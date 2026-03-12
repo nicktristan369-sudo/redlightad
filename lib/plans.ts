@@ -1,0 +1,48 @@
+export const PLANS = {
+  basic: {
+    name: "Basic",
+    price: 999, // cents
+    priceDisplay: "$9.99",
+    interval: "month" as const,
+    features: [
+      "Annonce i 30 dage",
+      "Standard placering",
+      "Op til 5 billeder",
+      "Email support",
+    ],
+    color: "gray",
+    badge: null,
+  },
+  featured: {
+    name: "Featured",
+    price: 2499,
+    priceDisplay: "$24.99",
+    interval: "month" as const,
+    features: [
+      "Annonce i 30 dage",
+      "Featured placering (over standard)",
+      "Op til 15 billeder",
+      "Blå Verified badge",
+      "Prioritet support",
+    ],
+    color: "blue",
+    badge: "⭐ Featured",
+  },
+  vip: {
+    name: "VIP",
+    price: 4999,
+    priceDisplay: "$49.99",
+    interval: "month" as const,
+    features: [
+      "Annonce i 30 dage",
+      "Top placering (premium carousel)",
+      "Op til 20 billeder",
+      "Guld VIP badge",
+      "Video upload",
+      "Dedikeret support 24/7",
+      "Statistik dashboard",
+    ],
+    color: "gold",
+    badge: "👑 VIP",
+  },
+}

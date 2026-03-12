@@ -115,6 +115,12 @@ export default function MineAnnoncer() {
 
                   {/* Actions */}
                   <div className="flex gap-2 flex-shrink-0">
+                    <a
+                      href={`/premium?listing=${listing.id}`}
+                      className="px-4 py-2 rounded-xl text-sm font-medium bg-yellow-50 hover:bg-yellow-100 text-yellow-700 transition-colors"
+                    >
+                      👑 Opgrader
+                    </a>
                     <button
                       onClick={() => router.push(`/dashboard/annoncer/${listing.id}/edit`)}
                       className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
