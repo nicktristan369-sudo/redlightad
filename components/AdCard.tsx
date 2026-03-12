@@ -1,6 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
 
 interface AdCardProps {
+  id: number;
   title: string;
   image: string;
   verified: boolean;
@@ -14,6 +16,7 @@ interface AdCardProps {
 }
 
 export default function AdCard({
+  id,
   title,
   image,
   verified,
@@ -34,6 +37,7 @@ export default function AdCard({
   ];
 
   return (
+    <Link href={`/ads/${id}`} className="block">
     <div className="flex gap-4 rounded-xl bg-white p-4 shadow-md transition-shadow hover:shadow-lg">
       <div className="relative h-[200px] w-[200px] flex-shrink-0 overflow-hidden rounded-lg">
         <Image
@@ -71,5 +75,6 @@ export default function AdCard({
         </div>
       </div>
     </div>
+    </Link>
   );
 }
