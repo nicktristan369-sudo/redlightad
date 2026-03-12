@@ -1,3 +1,41 @@
+export const mockAnnonceAd = {
+  id: 1,
+  name: "Sofia Milano",
+  verified: true,
+  lastSeen: "2 hours ago",
+  country: "Danmark",
+  category: "Escort",
+  city: "København",
+  age: 24,
+  gender: "Female",
+  languages: ["Dansk", "Engelsk"],
+  about: "Hej, jeg er Sofia Milano — en professionel og diskret ledsager baseret i København. Jeg tilbyder en uforglemmelig oplevelse for den sofistikerede herre. Jeg er velrejst, uddannet og flydende i både dansk og engelsk. Uanset om du leder efter en middagsdate, rejseledsager eller et privat møde, er jeg det perfekte valg. Jeg sætter stor pris på diskretion, god hygiejne og gensidig respekt. Kontakt mig gerne for at aftale et møde — jeg ser frem til at høre fra dig.",
+  images: [
+    "https://picsum.photos/800/600?random=40",
+    "https://picsum.photos/800/600?random=41",
+    "https://picsum.photos/800/600?random=42",
+    "https://picsum.photos/800/600?random=43",
+    "https://picsum.photos/800/600?random=44",
+    "https://picsum.photos/800/600?random=45",
+  ],
+  totalPhotos: 20,
+  hasVoiceMessage: true,
+  rates: [
+    { duration: "1 time", price: "$500" },
+    { duration: "2 timer", price: "$900" },
+    { duration: "Overnat", price: "$2.500" },
+    { duration: "Weekend", price: "$5.000" },
+  ],
+  services: ["Dinner dates", "Social events", "Travel companion", "Private meetings", "Weekend getaways"],
+  contact: {
+    phone: "+45 XX XX XX XX",
+    whatsapp: "+45 XX XX XX XX",
+    telegram: "@sofiamilano",
+    snapchat: "sofia.milano",
+    email: "sofia@redlightad.com",
+  },
+};
+
 export const mockAd = {
   id: 1,
   name: "Sofia",
