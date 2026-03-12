@@ -18,7 +18,8 @@ export default function OpretAnnoncePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [form, setForm] = useState({
     title: "",
     category: "",
@@ -73,8 +74,17 @@ export default function OpretAnnoncePage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      if (!user) throw new Error("Du skal være logget ind for at oprette en annonce");
+
+      // Upload images
+      let imageUrls: string[] = [];
+      if (imageFiles.length > 0) {
+        const { uploadImages } = await import("@/lib/uploadImages");
+        imageUrls = await uploadImages(imageFiles, user.id);
+      }
+
       const { error } = await supabase.from("listings").insert({
-        user_id: user?.id,
+        user_id: user.id,
         title: form.title,
         category: form.category,
         gender: form.gender,
@@ -92,6 +102,8 @@ export default function OpretAnnoncePage() {
         telegram: form.telegram,
         snapchat: form.snapchat,
         email: form.email,
+        images: imageUrls,
+        profile_image: imageUrls[0] || null,
         status: "draft",
       });
       if (error) throw error;
@@ -123,7 +135,8 @@ export default function OpretAnnoncePage() {
       snapchat: "",
       email: "",
     });
-    setSelectedFiles([]);
+    setImageFiles([]);
+    setImagePreviews([]);
     setStep(1);
     setSuccess(false);
     setError("");
@@ -450,31 +463,76 @@ export default function OpretAnnoncePage() {
                   </div>
                 </div>
 
-                {/* Image upload UI */}
+                {/* Image upload area */}
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">Profilbilleder</label>
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-8 transition hover:border-gray-400">
-                    <span className="mb-2 text-3xl">📷</span>
-                    <span className="text-sm text-gray-500">
-                      {selectedFiles.length > 0
-                        ? `${selectedFiles.length} billede${selectedFiles.length > 1 ? "r" : ""} valgt`
-                        : "Klik for at uploade billeder"}
-                    </span>
-                    <span className="mt-1 text-xs text-gray-400">
-                      Max 10 billeder • JPG, PNG • Max 5MB per billede
-                    </span>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Billeder <span className="text-gray-400">(max 20 &bull; JPG, PNG &bull; max 5MB/stk)</span>
+                  </label>
+
+                  {/* Drop zone */}
+                  <div
+                    className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-red-400 transition-colors"
+                    onClick={() => document.getElementById("image-input")?.click()}
+                  >
+                    <div className="text-4xl mb-2">📷</div>
+                    <p className="text-gray-500 text-sm font-medium">Klik for at uploade billeder</p>
+                    <p className="text-xs text-gray-400 mt-1">Første billede bruges som profilbillede</p>
                     <input
+                      id="image-input"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       multiple
                       className="hidden"
                       onChange={(e) => {
-                        if (e.target.files) {
-                          setSelectedFiles(Array.from(e.target.files).slice(0, 10));
-                        }
+                        const files = Array.from(e.target.files || []);
+                        const remaining = 20 - imageFiles.length;
+                        const newFiles = files.slice(0, remaining);
+                        setImageFiles(prev => [...prev, ...newFiles]);
+                        newFiles.forEach(file => {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            setImagePreviews(prev => [...prev, ev.target?.result as string]);
+                          };
+                          reader.readAsDataURL(file);
+                        });
                       }}
                     />
-                  </label>
+                  </div>
+
+                  {/* Preview thumbnails */}
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-4 gap-3 mt-4">
+                      {imagePreviews.map((src, i) => (
+                        <div key={i} className="relative group aspect-square">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={src}
+                            alt={`preview ${i + 1}`}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                          {i === 0 && (
+                            <span className="absolute top-1 left-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-md font-medium">
+                              Profil
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImageFiles(prev => prev.filter((_, idx) => idx !== i));
+                              setImagePreviews(prev => prev.filter((_, idx) => idx !== i));
+                            }}
+                            className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {imageFiles.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">{imageFiles.length} billede{imageFiles.length !== 1 ? "r" : ""} valgt</p>
+                  )}
                 </div>
 
                 {/* Preview */}
