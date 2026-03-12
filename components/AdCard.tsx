@@ -11,7 +11,9 @@ interface AdCardProps {
   age: number;
   gender: string;
   category: string;
-  location: string;
+  country?: string;
+  city?: string;
+  location?: string;
   language: string;
 }
 
@@ -25,16 +27,22 @@ export default function AdCard({
   age,
   gender,
   category,
+  country,
+  city,
   location,
   language,
 }: AdCardProps) {
+  const locationDisplay = city && country
+    ? `${city}, ${country}`
+    : city || country || location || "";
+
   const tags = [
     `${age} yrs`,
     gender,
     category,
-    location,
+    locationDisplay,
     language,
-  ];
+  ].filter(Boolean);
 
   return (
     <Link href={`/ads/${id}`} className="block">
