@@ -15,6 +15,7 @@ interface AdCardProps {
   city?: string;
   location?: string;
   language: string;
+  premium_tier?: string | null;
 }
 
 export default function AdCard({
@@ -31,6 +32,7 @@ export default function AdCard({
   city,
   location,
   language,
+  premium_tier,
 }: AdCardProps) {
   const locationDisplay = city && country
     ? `${city}, ${country}`
@@ -46,7 +48,21 @@ export default function AdCard({
 
   return (
     <Link href={`/ads/${id}`} className="block">
-    <div className="flex gap-4 rounded-xl bg-white p-4 shadow-md transition-shadow hover:shadow-lg">
+    <div className={`flex gap-4 rounded-xl bg-white p-4 shadow-md transition-shadow hover:shadow-lg relative ${
+      premium_tier === "vip" ? "ring-2 ring-yellow-400" : premium_tier === "featured" ? "ring-2 ring-blue-400" : ""
+    }`}>
+      {/* Premium badge */}
+      {premium_tier === "vip" && (
+        <div className="absolute top-2 left-2 z-10 bg-yellow-400 text-gray-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
+          👑 VIP
+        </div>
+      )}
+      {premium_tier === "featured" && (
+        <div className="absolute top-2 left-2 z-10 bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
+          ⭐ Featured
+        </div>
+      )}
+
       <div className="relative h-[200px] w-[200px] flex-shrink-0 overflow-hidden rounded-lg">
         <Image
           src={image}
