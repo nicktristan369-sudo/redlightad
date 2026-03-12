@@ -7,6 +7,7 @@ interface AnnonceDetailClientProps {
   images: string[];
   totalPhotos: number;
   hasVoiceMessage: boolean;
+  listingImages?: string[];
 }
 
 /* ========== LOCKED PHOTO GALLERY ========== */
@@ -123,10 +124,14 @@ export default function AnnonceDetailClient({
   images,
   totalPhotos,
   hasVoiceMessage,
+  listingImages,
 }: AnnonceDetailClientProps) {
+  const displayImages = listingImages && listingImages.length > 0 ? listingImages : images;
+  const displayTotal = listingImages && listingImages.length > 0 ? listingImages.length : totalPhotos;
+
   return (
     <>
-      <LockedPhotoGallery images={images} totalPhotos={totalPhotos} />
+      <LockedPhotoGallery images={displayImages} totalPhotos={displayTotal} />
 
       {/* Locked Banner */}
       <div className="mt-6 rounded-xl border border-red-100 bg-gradient-to-r from-red-50 to-pink-50 p-5 text-center">

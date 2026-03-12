@@ -3,6 +3,7 @@ import AnnonceDetailClient from "./AnnonceDetailClient";
 import { mockAnnonceAd } from "@/lib/mockAds";
 
 export default async function AnnonceDetailPage() {
+  // TODO: fetch from supabase by id
   const ad = mockAnnonceAd;
 
   return (
