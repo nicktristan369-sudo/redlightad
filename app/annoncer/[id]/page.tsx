@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import AnnonceDetailClient from "./AnnonceDetailClient";
+import SendMessageButton from "@/components/SendMessageButton";
 import { mockAnnonceAd } from "@/lib/mockAds";
 
 export default async function AnnonceDetailPage() {
@@ -158,6 +159,15 @@ export default async function AnnonceDetailPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Send Message */}
+                <div className="rounded-xl bg-white p-6 shadow-md">
+                  <h3 className="mb-4 text-xl font-bold text-gray-900">Send besked</h3>
+                  <SendMessageButton
+                    listingId={String(ad.id)}
+                    providerId="00000000-0000-0000-0000-000000000000"
+                  />
                 </div>
 
                 {/* Contact — locked */}
