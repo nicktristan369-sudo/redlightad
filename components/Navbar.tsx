@@ -22,7 +22,7 @@ export default function Navbar() {
           <a href="#" className="text-sm font-medium text-gray-600 hover:text-red-600">
             Support
           </a>
-          <a href="#" className="text-sm font-medium text-gray-600 hover:text-red-600">
+          <a href="/opret-annonce" className="text-sm font-medium text-gray-600 hover:text-red-600">
             Post an Ad
           </a>
         </div>
@@ -79,7 +79,7 @@ export default function Navbar() {
           <div className="flex flex-col gap-3 py-3">
             <a href="/" className="text-sm font-medium text-gray-900">Home</a>
             <a href="#" className="text-sm font-medium text-gray-600">Support</a>
-            <a href="#" className="text-sm font-medium text-gray-600">Post an Ad</a>
+            <a href="/opret-annonce" className="text-sm font-medium text-gray-600">Post an Ad</a>
           </div>
           <div className="relative mb-3">
             <input
