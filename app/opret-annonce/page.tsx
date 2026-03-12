@@ -80,7 +80,7 @@ export default function OpretAnnoncePage() {
       let imageUrls: string[] = [];
       if (imageFiles.length > 0) {
         const { uploadImages } = await import("@/lib/uploadImages");
-        imageUrls = await uploadImages(imageFiles, user.id);
+        imageUrls = await uploadImages(imageFiles);
       }
 
       const { error } = await supabase.from("listings").insert({

@@ -1,24 +1,24 @@
-import { createClient } from "@/lib/supabase";
-
-export async function uploadImages(
-  files: File[],
-  userId: string
-): Promise<string[]> {
-  const supabase = createClient();
+export async function uploadImages(files: File[]): Promise<string[]> {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
+  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
   const urls: string[] = [];
 
   for (const file of files) {
-    const ext = file.name.split(".").pop();
-    const filename = `listings/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+    formData.append("folder", "listings");
 
-    const { error } = await supabase.storage
-      .from("images")
-      .upload(filename, file, { upsert: false });
-
-    if (error) throw new Error(`Upload failed: ${error.message}`);
-
-    const { data } = supabase.storage.from("images").getPublicUrl(filename);
-    urls.push(data.publicUrl);
+    const res = await fetch(url, { method: "POST", body: formData });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(
+        `Cloudinary upload failed: ${err.error?.message || res.statusText}`
+      );
+    }
+    const data = await res.json();
+    urls.push(data.secure_url);
   }
 
   return urls;
