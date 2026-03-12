@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
+import LocationSelector from "@/components/LocationSelector";
 
 const SERVICE_OPTIONS = [
   "Dinner dates",
@@ -26,6 +27,10 @@ export default function OpretAnnoncePage() {
     gender: "",
     age: "",
     location: "",
+    country: "",
+    countryName: "",
+    region: "",
+    regionName: "",
     about: "",
     services: [] as string[],
     languages: [] as string[],
@@ -54,7 +59,7 @@ export default function OpretAnnoncePage() {
   };
 
   const validateStep1 = () => {
-    if (!form.title || !form.category || !form.gender || !form.age || !form.location) {
+    if (!form.title || !form.category || !form.gender || !form.age || !form.country) {
       setError("Udfyld venligst alle felter.");
       return false;
     }
@@ -90,6 +95,9 @@ export default function OpretAnnoncePage() {
         gender: form.gender,
         age: parseInt(form.age),
         location: form.location,
+        country: form.country,
+        region: form.region,
+        city: form.location,
         about: form.about,
         services: form.services,
         languages: form.languages,
@@ -122,6 +130,10 @@ export default function OpretAnnoncePage() {
       gender: "",
       age: "",
       location: "",
+      country: "",
+      countryName: "",
+      region: "",
+      regionName: "",
       about: "",
       services: [],
       languages: [],
@@ -290,13 +302,27 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">By / Lokation</label>
-                  <input
-                    type="text"
-                    value={form.location}
-                    onChange={(e) => updateField("location", e.target.value)}
-                    placeholder="F.eks. København"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Lokation <span className="text-red-500">*</span>
+                  </label>
+                  <LocationSelector
+                    value={{
+                      country: form.country,
+                      countryName: form.countryName,
+                      region: form.region,
+                      regionName: form.regionName,
+                      city: form.location,
+                    }}
+                    onChange={(val) => {
+                      setForm(prev => ({
+                        ...prev,
+                        country: val.country,
+                        countryName: val.countryName,
+                        region: val.region,
+                        regionName: val.regionName,
+                        location: val.city,
+                      }))
+                    }}
                   />
                 </div>
               </div>
