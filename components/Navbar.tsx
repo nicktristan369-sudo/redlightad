@@ -1,10 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState<{ email: string } | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUser({ email: user.email || "" });
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? { email: session.user.email || "" } : null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white">
@@ -49,12 +62,32 @@ export default function Navbar() {
               />
             </svg>
           </div>
-          <Link href="/login" className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Login
-          </Link>
-          <Link href="/register" className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700">
-            Create Account
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors"
+              >
+                Dashboard
+              </Link>
+              <span className="text-xs text-gray-400 hidden md:block max-w-[120px] truncate">{user.email}</span>
+              <Link
+                href="/dashboard"
+                className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+              >
+                Min konto
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-red-600 border border-gray-200 px-4 py-2 rounded-xl transition-colors">
+                Login
+              </Link>
+              <Link href="/register" className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+                Create Account
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Hamburger — mobile */}
@@ -96,14 +129,22 @@ export default function Navbar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div className="flex gap-2">
-            <Link href="/login" className="flex-1 rounded-lg border border-gray-300 py-1.5 text-center text-sm font-medium text-gray-700">
-              Login
-            </Link>
-            <Link href="/register" className="flex-1 rounded-lg bg-red-600 py-1.5 text-center text-sm font-medium text-white">
-              Create Account
-            </Link>
-          </div>
+          {user ? (
+            <div className="flex gap-2">
+              <Link href="/dashboard" className="flex-1 rounded-xl bg-red-600 py-2 text-center text-sm font-medium text-white">
+                Dashboard
+              </Link>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Link href="/login" className="flex-1 rounded-xl border border-gray-300 py-1.5 text-center text-sm font-medium text-gray-700">
+                Login
+              </Link>
+              <Link href="/register" className="flex-1 rounded-xl bg-red-600 py-1.5 text-center text-sm font-medium text-white">
+                Create Account
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </nav>
