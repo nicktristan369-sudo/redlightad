@@ -9,6 +9,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const [email, setEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [totalUnread, setTotalUnread] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -17,6 +18,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.replace("/login")
       } else {
         setEmail(user.email ?? null)
+        // Fetch unread count
+        supabase
+          .from("conversations")
+          .select("provider_unread, customer_unread, provider_id")
+          .or(`provider_id.eq.${user.id},customer_id.eq.${user.id}`)
+          .then(({ data }) => {
+            const total = (data || []).reduce((sum, c) => {
+              return sum + (c.provider_id === user.id ? c.provider_unread : c.customer_unread)
+            }, 0)
+            setTotalUnread(total)
+          })
       }
       setLoading(false)
     })
@@ -72,6 +84,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <span>{item.icon}</span>
                 {item.label}
+                {item.href === "/dashboard/beskeder" && totalUnread > 0 && (
+                  <span className="ml-auto bg-red-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {totalUnread}
+                  </span>
+                )}
               </Link>
             )
           })}
