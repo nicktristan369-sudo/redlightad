@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,12 +49,12 @@ export default function Navbar() {
               />
             </svg>
           </div>
-          <button className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <Link href="/login" className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
             Login
-          </button>
-          <button className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700">
+          </Link>
+          <Link href="/register" className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700">
             Create Account
-          </button>
+          </Link>
         </div>
 
         {/* Hamburger — mobile */}
@@ -96,12 +97,12 @@ export default function Navbar() {
             </svg>
           </div>
           <div className="flex gap-2">
-            <button className="flex-1 rounded-lg border border-gray-300 py-1.5 text-sm font-medium text-gray-700">
+            <Link href="/login" className="flex-1 rounded-lg border border-gray-300 py-1.5 text-center text-sm font-medium text-gray-700">
               Login
-            </button>
-            <button className="flex-1 rounded-lg bg-red-600 py-1.5 text-sm font-medium text-white">
+            </Link>
+            <Link href="/register" className="flex-1 rounded-lg bg-red-600 py-1.5 text-center text-sm font-medium text-white">
               Create Account
-            </button>
+            </Link>
           </div>
         </div>
       )}
