@@ -2,6 +2,7 @@
 import { useRef } from "react"
 import Image from "next/image";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface AdCardProps {
   id: number;
@@ -41,13 +42,14 @@ export default function AdCard({
   premium_tier,
 }: AdCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const { t } = useLanguage()
 
   const locationDisplay = city && country
     ? `${city}, ${country}`
     : city || country || location || "";
 
   const tags = [
-    `${age} yrs`,
+    `${age} ${t.ad_yrs}`,
     gender,
     category,
     locationDisplay,
@@ -62,12 +64,12 @@ export default function AdCard({
       {/* Premium badge */}
       {premium_tier === "vip" && (
         <div className="absolute top-2 left-2 z-10 bg-yellow-400 text-gray-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-          👑 VIP
+          {"\uD83D\uDC51"} VIP
         </div>
       )}
       {premium_tier === "featured" && (
         <div className="absolute top-2 left-2 z-10 bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-          ⭐ Featured
+          {"\u2B50"} Featured
         </div>
       )}
 
@@ -106,7 +108,7 @@ export default function AdCard({
         )}
         {hasVideo && (
           <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs">
-            ▶
+            {"\u25B6"}
           </div>
         )}
       </div>
@@ -116,13 +118,13 @@ export default function AdCard({
             <h3 className="truncate text-lg font-bold text-gray-900">{title}</h3>
             {verified && (
               <span className="whitespace-nowrap text-sm font-medium text-green-600">
-                ✓ Verified
+                {t.ad_verified}
               </span>
             )}
           </div>
           <p className="mb-2 line-clamp-2 text-sm text-gray-600">{description}</p>
           {hasVoice && (
-            <p className="text-xs text-gray-500">🎙️ Voice message available</p>
+            <p className="text-xs text-gray-500">{t.ad_voice}</p>
           )}
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
