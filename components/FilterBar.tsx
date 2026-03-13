@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { Search, MapPin, Grid3X3, Users, ChevronDown, X } from "lucide-react"
 import { Country } from "country-state-city"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
@@ -28,128 +29,118 @@ export default function FilterBar() {
 
   const hasFilters = selectedCountry || selectedCategory || selectedGender || searchQuery
 
-  const selectClass = "h-11 border border-gray-200 rounded-xl px-4 text-sm text-gray-700 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none cursor-pointer appearance-none pr-8 shadow-sm hover:border-gray-300 transition-colors"
+  const inputClass = "h-11 w-full border border-gray-200 rounded-xl bg-white text-sm text-gray-700 focus:ring-1 focus:ring-gray-300 focus:border-gray-300 outline-none transition-all placeholder-gray-400"
+  const selectWrapClass = "relative flex-shrink-0"
+  const selectClass = "h-11 border border-gray-200 rounded-xl pl-9 pr-8 text-sm text-gray-700 bg-white focus:ring-1 focus:ring-gray-300 focus:border-gray-300 outline-none cursor-pointer appearance-none transition-colors hover:border-gray-300"
 
   return (
-    <div className="bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 py-5">
-        {/* Search bar */}
-        <div className="relative mb-4">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">{"\uD83D\uDD0D"}</div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.search_placeholder}
-            className="w-full h-12 pl-12 pr-4 border border-gray-200 rounded-2xl text-sm text-gray-700 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all shadow-sm"
-          />
-        </div>
-
-        {/* Filter row */}
+    <div className="bg-white border-b border-gray-100" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        {/* Search + filters in one row on desktop */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Country with flags */}
-          <div className="relative">
+          {/* Search bar */}
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t.search_placeholder}
+              className={`${inputClass} pl-10 pr-4`}
+            />
+          </div>
+
+          {/* Country */}
+          <div className={selectWrapClass} style={{ minWidth: "180px" }}>
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
             <select
               className={selectClass}
+              style={{ minWidth: "180px" }}
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              style={{ minWidth: "180px" }}
             >
               <option value="">{t.filter_all_countries}</option>
               <optgroup label="Popular">
                 {popularCountries.map(c => (
-                  <option key={c.isoCode} value={c.isoCode}>
-                    {COUNTRY_FLAGS[c.isoCode] || "\uD83C\uDFF3\uFE0F"} {c.name}
-                  </option>
+                  <option key={c.isoCode} value={c.isoCode}>{COUNTRY_FLAGS[c.isoCode] || ""} {c.name}</option>
                 ))}
               </optgroup>
-              <optgroup label="All">
+              <optgroup label="All countries">
                 {otherCountries.map(c => (
-                  <option key={c.isoCode} value={c.isoCode}>
-                    {COUNTRY_FLAGS[c.isoCode] || "\uD83C\uDFF3\uFE0F"} {c.name}
-                  </option>
+                  <option key={c.isoCode} value={c.isoCode}>{COUNTRY_FLAGS[c.isoCode] || ""} {c.name}</option>
                 ))}
               </optgroup>
             </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">{"\u25BC"}</div>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
 
           {/* Category */}
-          <div className="relative">
-            <select
-              className={selectClass}
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
+          <div className={selectWrapClass}>
+            <Grid3X3 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
+            <select className={selectClass} value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
               <option value="">{t.filter_all_categories}</option>
               {["Escort", "Massage", "Fetish", "Transgender", "BDSM", "Webcam"].map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">{"\u25BC"}</div>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
 
           {/* Gender */}
-          <div className="relative">
-            <select
-              className={selectClass}
-              value={selectedGender}
-              onChange={(e) => setSelectedGender(e.target.value)}
-            >
+          <div className={selectWrapClass}>
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
+            <select className={selectClass} value={selectedGender} onChange={(e) => setSelectedGender(e.target.value)}>
               <option value="">{t.filter_all_genders}</option>
-              <option value="Female">{"\u2640\uFE0F"} Female</option>
-              <option value="Male">{"\u2642\uFE0F"} Male</option>
-              <option value="Transgender">{"\u26A7\uFE0F"} Transgender</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Transgender">Transgender</option>
             </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">{"\u25BC"}</div>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
 
-          {/* Search button */}
-          <button className="h-11 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 rounded-xl text-sm transition-colors shadow-sm flex items-center gap-2">
-            {t.filter_search_btn}
+          {/* Search btn */}
+          <button className="h-11 flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-medium px-5 rounded-xl text-sm transition-colors flex-shrink-0">
+            <Search className="w-3.5 h-3.5" />
+            <span>{t.filter_search_btn}</span>
           </button>
 
           {/* Clear */}
           {hasFilters && (
             <button
-              onClick={() => {
-                setSelectedCountry("")
-                setSelectedCategory("")
-                setSelectedGender("")
-                setSearchQuery("")
-              }}
-              className="h-11 text-sm text-gray-500 hover:text-red-600 font-medium px-4 rounded-xl hover:bg-red-50 transition-colors"
+              onClick={() => { setSelectedCountry(""); setSelectedCategory(""); setSelectedGender(""); setSearchQuery("") }}
+              className="h-11 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 font-medium px-3 rounded-xl hover:bg-gray-100 transition-colors"
             >
+              <X className="w-3.5 h-3.5" />
               {t.filter_clear}
             </button>
           )}
         </div>
 
-        {/* Active filters pills */}
+        {/* Active filter pills */}
         {hasFilters && (
           <div className="flex flex-wrap gap-2 mt-3">
             {selectedCountry && (
-              <span className="bg-red-50 text-red-700 text-xs font-medium px-3 py-1.5 rounded-full border border-red-100 flex items-center gap-1">
-                {COUNTRY_FLAGS[selectedCountry] || "\uD83C\uDFF3\uFE0F"} {allCountries.find(c => c.isoCode === selectedCountry)?.name}
-                <button onClick={() => setSelectedCountry("")} className="ml-1 hover:text-red-900">{"\u2715"}</button>
+              <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full">
+                {COUNTRY_FLAGS[selectedCountry]} {allCountries.find(c => c.isoCode === selectedCountry)?.name}
+                <button onClick={() => setSelectedCountry("")} className="ml-0.5 text-gray-400 hover:text-gray-700"><X className="w-3 h-3" /></button>
               </span>
             )}
             {selectedCategory && (
-              <span className="bg-red-50 text-red-700 text-xs font-medium px-3 py-1.5 rounded-full border border-red-100 flex items-center gap-1">
+              <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full">
                 {selectedCategory}
-                <button onClick={() => setSelectedCategory("")} className="ml-1 hover:text-red-900">{"\u2715"}</button>
+                <button onClick={() => setSelectedCategory("")} className="ml-0.5 text-gray-400 hover:text-gray-700"><X className="w-3 h-3" /></button>
               </span>
             )}
             {selectedGender && (
-              <span className="bg-red-50 text-red-700 text-xs font-medium px-3 py-1.5 rounded-full border border-red-100 flex items-center gap-1">
+              <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full">
                 {selectedGender}
-                <button onClick={() => setSelectedGender("")} className="ml-1 hover:text-red-900">{"\u2715"}</button>
+                <button onClick={() => setSelectedGender("")} className="ml-0.5 text-gray-400 hover:text-gray-700"><X className="w-3 h-3" /></button>
               </span>
             )}
             {searchQuery && (
-              <span className="bg-red-50 text-red-700 text-xs font-medium px-3 py-1.5 rounded-full border border-red-100 flex items-center gap-1">
+              <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full">
                 &quot;{searchQuery}&quot;
-                <button onClick={() => setSearchQuery("")} className="ml-1 hover:text-red-900">{"\u2715"}</button>
+                <button onClick={() => setSearchQuery("")} className="ml-0.5 text-gray-400 hover:text-gray-700"><X className="w-3 h-3" /></button>
               </span>
             )}
           </div>

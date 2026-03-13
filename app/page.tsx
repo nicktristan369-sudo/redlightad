@@ -8,13 +8,10 @@ export default function Home() {
     <>
       <Navbar />
       <FilterBar />
-      <main className="bg-gray-50">
+      <main className="bg-[#F5F5F7]">
         <PremiumCarousel />
         <AdList />
       </main>
-      <footer className="border-t border-gray-200 bg-white px-6 py-8 text-center text-sm text-gray-500">
-        &copy; 2026 RedLightAD. All rights reserved.
-      </footer>
     </>
   );
 }

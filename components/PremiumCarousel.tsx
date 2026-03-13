@@ -31,17 +31,20 @@ export default function PremiumCarousel() {
   )
 
   return (
-    <section className="py-10 bg-white">
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">⭐ Premium Listings</h2>
+    <section className="py-10 bg-[#F5F5F7]">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Premium</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Top verified members</p>
+          </div>
           <div className="flex gap-1.5">
             {premiumListings.map((_, i) => (
               <button
                 key={i}
                 onClick={() => goTo(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === activeIndex ? "w-6 bg-red-600" : "w-2 bg-gray-300 hover:bg-gray-400"
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === activeIndex ? "w-8 bg-gray-900" : "w-1.5 bg-gray-300 hover:bg-gray-400"
                 }`}
               />
             ))}
@@ -56,9 +59,10 @@ export default function PremiumCarousel() {
           {visibleListings.map((listing, i) => (
             <div
               key={`${listing.id}-${activeIndex}-${i}`}
-              className="relative overflow-hidden rounded-2xl shadow-md group cursor-pointer animate-fadeSlideIn"
+              className="relative overflow-hidden rounded-2xl group cursor-pointer animate-fadeSlideIn"
+              style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
             >
-              <div className="relative h-[320px] w-full overflow-hidden">
+              <div className="relative h-[360px] w-full overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={listing.img}
@@ -68,13 +72,16 @@ export default function PremiumCarousel() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               </div>
 
-              <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                👑 PREMIUM
+              <span
+                className="absolute left-3 top-3 text-[10px] font-bold tracking-[0.15em] uppercase px-3 py-1 rounded-full"
+                style={{ backgroundColor: "rgba(0,0,0,0.7)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.5)" }}
+              >
+                PREMIUM
               </span>
 
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                <p className="font-bold text-lg leading-tight">{listing.name}, {listing.age}</p>
-                <p className="text-sm text-gray-300">{listing.city} · {listing.country}</p>
+              <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                <p className="font-bold text-xl leading-tight tracking-tight">{listing.name}, {listing.age}</p>
+                <p className="text-sm text-gray-300 mt-0.5">{listing.city} · {listing.country}</p>
               </div>
             </div>
           ))}
