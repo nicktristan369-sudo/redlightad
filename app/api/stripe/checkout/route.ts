@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getStripe } from "@/lib/stripe"
+import Stripe from "stripe"
 import { PLANS } from "@/lib/plans"
 
 export async function POST(req: NextRequest) {
   try {
+    const stripeKey = process.env.STRIPE_SECRET_KEY
+
+    // Debug: log key presence (never log the full key)
+    if (!stripeKey) {
+      console.error("STRIPE_SECRET_KEY is missing from env vars")
+      return NextResponse.json(
+        { error: "Stripe is not configured (missing secret key)" },
+        { status: 500 }
+      )
+    }
+
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: "2025-02-24.acacia",
+    })
+
     const { tier, listingId } = await req.json()
 
     if (!["basic", "featured", "vip"].includes(tier)) {
@@ -11,9 +26,9 @@ export async function POST(req: NextRequest) {
     }
 
     const plan = PLANS[tier as keyof typeof PLANS]
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://redlightad.com"
+    const baseUrl = "https://redlightad.com"
 
-    const session = await getStripe().checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
       line_items: [
@@ -40,6 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Server error"
+    console.error("Stripe checkout error:", msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
