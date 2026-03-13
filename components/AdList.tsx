@@ -8,6 +8,7 @@ interface Listing {
   verified: boolean;
   description: string;
   hasVoice: boolean;
+  hasVideo?: boolean;
   age: number;
   gender: string;
   category: string;

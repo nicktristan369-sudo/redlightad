@@ -1,3 +1,5 @@
+"use client"
+import { useRef } from "react"
 import Image from "next/image";
 import Link from "next/link";
 
@@ -8,6 +10,8 @@ interface AdCardProps {
   verified: boolean;
   description: string;
   hasVoice: boolean;
+  hasVideo?: boolean;
+  videoUrl?: string;
   age: number;
   gender: string;
   category: string;
@@ -25,6 +29,8 @@ export default function AdCard({
   verified,
   description,
   hasVoice,
+  hasVideo,
+  videoUrl,
   age,
   gender,
   category,
@@ -34,6 +40,8 @@ export default function AdCard({
   language,
   premium_tier,
 }: AdCardProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
   const locationDisplay = city && country
     ? `${city}, ${country}`
     : city || country || location || "";
@@ -63,7 +71,21 @@ export default function AdCard({
         </div>
       )}
 
-      <div className="relative h-[200px] w-[200px] flex-shrink-0 overflow-hidden rounded-lg">
+      <div
+        className="relative h-[200px] w-[200px] flex-shrink-0 overflow-hidden rounded-lg"
+        onMouseEnter={() => {
+          if (hasVideo && videoRef.current) {
+            videoRef.current.style.display = "block"
+            videoRef.current.play()
+          }
+        }}
+        onMouseLeave={() => {
+          if (hasVideo && videoRef.current) {
+            videoRef.current.pause()
+            videoRef.current.style.display = "none"
+          }
+        }}
+      >
         <Image
           src={image}
           alt={title}
@@ -71,6 +93,22 @@ export default function AdCard({
           className="object-cover"
           unoptimized
         />
+        {hasVideo && videoUrl && (
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ display: "none" }}
+          />
+        )}
+        {hasVideo && (
+          <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs">
+            ▶
+          </div>
+        )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-between">
         <div>
