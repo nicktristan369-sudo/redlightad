@@ -1,61 +1,60 @@
 import { NextRequest, NextResponse } from "next/server"
-import Stripe from "stripe"
 import { PLANS } from "@/lib/plans"
 
 export async function POST(req: NextRequest) {
   try {
     const stripeKey = process.env.STRIPE_SECRET_KEY
-
-    // Debug: log key presence (never log the full key)
     if (!stripeKey) {
-      console.error("STRIPE_SECRET_KEY is missing from env vars")
       return NextResponse.json(
-        { error: "Stripe is not configured (missing secret key)" },
+        { error: "Stripe ikke konfigureret" },
         { status: 500 }
       )
     }
 
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2025-02-24.acacia",
-    })
-
     const { tier, listingId } = await req.json()
-
     if (!["basic", "featured", "vip"].includes(tier)) {
-      return NextResponse.json({ error: "Invalid tier" }, { status: 400 })
+      return NextResponse.json({ error: "Ugyldig pakke" }, { status: 400 })
     }
 
     const plan = PLANS[tier as keyof typeof PLANS]
     const baseUrl = "https://redlightad.com"
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `RedLightAD ${plan.name} — 30 dage`,
-              description: plan.features.join(" • "),
-            },
-            unit_amount: plan.price,
-          },
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        tier,
-        listing_id: listingId || "",
+    // Build Stripe Checkout session via REST API directly (avoids SDK network issues)
+    const params = new URLSearchParams()
+    params.append("payment_method_types[]", "card")
+    params.append("mode", "payment")
+    params.append("line_items[0][price_data][currency]", "usd")
+    params.append("line_items[0][price_data][product_data][name]", `RedLightAD ${plan.name} — 30 dage`)
+    params.append("line_items[0][price_data][unit_amount]", String(plan.price))
+    params.append("line_items[0][quantity]", "1")
+    params.append("metadata[tier]", tier)
+    params.append("metadata[listing_id]", listingId || "")
+    params.append("success_url", `${baseUrl}/dashboard?upgraded=true&tier=${tier}`)
+    params.append("cancel_url", `${baseUrl}/premium`)
+
+    const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${stripeKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      success_url: `${baseUrl}/dashboard?upgraded=true&tier=${tier}`,
-      cancel_url: `${baseUrl}/premium`,
+      body: params.toString(),
     })
 
-    return NextResponse.json({ url: session.url })
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error("Stripe API error:", data.error?.message)
+      return NextResponse.json(
+        { error: data.error?.message || "Stripe fejl" },
+        { status: response.status }
+      )
+    }
+
+    return NextResponse.json({ url: data.url })
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : "Server error"
-    console.error("Stripe checkout error:", msg)
+    const msg = error instanceof Error ? error.message : "Server fejl"
+    console.error("Checkout route error:", msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
