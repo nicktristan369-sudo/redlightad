@@ -1,8 +1,9 @@
 "use client"
 import { useRef } from "react"
-import Image from "next/image";
-import Link from "next/link";
-import { useLanguage } from "@/lib/i18n/LanguageContext";
+import Image from "next/image"
+import Link from "next/link"
+import { CheckCircle, Mic, Play, MapPin } from "lucide-react"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface AdCardProps {
   id: number;
@@ -48,97 +49,90 @@ export default function AdCard({
     ? `${city}, ${country}`
     : city || country || location || "";
 
-  const tags = [
-    `${age} ${t.ad_yrs}`,
-    gender,
-    category,
-    locationDisplay,
-    language,
-  ].filter(Boolean);
-
   return (
-    <Link href={`/ads/${id}`} className="block">
-    <div className={`flex gap-4 rounded-xl bg-white p-4 shadow-md transition-shadow hover:shadow-lg relative ${
-      premium_tier === "vip" ? "ring-2 ring-yellow-400" : premium_tier === "featured" ? "ring-2 ring-blue-400" : ""
-    }`}>
-      {/* Premium badge */}
-      {premium_tier === "vip" && (
-        <div className="absolute top-2 left-2 z-10 bg-yellow-400 text-gray-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-          {"\uD83D\uDC51"} VIP
-        </div>
-      )}
-      {premium_tier === "featured" && (
-        <div className="absolute top-2 left-2 z-10 bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-          {"\u2B50"} Featured
-        </div>
-      )}
+    <Link href={`/ads/${id}`} className="block group">
+      <div className={`flex gap-5 rounded-2xl bg-white p-4 transition-all hover:shadow-md relative ${
+        premium_tier === "vip" ? "ring-1 ring-yellow-300" : premium_tier === "featured" ? "ring-1 ring-blue-200" : "border border-gray-100"
+      }`} style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
 
-      <div
-        className="relative h-[200px] w-[200px] flex-shrink-0 overflow-hidden rounded-lg"
-        onMouseEnter={() => {
-          if (hasVideo && videoRef.current) {
-            videoRef.current.style.display = "block"
-            videoRef.current.play()
-          }
-        }}
-        onMouseLeave={() => {
-          if (hasVideo && videoRef.current) {
-            videoRef.current.pause()
-            videoRef.current.style.display = "none"
-          }
-        }}
-      >
-        <Image
-          src={image}
-          alt={title}
-          fill
-          className="object-cover"
-          unoptimized
-        />
-        {hasVideo && videoUrl && (
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ display: "none" }}
+        {/* Premium badge */}
+        {premium_tier === "vip" && (
+          <div className="absolute top-3 left-3 z-10 text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.4)" }}>
+            VIP
+          </div>
+        )}
+        {premium_tier === "featured" && (
+          <div className="absolute top-3 left-3 z-10 bg-blue-600 text-white text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full">
+            Featured
+          </div>
+        )}
+
+        {/* Image */}
+        <div
+          className="relative h-[180px] w-[180px] flex-shrink-0 overflow-hidden rounded-xl"
+          onMouseEnter={() => {
+            if (hasVideo && videoRef.current) {
+              videoRef.current.style.display = "block"
+              videoRef.current.play()
+            }
+          }}
+          onMouseLeave={() => {
+            if (hasVideo && videoRef.current) {
+              videoRef.current.pause()
+              videoRef.current.style.display = "none"
+            }
+          }}
+        >
+          <Image
+            src={image}
+            alt={title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            unoptimized
           />
-        )}
-        {hasVideo && (
-          <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs">
-            {"\u25B6"}
-          </div>
-        )}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-between">
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <h3 className="truncate text-lg font-bold text-gray-900">{title}</h3>
-            {verified && (
-              <span className="whitespace-nowrap text-sm font-medium text-green-600">
-                {t.ad_verified}
-              </span>
-            )}
-          </div>
-          <p className="mb-2 line-clamp-2 text-sm text-gray-600">{description}</p>
-          {hasVoice && (
-            <p className="text-xs text-gray-500">{t.ad_voice}</p>
+          {hasVideo && videoUrl && (
+            <video ref={videoRef} src={videoUrl} muted loop playsInline className="absolute inset-0 w-full h-full object-cover" style={{ display: "none" }} />
+          )}
+          {hasVideo && (
+            <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-sm">
+              <Play className="w-3 h-3 fill-white" />
+            </div>
           )}
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600"
-            >
-              {tag}
-            </span>
-          ))}
+
+        {/* Content */}
+        <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <h3 className="truncate text-base font-bold text-gray-900 tracking-tight">{title}</h3>
+              {verified && (
+                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+              )}
+            </div>
+            <p className="mb-3 line-clamp-2 text-sm text-gray-500 leading-relaxed">{description}</p>
+            {hasVoice && (
+              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                <Mic className="w-3.5 h-3.5" />
+                <span>Voice message</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {locationDisplay && (
+              <span className="flex items-center gap-1 rounded-lg bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-100">
+                <MapPin className="w-3 h-3" />
+                {locationDisplay}
+              </span>
+            )}
+            {[`${age} ${t.ad_yrs}`, gender, category, language].filter(Boolean).map((tag) => (
+              <span key={tag} className="rounded-lg bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-100">
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
     </Link>
-  );
+  )
 }

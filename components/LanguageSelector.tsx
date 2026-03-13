@@ -1,5 +1,6 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
+import { Globe, ChevronDown } from "lucide-react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { Locale } from "@/lib/i18n/translations"
 
@@ -24,9 +25,9 @@ export default function LanguageSelector() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 bg-white text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
       >
-        <span className="text-base">{current.flag}</span>
-        <span className="hidden sm:block">{current.name}</span>
-        <span className="text-gray-400 text-xs">{"\u25BC"}</span>
+        <Globe className="w-4 h-4 text-gray-500" />
+        <span className="hidden sm:block text-xs">{current.name}</span>
+        <ChevronDown className="w-3 h-3 text-gray-400" />
       </button>
 
       {open && (
@@ -37,12 +38,12 @@ export default function LanguageSelector() {
                 key={code}
                 onClick={() => { setLocale(code); setOpen(false) }}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors ${
-                  locale === code ? "bg-red-50 text-red-700 font-medium" : "text-gray-700"
+                  locale === code ? "bg-gray-100 text-gray-900 font-medium" : "text-gray-700"
                 }`}
               >
                 <span className="text-xl">{lang.flag}</span>
                 <span>{lang.name}</span>
-                {locale === code && <span className="ml-auto text-red-600">{"\u2713"}</span>}
+                {locale === code && <span className="ml-auto text-gray-900">{"\u2713"}</span>}
               </button>
             ))}
           </div>

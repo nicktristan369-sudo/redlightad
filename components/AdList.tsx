@@ -37,7 +37,7 @@ export default function AdList({ listings }: AdListProps) {
   return (
     <section className="py-8">
       <div className="mx-auto max-w-7xl px-4">
-        <h2 className="mb-6 text-2xl font-bold text-gray-900">Latest Listings</h2>
+        <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-6">Latest Listings</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {sorted.map((ad) => (
             <AdCard key={ad.id} {...ad} />
