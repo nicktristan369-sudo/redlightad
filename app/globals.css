@@ -13,6 +13,15 @@
   animation: dropdownIn 0.15s ease-out both;
 }
 
+/* Mobile menu slide-in from left */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.25s cubic-bezier(0.4,0,0.2,1) both;
+}
+
 :root {
   --bg: #F5F5F7;
   --text: #1D1D1F;
