@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import AgeVerificationModal from "@/components/AgeVerificationModal";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,6 +27,7 @@ export default function RootLayout({
         className={`${inter.variable} antialiased bg-[#F5F5F7] text-[#1D1D1F] flex flex-col min-h-screen`}
       >
         <LanguageProvider>
+          <AgeVerificationModal />
           <main className="flex-1">{children}</main>
           <Footer />
         </LanguageProvider>
