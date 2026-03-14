@@ -53,6 +53,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/annoncer", label: "Mine annoncer", icon: "📋" },
     { href: "/opret-annonce", label: "Opret annonce", icon: "➕" },
     { href: "/dashboard/beskeder", label: "Beskeder", icon: "💬" },
+    { href: "/dashboard/wallet", label: "Wallet", icon: "🔴" },
+    { href: "/dashboard/buy-coins", label: "Køb coins", icon: "💳" },
     { href: "/dashboard/profil", label: "Profil indstillinger", icon: "⚙️" },
   ]
 
