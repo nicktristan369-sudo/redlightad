@@ -104,6 +104,19 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Legal disclaimer */}
+        <div className="border-t border-gray-800 mt-6 pt-6 text-center space-y-3">
+          <p className="text-xs text-gray-600 leading-relaxed max-w-4xl mx-auto">
+            Copyright © redlightad.com, 2026. By using this site you agree to comply with our terms of use. All profiles listed on this site were 18 years of age or older at the time of listing. This website uses cookies to improve your experience.
+          </p>
+          <p className="text-xs text-gray-600 leading-relaxed max-w-4xl mx-auto">
+            All profiles listed on RedLightAd.com charge for their time and companionship only. Anything else that may occur is a matter of coincidence and choice between consenting adults. By using this site you accept that we do not support or advertise sexually based business activities in any form. You hereby declare that you offer your time and companionship only. We do not support any forms of sexual activity based business partnerships — every advertiser must be an independent individual.
+          </p>
+          <p className="text-xs font-medium text-gray-500">
+            🚫 Say NO to human trafficking.
+          </p>
+        </div>
+
       </div>
     </footer>
   )
