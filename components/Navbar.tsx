@@ -15,8 +15,9 @@ import {
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [user, setUser] = useState<{ email: string; id: string } | null>(null);
   const [customSearchOpen, setCustomSearchOpen] = useState(false);
+  const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const customSearchRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({
@@ -42,10 +43,14 @@ export default function Navbar() {
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUser({ email: user.email || "" });
+      if (user) {
+        setUser({ email: user.email || "", id: user.id });
+        supabase.from("wallets").select("balance").eq("user_id", user.id).single()
+          .then(({ data }) => { if (data) setCoinBalance(data.balance) });
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? { email: session.user.email || "" } : null);
+      setUser(session?.user ? { email: session.user.email || "", id: session.user.id } : null);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -111,6 +116,13 @@ export default function Navbar() {
               <Globe className="w-3.5 h-3.5 text-gray-500" />
               US
             </button>
+
+            {/* Coin balance */}
+            {user && coinBalance !== null && (
+              <Link href="/dashboard/wallet" className="flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 px-3 py-1.5 rounded-full text-sm font-bold transition-colors">
+                🔴 {coinBalance}
+              </Link>
+            )}
 
             {/* Auth */}
             {user ? (
