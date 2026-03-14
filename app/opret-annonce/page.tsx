@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
 import LocationSelector from "@/components/LocationSelector";
+import {
+  BODY_BUILD_OPTIONS,
+  HAIR_COLOR_OPTIONS,
+  EYE_COLOR_OPTIONS,
+  GROOMING_OPTIONS,
+  BRA_SIZE_OPTIONS,
+  NATIONALITY_OPTIONS,
+} from "@/lib/listingOptions";
 
 const SERVICE_OPTIONS = [
   "Dinner dates",
@@ -43,9 +51,20 @@ export default function OpretAnnoncePage() {
     telegram: "",
     snapchat: "",
     email: "",
+    height: "",
+    weight: "",
+    body_build: "",
+    hair_color: "",
+    eye_color: "",
+    grooming: "",
+    bra_size: "",
+    nationality: "",
+    outcall: false,
+    handicap_friendly: false,
+    has_own_place: false,
   });
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -112,6 +131,17 @@ export default function OpretAnnoncePage() {
         email: form.email,
         images: imageUrls,
         profile_image: imageUrls[0] || null,
+        height: form.height ? parseInt(form.height) : null,
+        weight: form.weight ? parseInt(form.weight) : null,
+        body_build: form.body_build || null,
+        hair_color: form.hair_color || null,
+        eye_color: form.eye_color || null,
+        grooming: form.grooming || null,
+        bra_size: form.bra_size || null,
+        nationality: form.nationality || null,
+        outcall: form.outcall,
+        handicap_friendly: form.handicap_friendly,
+        has_own_place: form.has_own_place,
         status: "pending",
       });
       if (error) throw error;
@@ -146,6 +176,17 @@ export default function OpretAnnoncePage() {
       telegram: "",
       snapchat: "",
       email: "",
+      height: "",
+      weight: "",
+      body_build: "",
+      hair_color: "",
+      eye_color: "",
+      grooming: "",
+      bra_size: "",
+      nationality: "",
+      outcall: false,
+      handicap_friendly: false,
+      has_own_place: false,
     });
     setImageFiles([]);
     setImagePreviews([]);
@@ -436,6 +477,132 @@ export default function OpretAnnoncePage() {
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* Udseende & Detaljer */}
+                <div>
+                  <label className="mb-3 block text-sm font-semibold text-gray-900">Udseende & Detaljer</label>
+
+                  {/* Højde / Vægt */}
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Højde (cm)</span>
+                      <input
+                        type="number"
+                        min={100}
+                        max={250}
+                        value={form.height}
+                        onChange={(e) => updateField("height", e.target.value)}
+                        placeholder="170"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Vægt (kg)</span>
+                      <input
+                        type="number"
+                        min={30}
+                        max={200}
+                        value={form.weight}
+                        onChange={(e) => updateField("weight", e.target.value)}
+                        placeholder="60"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 2x2 selects */}
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Kropsbygning</span>
+                      <select
+                        value={form.body_build}
+                        onChange={(e) => updateField("body_build", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="">Vælg</option>
+                        {BODY_BUILD_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Hårfarve</span>
+                      <select
+                        value={form.hair_color}
+                        onChange={(e) => updateField("hair_color", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="">Vælg</option>
+                        {HAIR_COLOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Øjenfarve</span>
+                      <select
+                        value={form.eye_color}
+                        onChange={(e) => updateField("eye_color", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="">Vælg</option>
+                        {EYE_COLOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Intimbelshåring</span>
+                      <select
+                        value={form.grooming}
+                        onChange={(e) => updateField("grooming", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="">Vælg</option>
+                        {GROOMING_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* BH-størrelse */}
+                  <div className="mb-3">
+                    <span className="mb-1 block text-xs text-gray-500">BH-størrelse</span>
+                    <select
+                      value={form.bra_size}
+                      onChange={(e) => updateField("bra_size", e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    >
+                      <option value="">Vælg</option>
+                      {BRA_SIZE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Nationalitet */}
+                  <div className="mb-3">
+                    <span className="mb-1 block text-xs text-gray-500">Nationalitet</span>
+                    <select
+                      value={form.nationality}
+                      onChange={(e) => updateField("nationality", e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    >
+                      <option value="">Vælg</option>
+                      {NATIONALITY_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Checkboxes */}
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    {[
+                      { field: "outcall", label: "Kører escort" },
+                      { field: "handicap_friendly", label: "Modtager handicappede" },
+                      { field: "has_own_place", label: "Har eget sted" },
+                    ].map((c) => (
+                      <label key={c.field} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form[c.field as keyof typeof form] as boolean}
+                          onChange={(e) => updateField(c.field, e.target.checked)}
+                          className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                        />
+                        {c.label}
+                      </label>
+                    ))}
                   </div>
                 </div>
               </div>
