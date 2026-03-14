@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Menu, X, Globe, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import CountrySelector from "@/components/CountrySelector";
 import {
   BODY_BUILD_OPTIONS,
   HAIR_COLOR_OPTIONS,
@@ -18,6 +19,8 @@ export default function Navbar() {
   const [user, setUser] = useState<{ email: string; id: string } | null>(null);
   const [customSearchOpen, setCustomSearchOpen] = useState(false);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
+  const [showCountrySelector, setShowCountrySelector] = useState(false);
   const customSearchRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({
@@ -39,6 +42,18 @@ export default function Navbar() {
     outcall: false, handicap_friendly: false,
     has_own_place: false, is_trans: false, old_ads: false,
   });
+
+  useEffect(() => {
+    try {
+      const code = localStorage.getItem("selected_country");
+      if (code) {
+        import("@/lib/countries").then(({ getCountry }) => {
+          const c = getCountry(code);
+          if (c) setSelectedCountry({ code: c.code, flag: c.flag, name: c.name });
+        });
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -76,6 +91,23 @@ export default function Navbar() {
 
   return (
     <>
+      {showCountrySelector && (
+        <CountrySelector
+          forceOpen
+          onClose={() => {
+            setShowCountrySelector(false);
+            try {
+              const code = localStorage.getItem("selected_country");
+              if (code) {
+                import("@/lib/countries").then(({ getCountry }) => {
+                  const c = getCountry(code);
+                  if (c) setSelectedCountry({ code: c.code, flag: c.flag, name: c.name });
+                });
+              }
+            } catch { /* ignore */ }
+          }}
+        />
+      )}
       {/* ── Main navbar ── */}
       <nav className="sticky top-0 z-40 bg-white border-b border-gray-100" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 sm:px-6 h-16">
@@ -111,6 +143,18 @@ export default function Navbar() {
 
           {/* Right — desktop */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+            {/* Country selector */}
+            {selectedCountry && (
+              <button
+                onClick={() => setShowCountrySelector(true)}
+                className="flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+              >
+                <span className="text-base leading-none">{selectedCountry.flag}</span>
+                <span>{selectedCountry.name}</span>
+                <ChevronDown className="w-3 h-3 text-gray-400" />
+              </button>
+            )}
+
             {/* Language */}
             <button className="flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors">
               <Globe className="w-3.5 h-3.5 text-gray-500" />
@@ -331,3 +375,5 @@ export default function Navbar() {
     </>
   );
 }
+
+export { CountrySelector };

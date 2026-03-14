@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import CountrySelector from "@/components/CountrySelector"
 
 export default function AgeVerificationModal() {
   const [visible, setVisible] = useState(false)
+  const [showCountry, setShowCountry] = useState(false)
 
   useEffect(() => {
     try {
@@ -17,13 +19,17 @@ export default function AgeVerificationModal() {
   const handleEnter = () => {
     try { localStorage.setItem("age_verified", "true") } catch { /* ignore */ }
     setVisible(false)
+    // Show country selector if no country chosen yet
+    try {
+      if (!localStorage.getItem("selected_country")) setShowCountry(true)
+    } catch { /* ignore */ }
   }
 
   const handleExit = () => {
     window.location.href = "https://www.google.com"
   }
 
-  if (!visible) return null
+  if (!visible) return showCountry ? <CountrySelector forceOpen onClose={() => setShowCountry(false)} /> : null
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.92)" }}>
