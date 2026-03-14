@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import LocationSelector from "@/components/LocationSelector";
+import VoiceRecorder from "@/components/VoiceRecorder";
 
 const DAYS_OF_WEEK = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const;
 type DayKey = typeof DAYS_OF_WEEK[number];
@@ -49,6 +50,8 @@ export default function OpretAnnoncePage() {
   const [success, setSuccess] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
+  const [userTier, setUserTier] = useState<string | null>(null);
   const [timezone, setTimezone] = useState("Europe/Copenhagen");
   const [openingHours, setOpeningHours] = useState<OpeningHours>(() => {
     const defaults: Partial<OpeningHours> = {};
@@ -61,6 +64,20 @@ export default function OpretAnnoncePage() {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (tz) setTimezone(tz);
     } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    const fetchTier = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("listings")
+          .select("premium_tier").eq("user_id", user.id).not("premium_tier", "is", null).limit(1).single();
+        if (data?.premium_tier) setUserTier(data.premium_tier);
+      } catch { /* no tier */ }
+    };
+    fetchTier();
   }, []);
   const [form, setForm] = useState({
     title: "",
@@ -177,6 +194,7 @@ export default function OpretAnnoncePage() {
         has_own_place: form.has_own_place,
         opening_hours: openingHours,
         timezone: timezone,
+        voice_message_url: voiceMessageUrl || null,
         status: "pending",
       });
       if (error) throw error;
@@ -861,6 +879,27 @@ export default function OpretAnnoncePage() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Voice Message — Premium only */}
+              <div className="mt-6 rounded-2xl border border-gray-200 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">🎙</span>
+                  <h3 className="font-semibold text-gray-900 text-sm">Voice Message</h3>
+                  {!["premium", "featured", "vip"].includes(userTier || "") && (
+                    <span className="ml-auto text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Premium only</span>
+                  )}
+                </div>
+                {["premium", "featured", "vip"].includes(userTier || "") ? (
+                  <VoiceRecorder
+                    onUpload={(url) => setVoiceMessageUrl(url)}
+                    existingUrl={voiceMessageUrl || null}
+                  />
+                ) : (
+                  <div className="rounded-xl bg-gray-50 border border-dashed border-gray-200 p-4 text-center">
+                    <p className="text-sm text-gray-400">🔒 Opgrader til Premium for at tilføje en voice message til din profil</p>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex flex-col sm:flex-row gap-3">

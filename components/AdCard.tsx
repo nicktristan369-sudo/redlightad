@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { CheckCircle, Mic, Play, MapPin } from "lucide-react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import VoiceMessagePlayer from "@/components/VoiceMessagePlayer"
 
 interface AdCardProps {
   id: string | number;
@@ -12,6 +13,7 @@ interface AdCardProps {
   verified: boolean;
   description: string;
   hasVoice: boolean;
+  voiceUrl?: string | null;
   hasVideo?: boolean;
   videoUrl?: string;
   age: number;
@@ -31,6 +33,7 @@ export default function AdCard({
   verified,
   description,
   hasVoice,
+  voiceUrl,
   hasVideo,
   videoUrl,
   age,
@@ -111,12 +114,14 @@ export default function AdCard({
               )}
             </div>
             <p className="mb-3 line-clamp-2 text-sm text-gray-500 leading-relaxed">{description}</p>
-            {hasVoice && (
+            {hasVoice && voiceUrl ? (
+              <VoiceMessagePlayer url={voiceUrl} compact />
+            ) : hasVoice ? (
               <div className="flex items-center gap-1.5 text-xs text-gray-400">
                 <Mic className="w-3.5 h-3.5" />
                 <span>Voice message</span>
               </div>
-            )}
+            ) : null}
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {locationDisplay && (

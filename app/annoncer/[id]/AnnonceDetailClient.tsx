@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import VoiceMessagePlayer from "@/components/VoiceMessagePlayer";
 
 /* ---------- TYPES ---------- */
 interface AnnonceDetailClientProps {
   images: string[];
   totalPhotos: number;
   hasVoiceMessage: boolean;
+  voiceMessageUrl?: string | null;
   listingImages?: string[];
 }
 
@@ -76,54 +78,12 @@ function LockedPhotoGallery({
   );
 }
 
-/* ========== VOICE MESSAGE PLAYER ========== */
-function VoiceMessagePlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  return (
-    <div className="rounded-xl bg-white p-5 shadow-md">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="text-red-600 text-lg">🎙️</span>
-        <h3 className="font-semibold text-gray-900">Stemmebesked</h3>
-      </div>
-
-      <div className="flex items-center gap-4">
-        {/* Play / Pause button */}
-        <button
-          onClick={() => setIsPlaying(!isPlaying)}
-          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
-        >
-          {isPlaying ? (
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <rect x="5" y="4" width="3" height="12" rx="1" />
-              <rect x="12" y="4" width="3" height="12" rx="1" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M6.5 4.5v11l9-5.5-9-5.5z" />
-            </svg>
-          )}
-        </button>
-
-        {/* Progress bar */}
-        <div className="flex-1">
-          <div className="h-2 w-full rounded-full bg-gray-200">
-            <div className="h-2 rounded-full bg-red-600" style={{ width: "40%" }} />
-          </div>
-        </div>
-
-        {/* Time */}
-        <span className="text-sm text-gray-500 flex-shrink-0">1:02 / 2:34</span>
-      </div>
-    </div>
-  );
-}
-
 /* ========== MAIN CLIENT COMPONENT ========== */
 export default function AnnonceDetailClient({
   images,
   totalPhotos,
   hasVoiceMessage,
+  voiceMessageUrl,
   listingImages,
 }: AnnonceDetailClientProps) {
   const displayImages = listingImages && listingImages.length > 0 ? listingImages : images;
@@ -148,9 +108,9 @@ export default function AnnonceDetailClient({
         </button>
       </div>
 
-      {hasVoiceMessage && (
+      {hasVoiceMessage && voiceMessageUrl && (
         <div className="mt-6">
-          <VoiceMessagePlayer />
+          <VoiceMessagePlayer url={voiceMessageUrl} />
         </div>
       )}
     </>

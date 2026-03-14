@@ -13,6 +13,7 @@ interface Listing {
   profile_image: string | null
   created_at: string
   user_id: string
+  voice_message_url: string | null
 }
 
 type FilterTab = "alle" | "pending" | "active" | "rejected" | "draft"
@@ -28,7 +29,7 @@ export default function AdminAnnoncerPage() {
       const supabase = createClient()
       const { data } = await supabase
         .from("listings")
-        .select("id, title, category, location, status, profile_image, created_at, user_id")
+        .select("id, title, category, location, status, profile_image, created_at, user_id, voice_message_url")
         .order("created_at", { ascending: false })
 
       setListings(data || [])
@@ -160,7 +161,12 @@ export default function AdminAnnoncerPage() {
                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">N/A</div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">{listing.title}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-medium text-gray-900 truncate">{listing.title}</p>
+                            {listing.voice_message_url && (
+                              <span title="Har voice message" className="text-sm flex-shrink-0">🎙</span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500">{listing.category} &middot; {listing.location}</p>
                         </div>
                         {statusBadge(listing.status)}
