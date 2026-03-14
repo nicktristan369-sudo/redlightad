@@ -1,89 +1,123 @@
 "use client"
 import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase"
+import Link from "next/link"
 
-const premiumListings = [
-  { id: 1, name: "Sofia", city: "Copenhagen", country: "Denmark", age: 24, img: "https://picsum.photos/300/400?random=10" },
-  { id: 2, name: "Jessica", city: "New York", country: "USA", age: 26, img: "https://picsum.photos/300/400?random=50" },
-  { id: 3, name: "Charlotte", city: "London", country: "UK", age: 28, img: "https://picsum.photos/300/400?random=53" },
-  { id: 4, name: "Emma", city: "Sydney", country: "Australia", age: 25, img: "https://picsum.photos/300/400?random=59" },
-  { id: 5, name: "Lena", city: "Berlin", country: "Germany", age: 27, img: "https://picsum.photos/300/400?random=57" },
-  { id: 6, name: "Isabelle", city: "Toronto", country: "Canada", age: 26, img: "https://picsum.photos/300/400?random=61" },
+interface PremiumListing {
+  id: string
+  title: string
+  profile_image: string | null
+  video_url: string | null
+  age: number
+  city: string | null
+  location: string
+  premium_tier: string | null
+}
+
+const MOCK_LISTINGS: PremiumListing[] = [
+  { id: "1", title: "Sofia", profile_image: "https://picsum.photos/300/400?random=10", video_url: null, age: 24, city: "Copenhagen", location: "Copenhagen", premium_tier: "featured" },
+  { id: "2", title: "Jessica", profile_image: "https://picsum.photos/300/400?random=50", video_url: null, age: 26, city: "New York", location: "New York", premium_tier: "vip" },
+  { id: "3", title: "Charlotte", profile_image: "https://picsum.photos/300/400?random=53", video_url: null, age: 28, city: "London", location: "London", premium_tier: "featured" },
+  { id: "4", title: "Emma", profile_image: "https://picsum.photos/300/400?random=59", video_url: null, age: 25, city: "Sydney", location: "Sydney", premium_tier: "basic" },
 ]
 
-const VISIBLE = 4
+function tierBadge(tier: string | null | undefined) {
+  if (!tier) return null
+  const map: Record<string, { label: string; cls: string }> = {
+    vip: { label: "VIP", cls: "bg-black text-yellow-400 border border-yellow-400/50" },
+    featured: { label: "FEATURED", cls: "bg-black text-gray-300 border border-gray-600/50" },
+    basic: { label: "PREMIUM", cls: "bg-black/80 text-yellow-500 border border-yellow-500/40" },
+  }
+  const b = map[tier]
+  if (!b) return null
+  return (
+    <span className={`absolute left-2.5 top-2.5 text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded-full ${b.cls}`}>
+      {b.label}
+    </span>
+  )
+}
 
 export default function PremiumCarousel() {
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [isHovered, setIsHovered] = useState(false)
+  const [listings, setListings] = useState<PremiumListing[]>(MOCK_LISTINGS)
+  const [index, setIndex] = useState(0)
+  const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
-    if (isHovered) return
-    const interval = setInterval(() => {
-      setActiveIndex(prev => (prev + 1) % premiumListings.length)
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [isHovered])
+    const supabase = createClient()
+    supabase
+      .from("listings")
+      .select("id, title, profile_image, video_url, age, city, location, premium_tier")
+      .eq("status", "active")
+      .not("premium_tier", "is", null)
+      .limit(12)
+      .then(({ data }) => {
+        if (data && data.length > 0) setListings(data as PremiumListing[])
+      })
+  }, [])
 
-  const goTo = (i: number) => setActiveIndex(i)
+  useEffect(() => {
+    if (hovered) return
+    const t = setInterval(() => setIndex(p => (p + 1) % listings.length), 4000)
+    return () => clearInterval(t)
+  }, [hovered, listings.length])
 
-  const visibleListings = Array.from({ length: VISIBLE }, (_, i) =>
-    premiumListings[(activeIndex + i) % premiumListings.length]
+  const VISIBLE = 4
+  const visible = Array.from({ length: Math.min(VISIBLE, listings.length) }, (_, i) =>
+    listings[(index + i) % listings.length]
   )
 
+  const prev = () => setIndex(p => (p - 1 + listings.length) % listings.length)
+  const next = () => setIndex(p => (p + 1) % listings.length)
+
   return (
-    <section className="py-10 bg-[#F5F5F7]">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="flex items-center justify-between mb-8">
+    <section className="py-8 bg-[#F5F5F7]">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Premium</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Top verified members</p>
+            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Premium annoncer</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Top verified members</p>
           </div>
-          <div className="flex gap-1.5">
-            {premiumListings.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goTo(i)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === activeIndex ? "w-8 bg-gray-900" : "w-1.5 bg-gray-300 hover:bg-gray-400"
-                }`}
-              />
-            ))}
+          <div className="flex items-center gap-2">
+            <button onClick={prev} className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700 text-sm font-bold">←</button>
+            <button onClick={next} className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700 text-sm font-bold">→</button>
           </div>
         </div>
 
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3"
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
         >
-          {visibleListings.map((listing, i) => (
-            <div
-              key={`${listing.id}-${activeIndex}-${i}`}
-              className="relative overflow-hidden rounded-2xl group cursor-pointer animate-fadeSlideIn"
-              style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
-            >
-              <div className="relative h-[360px] w-full overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={listing.img}
-                  alt={listing.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          {visible.map((listing, i) => (
+            <Link href={`/annoncer/${listing.id}`} key={`${listing.id}-${index}-${i}`}>
+              <div className="relative overflow-hidden rounded-xl group cursor-pointer" style={{ height: "200px" }}>
+                {listing.video_url ? (
+                  <video src={listing.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                ) : listing.profile_image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={listing.profile_image} alt={listing.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center"><span className="text-3xl text-gray-400">👤</span></div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
+                {tierBadge(listing.premium_tier)}
+                <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                  <p className="font-semibold text-sm leading-tight">{listing.title}{listing.age ? `, ${listing.age}` : ""}</p>
+                  <p className="text-xs text-gray-300 mt-0.5">{listing.city || listing.location}</p>
+                </div>
               </div>
+            </Link>
+          ))}
+        </div>
 
-              <span
-                className="absolute left-3 top-3 text-[10px] font-bold tracking-[0.15em] uppercase px-3 py-1 rounded-full"
-                style={{ backgroundColor: "rgba(0,0,0,0.7)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.5)" }}
-              >
-                PREMIUM
-              </span>
-
-              <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-                <p className="font-bold text-xl leading-tight tracking-tight">{listing.name}, {listing.age}</p>
-                <p className="text-sm text-gray-300 mt-0.5">{listing.city} · {listing.country}</p>
-              </div>
-            </div>
+        {/* Dot indicators */}
+        <div className="flex justify-center gap-1.5 mt-4">
+          {listings.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              className={`rounded-full transition-all duration-300 ${i === index % listings.length ? "w-6 h-1.5 bg-gray-900" : "w-1.5 h-1.5 bg-gray-300"}`}
+            />
           ))}
         </div>
       </div>
