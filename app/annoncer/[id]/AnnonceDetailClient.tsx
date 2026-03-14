@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Lock } from "lucide-react";
+import Link from "next/link";
 import VoiceMessagePlayer from "@/components/VoiceMessagePlayer";
 
 /* ---------- TYPES ---------- */
@@ -13,6 +15,25 @@ interface AnnonceDetailClientProps {
 }
 
 /* ========== LOCKED PHOTO GALLERY ========== */
+function UnlockButton() {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Link
+      href="/register"
+      className="block w-full py-3 text-sm font-semibold text-white text-center transition-all duration-200"
+      style={{
+        background: hovered ? "#CC0000" : "#000",
+        border: `1px solid ${hovered ? "#CC0000" : "#333"}`,
+        borderRadius: "8px",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      Create Free Account →
+    </Link>
+  );
+}
+
 function LockedPhotoGallery({
   images,
   totalPhotos,
@@ -94,18 +115,26 @@ export default function AnnonceDetailClient({
       <LockedPhotoGallery images={displayImages} totalPhotos={displayTotal} />
 
       {/* Locked Banner */}
-      <div className="mt-6 rounded-xl border border-red-100 bg-gradient-to-r from-red-50 to-pink-50 p-5 text-center">
-        <div className="text-2xl mb-2">🔒</div>
-        <h3 className="text-lg font-bold text-gray-900 mb-1">
-          Se alle private billeder og videoer
+      <div
+        className="mt-6 p-6 text-center"
+        style={{ background: "#111111", border: "1px solid #222", borderRadius: "12px" }}
+      >
+        <div className="flex items-center justify-center mb-3">
+          <Lock size={20} color="#C9A84C" />
+        </div>
+        <h3 className="text-[20px] font-bold text-white mb-2">
+          Unlock Private Content
         </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Opret en gratis konto for at få adgang til alle {totalPhotos} billeder
-          og eksklusive videoer
+        <p className="mb-5" style={{ fontSize: "14px", color: "#9CA3AF", lineHeight: "1.5" }}>
+          Create a free account to access all {totalPhotos} photos and exclusive videos
         </p>
-        <button className="w-full rounded-xl bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700 transition-colors cursor-pointer">
-          Opret gratis konto
-        </button>
+        <UnlockButton />
+        <p className="mt-3 text-[12px]" style={{ color: "#6B7280" }}>
+          Already have an account?{" "}
+          <Link href="/login" className="text-white underline underline-offset-2 hover:text-gray-300 transition-colors">
+            Log in
+          </Link>
+        </p>
       </div>
 
       {hasVoiceMessage && voiceMessageUrl && (
