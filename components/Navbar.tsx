@@ -228,41 +228,42 @@ export default function Navbar() {
       {/* ── Filter bar ── */}
       <div className="bg-white border-b border-[#E5E5E5]">
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-2.5">
-          <div className="flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
 
             {/* All countries */}
-            <button className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#E5E5E5] bg-white rounded-full px-3.5 py-1.5 text-[13px] font-medium text-gray-600 hover:bg-[#F5F5F5] hover:border-gray-300 transition-colors whitespace-nowrap">
-              <MapPin size={14} className="text-gray-500" />
+            <button className="flex-shrink-0 inline-flex items-center gap-2 border border-[#D1D5DB] bg-white px-4 py-2 text-[14px] font-medium text-[#374151] hover:border-[#9CA3AF] transition-colors whitespace-nowrap" style={{ borderRadius: "8px" }}>
+              <MapPin size={14} color="#6B7280" />
               {t.filter_all_countries}
-              <ChevronDown size={12} className="text-gray-400 ml-0.5" />
+              <ChevronDown size={12} color="#6B7280" />
             </button>
 
             {/* All categories */}
-            <button className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#E5E5E5] bg-white rounded-full px-3.5 py-1.5 text-[13px] font-medium text-gray-600 hover:bg-[#F5F5F5] hover:border-gray-300 transition-colors whitespace-nowrap">
-              <LayoutGrid size={14} className="text-gray-500" />
+            <button className="flex-shrink-0 inline-flex items-center gap-2 border border-[#D1D5DB] bg-white px-4 py-2 text-[14px] font-medium text-[#374151] hover:border-[#9CA3AF] transition-colors whitespace-nowrap" style={{ borderRadius: "8px" }}>
+              <LayoutGrid size={14} color="#6B7280" />
               {t.filter_all_categories}
-              <ChevronDown size={12} className="text-gray-400 ml-0.5" />
+              <ChevronDown size={12} color="#6B7280" />
             </button>
 
             {/* All genders */}
-            <button className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#E5E5E5] bg-white rounded-full px-3.5 py-1.5 text-[13px] font-medium text-gray-600 hover:bg-[#F5F5F5] hover:border-gray-300 transition-colors whitespace-nowrap">
-              <Users size={14} className="text-gray-500" />
+            <button className="flex-shrink-0 inline-flex items-center gap-2 border border-[#D1D5DB] bg-white px-4 py-2 text-[14px] font-medium text-[#374151] hover:border-[#9CA3AF] transition-colors whitespace-nowrap" style={{ borderRadius: "8px" }}>
+              <Users size={14} color="#6B7280" />
               {t.filter_all_genders}
-              <ChevronDown size={12} className="text-gray-400 ml-0.5" />
+              <ChevronDown size={12} color="#6B7280" />
             </button>
 
             {/* Filters */}
             <button
               onClick={() => setCustomSearchOpen(!customSearchOpen)}
-              className={`flex-shrink-0 inline-flex items-center gap-1.5 border rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors whitespace-nowrap ${
+              className={`flex-shrink-0 inline-flex items-center gap-2 border px-4 py-2 text-[14px] font-medium transition-colors whitespace-nowrap ${
                 customSearchOpen
                   ? "border-gray-900 bg-gray-900 text-white"
-                  : "border-[#E5E5E5] bg-white text-gray-600 hover:bg-[#F5F5F5] hover:border-gray-300"
+                  : "border-[#D1D5DB] bg-white text-[#374151] hover:border-[#9CA3AF]"
               }`}
+              style={{ borderRadius: "8px" }}
             >
-              <SlidersHorizontal size={14} className={customSearchOpen ? "text-white" : "text-gray-500"} />
+              <SlidersHorizontal size={14} color={customSearchOpen ? "#fff" : "#6B7280"} />
               Filters
-              <ChevronDown size={12} className={`ml-0.5 transition-transform ${customSearchOpen ? "text-white rotate-180" : "text-gray-400"}`} />
+              <ChevronDown size={12} color={customSearchOpen ? "#fff" : "#6B7280"} className={`transition-transform ${customSearchOpen ? "rotate-180" : ""}`} />
             </button>
 
           </div>
