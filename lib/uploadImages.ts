@@ -1,6 +1,6 @@
 export async function uploadImages(files: File[]): Promise<string[]> {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!.trim();
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!.trim();
   const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
   const urls: string[] = [];
 
