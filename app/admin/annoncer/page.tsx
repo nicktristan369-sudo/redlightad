@@ -125,7 +125,7 @@ export default function AdminAnnoncerPage() {
         </div>
       ) : (
         <>
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-1">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -147,82 +147,118 @@ export default function AdminAnnoncerPage() {
                 Ingen annoncer i denne kategori
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-left text-gray-500">
-                      <th className="px-6 py-3 font-medium">Billede</th>
-                      <th className="px-6 py-3 font-medium">Titel</th>
-                      <th className="px-6 py-3 font-medium">Kategori</th>
-                      <th className="px-6 py-3 font-medium">Lokation</th>
-                      <th className="px-6 py-3 font-medium">Status</th>
-                      <th className="px-6 py-3 font-medium">Oprettet</th>
-                      <th className="px-6 py-3 font-medium text-right">Handlinger</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((listing) => (
-                      <tr
-                        key={listing.id}
-                        className="border-b border-gray-50 hover:bg-gray-50"
-                      >
-                        <td className="px-6 py-4">
-                          {listing.profile_image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={listing.profile_image}
-                              alt=""
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
-                              N/A
-                            </div>
+              <>
+                {/* Mobile card view */}
+                <div className="block md:hidden divide-y divide-gray-100">
+                  {filtered.map((listing) => (
+                    <div key={listing.id} className="p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        {listing.profile_image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={listing.profile_image} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">N/A</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{listing.title}</p>
+                          <p className="text-xs text-gray-500">{listing.category} &middot; {listing.location}</p>
+                        </div>
+                        {statusBadge(listing.status)}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">{new Date(listing.created_at).toLocaleDateString("da-DK")}</span>
+                        <div className="flex gap-1.5">
+                          {listing.status !== "active" && (
+                            <button onClick={() => handleStatus(listing.id, "active")} disabled={actionLoading === listing.id} className="rounded-lg bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Godkend</button>
                           )}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-gray-900">
-                          {listing.title}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">{listing.category}</td>
-                        <td className="px-6 py-4 text-gray-600">{listing.location}</td>
-                        <td className="px-6 py-4">{statusBadge(listing.status)}</td>
-                        <td className="px-6 py-4 text-gray-500">
-                          {new Date(listing.created_at).toLocaleDateString("da-DK")}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-1.5">
-                            {listing.status !== "active" && (
-                              <button
-                                onClick={() => handleStatus(listing.id, "active")}
-                                disabled={actionLoading === listing.id}
-                                className="rounded-lg bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                              >
-                                Godkend
-                              </button>
-                            )}
-                            {listing.status !== "rejected" && (
-                              <button
-                                onClick={() => handleStatus(listing.id, "rejected")}
-                                disabled={actionLoading === listing.id}
-                                className="rounded-lg bg-yellow-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
-                              >
-                                Afvis
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDelete(listing.id)}
-                              disabled={actionLoading === listing.id}
-                              className="rounded-lg bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                            >
-                              Slet
-                            </button>
-                          </div>
-                        </td>
+                          {listing.status !== "rejected" && (
+                            <button onClick={() => handleStatus(listing.id, "rejected")} disabled={actionLoading === listing.id} className="rounded-lg bg-yellow-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-yellow-700 disabled:opacity-50">Afvis</button>
+                          )}
+                          <button onClick={() => handleDelete(listing.id)} disabled={actionLoading === listing.id} className="rounded-lg bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50">Slet</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table view */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-left text-gray-500">
+                        <th className="px-6 py-3 font-medium">Billede</th>
+                        <th className="px-6 py-3 font-medium">Titel</th>
+                        <th className="px-6 py-3 font-medium">Kategori</th>
+                        <th className="px-6 py-3 font-medium">Lokation</th>
+                        <th className="px-6 py-3 font-medium">Status</th>
+                        <th className="px-6 py-3 font-medium">Oprettet</th>
+                        <th className="px-6 py-3 font-medium text-right">Handlinger</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filtered.map((listing) => (
+                        <tr
+                          key={listing.id}
+                          className="border-b border-gray-50 hover:bg-gray-50"
+                        >
+                          <td className="px-6 py-4">
+                            {listing.profile_image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={listing.profile_image}
+                                alt=""
+                                className="w-10 h-10 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                                N/A
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 font-medium text-gray-900">
+                            {listing.title}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600">{listing.category}</td>
+                          <td className="px-6 py-4 text-gray-600">{listing.location}</td>
+                          <td className="px-6 py-4">{statusBadge(listing.status)}</td>
+                          <td className="px-6 py-4 text-gray-500">
+                            {new Date(listing.created_at).toLocaleDateString("da-DK")}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-1.5">
+                              {listing.status !== "active" && (
+                                <button
+                                  onClick={() => handleStatus(listing.id, "active")}
+                                  disabled={actionLoading === listing.id}
+                                  className="rounded-lg bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                                >
+                                  Godkend
+                                </button>
+                              )}
+                              {listing.status !== "rejected" && (
+                                <button
+                                  onClick={() => handleStatus(listing.id, "rejected")}
+                                  disabled={actionLoading === listing.id}
+                                  className="rounded-lg bg-yellow-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
+                                >
+                                  Afvis
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDelete(listing.id)}
+                                disabled={actionLoading === listing.id}
+                                className="rounded-lg bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                              >
+                                Slet
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </>

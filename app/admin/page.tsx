@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
             {statCards.map((card) => (
               <div
                 key={card.label}
@@ -145,50 +145,69 @@ export default function AdminDashboardPage() {
                 Ingen afventende annoncer
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-left text-gray-500">
-                      <th className="px-6 py-3 font-medium">Titel</th>
-                      <th className="px-6 py-3 font-medium">Oprettet</th>
-                      <th className="px-6 py-3 font-medium text-right">Handlinger</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingListings.map((listing) => (
-                      <tr
-                        key={listing.id}
-                        className="border-b border-gray-50 hover:bg-gray-50"
-                      >
-                        <td className="px-6 py-4 font-medium text-gray-900">
-                          {listing.title}
-                        </td>
-                        <td className="px-6 py-4 text-gray-500">
-                          {new Date(listing.created_at).toLocaleDateString("da-DK")}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => handleAction(listing.id, "active")}
-                              disabled={actionLoading === listing.id}
-                              className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                            >
-                              Godkend
-                            </button>
-                            <button
-                              onClick={() => handleAction(listing.id, "rejected")}
-                              disabled={actionLoading === listing.id}
-                              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                            >
-                              Afvis
-                            </button>
-                          </div>
-                        </td>
+              <>
+                {/* Mobile card view */}
+                <div className="block md:hidden divide-y divide-gray-100">
+                  {pendingListings.map((listing) => (
+                    <div key={listing.id} className="p-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{listing.title}</p>
+                        <p className="text-xs text-gray-500">{new Date(listing.created_at).toLocaleDateString("da-DK")}</p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button onClick={() => handleAction(listing.id, "active")} disabled={actionLoading === listing.id} className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Godkend</button>
+                        <button onClick={() => handleAction(listing.id, "rejected")} disabled={actionLoading === listing.id} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50">Afvis</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table view */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-left text-gray-500">
+                        <th className="px-6 py-3 font-medium">Titel</th>
+                        <th className="px-6 py-3 font-medium">Oprettet</th>
+                        <th className="px-6 py-3 font-medium text-right">Handlinger</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {pendingListings.map((listing) => (
+                        <tr
+                          key={listing.id}
+                          className="border-b border-gray-50 hover:bg-gray-50"
+                        >
+                          <td className="px-6 py-4 font-medium text-gray-900">
+                            {listing.title}
+                          </td>
+                          <td className="px-6 py-4 text-gray-500">
+                            {new Date(listing.created_at).toLocaleDateString("da-DK")}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleAction(listing.id, "active")}
+                                disabled={actionLoading === listing.id}
+                                className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                              >
+                                Godkend
+                              </button>
+                              <button
+                                onClick={() => handleAction(listing.id, "rejected")}
+                                disabled={actionLoading === listing.id}
+                                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                              >
+                                Afvis
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </>
