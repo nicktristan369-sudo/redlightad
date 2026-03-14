@@ -6,8 +6,10 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="bg-[#F5F5F7]">
+      <div className="bg-gray-950">
         <PremiumCarousel />
+      </div>
+      <main className="bg-[#F5F5F7]">
         <AdList />
       </main>
     </>
