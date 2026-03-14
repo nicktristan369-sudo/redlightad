@@ -70,7 +70,7 @@ export default function PremiumCarousel({
   title = "Premium Members",
   subtitle = "Top verified members",
   excludeId,
-  bgClass = "bg-gray-950",
+  bgClass = "bg-[#F8F8F8]",
 }: PremiumCarouselProps) {
   const [listings, setListings] = useState<PremiumListing[]>(
     excludeId ? MOCK_LISTINGS.filter(l => l.id !== excludeId) : MOCK_LISTINGS
@@ -102,8 +102,8 @@ export default function PremiumCarousel({
       {/* Header */}
       <div className="px-4 sm:px-6 pt-6 pb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tight">{title}</h2>
-          <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          <h2 className="text-lg font-bold text-gray-900 tracking-tight">{title}</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
         </div>
       </div>
 
