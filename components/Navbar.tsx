@@ -145,47 +145,55 @@ export default function Navbar() {
           </div>
 
           {/* Right — desktop */}
-          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-            {/* Country selector */}
-            {selectedCountry && (
-              <>
+          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+
+            {/* Country + Language + separator */}
+            <div className="flex items-center gap-3">
+              {selectedCountry && (
                 <button
                   onClick={() => setShowCountrySelector(true)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                  className="flex items-center gap-1.5 text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   <MapPin size={12} className="text-gray-400 flex-shrink-0" />
-                  <span className={`fi fi-${selectedCountry.code} flex-shrink-0`} style={{ width: "16px", height: "12px", display: "inline-block" }} />
+                  <span className={`fi fi-${selectedCountry.code} flex-shrink-0`} style={{ width: "15px", height: "11px", display: "inline-block" }} />
                   <span>{selectedCountry.name}</span>
-                  <ChevronDown size={12} className="text-gray-400" />
+                  <ChevronDown size={11} className="text-gray-400" />
                 </button>
+              )}
+              <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
+              <LanguageSelector />
+            </div>
 
-                {/* Separator */}
-                <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
-              </>
-            )}
-
-            {/* Language selector */}
-            <LanguageSelector />
+            {/* Separator before auth */}
+            <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
 
             {/* Coin balance */}
             {user && coinBalance !== null && (
-              <Link href="/dashboard/wallet" className="flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 px-3 py-1.5 rounded-full text-sm font-bold transition-colors">
+              <Link href="/dashboard/wallet" className="flex items-center gap-1 text-[13px] font-semibold text-red-600 hover:text-red-700 transition-colors">
                 🔴 {coinBalance}
               </Link>
             )}
 
             {/* Auth */}
             {user ? (
-              <Link href="/dashboard" className="bg-gray-900 hover:bg-black text-white text-sm font-semibold px-5 py-2 rounded-full transition-colors">
+              <Link
+                href="/dashboard"
+                className="bg-gray-900 hover:bg-black text-white text-[13px] font-semibold px-4 py-2 transition-colors whitespace-nowrap"
+                style={{ borderRadius: "8px" }}
+              >
                 {t.nav_dashboard}
               </Link>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                <Link href="/login" className="text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
                   {t.nav_login}
                 </Link>
-                <Link href="/register" className="bg-gray-900 hover:bg-black text-white text-sm font-semibold px-5 py-2 rounded-full transition-colors whitespace-nowrap">
-                  {t.nav_login} / {t.nav_create_account}
+                <Link
+                  href="/register"
+                  className="bg-gray-900 hover:bg-black text-white text-[13px] font-semibold px-4 py-2 transition-colors whitespace-nowrap flex items-center gap-1"
+                  style={{ borderRadius: "8px" }}
+                >
+                  {t.nav_create_account} →
                 </Link>
               </div>
             )}
