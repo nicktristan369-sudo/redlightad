@@ -80,86 +80,139 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-md">
-        <p className="mb-6 text-center text-2xl font-bold text-red-600">
-          REDLIGHTAD
-        </p>
+    <div className="flex min-h-screen items-center justify-center px-4 py-12" style={{ backgroundColor: "#F5F5F7" }}>
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100" style={{ maxWidth: "680px" }}>
 
         {step === 1 ? (
-          <>
-            <h1 className="text-xl font-bold text-gray-900">Opret konto</h1>
-            <p className="mb-6 text-sm text-gray-500">
-              Vælg din kontotype for at komme i gang
-            </p>
+          <div className="p-8 sm:p-10">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <p className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3">Create Your Account</p>
+              <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">Select Your Account Type</h1>
+              <p className="text-base text-gray-500">Choose how you want to use RedLightAD</p>
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Two cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+
+              {/* Provider card */}
               <button
                 type="button"
                 onClick={() => setAccountType("provider")}
-                className={`rounded-2xl border-2 p-5 text-left transition ${
-                  accountType === "provider"
-                    ? "border-red-600 bg-red-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
+                className="text-left rounded-2xl border-2 p-6 transition-all duration-150 focus:outline-none"
+                style={{
+                  borderColor: accountType === "provider" ? "#000" : "#E5E7EB",
+                  boxShadow: accountType === "provider" ? "0 2px 12px rgba(0,0,0,0.10)" : "none",
+                }}
               >
-                <span className="text-3xl">💼</span>
-                <p className="mt-2 font-bold text-gray-900">Udbyder</p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Opret og administrer dine annoncer
-                </p>
+                {/* Icon */}
+                <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Create Profile</h2>
+                <p className="text-[11px] font-bold text-red-600 tracking-[0.1em] uppercase mb-2">For Providers</p>
+                <p className="text-sm text-gray-500 mb-4">Post listings, receive bookings, and grow your business</p>
+                <ul className="space-y-1.5 mb-5">
+                  {["Post Listings", "Receive Messages", "Add Media & Videos", "Voice Messages", "Boost Visibility"].map(f => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <div className="pt-4 border-t border-gray-100">
+                  <span className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-bold tracking-[0.08em] uppercase px-3 py-1.5 rounded-full">
+                    ⭐ Most Popular
+                  </span>
+                </div>
               </button>
 
+              {/* Customer card */}
               <button
                 type="button"
                 onClick={() => setAccountType("customer")}
-                className={`rounded-2xl border-2 p-5 text-left transition ${
-                  accountType === "customer"
-                    ? "border-red-600 bg-red-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
+                className="text-left rounded-2xl border-2 p-6 transition-all duration-150 focus:outline-none"
+                style={{
+                  borderColor: accountType === "customer" ? "#000" : "#E5E7EB",
+                  boxShadow: accountType === "customer" ? "0 2px 12px rgba(0,0,0,0.10)" : "none",
+                }}
               >
-                <span className="text-3xl">👤</span>
-                <p className="mt-2 font-bold text-gray-900">Kunde</p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Find og kontakt udbydere
-                </p>
+                {/* Icon */}
+                <div className="w-12 h-12 rounded-xl bg-gray-600 flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Customer Account</h2>
+                <p className="text-[11px] font-bold text-gray-400 tracking-[0.1em] uppercase mb-2">For Clients</p>
+                <p className="text-sm text-gray-500 mb-4">Browse providers, message securely</p>
+                <ul className="space-y-1.5">
+                  {["Private Profile", "Secure Messaging", "Buy RedCoins", "Unlock Exclusive Content"].map(f => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
               </button>
+
             </div>
 
-            <button
-              type="button"
-              disabled={!accountType}
-              onClick={() => setStep(2)}
-              className="mt-6 w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-            >
-              Fortsæt
-            </button>
-          </>
+            {/* Info box */}
+            <div className="flex gap-3 rounded-xl p-4 mb-6" style={{ backgroundColor: "#F5F5F7", border: "1px solid #E5E7EB" }}>
+              <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Note: Your account type is permanent</p>
+                <p className="text-sm text-gray-500 mt-0.5">Providers can post listings. Customers can browse and book. Choose carefully — you cannot switch later.</p>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <Link
+                href="/"
+                className="px-5 py-3 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap"
+              >
+                Cancel
+              </Link>
+              <button
+                type="button"
+                disabled={!accountType}
+                onClick={() => setStep(2)}
+                className="flex-1 py-3 text-sm font-semibold text-white transition-colors"
+                style={{
+                  borderRadius: "8px",
+                  backgroundColor: accountType ? "#111" : "#D1D5DB",
+                  cursor: accountType ? "pointer" : "not-allowed",
+                }}
+              >
+                Continue →
+              </button>
+            </div>
+          </div>
+
         ) : (
-          <>
+          <div className="p-8 sm:p-10">
             <div className="mb-4 flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setStep(1)}
                 className="text-gray-500 hover:text-gray-700"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-600">
-                {accountType === "provider" ? "Udbyder" : "Kunde"}
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                {accountType === "provider" ? "Provider" : "Customer"}
               </span>
             </div>
 
@@ -350,27 +403,13 @@ export default function RegisterPage() {
 
             <p className="mt-6 text-center text-sm text-gray-600">
               Har du allerede en konto?{" "}
-              <Link
-                href="/login"
-                className="font-medium text-red-600 hover:underline"
-              >
+              <Link href="/login" className="font-medium text-gray-900 underline hover:text-black">
                 Log ind
               </Link>
             </p>
-          </>
+          </div>
         )}
 
-        {step === 1 && (
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Har du allerede en konto?{" "}
-            <Link
-              href="/login"
-              className="font-medium text-red-600 hover:underline"
-            >
-              Log ind
-            </Link>
-          </p>
-        )}
       </div>
     </div>
   );
