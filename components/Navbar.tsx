@@ -163,6 +163,9 @@ export default function Navbar() {
             <Link href="/opret-annonce" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               {t.nav_post_ad}
             </Link>
+            <Link href="/marketplace" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+              <ShoppingBag size={14} /> Marketplace
+            </Link>
           </div>
 
           {/* Search — desktop */}

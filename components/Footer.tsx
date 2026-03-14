@@ -70,6 +70,7 @@ export default function Footer() {
             <h3 className="text-xs font-semibold tracking-widest uppercase text-white mb-4">{t.footer_company}</h3>
             <ul className="space-y-2 text-sm">
               {[
+                { label: "🛍 Marketplace", href: "/marketplace" },
                 { label: t.footer_about, href: "/about" },
                 { label: t.footer_press, href: "/press" },
                 { label: t.footer_advertise, href: "/advertise" },
