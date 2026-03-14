@@ -11,33 +11,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) {
+    const checkAdmin = async () => {
+      const supabase = createClient()
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
         router.replace("/login")
         return
       }
       setEmail(user.email ?? null)
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
         .single()
 
+      if (profileError) {
+        console.error("Admin check fejl:", profileError.message)
+        router.replace("/dashboard")
+        return
+      }
+
       if (!profile?.is_admin) {
         router.replace("/dashboard")
         return
       }
+
       setLoading(false)
-    })
+    }
+
+    checkAdmin()
   }, [router])
 
   const navItems = [
-    { href: "/admin", label: "Dashboard", icon: "\u{1F3E0}" },
-    { href: "/admin/annoncer", label: "Annoncer", icon: "\u{1F4CB}" },
-    { href: "/admin/brugere", label: "Brugere", icon: "\u{1F465}" },
-    { href: "/admin/indstillinger", label: "Indstillinger", icon: "\u2699\uFE0F" },
+    { href: "/admin", label: "Dashboard", icon: "🏠" },
+    { href: "/admin/annoncer", label: "Annoncer", icon: "📋" },
+    { href: "/admin/brugere", label: "Brugere", icon: "👥" },
+    { href: "/admin/indstillinger", label: "Indstillinger", icon: "⚙️" },
   ]
 
   if (loading) {
@@ -83,7 +94,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href="/dashboard"
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors w-full"
           >
-            <span>{"\u2190"}</span>
+            <span>←</span>
             Tilbage til dashboard
           </Link>
         </div>
