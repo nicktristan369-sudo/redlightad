@@ -14,9 +14,9 @@ import {
   GROOMING_OPTIONS,
   BRA_SIZE_OPTIONS,
   NATIONALITY_OPTIONS,
-  CATEGORY_OPTIONS,
-  GENDER_OPTIONS,
 } from "@/lib/listingOptions";
+import { CATEGORIES } from "@/lib/constants/categories";
+import { GENDERS } from "@/lib/constants/genders";
 
 export default function Navbar() {
   const { t } = useLanguage();
@@ -112,6 +112,16 @@ export default function Navbar() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Update rect on scroll so fixed dropdown follows the button
+  useEffect(() => {
+    const onScroll = () => {
+      if (categoryOpen && categoryRef.current) setCategoryRect(categoryRef.current.getBoundingClientRect());
+      if (genderOpen && genderRef.current) setGenderRect(genderRef.current.getBoundingClientRect());
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [categoryOpen, genderOpen]);
 
   return (
     <>
@@ -295,7 +305,7 @@ export default function Navbar() {
                     {t.filter_all_categories}
                   </button>
                   <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
-                  {CATEGORY_OPTIONS.map(cat => (
+                  {CATEGORIES.map(cat => (
                     <button
                       key={cat}
                       onClick={() => { setSelectedCategory(cat); setCategoryOpen(false); }}
@@ -342,7 +352,7 @@ export default function Navbar() {
                     {t.filter_all_genders}
                   </button>
                   <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
-                  {GENDER_OPTIONS.map(g => (
+                  {GENDERS.map(g => (
                     <button
                       key={g}
                       onClick={() => { setSelectedGender(g); setGenderOpen(false); }}
