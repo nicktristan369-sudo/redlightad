@@ -6,7 +6,7 @@ import { CheckCircle, Mic, Play, MapPin } from "lucide-react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface AdCardProps {
-  id: number;
+  id: string | number;
   title: string;
   image: string;
   verified: boolean;
