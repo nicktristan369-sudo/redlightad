@@ -244,13 +244,6 @@ export default function Navbar() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-2.5">
           <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
 
-            {/* All countries */}
-            <button className="flex-shrink-0 inline-flex items-center gap-2 border border-[#D1D5DB] bg-white px-4 py-2 text-[14px] font-medium text-[#374151] hover:border-[#9CA3AF] transition-colors whitespace-nowrap" style={{ borderRadius: "8px" }}>
-              <MapPin size={14} color="#6B7280" />
-              {t.filter_all_countries}
-              <ChevronDown size={12} color="#6B7280" />
-            </button>
-
             {/* All categories */}
             <button className="flex-shrink-0 inline-flex items-center gap-2 border border-[#D1D5DB] bg-white px-4 py-2 text-[14px] font-medium text-[#374151] hover:border-[#9CA3AF] transition-colors whitespace-nowrap" style={{ borderRadius: "8px" }}>
               <LayoutGrid size={14} color="#6B7280" />
