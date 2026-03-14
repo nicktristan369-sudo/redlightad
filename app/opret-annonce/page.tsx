@@ -112,7 +112,7 @@ export default function OpretAnnoncePage() {
         email: form.email,
         images: imageUrls,
         profile_image: imageUrls[0] || null,
-        status: "draft",
+        status: "pending",
       });
       if (error) throw error;
       setSuccess(true);
@@ -172,7 +172,7 @@ export default function OpretAnnoncePage() {
             </div>
             <h2 className="mb-2 text-2xl font-bold text-gray-900">Din annonce er oprettet!</h2>
             <p className="mb-6 text-gray-500">
-              Din annonce er gemt som kladde og vil blive gennemgået inden udgivelse.
+              Din annonce er sendt til godkendelse og vil v&aelig;re synlig inden for 24 timer.
             </p>
             <div className="flex gap-3">
               <a
