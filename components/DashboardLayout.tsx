@@ -64,10 +64,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
+  const bottomNavItems = navItems.slice(0, 5)
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full z-10">
+      {/* Sidebar — hidden on mobile */}
+      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col fixed h-full z-10">
         {/* Logo */}
         <div className="p-6 border-b border-gray-100">
           <Link href="/" className="text-xl font-bold">
@@ -131,8 +133,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
+      {/* Bottom navigation bar — mobile only */}
+      <nav className="fixed bottom-0 left-0 right-0 z-20 flex md:hidden items-center justify-around bg-white border-t border-gray-200 py-2 px-1">
+        {bottomNavItems.map((item) => {
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-medium transition-colors relative ${
+                isActive ? "text-red-600" : "text-gray-500"
+              }`}
+            >
+              <span className="text-lg">{item.icon}</span>
+              <span className="truncate max-w-[60px]">{item.label.split(" ")[0]}</span>
+              {item.href === "/dashboard/beskeder" && totalUnread > 0 && (
+                <span className="absolute -top-0.5 right-0 bg-red-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {totalUnread}
+                </span>
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+
       {/* Main content */}
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 pb-20 md:pb-8">
         {children}
       </main>
     </div>

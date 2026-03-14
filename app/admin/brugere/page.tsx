@@ -95,83 +95,119 @@ export default function AdminBrugerePage() {
                 Ingen brugere fundet
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-left text-gray-500">
-                      <th className="px-6 py-3 font-medium">Bruger</th>
-                      <th className="px-6 py-3 font-medium">Email</th>
-                      <th className="px-6 py-3 font-medium">Oprettet</th>
-                      <th className="px-6 py-3 font-medium">Status</th>
-                      <th className="px-6 py-3 font-medium text-right">Handlinger</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((profile) => (
-                      <tr
-                        key={profile.id}
-                        className="border-b border-gray-50 hover:bg-gray-50"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-bold">
-                              {(profile.full_name || profile.email || "?")[0].toUpperCase()}
-                            </div>
-                            <span className="font-medium text-gray-900">
-                              {profile.full_name || "Ingen navn"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {profile.email || "N/A"}
-                        </td>
-                        <td className="px-6 py-4 text-gray-500">
-                          {new Date(profile.created_at).toLocaleDateString("da-DK")}
-                        </td>
-                        <td className="px-6 py-4">
+              <>
+                {/* Mobile card view */}
+                <div className="block md:hidden divide-y divide-gray-100">
+                  {filtered.map((profile) => (
+                    <div key={profile.id} className="p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                          {(profile.full_name || profile.email || "?")[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{profile.full_name || "Ingen navn"}</p>
+                          <p className="text-xs text-gray-500 truncate">{profile.email || "N/A"}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
                           {profile.is_banned ? (
-                            <span className="inline-block rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-medium">
-                              Banned
-                            </span>
+                            <span className="inline-block rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-medium">Banned</span>
                           ) : (
-                            <span className="inline-block rounded-full bg-green-100 text-green-700 px-2.5 py-0.5 text-xs font-medium">
-                              Aktiv
-                            </span>
+                            <span className="inline-block rounded-full bg-green-100 text-green-700 px-2.5 py-0.5 text-xs font-medium">Aktiv</span>
                           )}
                           {profile.is_admin && (
-                            <span className="inline-block rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-medium ml-1.5">
-                              Admin
-                            </span>
+                            <span className="inline-block rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-medium">Admin</span>
                           )}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-1.5">
-                            <Link
-                              href={`/admin/annoncer?user_id=${profile.id}`}
-                              className="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                            >
-                              Se annoncer
-                            </Link>
-                            <button
-                              onClick={() =>
-                                handleBanToggle(profile.id, profile.is_banned)
-                              }
-                              disabled={actionLoading === profile.id}
-                              className={`rounded-lg px-2.5 py-1 text-xs font-medium text-white disabled:opacity-50 ${
-                                profile.is_banned
-                                  ? "bg-green-600 hover:bg-green-700"
-                                  : "bg-red-600 hover:bg-red-700"
-                              }`}
-                            >
-                              {profile.is_banned ? "Unban" : "Ban"}
-                            </button>
-                          </div>
-                        </td>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <Link href={`/admin/annoncer?user_id=${profile.id}`} className="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Se annoncer</Link>
+                          <button onClick={() => handleBanToggle(profile.id, profile.is_banned)} disabled={actionLoading === profile.id} className={`rounded-lg px-2.5 py-1 text-xs font-medium text-white disabled:opacity-50 ${profile.is_banned ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}>{profile.is_banned ? "Unban" : "Ban"}</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table view */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-left text-gray-500">
+                        <th className="px-6 py-3 font-medium">Bruger</th>
+                        <th className="px-6 py-3 font-medium">Email</th>
+                        <th className="px-6 py-3 font-medium">Oprettet</th>
+                        <th className="px-6 py-3 font-medium">Status</th>
+                        <th className="px-6 py-3 font-medium text-right">Handlinger</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filtered.map((profile) => (
+                        <tr
+                          key={profile.id}
+                          className="border-b border-gray-50 hover:bg-gray-50"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-bold">
+                                {(profile.full_name || profile.email || "?")[0].toUpperCase()}
+                              </div>
+                              <span className="font-medium text-gray-900">
+                                {profile.full_name || "Ingen navn"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600">
+                            {profile.email || "N/A"}
+                          </td>
+                          <td className="px-6 py-4 text-gray-500">
+                            {new Date(profile.created_at).toLocaleDateString("da-DK")}
+                          </td>
+                          <td className="px-6 py-4">
+                            {profile.is_banned ? (
+                              <span className="inline-block rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-medium">
+                                Banned
+                              </span>
+                            ) : (
+                              <span className="inline-block rounded-full bg-green-100 text-green-700 px-2.5 py-0.5 text-xs font-medium">
+                                Aktiv
+                              </span>
+                            )}
+                            {profile.is_admin && (
+                              <span className="inline-block rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-medium ml-1.5">
+                                Admin
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-1.5">
+                              <Link
+                                href={`/admin/annoncer?user_id=${profile.id}`}
+                                className="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                              >
+                                Se annoncer
+                              </Link>
+                              <button
+                                onClick={() =>
+                                  handleBanToggle(profile.id, profile.is_banned)
+                                }
+                                disabled={actionLoading === profile.id}
+                                className={`rounded-lg px-2.5 py-1 text-xs font-medium text-white disabled:opacity-50 ${
+                                  profile.is_banned
+                                    ? "bg-green-600 hover:bg-green-700"
+                                    : "bg-red-600 hover:bg-red-700"
+                                }`}
+                              >
+                                {profile.is_banned ? "Unban" : "Ban"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </>

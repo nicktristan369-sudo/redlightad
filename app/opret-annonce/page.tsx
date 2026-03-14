@@ -222,7 +222,7 @@ export default function OpretAnnoncePage() {
                 <span className="mt-1 text-xs text-gray-500">{s.label}</span>
               </div>
               {i < steps.length - 1 && (
-                <div className={`mx-3 mb-5 h-0.5 w-16 ${step > s.num ? "bg-red-300" : "bg-gray-200"}`} />
+                <div className={`mx-1.5 sm:mx-3 mb-5 h-0.5 w-8 sm:w-16 ${step > s.num ? "bg-red-300" : "bg-gray-200"}`} />
               )}
             </div>
           ))}
@@ -527,7 +527,7 @@ export default function OpretAnnoncePage() {
 
                   {/* Preview thumbnails */}
                   {imagePreviews.length > 0 && (
-                    <div className="grid grid-cols-4 gap-3 mt-4">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
                       {imagePreviews.map((src, i) => (
                         <div key={i} className="relative group aspect-square">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -597,10 +597,10 @@ export default function OpretAnnoncePage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setStep(2)}
-                  className="rounded-xl border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="w-full sm:w-auto rounded-xl border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   ← Tilbage
                 </button>

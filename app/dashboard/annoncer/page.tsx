@@ -90,7 +90,7 @@ export default function MineAnnoncer() {
             {listings.map((listing) => {
               const badge = statusLabel(listing.status)
               return (
-                <div key={listing.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+                <div key={listing.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                   {/* Image */}
                   <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                     {listing.profile_image ? (
@@ -114,7 +114,7 @@ export default function MineAnnoncer() {
                   </span>
 
                   {/* Actions */}
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex flex-wrap gap-2 flex-shrink-0 w-full sm:w-auto">
                     <a
                       href={`/premium?listing=${listing.id}`}
                       className="px-4 py-2 rounded-xl text-sm font-medium bg-yellow-50 hover:bg-yellow-100 text-yellow-700 transition-colors"

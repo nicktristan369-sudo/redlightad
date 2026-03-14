@@ -36,10 +36,10 @@ export default function FilterBar() {
   return (
     <div className="bg-white border-b border-gray-100" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div className="max-w-7xl mx-auto px-6 py-4">
-        {/* Search + filters in one row on desktop */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Search + filters in one row on desktop, scrollable on mobile */}
+        <div className="flex items-center gap-3 overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-x-visible">
           {/* Search bar */}
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative flex-shrink-0 min-w-[200px] md:flex-1 md:min-w-[240px]">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
