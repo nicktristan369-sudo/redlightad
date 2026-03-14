@@ -1,8 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import LocationSelector from "@/components/LocationSelector";
+
+const DAYS_OF_WEEK = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const;
+type DayKey = typeof DAYS_OF_WEEK[number];
+const DAY_LABELS: Record<DayKey, string> = { monday:"Monday", tuesday:"Tuesday", wednesday:"Wednesday", thursday:"Thursday", friday:"Friday", saturday:"Saturday", sunday:"Sunday" };
+
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2); const m = i % 2 === 0 ? "00" : "30";
+  return `${String(h).padStart(2, "0")}:${m}`;
+});
+
+const TIMEZONE_OPTIONS = [
+  { group: "Europe", zones: ["Europe/Copenhagen","Europe/London","Europe/Paris","Europe/Berlin","Europe/Amsterdam","Europe/Oslo","Europe/Stockholm","Europe/Madrid","Europe/Rome","Europe/Athens","Europe/Warsaw","Europe/Helsinki","Europe/Zurich","Europe/Lisbon"] },
+  { group: "Americas", zones: ["America/New_York","America/Chicago","America/Denver","America/Los_Angeles","America/Toronto","America/Vancouver","America/Sao_Paulo","America/Bogota","America/Lima","America/Santiago","America/Mexico_City","America/Buenos_Aires"] },
+  { group: "Asia", zones: ["Asia/Dubai","Asia/Bangkok","Asia/Tokyo","Asia/Singapore","Asia/Hong_Kong","Asia/Seoul","Asia/Shanghai","Asia/Kolkata","Asia/Karachi","Asia/Istanbul","Asia/Riyadh","Asia/Jakarta"] },
+  { group: "Africa", zones: ["Africa/Cairo","Africa/Lagos","Africa/Johannesburg","Africa/Nairobi","Africa/Casablanca"] },
+  { group: "Pacific", zones: ["Pacific/Auckland","Pacific/Sydney","Pacific/Honolulu"] },
+];
+
+interface DayHours { open: string; close: string; closed: boolean; }
+type OpeningHours = Record<DayKey, DayHours>;
 import {
   BODY_BUILD_OPTIONS,
   HAIR_COLOR_OPTIONS,
@@ -29,6 +49,19 @@ export default function OpretAnnoncePage() {
   const [success, setSuccess] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [timezone, setTimezone] = useState("Europe/Copenhagen");
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(() => {
+    const defaults: Partial<OpeningHours> = {};
+    DAYS_OF_WEEK.forEach(d => { defaults[d] = { open: "09:00", close: "22:00", closed: d === "sunday" }; });
+    return defaults as OpeningHours;
+  });
+
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) setTimezone(tz);
+    } catch { /* ignore */ }
+  }, []);
   const [form, setForm] = useState({
     title: "",
     category: "",
@@ -142,6 +175,8 @@ export default function OpretAnnoncePage() {
         outcall: form.outcall,
         handicap_friendly: form.handicap_friendly,
         has_own_place: form.has_own_place,
+        opening_hours: openingHours,
+        timezone: timezone,
         status: "pending",
       });
       if (error) throw error;
@@ -657,6 +692,70 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 {/* Image upload area */}
+                {/* ── AVAILABILITY & OPENING HOURS ── */}
+                <div>
+                  <p className="text-base font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Availability & Opening Hours</p>
+
+                  {/* Timezone */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Your Timezone</label>
+                    <select
+                      value={timezone}
+                      onChange={e => setTimezone(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 bg-white"
+                    >
+                      {TIMEZONE_OPTIONS.map(group => (
+                        <optgroup key={group.group} label={group.group}>
+                          {group.zones.map(tz => (
+                            <option key={tz} value={tz}>{tz.replace(/_/g, " ").replace(/\//g, " / ")}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Opening hours table */}
+                  <div className="border border-gray-100 rounded-xl overflow-hidden">
+                    <div className="grid grid-cols-[120px_1fr_1fr_80px] gap-0 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                      <span>Day</span><span>Opens</span><span>Closes</span><span className="text-right">Closed</span>
+                    </div>
+                    {DAYS_OF_WEEK.map(day => {
+                      const h = openingHours[day];
+                      return (
+                        <div key={day} className={`grid grid-cols-[120px_1fr_1fr_80px] items-center gap-2 px-4 py-2.5 border-b border-gray-50 last:border-0 ${h.closed ? "bg-gray-50/60 opacity-60" : "bg-white"}`}>
+                          <span className="text-sm font-medium text-gray-800">{DAY_LABELS[day]}</span>
+                          <select
+                            disabled={h.closed}
+                            value={h.open}
+                            onChange={e => setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], open: e.target.value } }))}
+                            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:border-red-400 disabled:bg-gray-100 disabled:text-gray-400"
+                          >
+                            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                          <select
+                            disabled={h.closed}
+                            value={h.close}
+                            onChange={e => setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], close: e.target.value } }))}
+                            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:border-red-400 disabled:bg-gray-100 disabled:text-gray-400"
+                          >
+                            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], closed: !prev[day].closed } }))}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${h.closed ? "bg-gray-300" : "bg-red-500"}`}
+                            >
+                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${h.closed ? "translate-x-0.5" : "translate-x-4"}`} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">Toggle switches on the right to mark a day as closed</p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Billeder <span className="text-gray-400">(max 20 &bull; JPG, PNG &bull; max 5MB/stk)</span>

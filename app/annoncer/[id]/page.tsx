@@ -3,6 +3,7 @@ import AnnonceDetailClient from "./AnnonceDetailClient";
 import SendMessageButton from "@/components/SendMessageButton";
 import LockedContentSection from "@/components/LockedContentSection";
 import PremiumCarousel from "@/components/PremiumCarousel";
+import OpeningHoursDisplay from "@/components/OpeningHoursDisplay";
 import { mockAnnonceAd } from "@/lib/mockAds";
 
 export default async function AnnonceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -92,6 +93,12 @@ export default async function AnnonceDetailPage({ params }: { params: Promise<{ 
                   ))}
                 </div>
               </div>
+              {/* Opening Hours */}
+              <OpeningHoursDisplay
+                openingHours={(ad as Record<string, unknown>).opening_hours as Parameters<typeof OpeningHoursDisplay>[0]["openingHours"]}
+                profileTimezone={(ad as Record<string, unknown>).timezone as string | null}
+              />
+
               {/* Locked Content */}
               <LockedContentSection listingId={id} />
             </div>
