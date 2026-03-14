@@ -226,43 +226,45 @@ export default function Navbar() {
       </nav>
 
       {/* ── Filter bar ── */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden pb-0.5">
-            {/* Hele landet */}
-            <button className="flex-shrink-0 flex items-center gap-2 border border-gray-200 rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap">
-              <MapPin className="w-3.5 h-3.5 text-gray-400" />
+      <div className="bg-white border-b border-[#E5E5E5]">
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-2.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+
+            {/* All countries */}
+            <button className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#E5E5E5] bg-white rounded-full px-3.5 py-1.5 text-[13px] font-medium text-gray-600 hover:bg-[#F5F5F5] hover:border-gray-300 transition-colors whitespace-nowrap">
+              <MapPin size={14} className="text-gray-500" />
               {t.filter_all_countries}
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              <ChevronDown size={12} className="text-gray-400 ml-0.5" />
             </button>
 
-            {/* Alle kategorier */}
-            <button className="flex-shrink-0 flex items-center gap-2 border border-gray-200 rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap">
-              <LayoutGrid className="w-3.5 h-3.5 text-gray-400" />
+            {/* All categories */}
+            <button className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#E5E5E5] bg-white rounded-full px-3.5 py-1.5 text-[13px] font-medium text-gray-600 hover:bg-[#F5F5F5] hover:border-gray-300 transition-colors whitespace-nowrap">
+              <LayoutGrid size={14} className="text-gray-500" />
               {t.filter_all_categories}
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              <ChevronDown size={12} className="text-gray-400 ml-0.5" />
             </button>
 
-            {/* Alle køn */}
-            <button className="flex-shrink-0 flex items-center gap-2 border border-gray-200 rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap">
-              <Users className="w-3.5 h-3.5 text-gray-400" />
+            {/* All genders */}
+            <button className="flex-shrink-0 inline-flex items-center gap-1.5 border border-[#E5E5E5] bg-white rounded-full px-3.5 py-1.5 text-[13px] font-medium text-gray-600 hover:bg-[#F5F5F5] hover:border-gray-300 transition-colors whitespace-nowrap">
+              <Users size={14} className="text-gray-500" />
               {t.filter_all_genders}
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              <ChevronDown size={12} className="text-gray-400 ml-0.5" />
             </button>
 
-            {/* Tilpasset søgning */}
+            {/* Filters */}
             <button
               onClick={() => setCustomSearchOpen(!customSearchOpen)}
-              className={`flex-shrink-0 flex items-center gap-2 border rounded-full px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 border rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors whitespace-nowrap ${
                 customSearchOpen
                   ? "border-gray-900 bg-gray-900 text-white"
-                  : "border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                  : "border-[#E5E5E5] bg-white text-gray-600 hover:bg-[#F5F5F5] hover:border-gray-300"
               }`}
             >
-              <SlidersHorizontal className={`w-3.5 h-3.5 ${customSearchOpen ? "text-white" : "text-gray-400"}`} />
-              {t.filter_search_btn?.replace(/🔍\s?/, "") || "Custom search"}
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${customSearchOpen ? "text-white rotate-180" : "text-gray-400"}`} />
+              <SlidersHorizontal size={14} className={customSearchOpen ? "text-white" : "text-gray-500"} />
+              Filters
+              <ChevronDown size={12} className={`ml-0.5 transition-transform ${customSearchOpen ? "text-white rotate-180" : "text-gray-400"}`} />
             </button>
+
           </div>
 
           {/* Custom search dropdown */}
