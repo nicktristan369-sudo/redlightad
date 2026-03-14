@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import AnnonceDetailClient from "./AnnonceDetailClient";
 import SendMessageButton from "@/components/SendMessageButton";
 import LockedContentSection from "@/components/LockedContentSection";
+import PremiumCarousel from "@/components/PremiumCarousel";
 import { mockAnnonceAd } from "@/lib/mockAds";
 
 export default async function AnnonceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -224,6 +225,14 @@ export default async function AnnonceDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
       </main>
+
+      {/* Premium Members */}
+      <PremiumCarousel
+        title="Premium Members"
+        subtitle="Top verified members"
+        excludeId={id}
+        bgClass="bg-white border-t border-gray-100"
+      />
 
       <footer className="border-t border-gray-200 bg-white px-6 py-8 text-center text-sm text-gray-500">
         &copy; 2026 RedLightAD. All rights reserved.
