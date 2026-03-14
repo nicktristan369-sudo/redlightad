@@ -35,7 +35,7 @@ const MOCK_LISTINGS: PremiumListing[] = [
   { id: "12", title: "Ariana", profile_image: "https://picsum.photos/200/320?random=99", video_url: null, age: 23, city: "Tokyo", location: "Tokyo", country: "Japan", premium_tier: "featured", about: "Exotic and enchanting", images: ["x"], opening_hours: null, timezone: null, created_at: new Date(Date.now() - 50 * 60 * 1000).toISOString() },
 ]
 
-const VISIBLE_COUNT = 7
+const VISIBLE_COUNT = 6
 
 function timeAgo(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
