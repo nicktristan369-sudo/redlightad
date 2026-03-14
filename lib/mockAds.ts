@@ -20,6 +20,7 @@ export const mockAnnonceAd = {
   ],
   totalPhotos: 20,
   hasVoiceMessage: true,
+  voiceMessageUrl: null,
   rates: [
     { duration: "1 time", price: "$500" },
     { duration: "2 timer", price: "$900" },

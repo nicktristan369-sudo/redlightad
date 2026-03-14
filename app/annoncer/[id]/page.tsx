@@ -71,6 +71,7 @@ export default async function AnnonceDetailPage({ params }: { params: Promise<{ 
                 images={ad.images}
                 totalPhotos={ad.totalPhotos}
                 hasVoiceMessage={ad.hasVoiceMessage}
+                voiceMessageUrl={ad.voiceMessageUrl ?? null}
               />
 
               {/* About Me */}
