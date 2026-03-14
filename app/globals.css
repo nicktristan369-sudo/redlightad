@@ -4,6 +4,15 @@
 /* Square flags — no border radius */
 .fi { border-radius: 0 !important; }
 
+/* Dropdown fade+slide animation */
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-dropdown {
+  animation: dropdownIn 0.15s ease-out both;
+}
+
 :root {
   --bg: #F5F5F7;
   --text: #1D1D1F;

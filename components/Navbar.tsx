@@ -14,6 +14,8 @@ import {
   GROOMING_OPTIONS,
   BRA_SIZE_OPTIONS,
   NATIONALITY_OPTIONS,
+  CATEGORY_OPTIONS,
+  GENDER_OPTIONS,
 } from "@/lib/listingOptions";
 
 export default function Navbar() {
@@ -21,6 +23,12 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<{ email: string; id: string } | null>(null);
   const [customSearchOpen, setCustomSearchOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [genderOpen, setGenderOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedGender, setSelectedGender] = useState<string | null>(null);
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const genderRef = useRef<HTMLDivElement>(null);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
   const [showCountrySelector, setShowCountrySelector] = useState(false);
@@ -91,6 +99,16 @@ export default function Navbar() {
       document.removeEventListener("keydown", handleKey);
     };
   }, [customSearchOpen]);
+
+  // Close category/gender dropdowns on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) setCategoryOpen(false);
+      if (genderRef.current && !genderRef.current.contains(e.target as Node)) setGenderOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <>
@@ -244,19 +262,87 @@ export default function Navbar() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-2.5">
           <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
 
-            {/* All categories */}
-            <button className="flex-shrink-0 inline-flex items-center gap-2 border border-[#D1D5DB] bg-white px-4 py-2 text-[14px] font-medium text-[#374151] hover:border-[#9CA3AF] transition-colors whitespace-nowrap" style={{ borderRadius: "8px" }}>
-              <LayoutGrid size={14} color="#6B7280" />
-              {t.filter_all_categories}
-              <ChevronDown size={12} color="#6B7280" />
-            </button>
+            {/* Category dropdown */}
+            <div ref={categoryRef} className="relative flex-shrink-0">
+              <button
+                onClick={() => { setCategoryOpen(o => !o); setGenderOpen(false); }}
+                className="inline-flex items-center gap-2 border bg-white px-4 py-2 text-[14px] font-medium transition-colors whitespace-nowrap"
+                style={{ borderRadius: "8px", borderColor: categoryOpen ? "#000" : "#D1D5DB", color: selectedCategory ? "#000" : "#374151" }}
+              >
+                <LayoutGrid size={14} color="#6B7280" />
+                {selectedCategory || t.filter_all_categories}
+                <ChevronDown size={12} color="#6B7280" className={`transition-transform duration-150 ${categoryOpen ? "rotate-180" : ""}`} />
+              </button>
+              {categoryOpen && (
+                <div className="absolute left-0 top-full mt-1.5 z-50 w-52 animate-dropdown"
+                  style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: "8px" }}>
+                  <button
+                    onClick={() => { setSelectedCategory(null); setCategoryOpen(false); }}
+                    className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg"
+                    style={{ color: "#6B7280" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#F5F5F5")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {t.filter_all_categories}
+                  </button>
+                  <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
+                  {CATEGORY_OPTIONS.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => { setSelectedCategory(cat); setCategoryOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg flex items-center justify-between"
+                      style={{ background: selectedCategory === cat ? "#000" : "transparent", color: selectedCategory === cat ? "#fff" : "#111" }}
+                      onMouseEnter={e => { if (selectedCategory !== cat) e.currentTarget.style.background = "#F5F5F5" }}
+                      onMouseLeave={e => { e.currentTarget.style.background = selectedCategory === cat ? "#000" : "transparent" }}
+                    >
+                      {cat}
+                      {selectedCategory === cat && <span className="text-white text-xs">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            {/* All genders */}
-            <button className="flex-shrink-0 inline-flex items-center gap-2 border border-[#D1D5DB] bg-white px-4 py-2 text-[14px] font-medium text-[#374151] hover:border-[#9CA3AF] transition-colors whitespace-nowrap" style={{ borderRadius: "8px" }}>
-              <Users size={14} color="#6B7280" />
-              {t.filter_all_genders}
-              <ChevronDown size={12} color="#6B7280" />
-            </button>
+            {/* Gender dropdown */}
+            <div ref={genderRef} className="relative flex-shrink-0">
+              <button
+                onClick={() => { setGenderOpen(o => !o); setCategoryOpen(false); }}
+                className="inline-flex items-center gap-2 border bg-white px-4 py-2 text-[14px] font-medium transition-colors whitespace-nowrap"
+                style={{ borderRadius: "8px", borderColor: genderOpen ? "#000" : "#D1D5DB", color: selectedGender ? "#000" : "#374151" }}
+              >
+                <Users size={14} color="#6B7280" />
+                {selectedGender || t.filter_all_genders}
+                <ChevronDown size={12} color="#6B7280" className={`transition-transform duration-150 ${genderOpen ? "rotate-180" : ""}`} />
+              </button>
+              {genderOpen && (
+                <div className="absolute left-0 top-full mt-1.5 z-50 w-44 animate-dropdown"
+                  style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: "8px" }}>
+                  <button
+                    onClick={() => { setSelectedGender(null); setGenderOpen(false); }}
+                    className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg"
+                    style={{ color: "#6B7280" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#F5F5F5")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {t.filter_all_genders}
+                  </button>
+                  <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
+                  {GENDER_OPTIONS.map(g => (
+                    <button
+                      key={g}
+                      onClick={() => { setSelectedGender(g); setGenderOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg flex items-center justify-between"
+                      style={{ background: selectedGender === g ? "#000" : "transparent", color: selectedGender === g ? "#fff" : "#111" }}
+                      onMouseEnter={e => { if (selectedGender !== g) e.currentTarget.style.background = "#F5F5F5" }}
+                      onMouseLeave={e => { e.currentTarget.style.background = selectedGender === g ? "#000" : "transparent" }}
+                    >
+                      {g}
+                      {selectedGender === g && <span className="text-white text-xs">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Filters */}
             <button
