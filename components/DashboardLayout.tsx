@@ -10,26 +10,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [email, setEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [totalUnread, setTotalUnread] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.replace("/login")
-      } else {
-        setEmail(user.email ?? null)
-        // Fetch unread count
-        supabase
-          .from("conversations")
-          .select("provider_unread, customer_unread, provider_id")
-          .or(`provider_id.eq.${user.id},customer_id.eq.${user.id}`)
-          .then(({ data }) => {
-            const total = (data || []).reduce((sum, c) => {
-              return sum + (c.provider_id === user.id ? c.provider_unread : c.customer_unread)
-            }, 0)
-            setTotalUnread(total)
-          })
+        setLoading(false)
+        return
       }
+      setEmail(user.email ?? null)
+
+      // Check admin via RPC (SECURITY DEFINER — bypasser RLS)
+      const { data: adminStatus } = await supabase.rpc("get_my_admin_status")
+      setIsAdmin(!!adminStatus)
+
+      // Fetch unread count
+      supabase
+        .from("conversations")
+        .select("provider_unread, customer_unread, provider_id")
+        .or(`provider_id.eq.${user.id},customer_id.eq.${user.id}`)
+        .then(({ data }) => {
+          const total = (data || []).reduce((sum, c) => {
+            return sum + (c.provider_id === user.id ? c.provider_unread : c.customer_unread)
+          }, 0)
+          setTotalUnread(total)
+        })
+
       setLoading(false)
     })
   }, [router])
@@ -92,6 +100,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             )
           })}
+
+          {/* Admin link — kun synlig for admins */}
+          {isAdmin && (
+            <div className="pt-2 mt-2 border-t border-gray-100">
+              <Link
+                href="/admin"
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  pathname.startsWith("/admin")
+                    ? "bg-red-50 text-red-600 border border-red-100"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <span>🛡️</span>
+                Admin panel
+              </Link>
+            </div>
+          )}
         </nav>
 
         {/* Sign out */}
