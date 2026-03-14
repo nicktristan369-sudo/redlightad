@@ -14,6 +14,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const checkAdmin = async () => {
       const supabase = createClient()
 
+      // Refresh session first to ensure token is current
+      await supabase.auth.refreshSession()
+
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError || !user) {
         router.replace("/login")
@@ -21,19 +24,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
       setEmail(user.email ?? null)
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single()
+      // Use SECURITY DEFINER RPC — bypasses RLS completely
+      const { data: isAdmin, error: rpcError } = await supabase
+        .rpc("get_my_admin_status")
 
-      if (profileError) {
-        console.error("Admin check fejl:", profileError.message)
+      if (rpcError) {
+        console.error("Admin RPC fejl:", rpcError.message)
         router.replace("/dashboard")
         return
       }
 
-      if (!profile?.is_admin) {
+      if (!isAdmin) {
         router.replace("/dashboard")
         return
       }
