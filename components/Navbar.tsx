@@ -27,8 +27,10 @@ export default function Navbar() {
   const [genderOpen, setGenderOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedGender, setSelectedGender] = useState<string | null>(null);
-  const categoryRef = useRef<HTMLDivElement>(null);
-  const genderRef = useRef<HTMLDivElement>(null);
+  const [categoryRect, setCategoryRect] = useState<DOMRect | null>(null);
+  const [genderRect, setGenderRect] = useState<DOMRect | null>(null);
+  const categoryRef = useRef<HTMLButtonElement>(null);
+  const genderRef = useRef<HTMLButtonElement>(null);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
   const [showCountrySelector, setShowCountrySelector] = useState(false);
@@ -103,8 +105,9 @@ export default function Navbar() {
   // Close category/gender dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) setCategoryOpen(false);
-      if (genderRef.current && !genderRef.current.contains(e.target as Node)) setGenderOpen(false);
+      const t = e.target as Node;
+      if (categoryRef.current && !categoryRef.current.contains(t)) setCategoryOpen(false);
+      if (genderRef.current && !genderRef.current.contains(t)) setGenderOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -263,9 +266,15 @@ export default function Navbar() {
           <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
 
             {/* Category dropdown */}
-            <div ref={categoryRef} className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0">
               <button
-                onClick={() => { setCategoryOpen(o => !o); setGenderOpen(false); }}
+                ref={categoryRef}
+                onClick={() => {
+                  const r = categoryRef.current?.getBoundingClientRect() ?? null;
+                  setCategoryRect(r);
+                  setCategoryOpen(o => !o);
+                  setGenderOpen(false);
+                }}
                 className="inline-flex items-center gap-2 border bg-white px-4 py-2 text-[14px] font-medium transition-colors whitespace-nowrap"
                 style={{ borderRadius: "8px", borderColor: categoryOpen ? "#000" : "#D1D5DB", color: selectedCategory ? "#000" : "#374151" }}
               >
@@ -273,9 +282,9 @@ export default function Navbar() {
                 {selectedCategory || t.filter_all_categories}
                 <ChevronDown size={12} color="#6B7280" className={`transition-transform duration-150 ${categoryOpen ? "rotate-180" : ""}`} />
               </button>
-              {categoryOpen && (
-                <div className="absolute left-0 top-full mt-1.5 z-50 w-52 animate-dropdown"
-                  style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: "8px" }}>
+              {categoryOpen && categoryRect && (
+                <div className="fixed z-[9999] w-52 animate-dropdown"
+                  style={{ top: categoryRect.bottom + 6, left: categoryRect.left, background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: "8px" }}>
                   <button
                     onClick={() => { setSelectedCategory(null); setCategoryOpen(false); }}
                     className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg"
@@ -304,9 +313,15 @@ export default function Navbar() {
             </div>
 
             {/* Gender dropdown */}
-            <div ref={genderRef} className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0">
               <button
-                onClick={() => { setGenderOpen(o => !o); setCategoryOpen(false); }}
+                ref={genderRef}
+                onClick={() => {
+                  const r = genderRef.current?.getBoundingClientRect() ?? null;
+                  setGenderRect(r);
+                  setGenderOpen(o => !o);
+                  setCategoryOpen(false);
+                }}
                 className="inline-flex items-center gap-2 border bg-white px-4 py-2 text-[14px] font-medium transition-colors whitespace-nowrap"
                 style={{ borderRadius: "8px", borderColor: genderOpen ? "#000" : "#D1D5DB", color: selectedGender ? "#000" : "#374151" }}
               >
@@ -314,9 +329,9 @@ export default function Navbar() {
                 {selectedGender || t.filter_all_genders}
                 <ChevronDown size={12} color="#6B7280" className={`transition-transform duration-150 ${genderOpen ? "rotate-180" : ""}`} />
               </button>
-              {genderOpen && (
-                <div className="absolute left-0 top-full mt-1.5 z-50 w-44 animate-dropdown"
-                  style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: "8px" }}>
+              {genderOpen && genderRect && (
+                <div className="fixed z-[9999] w-44 animate-dropdown"
+                  style={{ top: genderRect.bottom + 6, left: genderRect.left, background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: "8px" }}>
                   <button
                     onClick={() => { setSelectedGender(null); setGenderOpen(false); }}
                     className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg"
