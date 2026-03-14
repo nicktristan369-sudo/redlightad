@@ -176,7 +176,7 @@ export default function OpretAnnoncePage() {
             </p>
             <div className="flex gap-3">
               <a
-                href="/mine-annoncer"
+                href="/dashboard/annoncer"
                 className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Se mine annoncer
