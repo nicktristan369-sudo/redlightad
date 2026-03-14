@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "flag-icons/css/flag-icons.min.css";
+
+/* Square flags — no border radius */
+.fi { border-radius: 0 !important; }
 
 :root {
   --bg: #F5F5F7;

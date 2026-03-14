@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, Globe, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
+import LanguageSelector from "@/components/LanguageSelector";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   BODY_BUILD_OPTIONS,
   HAIR_COLOR_OPTIONS,
@@ -15,6 +17,7 @@ import {
 } from "@/lib/listingOptions";
 
 export default function Navbar() {
+  const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<{ email: string; id: string } | null>(null);
   const [customSearchOpen, setCustomSearchOpen] = useState(false);
@@ -121,13 +124,13 @@ export default function Navbar() {
           {/* Nav links — desktop */}
           <div className="hidden md:flex items-center gap-6 ml-2">
             <Link href="/" className="text-sm font-semibold text-gray-900 hover:text-gray-600 transition-colors">
-              Home
+              {t.nav_home}
             </Link>
             <Link href="/support" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              Support
+              {t.nav_support}
             </Link>
             <Link href="/opret-annonce" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              Post an Ad
+              {t.nav_post_ad}
             </Link>
           </div>
 
@@ -136,7 +139,7 @@ export default function Navbar() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search for profiles, city or keyword..."
+              placeholder={t.search_placeholder}
               className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-300 focus:bg-white focus:outline-none transition-all"
             />
           </div>
@@ -149,17 +152,14 @@ export default function Navbar() {
                 onClick={() => setShowCountrySelector(true)}
                 className="flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
               >
-                <span className="text-base leading-none">{selectedCountry.flag}</span>
+                <span className={`fi fi-${selectedCountry.code} flex-shrink-0`} style={{ width: "16px", height: "12px", display: "inline-block" }} />
                 <span>{selectedCountry.name}</span>
                 <ChevronDown className="w-3 h-3 text-gray-400" />
               </button>
             )}
 
-            {/* Language */}
-            <button className="flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors">
-              <Globe className="w-3.5 h-3.5 text-gray-500" />
-              US
-            </button>
+            {/* Language selector */}
+            <LanguageSelector />
 
             {/* Coin balance */}
             {user && coinBalance !== null && (
@@ -171,15 +171,15 @@ export default function Navbar() {
             {/* Auth */}
             {user ? (
               <Link href="/dashboard" className="bg-gray-900 hover:bg-black text-white text-sm font-semibold px-5 py-2 rounded-full transition-colors">
-                Dashboard
+                {t.nav_dashboard}
               </Link>
             ) : (
               <div className="flex items-center gap-2">
                 <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                  Login
+                  {t.nav_login}
                 </Link>
                 <Link href="/register" className="bg-gray-900 hover:bg-black text-white text-sm font-semibold px-5 py-2 rounded-full transition-colors whitespace-nowrap">
-                  Login / Create Account
+                  {t.nav_login} / {t.nav_create_account}
                 </Link>
               </div>
             )}
@@ -214,11 +214,11 @@ export default function Navbar() {
             {/* Auth */}
             {user ? (
               <Link href="/dashboard" className="block w-full text-center bg-gray-900 text-white py-3 rounded-full text-sm font-semibold" onClick={() => setMobileOpen(false)}>
-                Dashboard
+                {t.nav_dashboard}
               </Link>
             ) : (
               <Link href="/register" className="block w-full text-center bg-gray-900 text-white py-3 rounded-full text-sm font-semibold" onClick={() => setMobileOpen(false)}>
-                Login / Create Account
+                {t.nav_login} / {t.nav_create_account}
               </Link>
             )}
           </div>
@@ -232,21 +232,21 @@ export default function Navbar() {
             {/* Hele landet */}
             <button className="flex-shrink-0 flex items-center gap-2 border border-gray-200 rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap">
               <MapPin className="w-3.5 h-3.5 text-gray-400" />
-              Hele landet
+              {t.filter_all_countries}
               <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
             </button>
 
             {/* Alle kategorier */}
             <button className="flex-shrink-0 flex items-center gap-2 border border-gray-200 rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap">
               <LayoutGrid className="w-3.5 h-3.5 text-gray-400" />
-              Alle kategorier
+              {t.filter_all_categories}
               <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
             </button>
 
             {/* Alle køn */}
             <button className="flex-shrink-0 flex items-center gap-2 border border-gray-200 rounded-full px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap">
               <Users className="w-3.5 h-3.5 text-gray-400" />
-              Alle køn
+              {t.filter_all_genders}
               <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
             </button>
 
@@ -260,7 +260,7 @@ export default function Navbar() {
               }`}
             >
               <SlidersHorizontal className={`w-3.5 h-3.5 ${customSearchOpen ? "text-white" : "text-gray-400"}`} />
-              Tilpasset søgning
+              {t.filter_search_btn?.replace(/🔍\s?/, "") || "Custom search"}
               <ChevronDown className={`w-3.5 h-3.5 transition-transform ${customSearchOpen ? "text-white rotate-180" : "text-gray-400"}`} />
             </button>
           </div>

@@ -85,7 +85,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
                     onClick={() => handleSelect(c.code)}
                     className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all text-left"
                   >
-                    <span className="text-xl">{c.flag}</span>
+                    <span className={`fi fi-${c.code}`} style={{ width: "20px", height: "15px", display: "inline-block" }} />
                     <span className="text-sm font-medium text-gray-800 truncate">{c.name}</span>
                   </button>
                 ))}
@@ -104,7 +104,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
                   onClick={() => handleSelect(c.code)}
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all text-left"
                 >
-                  <span className="text-xl">{c.flag}</span>
+                  <span className={`fi fi-${c.code}`} style={{ width: "20px", height: "15px", display: "inline-block" }} />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
                     <p className="text-xs text-gray-400 uppercase">{c.code}</p>
