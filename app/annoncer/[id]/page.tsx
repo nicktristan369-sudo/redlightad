@@ -4,6 +4,7 @@ import SendMessageButton from "@/components/SendMessageButton";
 import LockedContentSection from "@/components/LockedContentSection";
 import PremiumCarousel from "@/components/PremiumCarousel";
 import OpeningHoursDisplay from "@/components/OpeningHoursDisplay";
+import ProfileInfoSidebar from "@/components/ProfileInfoSidebar";
 import { mockAnnonceAd } from "@/lib/mockAds";
 
 export default async function AnnonceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -107,72 +108,16 @@ export default async function AnnonceDetailPage({ params }: { params: Promise<{ 
             {/* Right column — sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-6">
-                {/* Profile Info */}
-                <div className="rounded-xl bg-white p-6 shadow-md">
-                  <h3 className="mb-4 text-xl font-bold text-gray-900">Profilinfo</h3>
-                  <div className="divide-y divide-gray-100">
-                    {[
-                      { icon: "🎂", label: "Alder", value: ad.age },
-                      { icon: "♀️", label: "Køn", value: ad.gender },
-                      { icon: "📁", label: "Kategori", value: ad.category },
-                      {
-                        icon: "📍",
-                        label: "Lokation",
-                        value: `${ad.city}, ${ad.country}`,
-                      },
-                      {
-                        icon: "🗣️",
-                        label: "Sprog",
-                        value: ad.languages.join(", "),
-                      },
-                    ].map((row) => (
-                      <div
-                        key={row.label}
-                        className="flex items-center justify-between py-3"
-                      >
-                        <span className="flex items-center gap-2 text-sm text-gray-500">
-                          <span>{row.icon}</span>
-                          {row.label}
-                        </span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {row.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Rates Table */}
-                <div className="rounded-xl bg-white p-6 shadow-md">
-                  <h3 className="mb-4 text-xl font-bold text-gray-900">Priser</h3>
-                  <table className="w-full">
-                    <thead>
-                      <tr>
-                        <th className="pb-2 text-left text-xs font-medium uppercase text-gray-500">
-                          Varighed
-                        </th>
-                        <th className="pb-2 text-right text-xs font-medium uppercase text-gray-500">
-                          Pris
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ad.rates.map((rate, i) => (
-                        <tr
-                          key={rate.duration}
-                          className={i % 2 === 0 ? "bg-gray-50" : ""}
-                        >
-                          <td className="py-2.5 px-2 text-sm text-gray-700 rounded-l-lg">
-                            {rate.duration}
-                          </td>
-                          <td className="py-2.5 px-2 text-right text-sm font-bold text-red-600 rounded-r-lg">
-                            {rate.price}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {/* Profile Info + Rates — currency-aware */}
+                <ProfileInfoSidebar
+                  age={ad.age}
+                  gender={ad.gender}
+                  category={ad.category}
+                  city={ad.city}
+                  country={ad.country}
+                  languages={ad.languages}
+                  rates={ad.rates}
+                />
 
                 {/* Send Message */}
                 <div className="rounded-xl bg-white p-6 shadow-md">
