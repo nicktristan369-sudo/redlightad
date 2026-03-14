@@ -1,18 +1,20 @@
-export type Locale = "en" | "da" | "de" | "fr" | "es" | "nl" | "sv" | "no" | "ar" | "th" | "ru" | "pl"
+export type Locale = "en" | "da" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "sv" | "no" | "ar" | "th" | "ru" | "pl"
 
-export const LANGUAGES: Record<Locale, { name: string; flag: string; dir?: "rtl" }> = {
-  en: { name: "English", flag: "\u{1F1EC}\u{1F1E7}" },
-  da: { name: "Dansk", flag: "\u{1F1E9}\u{1F1F0}" },
-  de: { name: "Deutsch", flag: "\u{1F1E9}\u{1F1EA}" },
-  fr: { name: "Fran\u00e7ais", flag: "\u{1F1EB}\u{1F1F7}" },
-  es: { name: "Espa\u00f1ol", flag: "\u{1F1EA}\u{1F1F8}" },
-  nl: { name: "Nederlands", flag: "\u{1F1F3}\u{1F1F1}" },
-  sv: { name: "Svenska", flag: "\u{1F1F8}\u{1F1EA}" },
-  no: { name: "Norsk", flag: "\u{1F1F3}\u{1F1F4}" },
-  ar: { name: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629", flag: "\u{1F1F8}\u{1F1E6}", dir: "rtl" },
-  th: { name: "\u0E20\u0E32\u0E29\u0E32\u0E44\u0E17\u0E22", flag: "\u{1F1F9}\u{1F1ED}" },
-  ru: { name: "\u0420\u0443\u0441\u0441\u043A\u0438\u0439", flag: "\u{1F1F7}\u{1F1FA}" },
-  pl: { name: "Polski", flag: "\u{1F1F5}\u{1F1F1}" },
+export const LANGUAGES: Record<Locale, { name: string; flagCode: string; dir?: "rtl" }> = {
+  en: { name: "English",    flagCode: "gb" },
+  da: { name: "Dansk",      flagCode: "dk" },
+  de: { name: "Deutsch",    flagCode: "de" },
+  fr: { name: "Français",   flagCode: "fr" },
+  es: { name: "Español",    flagCode: "es" },
+  it: { name: "Italiano",   flagCode: "it" },
+  pt: { name: "Português",  flagCode: "br" },
+  nl: { name: "Nederlands", flagCode: "nl" },
+  sv: { name: "Svenska",    flagCode: "se" },
+  no: { name: "Norsk",      flagCode: "no" },
+  ar: { name: "العربية",    flagCode: "sa", dir: "rtl" },
+  th: { name: "ภาษาไทย",   flagCode: "th" },
+  ru: { name: "Русский",    flagCode: "ru" },
+  pl: { name: "Polski",     flagCode: "pl" },
 }
 
 export type TranslationKeys = {
@@ -381,6 +383,34 @@ const pl = makeSimple({
   auth_login_title: "Witaj ponownie", auth_login_btn: "Zaloguj si\u0119",
 })
 
+const it = makeSimple({
+  nav_home: "Home", nav_post_ad: "Pubblica annuncio",
+  nav_login: "Accedi", nav_create_account: "Crea account",
+  nav_dashboard: "Dashboard", nav_support: "Supporto",
+  hero_title: "La piattaforma leader per annunci per adulti",
+  hero_subtitle: "Connettiti con oltre 5000 utenti attivi in tutto il mondo",
+  search_placeholder: "Cerca profili, città o parole chiave...",
+  filter_all_countries: "Tutti i paesi", filter_all_categories: "Tutte le categorie",
+  filter_all_genders: "Tutti i generi", filter_search_btn: "🔍 Cerca", filter_clear: "✕ Cancella",
+  footer_adults_only: "🔞 Solo adulti — 18+",
+  footer_copyright: "© 2026 RedLightAd.com — Tutti i diritti riservati.",
+  auth_login_title: "Bentornato", auth_login_btn: "Accedi",
+})
+
+const pt = makeSimple({
+  nav_home: "Início", nav_post_ad: "Publicar anúncio",
+  nav_login: "Entrar", nav_create_account: "Criar conta",
+  nav_dashboard: "Painel", nav_support: "Suporte",
+  hero_title: "A plataforma líder de anúncios para adultos",
+  hero_subtitle: "Conecte-se com mais de 5000 usuários ativos em todo o mundo",
+  search_placeholder: "Buscar perfis, cidade ou palavra-chave...",
+  filter_all_countries: "Todos os países", filter_all_categories: "Todas as categorias",
+  filter_all_genders: "Todos os gêneros", filter_search_btn: "🔍 Buscar", filter_clear: "✕ Limpar",
+  footer_adults_only: "🔞 Somente adultos — 18+",
+  footer_copyright: "© 2026 RedLightAd.com — Todos os direitos reservados.",
+  auth_login_title: "Bem-vindo de volta", auth_login_btn: "Entrar",
+})
+
 export const translations: Record<Locale, TranslationKeys> = {
-  en, da, de, fr, es, nl, sv, no, ar, th, ru, pl,
+  en, da, de, fr, es, it, pt, nl, sv, no, ar, th, ru, pl,
 }
