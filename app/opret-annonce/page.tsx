@@ -488,7 +488,10 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">Priser</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">Priser</label>
+                    <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1">Enter in USD — visitors see local currency</span>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <span className="mb-1 block text-xs text-gray-500">1 time</span>
