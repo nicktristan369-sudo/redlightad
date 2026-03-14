@@ -24,6 +24,8 @@ const TIMEZONE_OPTIONS = [
 
 interface DayHours { open: string; close: string; closed: boolean; }
 type OpeningHours = Record<DayKey, DayHours>;
+import { CATEGORIES } from "@/lib/constants/categories";
+import { GENDERS } from "@/lib/constants/genders";
 import {
   BODY_BUILD_OPTIONS,
   HAIR_COLOR_OPTIONS,
@@ -355,17 +357,16 @@ export default function OpretAnnoncePage() {
                     <option value="" disabled>
                       Vælg kategori
                     </option>
-                    <option value="Escort">Escort</option>
-                    <option value="Massage">Massage</option>
-                    <option value="Fetish">Fetish</option>
-                    <option value="Transgender">Transgender</option>
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Køn</label>
                   <div className="flex gap-3">
-                    {["Female", "Male", "Transgender"].map((g) => (
+                    {GENDERS.map((g) => (
                       <button
                         key={g}
                         type="button"
