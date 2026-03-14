@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Globe } from "lucide-react"
 
 export default function LanguageSelector() {
   const { locale, setLocale, languages } = useLanguage()
@@ -24,11 +24,12 @@ export default function LanguageSelector() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
       >
+        <Globe size={12} className="text-gray-400 flex-shrink-0" />
         <span className={`fi fi-${current.flagCode}`} style={{ width: "16px", height: "12px", display: "inline-block" }} />
         <span className="hidden sm:inline">{current.name}</span>
-        <ChevronDown className="w-3 h-3 text-gray-400" />
+        <ChevronDown size={12} className="text-gray-400" />
       </button>
 
       {open && (
