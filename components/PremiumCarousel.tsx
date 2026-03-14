@@ -97,9 +97,14 @@ export default function PremiumCarousel({
   }, [excludeId])
 
   const rotate = useCallback(() => {
+    if (listings.length <= VISIBLE_COUNT) return
     setFading(true)
     setTimeout(() => {
-      setOffset(prev => (prev + VISIBLE_COUNT) % listings.length)
+      setOffset(prev => {
+        const next = prev + VISIBLE_COUNT
+        // wrap cleanly to a multiple of VISIBLE_COUNT so first card is always fully visible
+        return next >= listings.length ? 0 : next
+      })
       setFading(false)
     }, 300)
   }, [listings.length])
@@ -115,8 +120,16 @@ export default function PremiumCarousel({
     setFading(true)
     setTimeout(() => {
       setOffset(prev => {
-        const step = dir === "next" ? VISIBLE_COUNT : -VISIBLE_COUNT
-        return (prev + step + listings.length) % listings.length
+        const step = VISIBLE_COUNT
+        if (dir === "next") {
+          const next = prev + step
+          return next >= listings.length ? 0 : next
+        } else {
+          const prev2 = prev - step
+          // snap back to last clean page
+          const pages = Math.ceil(listings.length / VISIBLE_COUNT)
+          return prev2 < 0 ? (pages - 1) * VISIBLE_COUNT : prev2
+        }
       })
       setFading(false)
     }, 200)
@@ -136,21 +149,31 @@ export default function PremiumCarousel({
           <h2 className="text-base font-bold text-gray-900 tracking-tight">{title}</h2>
           <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-2">
           <button
             onClick={() => manualNav("prev")}
-            className="w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors text-xs font-bold"
-          >‹</button>
+            className="w-9 h-9 rounded-full bg-gray-900 hover:bg-black flex items-center justify-center text-white transition-colors shadow-sm"
+            aria-label="Previous"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
           <button
             onClick={() => manualNav("next")}
-            className="w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors text-xs font-bold"
-          >›</button>
+            className="w-9 h-9 rounded-full bg-gray-900 hover:bg-black flex items-center justify-center text-white transition-colors shadow-sm"
+            aria-label="Next"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
       </div>
 
       {/* Cards */}
       <div
-        className={`flex gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden transition-opacity duration-300 ${fading ? "opacity-0" : "opacity-100"}`}
+        className={`flex gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden transition-opacity duration-300 pl-4 sm:pl-6 ${fading ? "opacity-0" : "opacity-100"}`}
         style={{ scrollbarWidth: "none" }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
