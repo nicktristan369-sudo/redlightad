@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal, Globe } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -148,14 +148,20 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-2 flex-shrink-0">
             {/* Country selector */}
             {selectedCountry && (
-              <button
-                onClick={() => setShowCountrySelector(true)}
-                className="flex items-center gap-1.5 border border-gray-200 rounded-full px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-              >
-                <span className={`fi fi-${selectedCountry.code} flex-shrink-0`} style={{ width: "16px", height: "12px", display: "inline-block" }} />
-                <span>{selectedCountry.name}</span>
-                <ChevronDown className="w-3 h-3 text-gray-400" />
-              </button>
+              <>
+                <button
+                  onClick={() => setShowCountrySelector(true)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                  <span className={`fi fi-${selectedCountry.code} flex-shrink-0`} style={{ width: "16px", height: "12px", display: "inline-block" }} />
+                  <span>{selectedCountry.name}</span>
+                  <ChevronDown size={12} className="text-gray-400" />
+                </button>
+
+                {/* Separator */}
+                <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
+              </>
             )}
 
             {/* Language selector */}
