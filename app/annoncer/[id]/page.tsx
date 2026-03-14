@@ -1,10 +1,12 @@
 import Navbar from "@/components/Navbar";
 import AnnonceDetailClient from "./AnnonceDetailClient";
 import SendMessageButton from "@/components/SendMessageButton";
+import LockedContentSection from "@/components/LockedContentSection";
 import { mockAnnonceAd } from "@/lib/mockAds";
 
-export default async function AnnonceDetailPage() {
-  // TODO: fetch from supabase by id
+export default async function AnnonceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  // TODO: fetch real ad from supabase by id
   const ad = mockAnnonceAd;
 
   return (
@@ -89,6 +91,8 @@ export default async function AnnonceDetailPage() {
                   ))}
                 </div>
               </div>
+              {/* Locked Content */}
+              <LockedContentSection listingId={id} />
             </div>
 
             {/* Right column — sidebar */}
