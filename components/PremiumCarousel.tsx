@@ -143,8 +143,9 @@ export default function PremiumCarousel({
 
   return (
     <section className={`${bgClass} pt-5 pb-5`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
       {/* Header */}
-      <div className="px-4 sm:px-6 mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-base font-bold text-gray-900 tracking-tight">{title}</h2>
           <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
@@ -173,7 +174,7 @@ export default function PremiumCarousel({
 
       {/* Cards */}
       <div
-        className={`flex gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden transition-opacity duration-300 pl-4 sm:pl-6 ${fading ? "opacity-0" : "opacity-100"}`}
+        className={`flex gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden transition-opacity duration-300 ${fading ? "opacity-0" : "opacity-100"}`}
         style={{ scrollbarWidth: "none" }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -243,6 +244,7 @@ export default function PremiumCarousel({
             </Link>
           )
         })}
+      </div>
       </div>
     </section>
   )
