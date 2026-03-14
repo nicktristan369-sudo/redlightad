@@ -117,21 +117,21 @@ export default function AnnonceDetailClient({
       {/* Locked Banner */}
       <div
         className="mt-6 p-6 text-center"
-        style={{ background: "#111111", border: "1px solid #222", borderRadius: "12px" }}
+        style={{ background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px" }}
       >
         <div className="flex items-center justify-center mb-3">
-          <Lock size={20} color="#C9A84C" />
+          <Lock size={20} color="#000000" />
         </div>
-        <h3 className="text-[20px] font-bold text-white mb-2">
+        <h3 className="text-[20px] font-bold mb-2" style={{ color: "#000000" }}>
           Unlock Private Content
         </h3>
-        <p className="mb-5" style={{ fontSize: "14px", color: "#9CA3AF", lineHeight: "1.5" }}>
+        <p className="mb-5" style={{ fontSize: "14px", color: "#6B7280", lineHeight: "1.5" }}>
           Create a free account to access all {totalPhotos} photos and exclusive videos
         </p>
         <UnlockButton />
-        <p className="mt-3 text-[12px]" style={{ color: "#6B7280" }}>
+        <p className="mt-3 text-[12px]" style={{ color: "#9CA3AF" }}>
           Already have an account?{" "}
-          <Link href="/login" className="text-white underline underline-offset-2 hover:text-gray-300 transition-colors">
+          <Link href="/login" className="text-gray-900 underline underline-offset-2 hover:text-black transition-colors">
             Log in
           </Link>
         </p>
