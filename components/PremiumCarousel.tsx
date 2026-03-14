@@ -27,6 +27,7 @@ function tierBadge(tier: string | null | undefined) {
     vip: { label: "VIP", cls: "bg-black text-yellow-400 border border-yellow-400/50" },
     featured: { label: "FEATURED", cls: "bg-black text-gray-300 border border-gray-600/50" },
     basic: { label: "PREMIUM", cls: "bg-black/80 text-yellow-500 border border-yellow-500/40" },
+    premium: { label: "PREMIUM", cls: "bg-black/80 text-yellow-500 border border-yellow-500/40" },
   }
   const b = map[tier]
   if (!b) return null
@@ -37,23 +38,44 @@ function tierBadge(tier: string | null | undefined) {
   )
 }
 
-export default function PremiumCarousel() {
-  const [listings, setListings] = useState<PremiumListing[]>(MOCK_LISTINGS)
+interface PremiumCarouselProps {
+  /** Title shown above carousel. Default: "Premium annoncer" */
+  title?: string
+  /** Subtitle shown below title. Default: "Top verified members" */
+  subtitle?: string
+  /** Exclude a specific listing ID (e.g. the one currently being viewed) */
+  excludeId?: string
+  /** Background color. Default: "bg-[#F5F5F7]" */
+  bgClass?: string
+}
+
+export default function PremiumCarousel({
+  title = "Premium annoncer",
+  subtitle = "Top verified members",
+  excludeId,
+  bgClass = "bg-[#F5F5F7]",
+}: PremiumCarouselProps) {
+  const [listings, setListings] = useState<PremiumListing[]>(
+    excludeId ? MOCK_LISTINGS.filter(l => l.id !== excludeId) : MOCK_LISTINGS
+  )
   const [index, setIndex] = useState(0)
   const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase
+    let query = supabase
       .from("listings")
       .select("id, title, profile_image, video_url, age, city, location, premium_tier")
       .eq("status", "active")
       .not("premium_tier", "is", null)
       .limit(12)
-      .then(({ data }) => {
-        if (data && data.length > 0) setListings(data as PremiumListing[])
-      })
-  }, [])
+
+    if (excludeId) query = query.neq("id", excludeId)
+
+    query.then(({ data }) => {
+      if (data && data.length > 0) setListings(data as PremiumListing[])
+    })
+  }, [excludeId])
 
   useEffect(() => {
     if (hovered) return
@@ -69,13 +91,15 @@ export default function PremiumCarousel() {
   const prev = () => setIndex(p => (p - 1 + listings.length) % listings.length)
   const next = () => setIndex(p => (p + 1) % listings.length)
 
+  if (listings.length === 0) return null
+
   return (
-    <section className="py-8 bg-[#F5F5F7]">
+    <section className={`py-8 ${bgClass}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Premium annoncer</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Top verified members</p>
+            <h2 className="text-xl font-bold text-gray-900 tracking-tight">{title}</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={prev} className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700 text-sm font-bold">←</button>
