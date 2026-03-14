@@ -26,6 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin", label: "Dashboard", icon: "🏠" },
     { href: "/admin/annoncer", label: "Annoncer", icon: "📋" },
     { href: "/admin/brugere", label: "Brugere", icon: "👥" },
+    { href: "/admin/marketplace", label: "Marketplace", icon: "🛍" },
     { href: "/admin/udbetalinger", label: "Udbetalinger", icon: "🏦" },
     { href: "/admin/indstillinger", label: "Indstillinger", icon: "⚙️" },
   ]
