@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal, Globe } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal, Globe, Home, Star, CheckCircle, Play, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -239,33 +239,108 @@ export default function Navbar() {
         </div>
 
         {/* Mobile menu */}
+        {/* Mobile menu — full-screen slide-in overlay */}
         {mobileOpen && (
-          <div className="border-t border-gray-100 bg-white px-4 pb-5 md:hidden">
-            {/* Search */}
-            <div className="relative my-4">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search for profiles, city or keyword..."
-                className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-4 text-sm focus:outline-none"
-              />
+          <div className="fixed inset-0 z-[9998] md:hidden flex">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setMobileOpen(false)}
+            />
+            {/* Panel */}
+            <div className="animate-slide-in-left relative flex flex-col w-[82vw] max-w-[340px] h-full overflow-y-auto" style={{ background: "#F5F5F7" }}>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #E5E5E5" }}>
+                <span className="text-[17px] font-black tracking-tight">
+                  <span style={{ color: "#CC0000" }}>RED</span><span style={{ color: "#000" }}>LIGHTAD</span>
+                </span>
+                <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors">
+                  <X size={20} color="#111" />
+                </button>
+              </div>
+
+              {/* Nav items */}
+              <nav className="flex flex-col py-3 px-3 gap-0.5">
+                {[
+                  { href: "/",               icon: <Home size={18} />,         label: "Home" },
+                  { href: "/search",         icon: <Search size={18} />,       label: "Search" },
+                  { href: "/annoncer",       icon: <Star size={18} />,         label: "Premium Profiles" },
+                  { href: "/available-now",  icon: <CheckCircle size={18} />,  label: "Available Now" },
+                  { href: "/videos",         icon: <Play size={18} />,         label: "Videos" },
+                  { href: "/reviews",        icon: <MessageSquare size={18} />,label: "Reviews" },
+                  { href: "/marketplace",    icon: <ShoppingBag size={18} />,  label: "Marketplace" },
+                ].map(({ href, icon, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    className="group flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors"
+                    style={{ color: "#111" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#EBEBEB"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <span style={{ color: "#9CA3AF" }} className="group-hover:text-[#CC0000] transition-colors">{icon}</span>
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+
+              {/* Divider */}
+              <div style={{ height: "1px", background: "#E5E5E5", margin: "0 16px" }} />
+
+              {/* Auth section */}
+              <div className="flex flex-col gap-2 px-4 py-4">
+                {user ? (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center gap-2 py-3 rounded-xl text-[15px] font-semibold text-white transition-colors"
+                    style={{ background: "#000" }}
+                  >
+                    {t.nav_dashboard}
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors"
+                      style={{ color: "#111" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#EBEBEB"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <LogIn size={18} color="#9CA3AF" />
+                      Log In
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center justify-center gap-2 py-3 rounded-xl text-[15px] font-semibold text-white transition-colors"
+                      style={{ background: "#CC0000" }}
+                    >
+                      <UserPlus size={16} />
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: "1px", background: "#E5E5E5", margin: "0 16px" }} />
+
+              {/* Language */}
+              <div className="px-4 py-4">
+                <div className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors"
+                  onMouseEnter={e => { e.currentTarget.style.background = "#EBEBEB"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <Globe size={18} color="#9CA3AF" />
+                  <span className="text-[15px] font-medium" style={{ color: "#111" }}>Language</span>
+                </div>
+              </div>
+
             </div>
-            {/* Links */}
-            <div className="flex flex-col gap-3 mb-4">
-              <Link href="/" className="text-sm font-semibold text-gray-900" onClick={() => setMobileOpen(false)}>Home</Link>
-              <Link href="/support" className="text-sm font-medium text-gray-500" onClick={() => setMobileOpen(false)}>Support</Link>
-              <Link href="/opret-annonce" className="text-sm font-medium text-gray-500" onClick={() => setMobileOpen(false)}>Post an Ad</Link>
-            </div>
-            {/* Auth */}
-            {user ? (
-              <Link href="/dashboard" className="block w-full text-center bg-gray-900 text-white py-3 rounded-full text-sm font-semibold" onClick={() => setMobileOpen(false)}>
-                {t.nav_dashboard}
-              </Link>
-            ) : (
-              <Link href="/register" className="block w-full text-center bg-gray-900 text-white py-3 rounded-full text-sm font-semibold" onClick={() => setMobileOpen(false)}>
-                {t.nav_login} / {t.nav_create_account}
-              </Link>
-            )}
           </div>
         )}
       </nav>
