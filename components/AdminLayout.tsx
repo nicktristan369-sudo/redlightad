@@ -11,38 +11,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const supabase = createClient()
-
-      // Refresh session first to ensure token is current
-      await supabase.auth.refreshSession()
-
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError || !user) {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
         router.replace("/login")
         return
       }
       setEmail(user.email ?? null)
-
-      // Use SECURITY DEFINER RPC — bypasses RLS completely
-      const { data: isAdmin, error: rpcError } = await supabase
-        .rpc("get_my_admin_status")
-
-      if (rpcError) {
-        console.error("Admin RPC fejl:", rpcError.message)
-        router.replace("/dashboard")
-        return
-      }
-
-      if (!isAdmin) {
-        router.replace("/dashboard")
-        return
-      }
-
       setLoading(false)
-    }
-
-    checkAdmin()
+    })
   }, [router])
 
   const navItems = [
