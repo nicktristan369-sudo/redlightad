@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import LocationSelector from "@/components/LocationSelector";
 import VoiceRecorder from "@/components/VoiceRecorder";
+import SocialLinksEditor from "@/components/SocialLinksEditor";
+import type { SocialLinks } from "@/components/SocialLinksSection";
 
 const DAYS_OF_WEEK = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const;
 type DayKey = typeof DAYS_OF_WEEK[number];
@@ -53,6 +55,7 @@ export default function OpretAnnoncePage() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
   const [userTier, setUserTier] = useState<string | null>(null);
   const [timezone, setTimezone] = useState("Europe/Copenhagen");
   const [openingHours, setOpeningHours] = useState<OpeningHours>(() => {
@@ -197,6 +200,7 @@ export default function OpretAnnoncePage() {
         opening_hours: openingHours,
         timezone: timezone,
         voice_message_url: voiceMessageUrl || null,
+        social_links: Object.keys(socialLinks).length > 0 ? socialLinks : null,
         status: "pending",
       });
       if (error) throw error;
@@ -711,6 +715,23 @@ export default function OpretAnnoncePage() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* ── SOCIAL MEDIA LINKS ── */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-base font-bold text-gray-900">Social Media Links</p>
+                    {!["basic", "featured", "vip"].includes(userTier || "") && (
+                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                        🔒 Låsning kræver premium
+                      </span>
+                    )}
+                  </div>
+                  <SocialLinksEditor
+                    value={socialLinks}
+                    onChange={setSocialLinks}
+                    isPremium={["basic", "featured", "vip"].includes(userTier || "")}
+                  />
                 </div>
 
                 {/* Image upload area */}
