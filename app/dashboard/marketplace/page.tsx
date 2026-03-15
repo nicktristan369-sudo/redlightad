@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { createClient } from "@/lib/supabase";
-import { MARKETPLACE_CATEGORIES, CATEGORY_LABELS, type MarketplaceItem, type MarketplaceCategory, type ContentType } from "@/lib/marketplace";
+import { MARKETPLACE_CATEGORIES, CATEGORY_LABELS, eurToCoins, coinsToEur, type MarketplaceItem, type MarketplaceCategory, type ContentType } from "@/lib/marketplace";
 import { Plus, Upload, Trash2, Eye, Clock, CheckCircle, XCircle, ShoppingBag } from "lucide-react";
 
 const STATUS_BADGE = {
@@ -211,13 +211,41 @@ export default function DashboardMarketplacePage() {
                   </div>
                 )}
 
-                {/* Coin price */}
-                <div>
-                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Price (RedCoins) *</label>
-                  <input required type="number" min={1} value={form.coin_price}
-                    onChange={e => setForm(f => ({ ...f, coin_price: e.target.value }))}
-                    placeholder="e.g. 50"
-                    className="w-full px-4 py-2.5 text-[14px] border border-[#E5E5E5] rounded-lg outline-none focus:border-gray-900" />
+                {/* Price — EUR input + live coins calculator */}
+                <div className="md:col-span-2">
+                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Pris *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* EUR input */}
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-gray-400">€</span>
+                      <input
+                        type="number" min={1} step={0.5}
+                        placeholder="10.00"
+                        className="w-full pl-7 pr-4 py-2.5 text-[14px] border border-[#E5E5E5] rounded-lg outline-none focus:border-gray-900"
+                        onChange={e => {
+                          const eur = parseFloat(e.target.value);
+                          if (!isNaN(eur) && eur > 0) {
+                            setForm(f => ({ ...f, coin_price: String(eurToCoins(eur)) }));
+                          } else {
+                            setForm(f => ({ ...f, coin_price: "" }));
+                          }
+                        }}
+                      />
+                    </div>
+                    {/* Coins display */}
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg"
+                      style={{ background: "#FFF8F8", border: "1px solid #FEE2E2" }}>
+                      <span className="text-[13px]">🔴</span>
+                      <span className="text-[14px] font-bold text-gray-900">
+                        {form.coin_price ? `${form.coin_price} coins` : "—"}
+                      </span>
+                    </div>
+                  </div>
+                  {form.coin_price && (
+                    <p className="mt-1.5 text-[12px] text-gray-400">
+                      Du modtager <strong>{Math.round(parseInt(form.coin_price) * 0.81)}</strong> coins efter 19% platform fee (≈ €{coinsToEur(Math.round(parseInt(form.coin_price) * 0.81))})
+                    </p>
+                  )}
                 </div>
 
                 {/* Stock (physical) */}
@@ -255,17 +283,19 @@ export default function DashboardMarketplacePage() {
                   </button>
                 </div>
 
-                {/* Preview */}
+                {/* Teaser video (9s free) */}
                 <div>
-                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Preview / teaser (max 10s)</label>
-                  <input ref={previewRef} type="file" accept="image/*,video/*" className="hidden"
+                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
+                    Teaser video <span className="text-gray-400">(maks 9 sek, gratis preview)</span>
+                  </label>
+                  <input ref={previewRef} type="file" accept="video/*" className="hidden"
                     onChange={e => setPreviewFile(e.target.files?.[0] ?? null)} />
                   <button type="button" onClick={() => previewRef.current?.click()}
                     className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border-2 border-dashed border-[#E5E5E5] rounded-xl text-[13px] text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors">
                     <Upload size={18} />
-                    {previewFile ? previewFile.name : "Upload preview"}
+                    {previewFile ? previewFile.name : "Upload teaser (video)"}
                   </button>
-                  <p className="mt-1 text-[11px] text-gray-400">⚠️ No explicit content in preview</p>
+                  <p className="mt-1 text-[11px] text-gray-400">⚠️ Må ikke indeholde eksplicit indhold</p>
                 </div>
 
                 {/* Full content */}

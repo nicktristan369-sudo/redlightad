@@ -8,6 +8,7 @@ import {
   MARKETPLACE_CATEGORIES,
   SORT_OPTIONS,
   CATEGORY_LABELS,
+  coinsToEur,
   type MarketplaceItem,
   type MarketplaceCategory,
   type SortOption,
@@ -46,7 +47,9 @@ function ItemCard({ item }: { item: MarketplaceItem }) {
     }
   }, [hovering]);
 
-  const hasVideo = item.content_type === "video" && item.preview_url;
+  // Prefer teaser_url for hover preview; fallback to preview_url
+  const hasVideo = !!(item.teaser_url || (item.content_type === "video" && item.preview_url));
+  const videoSrc = item.teaser_url ?? item.preview_url;
   const [btnHov, setBtnHov] = useState(false);
 
   return (
@@ -73,7 +76,7 @@ function ItemCard({ item }: { item: MarketplaceItem }) {
         {hasVideo && (
           <video
             ref={videoRef}
-            src={item.preview_url!}
+            src={videoSrc!}
             muted
             loop={false}
             playsInline
@@ -86,8 +89,11 @@ function ItemCard({ item }: { item: MarketplaceItem }) {
         <div className="absolute top-2 left-2 flex gap-1.5">
           <CategoryBadge category={item.category} />
         </div>
-        <div className="absolute bottom-2 right-2">
+        <div className="absolute bottom-2 right-2 flex flex-col items-end gap-1">
           <CoinBadge coins={item.coin_price} />
+          <span className="text-[11px] font-semibold text-white/80" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
+            ≈ €{coinsToEur(item.coin_price)}
+          </span>
         </div>
       </div>
 
