@@ -50,3 +50,12 @@ body {
 .animate-fadeSlideIn {
   animation: fadeSlideIn 0.4s ease-out;
 }
+
+/* Country empty-state CTA */
+.btn-post-ad {
+  background: #000;
+  transition: background 0.2s;
+}
+.btn-post-ad:hover {
+  background: #CC0000;
+}
