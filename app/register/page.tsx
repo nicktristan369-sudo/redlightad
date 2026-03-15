@@ -18,18 +18,24 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeAge, setAgreeAge] = useState(false);
+  const [btnHov, setBtnHov] = useState(false);
+  const [emailFocus, setEmailFocus] = useState(false);
+  const [pwFocus, setPwFocus] = useState(false);
+  const [cpwFocus, setCpwFocus] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     if (password.length < 6) {
-      setError("Kodeord skal være mindst 6 tegn");
+      setError("Password must be at least 6 characters");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Kodeord matcher ikke");
+      setError("Passwords do not match");
       return;
     }
 
@@ -202,210 +208,175 @@ export default function RegisterPage() {
 
         ) : (
           <div className="p-8 sm:p-10">
-            <div className="mb-4 flex items-center gap-3">
+            {/* Back + badge */}
+            <div className="mb-6 flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="text-gray-500 hover:text-gray-700"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                {accountType === "provider" ? "Provider" : "Customer"}
+              <span className="inline-flex items-center rounded-full px-3 py-1 text-[12px] font-semibold text-white"
+                style={{ background: "#000" }}>
+                {accountType === "provider" ? "✦ Provider" : "◆ Customer"}
               </span>
             </div>
 
-            <h1 className="text-xl font-bold text-gray-900">Opret konto</h1>
-            <p className="mb-6 text-sm text-gray-500">
-              Udfyld dine oplysninger
+            {/* Header */}
+            <div className="flex justify-center mb-6">
+              <Logo variant="light" height={28} />
+            </div>
+            <h1 className="text-[24px] font-bold text-center mb-1" style={{ color: "#000" }}>Create Account</h1>
+            <p className="text-center mb-7" style={{ fontSize: "14px", color: "#6B7280" }}>
+              Fill in your details to get started
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
               <div>
-                <label
-                  htmlFor="email"
-                  className="mb-1 block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="reg-email" className="block mb-1.5 font-medium" style={{ fontSize: "13px", color: "#374151" }}>
                   Email
                 </label>
                 <input
-                  id="email"
+                  id="reg-email"
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                  placeholder="din@email.dk"
+                  onChange={e => setEmail(e.target.value)}
+                  onFocus={() => setEmailFocus(true)}
+                  onBlur={() => setEmailFocus(false)}
+                  placeholder="your@email.com"
+                  className="w-full px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors"
+                  style={{ border: `1px solid ${emailFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }}
                 />
               </div>
 
+              {/* Password */}
               <div>
-                <label
-                  htmlFor="password"
-                  className="mb-1 block text-sm font-medium text-gray-700"
-                >
-                  Kodeord
+                <label htmlFor="reg-password" className="block mb-1.5 font-medium" style={{ fontSize: "13px", color: "#374151" }}>
+                  Password
                 </label>
                 <div className="relative">
                   <input
-                    id="password"
+                    id="reg-password"
                     type={showPassword ? "text" : "password"}
                     required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                    placeholder="••••••••"
+                    onChange={e => setPassword(e.target.value)}
+                    onFocus={() => setPwFocus(true)}
+                    onBlur={() => setPwFocus(false)}
+                    placeholder="Min. 6 characters"
+                    className="w-full px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors"
+                    style={{ border: `1px solid ${pwFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    )}
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {showPassword
+                        ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" />
+                        : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>
+                      }
+                    </svg>
                   </button>
                 </div>
               </div>
 
+              {/* Confirm password */}
               <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="mb-1 block text-sm font-medium text-gray-700"
-                >
-                  Bekræft kodeord
+                <label htmlFor="reg-confirm" className="block mb-1.5 font-medium" style={{ fontSize: "13px", color: "#374151" }}>
+                  Confirm Password
                 </label>
                 <div className="relative">
                   <input
-                    id="confirmPassword"
+                    id="reg-confirm"
                     type={showConfirmPassword ? "text" : "password"}
                     required
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                    placeholder="••••••••"
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    onFocus={() => setCpwFocus(true)}
+                    onBlur={() => setCpwFocus(false)}
+                    placeholder="Repeat your password"
+                    className="w-full px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors"
+                    style={{ border: `1px solid ${cpwFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }}
                   />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    )}
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {showConfirmPassword
+                        ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" />
+                        : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>
+                      }
+                    </svg>
                   </button>
                 </div>
               </div>
 
+              {/* Checkboxes */}
+              <div className="space-y-3 pt-1">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={agreeTerms}
+                    onChange={e => setAgreeTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 accent-black"
+                  />
+                  <span style={{ fontSize: "13px", color: "#374151" }}>
+                    I agree to the{" "}
+                    <Link href="/terms" className="underline font-medium hover:text-black" target="_blank">Terms of Service</Link>
+                    {" "}and{" "}
+                    <Link href="/privacy" className="underline font-medium hover:text-black" target="_blank">Privacy Policy</Link>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={agreeAge}
+                    onChange={e => setAgreeAge(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 accent-black"
+                  />
+                  <span style={{ fontSize: "13px", color: "#374151" }}>
+                    I confirm I am 18 years of age or older
+                  </span>
+                </label>
+              </div>
+
               {error && (
-                <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                  {error}
-                </p>
+                <p className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{error}</p>
               )}
 
+              {/* Submit */}
               <button
                 type="submit"
-                disabled={loading}
-                className="mt-4 w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                disabled={loading || !agreeTerms || !agreeAge}
+                className="w-full py-3 text-sm font-semibold text-white flex items-center justify-center transition-all duration-200 disabled:opacity-40"
+                style={{ background: btnHov && !loading ? "#CC0000" : "#000", borderRadius: "8px" }}
+                onMouseEnter={() => setBtnHov(true)}
+                onMouseLeave={() => setBtnHov(false)}
               >
                 {loading ? (
-                  <svg
-                    className="mx-auto h-5 w-5 animate-spin text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
+                  <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                ) : (
-                  "Opret konto"
-                )}
+                ) : "Create Account →"}
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-gray-600">
-              Har du allerede en konto?{" "}
-              <Link href="/login" className="font-medium text-gray-900 underline hover:text-black">
-                Log ind
+            {/* Sign in */}
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1" style={{ background: "#D1D5DB" }} />
+              <span className="text-[13px]" style={{ color: "#9CA3AF" }}>or</span>
+              <div className="h-px flex-1" style={{ background: "#D1D5DB" }} />
+            </div>
+            <p className="text-center text-[14px]" style={{ color: "#6B7280" }}>
+              Already have an account?{" "}
+              <Link href="/login" className="font-bold text-gray-900 hover:underline">
+                Sign in
               </Link>
             </p>
           </div>
