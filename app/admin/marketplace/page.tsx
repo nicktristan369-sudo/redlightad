@@ -47,16 +47,24 @@ export default function AdminMarketplacePage() {
 
   const approve = async (id: string) => {
     setBusy(id);
-    await createClient().from("marketplace_items").update({ status: "approved" }).eq("id", id);
-    setItems(p => p.filter(i => i.id !== id));
+    await fetch("/api/admin/marketplace-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: id, action: "approve" }),
+    });
+    setItems(p => tab === "pending" ? p.filter(i => i.id !== id) : p.map(i => i.id === id ? { ...i, status: "approved" as const } : i));
     setBusy(null);
   };
 
   const reject = async () => {
     if (!rejectId) return;
     setBusy(rejectId);
-    await createClient().from("marketplace_items").update({ status: "rejected" }).eq("id", rejectId);
-    setItems(p => p.filter(i => i.id !== rejectId));
+    await fetch("/api/admin/marketplace-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: rejectId, action: "reject", reason: rejectMsg || undefined }),
+    });
+    setItems(p => tab === "pending" ? p.filter(i => i.id !== rejectId) : p.map(i => i.id === rejectId ? { ...i, status: "rejected" as const } : i));
     setBusy(null);
     setRejectId(null);
     setRejectMsg("");
@@ -113,10 +121,26 @@ export default function AdminMarketplacePage() {
       )}
 
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-5">
         <h1 className="text-[22px] font-bold text-gray-900">Marketplace</h1>
         <p className="text-[13px] text-gray-400 mt-0.5">Review and moderate seller items</p>
       </div>
+
+      {/* Pending alert banner */}
+      {pendingCount > 0 && tab !== "pending" && (
+        <button onClick={() => setTab("pending")}
+          className="w-full flex items-center justify-between px-4 py-3 rounded-xl mb-5 text-left transition-opacity hover:opacity-90"
+          style={{ background: "#FFF7ED", border: "1px solid #FED7AA" }}>
+          <div className="flex items-center gap-2">
+            <span className="text-[18px]">⚠️</span>
+            <div>
+              <p className="text-[13px] font-semibold text-orange-900">{pendingCount} item{pendingCount !== 1 ? "s" : ""} waiting for review</p>
+              <p className="text-[12px] text-orange-700">Click to review pending submissions</p>
+            </div>
+          </div>
+          <span className="text-[12px] font-semibold text-orange-800 bg-orange-100 px-2.5 py-1 rounded-full">Review →</span>
+        </button>
+      )}
 
       {/* Tabs + Search */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
@@ -197,7 +221,7 @@ export default function AdminMarketplacePage() {
                         {new Date(item.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           {item.status === "approved" && (
                             <a href={`/marketplace/${item.id}`} target="_blank" rel="noopener noreferrer"
                               className="p-1.5 rounded-md" style={{ color: "#9CA3AF" }}
@@ -206,21 +230,46 @@ export default function AdminMarketplacePage() {
                               <Eye size={14} />
                             </a>
                           )}
-                          {item.status !== "approved" && (
-                            <button onClick={() => approve(item.id)} disabled={busy === item.id}
-                              className="p-1.5 rounded-md disabled:opacity-40" style={{ color: "#16A34A" }}
-                              onMouseEnter={e => e.currentTarget.style.background = "#DCFCE7"}
-                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                              <CheckCircle size={14} />
-                            </button>
-                          )}
-                          {item.status !== "rejected" && (
-                            <button onClick={() => setRejectId(item.id)} disabled={busy === item.id}
-                              className="p-1.5 rounded-md disabled:opacity-40" style={{ color: "#DC2626" }}
-                              onMouseEnter={e => e.currentTarget.style.background = "#FEE2E2"}
-                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                              <XCircle size={14} />
-                            </button>
+                          {item.status === "pending" ? (
+                            <>
+                              <button onClick={() => approve(item.id)} disabled={busy === item.id}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold disabled:opacity-40 transition-colors"
+                                style={{ background: "#DCFCE7", color: "#14532D" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "#BBF7D0")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "#DCFCE7")}>
+                                {busy === item.id
+                                  ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                                  : <><CheckCircle size={12} /> Godkend</>}
+                              </button>
+                              <button onClick={() => setRejectId(item.id)} disabled={busy === item.id}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold disabled:opacity-40 transition-colors"
+                                style={{ background: "#FEE2E2", color: "#991B1B" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "#FECACA")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "#FEE2E2")}>
+                                <XCircle size={12} /> Afvis
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {item.status !== "approved" && (
+                                <button onClick={() => approve(item.id)} disabled={busy === item.id}
+                                  className="p-1.5 rounded-md disabled:opacity-40"
+                                  style={{ color: "#16A34A" }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = "#DCFCE7")}
+                                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                                  <CheckCircle size={14} />
+                                </button>
+                              )}
+                              {item.status !== "rejected" && (
+                                <button onClick={() => setRejectId(item.id)} disabled={busy === item.id}
+                                  className="p-1.5 rounded-md disabled:opacity-40"
+                                  style={{ color: "#DC2626" }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = "#FEE2E2")}
+                                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                                  <XCircle size={14} />
+                                </button>
+                              )}
+                            </>
                           )}
                           <button onClick={() => remove(item.id)} disabled={busy === item.id}
                             className="p-1.5 rounded-md disabled:opacity-40" style={{ color: "#9CA3AF" }}
