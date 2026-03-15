@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { createClient } from "@/lib/supabase";
-import { MessageCircle, Send, Users, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { MessageCircle, Send, Users, AlertCircle, CheckCircle, XCircle, Smartphone } from "lucide-react";
 
 interface SmsLog {
   id: string;
@@ -213,48 +213,109 @@ export default function AdminSmsPage() {
           </button>
         </div>
 
-        {/* SMS History */}
-        <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
-          <div className="px-5 py-4 flex items-center gap-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
-            <MessageCircle size={15} color="#6B7280" />
-            <h2 className="text-[15px] font-semibold text-gray-900">SMS History</h2>
-          </div>
-          <div className="overflow-y-auto" style={{ maxHeight: "460px" }}>
-            {loadingLogs ? (
-              <div className="flex justify-center py-12">
-                <div className="w-5 h-5 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
-              </div>
-            ) : logs.length === 0 ? (
-              <div className="py-12 text-center text-[13px] text-gray-400">No SMS sent yet</div>
-            ) : (
-              <div className="divide-y divide-gray-50">
-                {logs.map(l => (
-                  <div key={l.id} className="px-5 py-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[11px] font-semibold uppercase tracking-wide"
-                            style={{ color: l.direction === "broadcast" ? "#2563EB" : "#6B7280" }}>
-                            {l.direction === "broadcast" ? `Broadcast (${l.recipients})` : l.phone_number}
-                          </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
-                            style={{ background: l.status === "sent" ? "#DCFCE7" : "#FEE2E2", color: l.status === "sent" ? "#14532D" : "#7F1D1D" }}>
-                            {l.status}
-                          </span>
-                        </div>
-                        <p className="text-[12px] text-gray-600 truncate">{l.message}</p>
-                      </div>
-                      <span className="text-[11px] text-gray-400 flex-shrink-0">
-                        {new Date(l.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        {/* SMS History + Verification Log tabs */}
+        <SmsHistoryPanel logs={logs} loadingLogs={loadingLogs} />
       </div>
     </AdminLayout>
+  );
+}
+
+function SmsHistoryPanel({ logs, loadingLogs }: { logs: SmsLog[]; loadingLogs: boolean }) {
+  const [historyTab, setHistoryTab] = useState<"history" | "verification">("history");
+
+  const outbound = logs.filter(l => l.direction !== "verification");
+  const verif = logs.filter(l => l.direction === "verification" || l.message.includes("Verification"));
+
+  // Stats
+  const now = new Date();
+  const thisMonth = logs.filter(l => {
+    const d = new Date(l.created_at);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+  const monthlySent = thisMonth.length;
+  // Twilio pricing: ~$0.0079/SMS outbound
+  const estimatedCost = (monthlySent * 0.0079).toFixed(2);
+
+  return (
+    <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
+      {/* Tab header */}
+      <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid #F3F4F6" }}>
+        <div className="flex gap-0.5 p-0.5 rounded-lg" style={{ background: "#F3F4F6" }}>
+          {([["history", "SMS History", MessageCircle], ["verification", "Verification Log", Smartphone]] as const).map(([key, label, Icon]) => (
+            <button key={key} onClick={() => setHistoryTab(key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors"
+              style={{ background: historyTab === key ? "#fff" : "transparent", color: historyTab === key ? "#111" : "#6B7280" }}>
+              <Icon size={12} />{label}
+            </button>
+          ))}
+        </div>
+        <div className="text-[11px] text-gray-400 hidden sm:block">
+          {monthlySent} SMS this month · ~${estimatedCost}
+        </div>
+      </div>
+
+      <div className="overflow-y-auto" style={{ maxHeight: "460px" }}>
+        {loadingLogs ? (
+          <div className="flex justify-center py-12">
+            <div className="w-5 h-5 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+          </div>
+        ) : historyTab === "history" ? (
+          outbound.length === 0 ? (
+            <div className="py-12 text-center text-[13px] text-gray-400">No SMS sent yet</div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {outbound.map(l => (
+                <div key={l.id} className="px-5 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[11px] font-semibold uppercase tracking-wide"
+                          style={{ color: l.direction === "broadcast" ? "#2563EB" : "#6B7280" }}>
+                          {l.direction === "broadcast" ? `Broadcast (${l.recipients})` : l.phone_number}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                          style={{ background: l.status === "sent" ? "#DCFCE7" : "#FEE2E2", color: l.status === "sent" ? "#14532D" : "#7F1D1D" }}>
+                          {l.status}
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-gray-600 truncate">{l.message}</p>
+                    </div>
+                    <span className="text-[11px] text-gray-400 flex-shrink-0">
+                      {new Date(l.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          verif.length === 0 ? (
+            <div className="py-12 text-center text-[13px] text-gray-400">No verification SMS sent yet</div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {verif.map(l => (
+                <div key={l.id} className="px-5 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <Smartphone size={14} color={l.status === "sent" ? "#16A34A" : "#DC2626"} className="flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[12px] font-semibold text-gray-900 truncate">{l.phone_number}</p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                          style={{ background: l.status === "sent" ? "#DCFCE7" : "#FEE2E2", color: l.status === "sent" ? "#14532D" : "#7F1D1D" }}>
+                          {l.status === "sent" ? "Delivered" : "Failed"}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[11px] text-gray-400 flex-shrink-0">
+                      {new Date(l.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+      </div>
+    </div>
   );
 }

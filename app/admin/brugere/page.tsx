@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import AdminLayout from "@/components/AdminLayout";
-import { Search, Ban, Trash2, FileText, BadgeCheck } from "lucide-react";
+import { Search, Ban, Trash2, FileText, BadgeCheck, Mail, Smartphone } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -14,6 +14,8 @@ interface Profile {
   is_admin: boolean;
   is_banned: boolean;
   is_verified: boolean;
+  phone: string | null;
+  phone_verified: boolean;
   created_at: string;
 }
 
@@ -33,7 +35,7 @@ export default function AdminBrugerePage() {
     setLoading(true);
     const { data } = await createClient()
       .from("profiles")
-      .select("id, email, full_name, account_type, country, is_admin, is_banned, is_verified, created_at")
+      .select("id, email, full_name, account_type, country, is_admin, is_banned, is_verified, phone, phone_verified, created_at")
       .order("created_at", { ascending: false });
     setProfiles(data ?? []);
     setLoading(false);
@@ -203,7 +205,7 @@ export default function AdminBrugerePage() {
                     <td className="px-4 py-3 text-[12px] text-gray-500">{u.country ?? "—"}</td>
                     {/* Status */}
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1 items-center">
                         {u.is_banned ? (
                           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                             style={{ background: "#FEE2E2", color: "#7F1D1D" }}>Banned</span>
@@ -211,9 +213,17 @@ export default function AdminBrugerePage() {
                           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                             style={{ background: "#DCFCE7", color: "#14532D" }}>Active</span>
                         )}
+                        {/* Email verified icon */}
+                        <span title={u.email ? "Email verified" : "No email"}>
+                          <Mail size={13} color={u.email ? "#16A34A" : "#D1D5DB"} />
+                        </span>
+                        {/* Phone verified icon */}
+                        <span title={u.phone_verified ? `Phone: ${u.phone}` : u.phone ? "Phone not verified" : "No phone"}>
+                          <Smartphone size={13} color={u.phone_verified ? "#16A34A" : u.phone ? "#F59E0B" : "#D1D5DB"} />
+                        </span>
                         {u.is_verified && (
                           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                            style={{ background: "#EFF6FF", color: "#1E40AF" }}>✓ Verified</span>
+                            style={{ background: "#EFF6FF", color: "#1E40AF" }}>✓ ID</span>
                         )}
                       </div>
                     </td>
