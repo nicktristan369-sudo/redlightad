@@ -723,7 +723,7 @@ export default function OpretAnnoncePage() {
                     <p className="text-base font-bold text-gray-900">Social Media Links</p>
                     {!["basic", "featured", "vip"].includes(userTier || "") && (
                       <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                        🔒 Låsning kræver premium
+                        Låsning kræver premium
                       </span>
                     )}
                   </div>
@@ -922,7 +922,7 @@ export default function OpretAnnoncePage() {
                   />
                 ) : (
                   <div className="rounded-xl bg-gray-50 border border-dashed border-gray-200 p-4 text-center">
-                    <p className="text-sm text-gray-400">🔒 Opgrader til Premium for at tilføje en voice message til din profil</p>
+                    <p className="text-sm text-gray-400">Opgrader til Premium for at tilføje en voice message til din profil</p>
                   </div>
                 )}
               </div>

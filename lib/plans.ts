@@ -1,7 +1,7 @@
 export const PLANS = {
   basic: {
     name: "Basic",
-    price: 999, // cents
+    price: 999,
     priceDisplay: "$9.99",
     interval: "month" as const,
     features: [
@@ -9,6 +9,7 @@ export const PLANS = {
       "Standard placering",
       "Op til 5 billeder",
       "Email support",
+      "Social Media links (låsbar bag RedCoins)",
     ],
     color: "gray",
     badge: null,
@@ -24,9 +25,10 @@ export const PLANS = {
       "Op til 15 billeder",
       "Blå Verified badge",
       "Prioritet support",
+      "Social Media links (låsbar bag RedCoins)",
     ],
     color: "blue",
-    badge: "⭐ Featured",
+    badge: "Featured",
   },
   vip: {
     name: "VIP",
@@ -41,8 +43,9 @@ export const PLANS = {
       "Video upload",
       "Dedikeret support 24/7",
       "Statistik dashboard",
+      "Social Media links (låsbar bag RedCoins)",
     ],
     color: "gold",
-    badge: "👑 VIP",
+    badge: "VIP",
   },
 }

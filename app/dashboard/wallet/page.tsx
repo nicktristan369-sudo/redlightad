@@ -89,7 +89,7 @@ function WalletContent() {
       <div>
         {coinsPurchased && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
-            <span className="text-2xl">🎉</span>
+            
             <div>
               <p className="font-semibold text-green-800">Betaling gennemført!</p>
               <p className="text-green-600 text-sm">{coinsAmount} coins er tilføjet til din wallet</p>
@@ -106,7 +106,7 @@ function WalletContent() {
             <p className="text-5xl font-black text-red-400">{wallet?.balance ?? 0}</p>
             <p className="text-gray-400 text-sm mt-1">≈ ${((wallet?.balance ?? 0) * 0.08).toFixed(2)} USD</p>
           </div>
-          <div className="text-6xl opacity-20">🔴</div>
+          
         </div>
 
         <div className="flex gap-3 mb-8">
