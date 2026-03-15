@@ -11,6 +11,7 @@ export interface MarketplaceItem {
   coin_price: number;
   thumbnail_url: string | null;
   preview_url: string | null;
+  teaser_url: string | null;       // 9-sec free teaser video
   full_content_urls: string[] | null;
   content_type: ContentType;
   stock: number | null;
@@ -20,6 +21,16 @@ export interface MarketplaceItem {
   // joined fields
   seller_name?: string;
   seller_avatar?: string;
+}
+
+// Coin rates: buyer pays COIN_BUY_RATE per coin, seller gets COIN_SELL_RATE after 19% cut
+export const COIN_BUY_RATE  = 0.08;  // USD per coin for buyer
+export const COMMISSION_PCT = 0.19;   // 19% platform fee
+export function coinsToEur(coins: number): string {
+  return (coins * COIN_BUY_RATE * 0.92).toFixed(2); // rough EUR conversion
+}
+export function eurToCoins(eur: number): number {
+  return Math.ceil((eur / 0.92) / COIN_BUY_RATE);
 }
 
 export interface MarketplacePurchase {

@@ -15,17 +15,21 @@ import {
   Settings,
   Shield,
   LogOut,
+  ShoppingBag,
+  Tag,
 } from "lucide-react"
 
 const NAV_ITEMS = [
-  { href: "/dashboard",               label: "Oversigt",           icon: LayoutDashboard },
-  { href: "/dashboard/annoncer",      label: "Mine annoncer",      icon: FileText },
-  { href: "/opret-annonce",           label: "Opret annonce",      icon: Plus },
-  { href: "/dashboard/beskeder",      label: "Beskeder",           icon: MessageSquare },
-  { href: "/dashboard/locked-content",label: "Eksklusivt indhold", icon: Lock },
-  { href: "/dashboard/wallet",        label: "Wallet",             icon: Wallet },
-  { href: "/dashboard/buy-coins",     label: "Køb coins",          icon: Coins },
-  { href: "/dashboard/profil",        label: "Profil indstillinger",icon: Settings },
+  { href: "/dashboard",                label: "Oversigt",            icon: LayoutDashboard },
+  { href: "/dashboard/annoncer",       label: "Mine annoncer",       icon: FileText },
+  { href: "/opret-annonce",            label: "Opret annonce",       icon: Plus },
+  { href: "/dashboard/beskeder",       label: "Beskeder",            icon: MessageSquare },
+  { href: "/dashboard/locked-content", label: "Eksklusivt indhold",  icon: Lock },
+  { href: "/dashboard/marketplace",    label: "Sælg på Marketplace", icon: Tag },
+  { href: "/dashboard/mine-kob",       label: "Mine køb",            icon: ShoppingBag },
+  { href: "/dashboard/wallet",         label: "Wallet",              icon: Wallet },
+  { href: "/dashboard/buy-coins",      label: "Køb coins",           icon: Coins },
+  { href: "/dashboard/profil",         label: "Profil indstillinger", icon: Settings },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
