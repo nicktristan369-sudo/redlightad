@@ -1,250 +1,280 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase"
-import AdminLayout from "@/components/AdminLayout"
-import { COIN_SELL_RATE } from "@/lib/coinPackages"
+import { useEffect, useState, useCallback } from "react";
+import { createClient } from "@/lib/supabase";
+import AdminLayout from "@/components/AdminLayout";
+import { ArrowDownToLine, DollarSign, Clock, CheckCircle, XCircle, Copy, Check } from "lucide-react";
+import { COIN_SELL_RATE } from "@/lib/coinPackages";
 
 interface PayoutRequest {
-  id: string
-  seller_id: string
-  coins_amount: number
-  usd_amount: number
-  iban: string
-  status: string
-  created_at: string
-  profiles?: { email: string; username: string | null }[] | { email: string; username: string | null } | null
+  id: string;
+  seller_id: string;
+  coins_amount: number;
+  usd_amount: number;
+  iban: string;
+  status: string;
+  created_at: string;
+  seller_email?: string;
+  seller_name?: string;
 }
 
-type FilterStatus = "pending" | "approved" | "paid" | "rejected" | "all"
+type Tab = "pending" | "paid" | "rejected" | "all";
+const PAGE_SIZE = 25;
 
-export default function AdminUdbetalingerPage() {
-  const [requests, setRequests] = useState<PayoutRequest[]>([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<FilterStatus>("pending")
-  const [processingId, setProcessingId] = useState<string | null>(null)
+const STATUS_BADGE: Record<string, { bg: string; color: string }> = {
+  pending:  { bg: "#FEF3C7", color: "#92400E" },
+  approved: { bg: "#DBEAFE", color: "#1E40AF" },
+  paid:     { bg: "#DCFCE7", color: "#14532D" },
+  rejected: { bg: "#FEE2E2", color: "#7F1D1D" },
+};
 
-  const fetchRequests = async (status: FilterStatus) => {
-    setLoading(true)
-    const supabase = createClient()
-    let query = supabase
+function IBANCell({ iban }: { iban: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(iban);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <span className="font-mono text-[12px] text-gray-600">{iban}</span>
+      <button onClick={copy} className="flex-shrink-0 p-1 rounded transition-colors"
+        style={{ color: copied ? "#16A34A" : "#9CA3AF" }}
+        onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"}
+        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+        {copied ? <Check size={12} /> : <Copy size={12} />}
+      </button>
+    </div>
+  );
+}
+
+export default function AdminPayoutsPage() {
+  const [requests, setRequests] = useState<PayoutRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("pending");
+  const [page, setPage] = useState(1);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [rejectId, setRejectId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const supabase = createClient();
+    let q = supabase
       .from("payout_requests")
-      .select("id, seller_id, coins_amount, usd_amount, iban, status, created_at, profiles(email, username)")
-      .order("created_at", { ascending: false })
-
-    if (status !== "all") query = query.eq("status", status)
-
-    const { data } = await query
-    setRequests(data || [])
-    setLoading(false)
-  }
-
-  useEffect(() => { fetchRequests(filter) }, [filter])
-
-  const updateStatus = async (id: string, newStatus: string, sellerId?: string, coinsAmount?: number) => {
-    setProcessingId(id)
-    const supabase = createClient()
-    await supabase.from("payout_requests").update({ status: newStatus }).eq("id", id)
-
-    // If marking as paid, deduct coins from seller wallet + log transaction
-    if (newStatus === "paid" && sellerId && coinsAmount) {
-      const { data: wallet } = await supabase.from("wallets").select("balance").eq("user_id", sellerId).maybeSingle()
-      if (wallet) {
-        await supabase.from("wallets").update({ balance: Math.max(0, wallet.balance - coinsAmount) }).eq("user_id", sellerId)
-      }
-      await supabase.from("coin_transactions").insert({
-        user_id: sellerId,
-        type: "payout",
-        amount: -coinsAmount,
-        note: `Udbetaling godkendt: ${coinsAmount} coins = $${(coinsAmount * COIN_SELL_RATE).toFixed(2)}`,
-      })
+      .select("id, seller_id, coins_amount, usd_amount, iban, status, created_at, profiles!seller_id(email, full_name)")
+      .order("created_at", { ascending: false });
+    if (tab !== "all") {
+      if (tab === "paid") q = q.in("status", ["paid", "approved"]);
+      else q = q.eq("status", tab);
     }
+    const { data } = await q;
+    const mapped = (data ?? []).map((d: Record<string, unknown>) => ({
+      ...d,
+      seller_email: (d.profiles as Record<string, unknown> | null)?.email as string ?? undefined,
+      seller_name:  (d.profiles as Record<string, unknown> | null)?.full_name as string ?? undefined,
+    })) as PayoutRequest[];
+    setRequests(mapped);
+    setLoading(false);
+    setPage(1);
+  }, [tab]);
 
-    setRequests(prev => prev.filter(r => r.id !== id))
-    setProcessingId(null)
-  }
+  useEffect(() => { load(); }, [load]);
 
-  const statusBadge = (status: string) => {
-    switch (status) {
-      case "pending": return <span className="bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full">Afventer</span>
-      case "approved": return <span className="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">Godkendt</span>
-      case "paid": return <span className="bg-green-50 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full">Betalt</span>
-      case "rejected": return <span className="bg-red-50 text-red-700 text-xs font-medium px-2.5 py-1 rounded-full">Afvist</span>
-      default: return <span className="text-xs text-gray-500">{status}</span>
+  const markPaid = async (r: PayoutRequest) => {
+    setBusy(r.id);
+    const supabase = createClient();
+    await supabase.from("payout_requests").update({ status: "paid" }).eq("id", r.id);
+    // Deduct coins from wallet
+    const { data: wallet } = await supabase.from("wallets").select("balance").eq("user_id", r.seller_id).maybeSingle();
+    if (wallet) {
+      await supabase.from("wallets").update({ balance: Math.max(0, wallet.balance - r.coins_amount) }).eq("user_id", r.seller_id);
     }
-  }
+    await supabase.from("coin_transactions").insert({
+      user_id: r.seller_id,
+      type: "payout",
+      amount: -r.coins_amount,
+      note: `Payout paid: ${r.coins_amount} coins = $${(r.coins_amount * COIN_SELL_RATE).toFixed(2)}`,
+    });
+    setRequests(p => p.filter(x => x.id !== r.id));
+    setBusy(null);
+  };
 
-  const tabs: { label: string; value: FilterStatus; }[] = [
-    { label: "Afventer", value: "pending" },
-    { label: "Godkendt", value: "approved" },
-    { label: "Betalt", value: "paid" },
-    { label: "Afvist", value: "rejected" },
-    { label: "Alle", value: "all" },
-  ]
+  const reject = async (id: string) => {
+    setBusy(id);
+    await createClient().from("payout_requests").update({ status: "rejected" }).eq("id", id);
+    setRequests(p => p.filter(x => x.id !== id));
+    setBusy(null);
+    setRejectId(null);
+  };
 
-  const totalPending = requests.filter(r => r.status === "pending").length
-  const totalUsd = requests.filter(r => r.status === "pending").reduce((s, r) => s + Number(r.usd_amount), 0)
+  const counts = {
+    pending:  requests.filter(r => r.status === "pending").length,
+    paid:     requests.filter(r => ["paid","approved"].includes(r.status)).length,
+    rejected: requests.filter(r => r.status === "rejected").length,
+    all:      requests.length,
+  };
+  const pendingUSD = requests.filter(r => r.status === "pending").reduce((s, r) => s + Number(r.usd_amount), 0);
+
+  const pages = Math.max(1, Math.ceil(requests.length / PAGE_SIZE));
+  const paged = requests.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const TABS: { key: Tab; label: string }[] = [
+    { key: "pending",  label: "Pending" },
+    { key: "paid",     label: "Paid" },
+    { key: "rejected", label: "Rejected" },
+    { key: "all",      label: "All" },
+  ];
 
   return (
     <AdminLayout>
-      <div>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Udbetalinger</h1>
-          <p className="text-gray-500 text-sm mt-1">Administrer sælgers udbetalingsanmodninger</p>
-        </div>
-
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <p className="text-xs text-gray-400 mb-1">Afventer</p>
-            <p className="text-2xl font-black text-amber-500">{totalPending}</p>
+      {/* Reject confirm */}
+      {rejectId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" style={{ border: "1px solid #E5E5E5" }}>
+            <h3 className="text-[16px] font-bold text-gray-900 mb-2">Reject payout?</h3>
+            <p className="text-[13px] text-gray-500 mb-5">The seller will not receive their payment. This action cannot be undone.</p>
+            <div className="flex gap-2">
+              <button onClick={() => reject(rejectId)} disabled={busy !== null}
+                className="flex-1 py-2.5 text-[13px] font-semibold text-white rounded-lg disabled:opacity-50"
+                style={{ background: "#DC2626" }}>Reject</button>
+              <button onClick={() => setRejectId(null)}
+                className="px-4 py-2.5 text-[13px] font-medium rounded-lg"
+                style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}>Cancel</button>
+            </div>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <p className="text-xs text-gray-400 mb-1">Samlet USD (pending)</p>
-            <p className="text-2xl font-black text-gray-900">${totalUsd.toFixed(2)}</p>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-[22px] font-bold text-gray-900">Payouts</h1>
+        <p className="text-[13px] text-gray-400 mt-0.5">Seller coin withdrawal requests</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: "Pending Payouts", value: counts.pending.toString(),    Icon: Clock,            accent: counts.pending > 0 },
+          { label: "Total Pending $", value: `$${pendingUSD.toFixed(2)}`, Icon: DollarSign,       accent: counts.pending > 0 },
+          { label: "Paid Out",        value: counts.paid.toString(),       Icon: CheckCircle,      accent: false },
+          { label: "Rejected",        value: counts.rejected.toString(),   Icon: ArrowDownToLine,  accent: false },
+        ].map(({ label, value, Icon, accent }) => (
+          <div key={label} className="bg-white p-5 rounded-xl" style={{ border: "1px solid #E5E5E5" }}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#9CA3AF" }}>{label}</p>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: accent ? "rgba(204,0,0,0.08)" : "#F5F5F5" }}>
+                <Icon size={15} color={accent ? "#CC0000" : "#6B7280"} />
+              </div>
+            </div>
+            <p className="text-[26px] font-bold leading-none" style={{ color: accent ? "#CC0000" : "#111" }}>{value}</p>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-1 mb-5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-          {tabs.map(tab => (
-            <button
-              key={tab.value}
-              onClick={() => setFilter(tab.value)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                filter === tab.value
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-0.5 p-1 rounded-lg w-fit mb-5" style={{ background: "#F3F4F6" }}>
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className="relative px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors"
+            style={{ background: tab === t.key ? "#fff" : "transparent", color: tab === t.key ? "#111" : "#6B7280" }}>
+            {t.label}
+            {t.key === "pending" && counts.pending > 0 && (
+              <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: "#CC0000", color: "#fff" }}>{counts.pending}</span>
+            )}
+          </button>
+        ))}
+      </div>
 
+      {/* Table */}
+      <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
           </div>
-        ) : requests.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-            <p className="text-4xl mb-3">🏦</p>
-            <p className="text-gray-500">Ingen udbetalingsanmodninger</p>
-          </div>
+        ) : paged.length === 0 ? (
+          <div className="py-16 text-center text-[14px] text-gray-400">No payout requests</div>
         ) : (
-          <>
-            {/* Desktop table */}
-            <div className="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50 text-left">
-                    <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Sælger</th>
-                    <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Coins</th>
-                    <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">USD</th>
-                    <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">IBAN</th>
-                    <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Dato</th>
-                    <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                    <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Handling</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {requests.map(r => (
-                    <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-gray-900">{(r.profiles as { email: string; username: string | null } | null)?.username || "—"}</p>
-                        <p className="text-xs text-gray-400">{(r.profiles as { email: string; username: string | null } | null)?.email || r.seller_id.slice(0, 8) + "..."}</p>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
+                  {["Seller", "Coins", "USD", "IBAN", "Status", "Date", "Actions"].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"
+                      style={{ color: "#9CA3AF" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map(r => {
+                  const sb = STATUS_BADGE[r.status] ?? STATUS_BADGE.pending;
+                  return (
+                    <tr key={r.id} style={{ borderBottom: "1px solid #F9FAFB" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#FAFAFA")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      <td className="px-4 py-3">
+                        <p className="text-[13px] font-semibold text-gray-900">{r.seller_name ?? "—"}</p>
+                        <p className="text-[11px] text-gray-400 truncate max-w-[160px]">{r.seller_email ?? r.seller_id.slice(0,12)+"…"}</p>
                       </td>
-                      <td className="px-5 py-4 font-bold text-red-500">🔴 {r.coins_amount}</td>
-                      <td className="px-5 py-4 font-semibold text-gray-900">${Number(r.usd_amount).toFixed(2)}</td>
-                      <td className="px-5 py-4 font-mono text-xs text-gray-600">{r.iban}</td>
-                      <td className="px-5 py-4 text-gray-500 text-xs">{new Date(r.created_at).toLocaleDateString("da-DK")}</td>
-                      <td className="px-5 py-4">{statusBadge(r.status)}</td>
-                      <td className="px-5 py-4">
-                        <div className="flex gap-2">
-                          {r.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() => updateStatus(r.id, "paid", r.seller_id, r.coins_amount)}
-                                disabled={processingId === r.id}
-                                className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50"
-                              >
-                                {processingId === r.id ? "..." : "✅ Betalt"}
-                              </button>
-                              <button
-                                onClick={() => updateStatus(r.id, "rejected")}
-                                disabled={processingId === r.id}
-                                className="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50"
-                              >
-                                ❌ Afvis
-                              </button>
-                            </>
+                      <td className="px-4 py-3 text-[13px] font-bold" style={{ color: "#CC0000" }}>
+                        {r.coins_amount.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-[13px] font-semibold text-gray-900">
+                        ${Number(r.usd_amount).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3"><IBANCell iban={r.iban} /></td>
+                      <td className="px-4 py-3">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
+                          style={{ background: sb.bg, color: sb.color }}>{r.status}</span>
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-gray-400 whitespace-nowrap">
+                        {new Date(r.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          {(r.status === "pending" || r.status === "approved") && (
+                            <button onClick={() => markPaid(r)} disabled={busy === r.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white rounded-lg disabled:opacity-40"
+                              style={{ background: "#16A34A" }}>
+                              <CheckCircle size={13} />
+                              {busy === r.id ? "…" : "Mark Paid"}
+                            </button>
                           )}
-                          {r.status === "approved" && (
-                            <button
-                              onClick={() => updateStatus(r.id, "paid", r.seller_id, r.coins_amount)}
-                              disabled={processingId === r.id}
-                              className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50"
-                            >
-                              {processingId === r.id ? "..." : "✅ Marker betalt"}
+                          {r.status === "pending" && (
+                            <button onClick={() => setRejectId(r.id)} disabled={busy === r.id}
+                              className="p-1.5 rounded-md disabled:opacity-40" style={{ color: "#9CA3AF" }}
+                              onMouseEnter={e => { e.currentTarget.style.color = "#DC2626"; e.currentTarget.style.background = "#FEE2E2"; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}>
+                              <XCircle size={15} />
                             </button>
                           )}
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile cards */}
-            <div className="md:hidden space-y-3">
-              {requests.map(r => (
-                <div key={r.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-semibold text-gray-900">{(r.profiles as { email: string; username: string | null } | null)?.username || "—"}</p>
-                      <p className="text-xs text-gray-400">{(r.profiles as { email: string; username: string | null } | null)?.email}</p>
-                    </div>
-                    {statusBadge(r.status)}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                    <div>
-                      <p className="text-xs text-gray-400">Coins</p>
-                      <p className="font-bold text-red-500">🔴 {r.coins_amount}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">USD</p>
-                      <p className="font-semibold text-gray-900">${Number(r.usd_amount).toFixed(2)}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs text-gray-400">IBAN</p>
-                      <p className="font-mono text-xs text-gray-700">{r.iban}</p>
-                    </div>
-                  </div>
-                  {r.status === "pending" && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => updateStatus(r.id, "paid", r.seller_id, r.coins_amount)}
-                        disabled={processingId === r.id}
-                        className="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-2 rounded-xl disabled:opacity-50"
-                      >
-                        ✅ Betalt
-                      </button>
-                      <button
-                        onClick={() => updateStatus(r.id, "rejected")}
-                        disabled={processingId === r.id}
-                        className="flex-1 bg-red-100 text-red-700 text-sm font-semibold py-2 rounded-xl disabled:opacity-50"
-                      >
-                        ❌ Afvis
-                      </button>
-                    </div>
-                  )}
-                </div>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: "1px solid #F3F4F6" }}>
+            <p className="text-[12px] text-gray-400">
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, requests.length)} of {requests.length}
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map(n => (
+                <button key={n} onClick={() => setPage(n)}
+                  className="w-7 h-7 rounded-md text-[12px] font-medium"
+                  style={{ background: n === page ? "#000" : "transparent", color: n === page ? "#fff" : "#6B7280" }}>
+                  {n}
+                </button>
               ))}
             </div>
-          </>
+          </div>
         )}
       </div>
     </AdminLayout>
-  )
+  );
 }
