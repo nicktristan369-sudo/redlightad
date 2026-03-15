@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
+import { MessageSquare } from "lucide-react"
 import Link from "next/link"
 
 interface Conversation {
@@ -67,7 +68,7 @@ export default function BeskederPage() {
           </div>
         ) : conversations.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
-            <p className="text-5xl mb-4">💬</p>
+            <MessageSquare size={40} color="#D1D5DB" className="mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Ingen beskeder endnu</h2>
             <p className="text-gray-500">Samtaler med brugere vises her</p>
           </div>
@@ -82,7 +83,6 @@ export default function BeskederPage() {
                   className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold flex-shrink-0">
-                    💬
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">

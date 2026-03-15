@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation"
 import { PLANS } from "@/lib/plans"
 import Navbar from "@/components/Navbar"
 import { Suspense } from "react"
+import { FileText, Star, Crown, Check } from "lucide-react"
 
 function PremiumContent() {
   const [loading, setLoading] = useState<string | null>(null)
@@ -77,8 +78,12 @@ function PremiumContent() {
                 )}
 
                 <div className="mb-6">
-                  <div className="text-3xl mb-2">
-                    {isVip ? "👑" : isFeatured ? "⭐" : "📋"}
+                  <div className="mb-3">
+                    {isVip
+                      ? <Crown size={28} color="#CA8A04" />
+                      : isFeatured
+                      ? <Star size={28} color="#3B82F6" />
+                      : <FileText size={28} color="#6B7280" />}
                   </div>
                   <h2 className="text-xl font-bold text-gray-900">{plan.name}</h2>
                   <div className="mt-3">
@@ -89,8 +94,8 @@ function PremiumContent() {
 
                 <ul className="space-y-3 flex-1 mb-8">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-green-500 font-bold flex-shrink-0">✓</span>
+                    <li key={f} className="flex items-start gap-2 text-[13px] text-gray-600">
+                      <Check size={14} className="flex-shrink-0 mt-0.5" color="#16A34A" />
                       {f}
                     </li>
                   ))}

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
+import { FileText, Image as ImageIcon } from "lucide-react"
 
 interface Listing {
   id: string
@@ -75,7 +76,7 @@ export default function MineAnnoncer() {
           </div>
         ) : listings.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
-            <p className="text-5xl mb-4">📋</p>
+            <FileText size={40} color="#D1D5DB" className="mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Ingen annoncer endnu</h2>
             <p className="text-gray-500 mb-6">Opret din første annonce og nå tusindvis af brugere</p>
             <a
@@ -97,7 +98,7 @@ export default function MineAnnoncer() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={listing.profile_image} alt={listing.title} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl">📷</div>
+                      <div className="w-full h-full flex items-center justify-center"><ImageIcon size={20} color="#D1D5DB" /></div>
                     )}
                   </div>
 
@@ -119,7 +120,7 @@ export default function MineAnnoncer() {
                       href={`/premium?listing=${listing.id}`}
                       className="px-4 py-2 rounded-xl text-sm font-medium bg-yellow-50 hover:bg-yellow-100 text-yellow-700 transition-colors"
                     >
-                      👑 Opgrader
+                      Opgrader
                     </a>
                     <button
                       onClick={() => router.push(`/dashboard/annoncer/${listing.id}/edit`)}
