@@ -5,8 +5,16 @@ import AdminLayout from "@/components/AdminLayout";
 import { createClient } from "@/lib/supabase";
 import {
   Plus, Search, Phone, Mail, MessageCircle, Edit2, Trash2,
-  Download, X, Check,
+  Download, X, Check, Globe, Scan, Tag, AlertCircle, CheckCircle,
 } from "lucide-react";
+
+interface ScrapedPhone {
+  id: string;
+  phone: string;
+  source_url: string;
+  tag: string;
+  created_at: string;
+}
 
 interface Contact {
   id: string;
@@ -58,6 +66,16 @@ export default function AdminPhonebookPage() {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // URL Scraper state
+  const [activeTab, setActiveTab] = useState<"contacts" | "scraper">("contacts");
+  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [scrapeTag, setScrapeTag] = useState("untagged");
+  const [scraping, setScaping] = useState(false);
+  const [scrapeResult, setScrapeResult] = useState<{ ok: boolean; msg: string; phones?: string[] } | null>(null);
+  const [scrapedPhones, setScrapedPhones] = useState<ScrapedPhone[]>([]);
+  const [loadingScraped, setLoadingScraped] = useState(false);
+  const [scrapeTagFilter, setScrapeTagFilter] = useState("all");
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data } = await createClient()
@@ -69,6 +87,65 @@ export default function AdminPhonebookPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadScraped = useCallback(async (tag = "all") => {
+    setLoadingScraped(true);
+    const res = await fetch(`/api/admin/scrape-phones?tag=${tag}`);
+    const data = await res.json();
+    setScrapedPhones(Array.isArray(data) ? data : []);
+    setLoadingScraped(false);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "scraper") loadScraped(scrapeTagFilter);
+  }, [activeTab, scrapeTagFilter, loadScraped]);
+
+  const runScrape = async () => {
+    if (!scrapeUrl.trim()) return;
+    setScaping(true);
+    setScrapeResult(null);
+    try {
+      const res = await fetch("/api/admin/scrape-phones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: scrapeUrl.trim(), tag: scrapeTag || "untagged" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setScrapeResult({ ok: false, msg: data.error ?? "Scrape failed" });
+      } else {
+        setScrapeResult({ ok: true, msg: data.message, phones: data.phones });
+        loadScraped(scrapeTagFilter);
+      }
+    } catch (e) {
+      setScrapeResult({ ok: false, msg: String(e) });
+    }
+    setScaping(false);
+  };
+
+  const deleteScraped = async (id: string) => {
+    await fetch("/api/admin/scrape-phones", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    setScrapedPhones(p => p.filter(x => x.id !== id));
+  };
+
+  const exportScrapedCSV = () => {
+    const rows = [
+      ["Phone", "Source URL", "Tag", "Added"],
+      ...scrapedPhones.map(p => [p.phone, p.source_url, p.tag, new Date(p.created_at).toISOString()]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "scraped-phones.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Distinct tags from scraped phones
+  const scrapedTags = ["all", ...Array.from(new Set(scrapedPhones.map(p => p.tag)))];
 
   const openNew = () => {
     setEditing(null);
@@ -213,29 +290,53 @@ export default function AdminPhonebookPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
         <div>
           <h1 className="text-[22px] font-bold text-gray-900">Phonebook</h1>
-          <p className="text-[13px] text-gray-400 mt-0.5">{contacts.length} contacts — admin only</p>
+          <p className="text-[13px] text-gray-400 mt-0.5">{contacts.length} contacts · {scrapedPhones.length} scraped numbers</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={exportCSV} disabled={filtered.length === 0}
-            className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-lg disabled:opacity-40 transition-colors"
-            style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}
-            onMouseEnter={e => e.currentTarget.style.background = "#F5F5F5"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <Download size={13} /> CSV
-          </button>
-          <button onClick={openNew}
-            className="flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-white rounded-lg transition-colors"
-            style={{ background: "#000" }}
-            onMouseEnter={e => e.currentTarget.style.background = "#CC0000"}
-            onMouseLeave={e => e.currentTarget.style.background = "#000"}>
-            <Plus size={14} /> Add Contact
-          </button>
+          {activeTab === "contacts" ? (
+            <>
+              <button onClick={exportCSV} disabled={filtered.length === 0}
+                className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-lg disabled:opacity-40 transition-colors"
+                style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#F5F5F5"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <Download size={13} /> CSV
+              </button>
+              <button onClick={openNew}
+                className="flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-white rounded-lg transition-colors"
+                style={{ background: "#000" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#CC0000"}
+                onMouseLeave={e => e.currentTarget.style.background = "#000"}>
+                <Plus size={14} /> Add Contact
+              </button>
+            </>
+          ) : (
+            <button onClick={exportScrapedCSV} disabled={scrapedPhones.length === 0}
+              className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-lg disabled:opacity-40 transition-colors"
+              style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#F5F5F5"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              <Download size={13} /> Export CSV
+            </button>
+          )}
         </div>
       </div>
 
+      {/* Tab switcher */}
+      <div className="flex gap-0.5 p-1 rounded-xl mb-6 w-fit" style={{ background: "#F3F4F6" }}>
+        {([["contacts", "Contacts", Phone], ["scraper", "URL Scraper", Globe]] as const).map(([key, label, Icon]) => (
+          <button key={key} onClick={() => setActiveTab(key)}
+            className="flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-lg transition-colors"
+            style={{ background: activeTab === key ? "#fff" : "transparent", color: activeTab === key ? "#111" : "#6B7280" }}>
+            <Icon size={14} />{label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "contacts" ? (<>
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="flex gap-0.5 p-1 rounded-lg" style={{ background: "#F3F4F6" }}>
@@ -346,6 +447,127 @@ export default function AdminPhonebookPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      </>) : (
+        /* ── URL SCRAPER TAB ── */
+        <div className="space-y-5">
+          {/* Scan card */}
+          <div className="bg-white rounded-xl p-5" style={{ border: "1px solid #E5E5E5" }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Globe size={15} color="#6B7280" />
+              <h2 className="text-[15px] font-semibold text-gray-900">Scan URL for phone numbers</h2>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 mb-3">
+              <input
+                value={scrapeUrl} onChange={e => setScrapeUrl(e.target.value)}
+                placeholder="https://example.com/contacts"
+                className="flex-1 text-[13px] px-3 py-2.5 rounded-lg outline-none font-mono"
+                style={{ border: "1px solid #E5E5E5" }}
+                onKeyDown={e => e.key === "Enter" && runScrape()}
+              />
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg flex-shrink-0"
+                style={{ border: "1px solid #E5E5E5", minWidth: "140px" }}>
+                <Tag size={12} color="#9CA3AF" />
+                <input value={scrapeTag} onChange={e => setScrapeTag(e.target.value)}
+                  placeholder="Tag (e.g. escorts)" maxLength={32}
+                  className="flex-1 text-[13px] outline-none bg-transparent text-gray-700 placeholder-gray-400" />
+              </div>
+              <button onClick={runScrape} disabled={scraping || !scrapeUrl.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white rounded-lg disabled:opacity-40 transition-colors flex-shrink-0"
+                style={{ background: "#000" }}
+                onMouseEnter={e => { if (!scraping) e.currentTarget.style.background = "#CC0000"; }}
+                onMouseLeave={e => e.currentTarget.style.background = "#000"}>
+                {scraping
+                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Scanning…</>
+                  : <><Scan size={14} /> Scan</>}
+              </button>
+            </div>
+
+            {scrapeResult && (
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg text-[13px]"
+                style={{ background: scrapeResult.ok ? "#F0FDF4" : "#FEF2F2", border: `1px solid ${scrapeResult.ok ? "#BBF7D0" : "#FECACA"}` }}>
+                {scrapeResult.ok
+                  ? <CheckCircle size={14} color="#16A34A" className="flex-shrink-0 mt-0.5" />
+                  : <AlertCircle size={14} color="#DC2626" className="flex-shrink-0 mt-0.5" />}
+                <div>
+                  <p style={{ color: scrapeResult.ok ? "#14532D" : "#7F1D1D" }}>{scrapeResult.msg}</p>
+                  {scrapeResult.phones && scrapeResult.phones.length > 0 && (
+                    <p className="text-[11px] mt-1 font-mono" style={{ color: "#6B7280" }}>
+                      {scrapeResult.phones.slice(0, 8).join(" · ")}{scrapeResult.phones.length > 8 ? ` +${scrapeResult.phones.length - 8} more` : ""}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Scraped numbers list */}
+          <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
+            <div className="px-5 py-3 flex flex-wrap items-center justify-between gap-3" style={{ borderBottom: "1px solid #F3F4F6" }}>
+              <div className="flex items-center gap-2">
+                <Phone size={14} color="#6B7280" />
+                <span className="text-[14px] font-semibold text-gray-900">{scrapedPhones.length} scraped numbers</span>
+              </div>
+              {/* Tag filter */}
+              <div className="flex gap-0.5 p-0.5 rounded-lg" style={{ background: "#F3F4F6" }}>
+                {scrapedTags.map(t => (
+                  <button key={t} onClick={() => setScrapeTagFilter(t)}
+                    className="px-3 py-1 text-[12px] font-semibold rounded-md transition-colors capitalize"
+                    style={{ background: scrapeTagFilter === t ? "#fff" : "transparent", color: scrapeTagFilter === t ? "#111" : "#6B7280" }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loadingScraped ? (
+              <div className="flex justify-center py-12">
+                <div className="w-5 h-5 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+              </div>
+            ) : scrapedPhones.length === 0 ? (
+              <div className="py-14 text-center">
+                <Globe size={28} color="#E5E5E5" className="mx-auto mb-3" />
+                <p className="text-[13px] text-gray-400">No scraped numbers yet — scan a URL above</p>
+              </div>
+            ) : (
+              <div className="overflow-y-auto" style={{ maxHeight: "460px" }}>
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
+                      {["Phone", "Source URL", "Tag", "Date", ""].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scrapedPhones.map(p => (
+                      <tr key={p.id} className="hover:bg-gray-50 transition-colors" style={{ borderBottom: "1px solid #F9FAFB" }}>
+                        <td className="px-4 py-2.5 text-[13px] font-mono font-semibold text-gray-900">{p.phone}</td>
+                        <td className="px-4 py-2.5 text-[12px] text-gray-500 max-w-[200px] truncate">
+                          <a href={p.source_url} target="_blank" rel="noopener noreferrer"
+                            className="hover:text-gray-900 transition-colors truncate block">{p.source_url}</a>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
+                            style={{ background: "#F3F4F6", color: "#6B7280" }}>{p.tag}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-[11px] text-gray-400 whitespace-nowrap">
+                          {new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <button onClick={() => deleteScraped(p.id)}
+                            className="p-1 rounded transition-colors text-gray-300 hover:text-red-500 hover:bg-red-50">
+                            <X size={13} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </AdminLayout>

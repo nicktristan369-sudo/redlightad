@@ -31,7 +31,9 @@ export default function AdminSmsPage() {
   const [foundUsers, setFoundUsers] = useState<Profile[]>([]);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [message, setMessage] = useState("");
-  const [broadcastTarget, setBroadcastTarget] = useState<"all" | "providers" | "customers">("all");
+  const [broadcastTarget, setBroadcastTarget] = useState<"all" | "providers" | "customers" | "phonebook">("all");
+  const [phonebookTags, setPhonebookTags] = useState<string[]>([]);
+  const [selectedPbTag, setSelectedPbTag] = useState("all");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [logs, setLogs] = useState<SmsLog[]>([]);
@@ -46,6 +48,14 @@ export default function AdminSmsPage() {
     fetch("/api/admin/sms")
       .then(r => r.ok ? r.json() : [])
       .then(d => { setLogs(Array.isArray(d) ? d : []); setLoadingLogs(false); });
+
+    // Load phonebook tags for broadcast targeting
+    fetch("/api/admin/scrape-phones")
+      .then(r => r.ok ? r.json() : [])
+      .then((d: { tag: string }[]) => {
+        const tags = ["all", ...Array.from(new Set(d.map((p) => p.tag)))];
+        setPhonebookTags(tags);
+      });
   }, []);
 
   const searchUsers = async (q: string) => {
@@ -65,10 +75,21 @@ export default function AdminSmsPage() {
     if (mode === "single") {
       if (!phone && !selectedUser) { setSending(false); return; }
       body = { to_phone: phone || "+unknown", message, to_user_id: selectedUser?.id ?? null };
+    } else if (broadcastTarget === "phonebook") {
+      // Fetch real phone numbers from scraped_phones
+      const pbRes = await fetch(`/api/admin/scrape-phones?tag=${selectedPbTag}`);
+      const pbData: { phone: string }[] = pbRes.ok ? await pbRes.json() : [];
+      const phones = pbData.map(p => p.phone).filter(Boolean);
+      if (phones.length === 0) {
+        setResult({ ok: false, msg: "No phone numbers in selected phonebook group" });
+        setSending(false);
+        return;
+      }
+      body = { to_phone: phones, message, is_broadcast: true, recipient_count: phones.length };
     } else {
-      // For broadcast: we'd need phone numbers from profiles — stub for now
+      // Profile-based broadcast
       const supabase = createClient();
-      let q = supabase.from("profiles").select("id", { count: "exact", head: true }).not("email", "is", null);
+      let q = supabase.from("profiles").select("id", { count: "exact", head: true }).not("phone", "is", null).eq("phone_verified", true);
       if (broadcastTarget !== "all") q = q.eq("account_type", broadcastTarget);
       const { count } = await q;
       body = { to_phone: ["+15555555555"], message, is_broadcast: true, recipient_count: count ?? 0 };
@@ -165,20 +186,38 @@ export default function AdminSmsPage() {
               </div>
             </div>
           ) : (
-            <div className="mb-4">
-              <label className="text-[12px] font-semibold text-gray-700 block mb-2">Recipients</label>
-              <div className="flex gap-2">
-                {(["all", "providers", "customers"] as const).map(t => (
+            <div className="mb-4 space-y-3">
+              <label className="text-[12px] font-semibold text-gray-700 block">Recipients</label>
+              <div className="flex flex-wrap gap-2">
+                {(["all", "providers", "customers", "phonebook"] as const).map(t => (
                   <button key={t} onClick={() => setBroadcastTarget(t)}
                     className="flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold rounded-lg capitalize transition-colors"
                     style={{
                       background: broadcastTarget === t ? "#000" : "#F3F4F6",
                       color: broadcastTarget === t ? "#fff" : "#6B7280",
                     }}>
-                    <Users size={12} /> {t}
+                    <Users size={12} /> {t === "phonebook" ? "📒 Phonebook" : t}
                   </button>
                 ))}
               </div>
+              {/* Phonebook group picker */}
+              {broadcastTarget === "phonebook" && (
+                <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "#F9FAFB", border: "1px solid #E5E5E5" }}>
+                  <span className="text-[12px] font-semibold text-gray-700 flex-shrink-0">Group / Tag:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(phonebookTags.length > 0 ? phonebookTags : ["all"]).map(tag => (
+                      <button key={tag} onClick={() => setSelectedPbTag(tag)}
+                        className="px-2.5 py-1 text-[11px] font-semibold rounded-full capitalize transition-colors"
+                        style={{
+                          background: selectedPbTag === tag ? "#000" : "#F3F4F6",
+                          color: selectedPbTag === tag ? "#fff" : "#6B7280",
+                        }}>
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
