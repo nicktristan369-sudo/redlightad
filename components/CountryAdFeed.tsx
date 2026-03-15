@@ -30,15 +30,34 @@ export default async function CountryAdFeed({ country }: Props) {
 
   const items = listings || []
 
+  // Capitalise country name for display
+  const countryLabel = country
+    .split("-")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ")
+
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-12">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-          <p className="text-4xl mb-4">📭</p>
-          <p className="font-semibold text-gray-900 mb-1">No ads yet in this country</p>
-          <p className="text-gray-400 text-sm mb-5">Be the first to post</p>
-          <Link href="/opret-annonce" className="bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-black transition-colors">
-            Post an Ad
+        <div className="bg-white rounded-2xl p-12 text-center" style={{ border: "1px solid #E5E5E5" }}>
+          {/* MapPin icon via inline SVG — no client boundary needed */}
+          <div className="flex justify-center mb-5">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <h2 className="text-[18px] font-bold text-gray-900 mb-2">
+            No profiles in {countryLabel} yet
+          </h2>
+          <p className="text-[14px] mb-6" style={{ color: "#9CA3AF" }}>
+            Be the first to advertise here and reach thousands of visitors
+          </p>
+          <Link
+            href="/opret-annonce"
+            className="btn-post-ad inline-block text-[13px] font-semibold text-white px-6 py-2.5 rounded-xl"
+          >
+            Post an Ad →
           </Link>
         </div>
       </div>
