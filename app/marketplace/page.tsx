@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { createClient } from "@/lib/supabase";
 import {
   MARKETPLACE_CATEGORIES,
   SORT_OPTIONS,
@@ -136,26 +135,11 @@ export default function MarketplacePage() {
   useEffect(() => {
     const fetchItems = async () => {
       setLoading(true);
-      const supabase = createClient();
-      let query = supabase
-        .from("marketplace_items")
-        .select("*, profiles(full_name, avatar_url)")
-        .eq("status", "approved");
-
-      if (activeCategory !== "all") query = query.eq("category", activeCategory);
-
-      if (sort === "newest")     query = query.order("created_at", { ascending: false });
-      if (sort === "popular")    query = query.order("purchase_count", { ascending: false });
-      if (sort === "price_asc")  query = query.order("coin_price", { ascending: true });
-      if (sort === "price_desc") query = query.order("coin_price", { ascending: false });
-
-      const { data } = await query;
-      const mapped = (data ?? []).map((d: Record<string, unknown>) => ({
-        ...d,
-        seller_name: (d.profiles as Record<string, unknown> | null)?.full_name as string ?? undefined,
-        seller_avatar: (d.profiles as Record<string, unknown> | null)?.avatar_url as string ?? undefined,
-      })) as MarketplaceItem[];
-      setItems(mapped);
+      const params = new URLSearchParams({ sort });
+      if (activeCategory !== "all") params.set("category", activeCategory);
+      const res = await fetch(`/api/marketplace/items?${params}`);
+      const json = await res.json();
+      setItems((json.items ?? []) as MarketplaceItem[]);
       setLoading(false);
     };
     fetchItems();
@@ -175,7 +159,7 @@ export default function MarketplacePage() {
                     <Globe size={12} /> Global
                   </span>
                 </div>
-                <h1 className="text-[28px] font-black text-gray-900">Marketplace 🛍</h1>
+                <h1 className="text-[28px] font-black text-gray-900">Marketplace</h1>
                 <p className="text-[14px] text-gray-500 mt-1">Buy exclusive content from verified creators worldwide</p>
               </div>
             </div>
@@ -241,9 +225,8 @@ export default function MarketplacePage() {
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <p className="text-[32px] mb-3">🛍</p>
-              <p className="text-[18px] font-semibold text-gray-900">No items yet</p>
-              <p className="text-[14px] text-gray-500 mt-1">Be the first to sell on the marketplace</p>
+              <p className="text-[18px] font-semibold text-gray-900">No items available</p>
+              <p className="text-[14px] text-gray-500 mt-1">Check back soon — new content is added daily</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
