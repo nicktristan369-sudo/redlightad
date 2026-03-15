@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 import {
   LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck,
   CreditCard, Coins, ArrowDownToLine, Mail, MessageCircle,
-  Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight,
+  Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight, ShieldCheck,
 } from "lucide-react";
 
 type NavItem = {
@@ -68,8 +68,9 @@ export default function AdminLayout({ children, pendingListings = 0, pendingMark
   }, [router]);
 
   const handleSignOut = async () => {
+    await fetch("/api/admin/auth/logout", { method: "POST" });
     await createClient().auth.signOut();
-    router.push("/");
+    router.replace("/admin/login");
   };
 
   const SECTIONS: NavSection[] = [
@@ -113,6 +114,7 @@ export default function AdminLayout({ children, pendingListings = 0, pendingMark
     {
       title: "SYSTEM",
       items: [
+        { href: "/admin/audit",          label: "Audit Log", icon: ShieldCheck },
         { href: "/admin/indstillinger", label: "Settings",  icon: Settings },
       ],
     },
