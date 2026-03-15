@@ -1,25 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { createClient } from "@/lib/supabase";
 import { CATEGORY_LABELS, type MarketplaceItem, type MarketplaceStatus } from "@/lib/marketplace";
-import { CheckCircle, XCircle, Trash2, Eye, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, Eye, Search } from "lucide-react";
 
-const TABS: { value: MarketplaceStatus | "all"; label: string }[] = [
-  { value: "all",      label: "All" },
-  { value: "pending",  label: "Pending" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
-];
+type Tab = MarketplaceStatus | "all";
+const PAGE_SIZE = 25;
+
+const STATUS_BADGE: Record<string, { bg: string; color: string }> = {
+  pending:  { bg: "#FEF3C7", color: "#92400E" },
+  approved: { bg: "#DCFCE7", color: "#14532D" },
+  rejected: { bg: "#FEE2E2", color: "#7F1D1D" },
+};
 
 export default function AdminMarketplacePage() {
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<MarketplaceStatus | "all">("pending");
-  const [processing, setProcessing] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("pending");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectMsg, setRejectMsg] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
     let query = supabase
@@ -34,147 +40,217 @@ export default function AdminMarketplacePage() {
     })) as MarketplaceItem[];
     setItems(mapped);
     setLoading(false);
+    setPage(1);
+  }, [tab]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const approve = async (id: string) => {
+    setBusy(id);
+    await createClient().from("marketplace_items").update({ status: "approved" }).eq("id", id);
+    setItems(p => p.filter(i => i.id !== id));
+    setBusy(null);
   };
 
-  useEffect(() => { load(); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const updateStatus = async (id: string, status: MarketplaceStatus) => {
-    setProcessing(id);
-    const supabase = createClient();
-    await supabase.from("marketplace_items").update({ status }).eq("id", id);
-    setItems(prev => prev.filter(i => i.id !== id));
-    setProcessing(null);
+  const reject = async () => {
+    if (!rejectId) return;
+    setBusy(rejectId);
+    await createClient().from("marketplace_items").update({ status: "rejected" }).eq("id", rejectId);
+    setItems(p => p.filter(i => i.id !== rejectId));
+    setBusy(null);
+    setRejectId(null);
+    setRejectMsg("");
   };
 
-  const deleteItem = async (id: string) => {
-    if (!confirm("Delete this item permanently?")) return;
-    setProcessing(id);
-    const supabase = createClient();
-    await supabase.from("marketplace_items").delete().eq("id", id);
-    setItems(prev => prev.filter(i => i.id !== id));
-    setProcessing(null);
+  const remove = async (id: string) => {
+    if (!confirm("Delete permanently?")) return;
+    setBusy(id);
+    await createClient().from("marketplace_items").delete().eq("id", id);
+    setItems(p => p.filter(i => i.id !== id));
+    setBusy(null);
   };
 
-  const counts = {
-    pending: items.filter(i => i.status === "pending").length,
-  };
+  const TABS: { key: Tab; label: string }[] = [
+    { key: "pending",  label: "Pending" },
+    { key: "approved", label: "Approved" },
+    { key: "rejected", label: "Rejected" },
+    { key: "all",      label: "All" },
+  ];
+
+  const pendingCount = items.filter(i => i.status === "pending").length;
+  const q = search.toLowerCase();
+  const filtered = items.filter(i => !q || i.title?.toLowerCase().includes(q));
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-[22px] font-bold text-gray-900">Marketplace</h1>
-          <p className="text-[13px] text-gray-500 mt-0.5">Review and approve seller listings</p>
+    <AdminLayout pendingMarketplace={pendingCount}>
+      {/* Reject modal */}
+      {rejectId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" style={{ border: "1px solid #E5E5E5" }}>
+            <h3 className="text-[16px] font-bold text-gray-900 mb-1">Reject item</h3>
+            <p className="text-[13px] text-gray-500 mb-4">Optional: leave a message to the seller</p>
+            <textarea value={rejectMsg} onChange={e => setRejectMsg(e.target.value)}
+              placeholder="Reason for rejection (optional)…"
+              rows={3}
+              className="w-full text-[13px] px-3 py-2 rounded-lg outline-none resize-none"
+              style={{ border: "1px solid #E5E5E5" }} />
+            <div className="flex gap-2 mt-4">
+              <button onClick={reject} disabled={busy !== null}
+                className="flex-1 py-2.5 text-[13px] font-semibold text-white rounded-lg disabled:opacity-50"
+                style={{ background: "#DC2626" }}>
+                Confirm Reject
+              </button>
+              <button onClick={() => { setRejectId(null); setRejectMsg(""); }}
+                className="px-4 py-2.5 text-[13px] font-medium rounded-lg"
+                style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
-        {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-[22px] font-bold text-gray-900">Marketplace</h1>
+        <p className="text-[13px] text-gray-400 mt-0.5">Review and moderate seller items</p>
+      </div>
+
+      {/* Tabs + Search */}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <div className="flex gap-0.5 p-1 rounded-lg" style={{ background: "#F3F4F6" }}>
           {TABS.map(t => (
-            <button key={t.value} onClick={() => setTab(t.value)}
-              className="px-4 py-1.5 text-[13px] font-medium rounded-lg transition-colors"
-              style={{ background: tab === t.value ? "#fff" : "transparent", color: tab === t.value ? "#111" : "#6B7280" }}>
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className="relative px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors"
+              style={{ background: tab === t.key ? "#fff" : "transparent", color: tab === t.key ? "#111" : "#6B7280" }}>
               {t.label}
+              {t.key === "pending" && pendingCount > 0 && (
+                <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                  style={{ background: "#CC0000", color: "#fff" }}>{pendingCount}</span>
+              )}
             </button>
           ))}
         </div>
+        <div className="flex items-center gap-2 flex-1 min-w-[180px] max-w-xs bg-white rounded-lg px-3 py-2"
+          style={{ border: "1px solid #E5E5E5" }}>
+          <Search size={13} color="#9CA3AF" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search title…"
+            className="flex-1 text-[13px] bg-transparent outline-none text-gray-900 placeholder-gray-400" />
+        </div>
+      </div>
 
+      {/* Table */}
+      <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
         {loading ? (
-          <div className="text-[14px] text-gray-400">Loading...</div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-[#E5E5E5]">
-            <p className="text-[28px] mb-2">🛍</p>
-            <p className="text-[14px] font-semibold text-gray-900">
-              {tab === "pending" ? "No pending items" : `No ${tab} items`}
-            </p>
+          <div className="flex justify-center py-20">
+            <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
           </div>
+        ) : paged.length === 0 ? (
+          <div className="py-16 text-center text-[14px] text-gray-400">No items found</div>
         ) : (
-          <div className="space-y-3">
-            {counts.pending > 0 && tab !== "pending" && (
-              <div className="flex items-center gap-2 text-[13px] text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-                <Clock size={14} /> {counts.pending} item{counts.pending !== 1 ? "s" : ""} awaiting review
-              </div>
-            )}
-            {items.map(item => (
-              <div key={item.id} className="bg-white rounded-2xl border border-[#E5E5E5] p-4">
-                <div className="flex gap-4">
-                  {/* Thumbnail */}
-                  <div className="flex-shrink-0 w-24 h-16 bg-gray-100 rounded-xl overflow-hidden">
-                    {item.thumbnail_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-[20px]">🖼</div>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-[15px] font-semibold text-gray-900">{item.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[12px] text-gray-500">{CATEGORY_LABELS[item.category]}</span>
-                          <span className="text-gray-300">·</span>
-                          <span className="text-[12px] font-semibold" style={{ color: "#CC0000" }}>🔴 {item.coin_price} coins</span>
-                          <span className="text-gray-300">·</span>
-                          <span className="text-[12px] text-gray-500">{item.seller_name ?? "Unknown seller"}</span>
-                        </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
+                  {["", "Item", "Category", "Seller", "Price", "Status", "Date", "Actions"].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"
+                      style={{ color: "#9CA3AF" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map(item => {
+                  const sb = STATUS_BADGE[item.status] ?? STATUS_BADGE.pending;
+                  return (
+                    <tr key={item.id} style={{ borderBottom: "1px solid #F9FAFB" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#FAFAFA")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      <td className="pl-4 py-3 w-12">
+                        {item.thumbnail_url
+                          ? <img src={item.thumbnail_url} alt="" className="w-9 h-9 rounded-lg object-cover" /> // eslint-disable-line @next/next/no-img-element
+                          : <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[18px]"
+                              style={{ background: "#F3F4F6" }}>🖼</div>}
+                      </td>
+                      <td className="px-4 py-3 max-w-[180px]">
+                        <p className="text-[13px] font-semibold text-gray-900 truncate">{item.title}</p>
                         {item.description && (
-                          <p className="text-[13px] text-gray-500 mt-1 line-clamp-2">{item.description}</p>
+                          <p className="text-[11px] text-gray-400 truncate mt-0.5">{item.description}</p>
                         )}
-                        {item.stock !== null && (
-                          <p className="text-[12px] text-gray-400 mt-1">Stock: {item.stock}</p>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {item.status === "pending" && (
-                          <>
-                            <button
-                              onClick={() => updateStatus(item.id, "approved")}
-                              disabled={processing === item.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white transition-colors disabled:opacity-50"
-                              style={{ background: "#16A34A", borderRadius: "6px" }}>
-                              <CheckCircle size={13} /> Approve
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
+                        {CATEGORY_LABELS[item.category] ?? item.category}
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
+                        {item.seller_name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-[12px] font-semibold whitespace-nowrap" style={{ color: "#CC0000" }}>
+                        {item.coin_price} coins
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
+                          style={{ background: sb.bg, color: sb.color }}>{item.status}</span>
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-gray-400 whitespace-nowrap">
+                        {new Date(item.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          {item.status === "approved" && (
+                            <a href={`/marketplace/${item.id}`} target="_blank" rel="noopener noreferrer"
+                              className="p-1.5 rounded-md" style={{ color: "#9CA3AF" }}
+                              onMouseEnter={e => { e.currentTarget.style.color = "#111"; e.currentTarget.style.background = "#F3F4F6"; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}>
+                              <Eye size={14} />
+                            </a>
+                          )}
+                          {item.status !== "approved" && (
+                            <button onClick={() => approve(item.id)} disabled={busy === item.id}
+                              className="p-1.5 rounded-md disabled:opacity-40" style={{ color: "#16A34A" }}
+                              onMouseEnter={e => e.currentTarget.style.background = "#DCFCE7"}
+                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                              <CheckCircle size={14} />
                             </button>
-                            <button
-                              onClick={() => updateStatus(item.id, "rejected")}
-                              disabled={processing === item.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white transition-colors disabled:opacity-50"
-                              style={{ background: "#DC2626", borderRadius: "6px" }}>
-                              <XCircle size={13} /> Reject
+                          )}
+                          {item.status !== "rejected" && (
+                            <button onClick={() => setRejectId(item.id)} disabled={busy === item.id}
+                              className="p-1.5 rounded-md disabled:opacity-40" style={{ color: "#DC2626" }}
+                              onMouseEnter={e => e.currentTarget.style.background = "#FEE2E2"}
+                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                              <XCircle size={14} />
                             </button>
-                          </>
-                        )}
-                        {item.status === "approved" && (
-                          <a href={`/marketplace/${item.id}`} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-                            style={{ borderRadius: "6px" }}>
-                            <Eye size={13} /> View
-                          </a>
-                        )}
-                        {item.status === "rejected" && (
-                          <button
-                            onClick={() => updateStatus(item.id, "approved")}
-                            disabled={processing === item.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white transition-colors disabled:opacity-50"
-                            style={{ background: "#16A34A", borderRadius: "6px" }}>
-                            <CheckCircle size={13} /> Approve
+                          )}
+                          <button onClick={() => remove(item.id)} disabled={busy === item.id}
+                            className="p-1.5 rounded-md disabled:opacity-40" style={{ color: "#9CA3AF" }}
+                            onMouseEnter={e => { e.currentTarget.style.color = "#DC2626"; e.currentTarget.style.background = "#FEE2E2"; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}>
+                            <Trash2 size={14} />
                           </button>
-                        )}
-                        <button
-                          onClick={() => deleteItem(item.id)}
-                          disabled={processing === item.id}
-                          className="p-1.5 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50">
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: "1px solid #F3F4F6" }}>
+            <p className="text-[12px] text-gray-400">
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map(n => (
+                <button key={n} onClick={() => setPage(n)}
+                  className="w-7 h-7 rounded-md text-[12px] font-medium"
+                  style={{ background: n === page ? "#000" : "transparent", color: n === page ? "#fff" : "#6B7280" }}>
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
