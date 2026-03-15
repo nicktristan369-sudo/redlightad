@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase";
 import AdminLayout from "@/components/AdminLayout";
 import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare } from "lucide-react";
 import Link from "next/link";
@@ -46,12 +45,9 @@ export default function AdminAnnoncerPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("listings")
-      .select("id, title, category, city, location, status, tier, profile_image, created_at, user_id")
-      .order("created_at", { ascending: false });
-    setListings(data ?? []);
+    const res = await fetch("/api/admin/listings");
+    const json = await res.json();
+    setListings(json.listings ?? []);
     setLoading(false);
   }, []);
 
@@ -60,7 +56,12 @@ export default function AdminAnnoncerPage() {
 
   const update = async (id: string, status: "active" | "rejected") => {
     setBusy(id);
-    await createClient().from("listings").update({ status }).eq("id", id);
+    const action = status === "active" ? "approve" : "reject";
+    await fetch("/api/admin/listings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingId: id, action }),
+    });
     setListings(p => p.map(l => l.id === id ? { ...l, status } : l));
     setBusy(null);
   };
@@ -68,7 +69,11 @@ export default function AdminAnnoncerPage() {
   const remove = async (id: string) => {
     if (!confirm("Delete this listing permanently?")) return;
     setBusy(id);
-    await createClient().from("listings").delete().eq("id", id);
+    await fetch("/api/admin/listings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingId: id, action: "delete" }),
+    });
     setListings(p => p.filter(l => l.id !== id));
     setBusy(null);
   };
@@ -78,8 +83,13 @@ export default function AdminAnnoncerPage() {
     if (!pending.length) return;
     if (!confirm(`Approve all ${pending.length} pending listings?`)) return;
     setBulkLoading(true);
-    const supabase = createClient();
-    await supabase.from("listings").update({ status: "active" }).in("id", pending.map(l => l.id));
+    await Promise.all(pending.map(l =>
+      fetch("/api/admin/listings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: l.id, action: "approve" }),
+      })
+    ));
     setListings(p => p.map(l => l.status === "pending" ? { ...l, status: "active" } : l));
     setBulkLoading(false);
   };
