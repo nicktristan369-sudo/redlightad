@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { Shield, AlertTriangle } from "lucide-react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import Logo from "@/components/Logo"
 
 export default function Footer() {
   const { t } = useLanguage()
@@ -12,10 +13,8 @@ export default function Footer() {
 
         {/* Logo + tagline */}
         <div className="mb-10">
-          <span className="text-xl font-black tracking-wider" style={{ color: "#8B0000" }}>
-            REDLIGHTAD
-          </span>
-          <p className="text-gray-300 text-sm mt-1">{t.footer_tagline}</p>
+          <Logo variant="dark" height={28} />
+          <p className="text-gray-300 text-sm mt-2">{t.footer_tagline}</p>
         </div>
 
         {/* 4 columns */}

@@ -14,6 +14,13 @@ export const metadata: Metadata = {
   title: "RedLightAD — The Premier Adult Advertising Platform",
   description:
     "Connect with 5000+ active users worldwide. Targeted adult advertising that delivers real results.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
