@@ -13,12 +13,20 @@ export async function POST(req: NextRequest) {
   try {
     const { itemId, action, reason } = await req.json() as {
       itemId: string;
-      action: "approve" | "reject";
+      action: "approve" | "reject" | "delete";
       reason?: string;
     };
 
-    if (!itemId || !["approve", "reject"].includes(action)) {
+    if (!itemId || !["approve", "reject", "delete"].includes(action)) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+
+    // Handle delete
+    if (action === "delete") {
+      const supabase = getClient();
+      const { error } = await supabase.from("marketplace_items").delete().eq("id", itemId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
     }
 
     const supabase = getClient();

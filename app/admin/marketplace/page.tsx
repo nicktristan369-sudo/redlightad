@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { createClient } from "@/lib/supabase";
 import { CATEGORY_LABELS, type MarketplaceItem, type MarketplaceStatus } from "@/lib/marketplace";
 import { CheckCircle, XCircle, Trash2, Eye, Search } from "lucide-react";
 
@@ -27,18 +26,11 @@ export default function AdminMarketplacePage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const supabase = createClient();
-    let query = supabase
-      .from("marketplace_items")
-      .select("*, profiles(full_name, avatar_url)")
-      .order("created_at", { ascending: false });
-    if (tab !== "all") query = query.eq("status", tab);
-    const { data } = await query;
-    const mapped = (data ?? []).map((d: Record<string, unknown>) => ({
-      ...d,
-      seller_name: (d.profiles as Record<string, unknown> | null)?.full_name ?? undefined,
-    })) as MarketplaceItem[];
-    setItems(mapped);
+    const params = new URLSearchParams();
+    if (tab !== "all") params.set("status", tab);
+    const res = await fetch(`/api/admin/marketplace-items?${params}`);
+    const json = await res.json();
+    setItems((json.items ?? []) as MarketplaceItem[]);
     setLoading(false);
     setPage(1);
   }, [tab]);
@@ -73,7 +65,11 @@ export default function AdminMarketplacePage() {
   const remove = async (id: string) => {
     if (!confirm("Delete permanently?")) return;
     setBusy(id);
-    await createClient().from("marketplace_items").delete().eq("id", id);
+    await fetch("/api/admin/marketplace-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: id, action: "delete" }),
+    });
     setItems(p => p.filter(i => i.id !== id));
     setBusy(null);
   };
