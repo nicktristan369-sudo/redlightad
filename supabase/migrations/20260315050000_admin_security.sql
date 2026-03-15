@@ -29,3 +29,15 @@ create index if not exists admin_login_attempts_ip_idx
   on public.admin_login_attempts (ip, attempted_at desc);
 create index if not exists admin_audit_log_created_idx
   on public.admin_audit_log (created_at desc);
+
+-- Update get_my_admin_status to check role = 'admin' OR is_admin = true
+CREATE OR REPLACE FUNCTION public.get_my_admin_status()
+  RETURNS boolean
+  LANGUAGE sql
+  STABLE SECURITY DEFINER
+AS $$
+  SELECT COALESCE(
+    (SELECT is_admin = true OR role = 'admin' FROM public.profiles WHERE id = auth.uid()),
+    false
+  );
+$$;
