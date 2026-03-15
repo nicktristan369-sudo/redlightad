@@ -38,12 +38,14 @@ export default function AdminSmsPage() {
   const [loadingLogs, setLoadingLogs] = useState(true);
 
   useEffect(() => {
-    // Check if Twilio configured by trying the endpoint
-    fetch("/api/admin/sms", { method: "GET" }).then(r => {
-      setTwilioOk(r.ok);
-      if (r.ok) r.json().then(d => setLogs(Array.isArray(d) ? d : []));
-      setLoadingLogs(false);
-    });
+    // Server-side check — Twilio vars are not exposed to client (no NEXT_PUBLIC_ prefix)
+    fetch("/api/admin/twilio-status")
+      .then(r => r.json())
+      .then(d => setTwilioOk(!!d.configured));
+
+    fetch("/api/admin/sms")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { setLogs(Array.isArray(d) ? d : []); setLoadingLogs(false); });
   }, []);
 
   const searchUsers = async (q: string) => {
