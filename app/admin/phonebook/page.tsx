@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 import {
   Plus, Search, Phone, Mail, MessageCircle, Edit2, Trash2,
   Download, X, Check, Globe, Scan, Tag, AlertCircle, CheckCircle,
+  Loader2, FileSearch,
 } from "lucide-react";
 
 interface ScrapedPhone {
@@ -14,6 +15,23 @@ interface ScrapedPhone {
   source_url: string;
   tag: string;
   created_at: string;
+}
+
+interface ScrapeProgressEvent {
+  type: "progress" | "found" | "skip" | "saving" | "done" | "error";
+  current?: number;
+  total?: number;
+  url?: string;
+  count?: number;
+  phones_found?: number;
+  phones_total?: number;
+  pages_scanned?: number;
+  saved?: number;
+  total_found?: number;
+  phones?: string[];
+  message?: string;
+  error?: string;
+  reason?: string;
 }
 
 interface Contact {
@@ -71,6 +89,8 @@ export default function AdminPhonebookPage() {
   const [scrapeUrl, setScrapeUrl] = useState("");
   const [scrapeTag, setScrapeTag] = useState("untagged");
   const [scraping, setScaping] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState<{ current: number; total: number; url: string; phonesFound: number } | null>(null);
+  const [scrapeLog, setScrapeLog] = useState<{ url: string; count: number }[]>([]);
   const [scrapeResult, setScrapeResult] = useState<{ ok: boolean; msg: string; phones?: string[] } | null>(null);
   const [scrapedPhones, setScrapedPhones] = useState<ScrapedPhone[]>([]);
   const [loadingScraped, setLoadingScraped] = useState(false);
@@ -104,21 +124,64 @@ export default function AdminPhonebookPage() {
     if (!scrapeUrl.trim()) return;
     setScaping(true);
     setScrapeResult(null);
+    setScrapeProgress(null);
+    setScrapeLog([]);
+
     try {
       const res = await fetch("/api/admin/scrape-phones", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: scrapeUrl.trim(), tag: scrapeTag || "untagged" }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setScrapeResult({ ok: false, msg: data.error ?? "Scrape failed" });
-      } else {
-        setScrapeResult({ ok: true, msg: data.message, phones: data.phones });
-        loadScraped(scrapeTagFilter);
+
+      if (!res.ok || !res.body) {
+        // Non-streaming error response
+        let msg = "Scrape failed";
+        try { const d = await res.json(); msg = d.error ?? msg; } catch { /* */ }
+        setScrapeResult({ ok: false, msg });
+        setScaping(false);
+        return;
+      }
+
+      // Read streaming NDJSON
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const evt: ScrapeProgressEvent = JSON.parse(line);
+            if (evt.type === "progress") {
+              setScrapeProgress({
+                current: evt.current ?? 0,
+                total: evt.total ?? 0,
+                url: evt.url ?? "",
+                phonesFound: evt.phones_found ?? 0,
+              });
+            } else if (evt.type === "found") {
+              setScrapeLog(prev => [...prev.slice(-29), { url: evt.url ?? "", count: evt.count ?? 0 }]);
+            } else if (evt.type === "done") {
+              setScrapeResult({ ok: true, msg: evt.message ?? "Done", phones: evt.phones });
+              setScrapeProgress(null);
+              loadScraped(scrapeTagFilter);
+            } else if (evt.type === "error") {
+              setScrapeResult({ ok: false, msg: evt.error ?? "Unknown error" });
+              setScrapeProgress(null);
+            }
+          } catch { /* skip malformed line */ }
+        }
       }
     } catch (e) {
       setScrapeResult({ ok: false, msg: String(e) });
+      setScrapeProgress(null);
     }
     setScaping(false);
   };
@@ -484,6 +547,43 @@ export default function AdminPhonebookPage() {
               </button>
             </div>
 
+            {/* Progress bar */}
+            {scrapeProgress && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[12px]">
+                  <span className="flex items-center gap-1.5 text-gray-700 font-semibold">
+                    <Loader2 size={13} className="animate-spin" />
+                    Scanning page {scrapeProgress.current}/{scrapeProgress.total}
+                  </span>
+                  <span className="text-gray-400">{scrapeProgress.phonesFound} numbers found</span>
+                </div>
+                <div className="w-full rounded-full overflow-hidden" style={{ height: "6px", background: "#F3F4F6" }}>
+                  <div className="h-full rounded-full transition-all duration-300"
+                    style={{ width: `${Math.round((scrapeProgress.current / Math.max(scrapeProgress.total, 1)) * 100)}%`, background: "#CC0000" }} />
+                </div>
+                <p className="text-[11px] font-mono truncate" style={{ color: "#9CA3AF" }}>{scrapeProgress.url}</p>
+              </div>
+            )}
+
+            {/* Live log of pages with finds */}
+            {scraping && scrapeLog.length > 0 && (
+              <div className="rounded-lg overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
+                <div className="px-3 py-2 flex items-center gap-1.5" style={{ borderBottom: "1px solid #F3F4F6", background: "#FAFAFA" }}>
+                  <FileSearch size={12} color="#6B7280" />
+                  <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Pages with numbers</span>
+                </div>
+                <div className="overflow-y-auto" style={{ maxHeight: "140px" }}>
+                  {scrapeLog.slice().reverse().map((entry, i) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-1.5" style={{ borderBottom: "1px solid #F9FAFB" }}>
+                      <p className="text-[11px] font-mono text-gray-600 truncate flex-1">{entry.url}</p>
+                      <span className="text-[11px] font-bold ml-2 flex-shrink-0" style={{ color: "#CC0000" }}>+{entry.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Final result */}
             {scrapeResult && (
               <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg text-[13px]"
                 style={{ background: scrapeResult.ok ? "#F0FDF4" : "#FEF2F2", border: `1px solid ${scrapeResult.ok ? "#BBF7D0" : "#FECACA"}` }}>
