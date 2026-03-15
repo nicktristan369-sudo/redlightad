@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
+import Logo from "@/components/Logo";
 
 type AccountType = "provider" | "customer" | null;
 
@@ -59,7 +60,7 @@ export default function RegisterPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-md text-center">
-          <p className="mb-6 text-2xl font-bold text-red-600">REDLIGHTAD</p>
+          <div className="flex justify-center mb-6"><Logo variant="light" height={32} /></div>
           <div className="rounded-xl bg-green-50 border border-green-200 p-6">
             <p className="text-lg font-semibold text-green-800">
               Tjek din email for at bekræfte din konto ✅

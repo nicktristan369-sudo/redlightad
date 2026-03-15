@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Menu, X, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal, Globe, Home, Star, CheckCircle, Play, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
+import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -147,9 +148,8 @@ export default function Navbar() {
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 sm:px-6 h-16">
 
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 text-xl font-black tracking-wide">
-            <span style={{ color: "#CC0000" }}>RED</span>
-            <span className="text-black">LIGHTAD</span>
+          <Link href="/" className="flex-shrink-0">
+            <Logo variant="light" height={28} />
           </Link>
 
           {/* Nav links — desktop */}
@@ -255,9 +255,7 @@ export default function Navbar() {
 
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #E5E5E5" }}>
-                <span className="text-[17px] font-black tracking-tight">
-                  <span style={{ color: "#CC0000" }}>RED</span><span style={{ color: "#000" }}>LIGHTAD</span>
-                </span>
+                <Logo variant="light" height={24} />
                 <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors">
                   <X size={20} color="#111" />
                 </button>

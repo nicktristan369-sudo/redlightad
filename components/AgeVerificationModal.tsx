@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import CountrySelector from "@/components/CountrySelector"
+import Logo from "@/components/Logo"
 
 export default function AgeVerificationModal() {
   const [visible, setVisible] = useState(false)
@@ -36,9 +37,8 @@ export default function AgeVerificationModal() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gray-950 px-8 pt-8 pb-6 text-center">
-          <div className="text-2xl font-black tracking-wide mb-6">
-            <span className="text-red-500">RED</span>
-            <span className="text-white">LIGHTAD</span>
+          <div className="flex justify-center mb-6">
+            <Logo variant="dark" height={36} />
           </div>
           <div className="flex items-center justify-center gap-2 mb-3">
             <span className="text-amber-400 text-xl">⚠️</span>

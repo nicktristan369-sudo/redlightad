@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,10 +39,8 @@ export default function LoginPage() {
       <div className="w-full" style={{ maxWidth: "420px", background: "#fff", borderRadius: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", padding: "40px" }}>
 
         {/* Logo */}
-        <div className="text-center mb-6">
-          <span className="text-xl font-black tracking-tight">
-            <span style={{ color: "#CC0000" }}>RED</span><span style={{ color: "#000" }}>LIGHTAD</span>
-          </span>
+        <div className="flex justify-center mb-6">
+          <Logo variant="light" height={32} />
         </div>
 
         {/* Header */}
