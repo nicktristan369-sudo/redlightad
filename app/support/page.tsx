@@ -113,8 +113,18 @@ export default function SupportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSending(true)
-    // Simulate send — in production, connect to email service
-    await new Promise(r => setTimeout(r, 1200))
+    try {
+      // Save to admin_inbox
+      const { createClient } = await import("@/lib/supabase")
+      const supabase = createClient()
+      await supabase.from("admin_inbox").insert({
+        from_name:  form.name,
+        from_email: form.email,
+        subject:    form.subject,
+        message:    form.message,
+        category:   "support",
+      })
+    } catch (_) { /* silent — don't block UX */ }
     setSent(true)
     setSending(false)
     setForm({ name: "", email: "", subject: "", message: "" })
