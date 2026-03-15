@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       },
       body: new URLSearchParams({
         To: phone,
-        From: fromNumber,
+        From: "REDLIGHTAD",
         Body: `Your RedLightAD verification code is: ${code}\n\nThis code expires in 10 minutes. Do not share it with anyone.`,
       }),
     }
