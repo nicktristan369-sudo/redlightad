@@ -32,10 +32,10 @@ export async function POST(req: NextRequest) {
     const supabase = getClient();
     const newStatus = action === "approve" ? "approved" : "rejected";
 
-    // Fetch item + seller info
+    // Fetch item (no join to avoid schema cache issues)
     const { data: item, error: fetchErr } = await supabase
       .from("marketplace_items")
-      .select("id, title, seller_id, profiles(full_name, email:id)")
+      .select("id, title, seller_id")
       .eq("id", itemId)
       .single();
 
@@ -53,10 +53,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
 
+    // Get seller name from profiles
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", item.seller_id)
+      .single();
+    const sellerName = profileData?.full_name ?? "Seller";
+
     // Get seller email from auth.users via service role
     const { data: userData } = await supabase.auth.admin.getUserById(item.seller_id);
     const sellerEmail = userData?.user?.email;
-    const sellerName = (item.profiles as { full_name?: string } | null)?.full_name ?? "Seller";
 
     // Send email notification to seller
     if (sellerEmail && process.env.RESEND_API_KEY) {

@@ -13,39 +13,50 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status"); // pending | approved | rejected | all
-    const search = searchParams.get("search") ?? "";
 
     const supabase = getClient();
 
+    // Fetch items without relationship join (avoids schema cache issues)
     let query = supabase
       .from("marketplace_items")
-      .select("*, profiles(full_name, avatar_url)")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (status && status !== "all") {
       query = query.eq("status", status);
     }
 
-    const { data, error } = await query;
+    const { data: items, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const items = (data ?? []).map((d: Record<string, unknown>) => ({
-      ...d,
-      seller_name: (d.profiles as Record<string, unknown> | null)?.full_name ?? null,
-      seller_avatar: (d.profiles as Record<string, unknown> | null)?.avatar_url ?? null,
+    if (!items || items.length === 0) {
+      return NextResponse.json({ items: [] });
+    }
+
+    // Manual join: fetch seller profiles
+    const sellerIds = [...new Set(items.map((i: Record<string, unknown>) => i.seller_id as string))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", sellerIds);
+
+    const profileMap = Object.fromEntries(
+      (profiles ?? []).map((p: { id: string; full_name?: string; avatar_url?: string }) => [
+        p.id,
+        { full_name: p.full_name ?? null, avatar_url: p.avatar_url ?? null },
+      ])
+    );
+
+    const enriched = items.map((item: Record<string, unknown>) => ({
+      ...item,
+      seller_name: profileMap[item.seller_id as string]?.full_name ?? null,
+      seller_avatar: profileMap[item.seller_id as string]?.avatar_url ?? null,
     }));
 
-    // Client-side search filter
-    const filtered = search
-      ? items.filter((i: Record<string, unknown>) =>
-          String(i.title ?? "").toLowerCase().includes(search.toLowerCase())
-        )
-      : items;
-
-    return NextResponse.json({ items: filtered });
+    return NextResponse.json({ items: enriched });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
