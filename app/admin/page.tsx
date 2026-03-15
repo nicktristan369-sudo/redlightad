@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { createClient } from "@/lib/supabase";
+import Link from "next/link";
 import {
   Users, FileText, DollarSign, Coins,
-  TrendingUp, Clock, UserPlus, CreditCard, ArrowDownToLine,
+  TrendingUp, Clock, UserPlus, CreditCard, ArrowDownToLine, ShoppingBag,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -24,17 +25,19 @@ interface Metrics {
 }
 
 interface Activity {
+  href?: string;
   id: string;
-  type: "listing" | "user" | "payment" | "payout";
+  type: "listing" | "user" | "payment" | "payout" | "marketplace";
   text: string;
   time: string;
 }
 
 const ACTIVITY_ICONS = {
-  listing: <FileText size={14} color="#6B7280" />,
-  user:    <UserPlus size={14} color="#6B7280" />,
-  payment: <CreditCard size={14} color="#6B7280" />,
-  payout:  <ArrowDownToLine size={14} color="#6B7280" />,
+  listing:     <FileText size={14} color="#6B7280" />,
+  user:        <UserPlus size={14} color="#6B7280" />,
+  payment:     <CreditCard size={14} color="#6B7280" />,
+  payout:      <ArrowDownToLine size={14} color="#6B7280" />,
+  marketplace: <ShoppingBag size={14} color="#CC0000" />,
 };
 
 function MetricCard({ label, value, sub, icon: Icon, accent }: {
@@ -98,6 +101,7 @@ export default function AdminOverviewPage() {
         { count: pendingPayouts },
         { data: recentListings },
         { data: recentUsers },
+        { data: recentMarketplace },
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", today),
@@ -108,6 +112,7 @@ export default function AdminOverviewPage() {
         supabase.from("payout_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("listings").select("title, city, created_at, status").order("created_at", { ascending: false }).limit(5),
         supabase.from("profiles").select("full_name, created_at").order("created_at", { ascending: false }).limit(5),
+        supabase.from("marketplace_items").select("title, category, created_at, status, profiles(full_name)").order("created_at", { ascending: false }).limit(5),
       ]);
 
       const coinsSoldTotal = (coinData ?? []).reduce((sum: number, t: { amount: number }) => sum + Math.abs(t.amount), 0);
@@ -132,6 +137,7 @@ export default function AdminOverviewPage() {
           type: "listing",
           text: `${l.status === "pending" ? "New listing pending" : "Listing active"} — ${l.title}${l.city ? `, ${l.city}` : ""}`,
           time: new Date(l.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+          href: l.status === "pending" ? "/admin/annoncer?tab=pending" : "/admin/annoncer",
         });
       });
       (recentUsers ?? []).forEach((u: { full_name: string; created_at: string }) => {
@@ -140,10 +146,21 @@ export default function AdminOverviewPage() {
           type: "user",
           text: `New user registered — ${u.full_name ?? "Anonymous"}`,
           time: new Date(u.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+          href: "/admin/brugere",
         });
       });
-      acts.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      setActivity(acts.slice(0, 10));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (recentMarketplace ?? []).forEach((m: any) => {
+        acts.push({
+          id: m.created_at + "m",
+          type: "marketplace",
+          text: `${m.status === "pending" ? "⚠️ Pending review" : m.status === "approved" ? "Approved" : "Rejected"} — Marketplace: ${m.title}${m.profiles?.full_name ? ` by ${m.profiles.full_name}` : ""}`,
+          time: new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+          href: "/admin/marketplace",
+        });
+      });
+      acts.sort((a, b) => new Date(b.id).getTime() - new Date(a.id).getTime());
+      setActivity(acts.slice(0, 12));
       setLoading(false);
     };
     load();
@@ -217,21 +234,34 @@ export default function AdminOverviewPage() {
             <p className="text-[13px] text-gray-400">No recent activity</p>
           ) : (
             <div className="space-y-3">
-              {activity.map(a => (
-                <div key={a.id} className="flex items-start gap-3">
-                  <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: "#F5F5F5" }}>
-                    {ACTIVITY_ICONS[a.type]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] text-gray-700 leading-snug">{a.text}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Clock size={10} color="#9CA3AF" />
-                      <span className="text-[11px]" style={{ color: "#9CA3AF" }}>{a.time}</span>
+              {activity.map(a => {
+                const inner = (
+                  <>
+                    <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ background: a.type === "marketplace" ? "rgba(204,0,0,0.08)" : "#F5F5F5" }}>
+                      {ACTIVITY_ICONS[a.type]}
                     </div>
-                  </div>
-                </div>
-              ))}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[12px] leading-snug ${a.type === "marketplace" && a.text.includes("⚠️") ? "font-semibold text-gray-900" : "text-gray-700"}`}>
+                        {a.text}
+                      </p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Clock size={10} color="#9CA3AF" />
+                        <span className="text-[11px]" style={{ color: "#9CA3AF" }}>{a.time}</span>
+                        {a.href && <span className="text-[11px] text-red-500 ml-1">→ Review</span>}
+                      </div>
+                    </div>
+                  </>
+                );
+                return a.href ? (
+                  <Link key={a.id} href={a.href}
+                    className="flex items-start gap-3 -mx-2 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={a.id} className="flex items-start gap-3">{inner}</div>
+                );
+              })}
             </div>
           )}
         </div>
