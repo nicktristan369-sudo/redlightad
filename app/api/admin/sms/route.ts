@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
           "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({ To: phone, From: fromNumber, Body: message }),
+        body: new URLSearchParams({ To: phone, From: "REDLIGHTAD", Body: message }),
       });
       const data = await res.json();
       results.push({ phone, ok: !data.error_code, sid: data.sid, error: data.message });
