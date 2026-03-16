@@ -284,7 +284,7 @@ export default function RegisterPage() {
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <span className="inline-flex items-center rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "#000" }}>
-                  {accountType === "provider" ? "✦ Provider" : "◆ Customer"}
+                  {accountType === "provider" ? "Provider" : "Customer"}
                 </span>
                 <span className="text-[12px] text-gray-400 ml-auto">Step 2 of 3</span>
               </div>

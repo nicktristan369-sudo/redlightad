@@ -696,14 +696,14 @@ export default function OpretAnnoncePage() {
                   <label className="mb-2 block text-sm font-medium text-gray-700">Kontakt</label>
                   <div className="space-y-3">
                     {[
-                      { icon: "📞", label: "Telefon", field: "phone" },
-                      { icon: "💬", label: "WhatsApp", field: "whatsapp" },
-                      { icon: "✈️", label: "Telegram", field: "telegram" },
-                      { icon: "👻", label: "Snapchat", field: "snapchat" },
-                      { icon: "📧", label: "Email", field: "email" },
+                      { label: "Telefon",  field: "phone" },
+                      { label: "WhatsApp", field: "whatsapp" },
+                      { label: "Telegram", field: "telegram" },
+                      { label: "Snapchat", field: "snapchat" },
+                      { label: "Email",    field: "email" },
                     ].map((c) => (
                       <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                        <span className="text-lg">{c.icon}</span>
+                        <span className="w-4 h-4 rounded-sm bg-gray-200 flex-shrink-0" />
                         <span className="w-20 text-sm text-gray-500">{c.label}</span>
                         <input
                           type={c.field === "email" ? "email" : "text"}
@@ -809,7 +809,7 @@ export default function OpretAnnoncePage() {
                     className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-red-400 transition-colors"
                     onClick={() => document.getElementById("image-input")?.click()}
                   >
-                    <div className="text-4xl mb-2">📷</div>
+                    <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     <p className="text-gray-500 text-sm font-medium">Klik for at uploade billeder</p>
                     <p className="text-xs text-gray-400 mt-1">Første billede bruges som profilbillede</p>
                     <input
@@ -858,7 +858,7 @@ export default function OpretAnnoncePage() {
                             }}
                             className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            ✕
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                           </button>
                         </div>
                       ))}
@@ -909,7 +909,7 @@ export default function OpretAnnoncePage() {
               {/* Voice Message — Premium only */}
               <div className="mt-6 rounded-2xl border border-gray-200 p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">🎙</span>
+                  <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
                   <h3 className="font-semibold text-gray-900 text-sm">Voice Message</h3>
                   {!["premium", "featured", "vip"].includes(userTier || "") && (
                     <span className="ml-auto text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Premium only</span>

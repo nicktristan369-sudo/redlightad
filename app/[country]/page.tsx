@@ -44,7 +44,7 @@ export default async function CountryPage({ params }: Props) {
           {/* Country header */}
           <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3">
             <div className="mx-auto max-w-7xl flex items-center gap-2">
-              <span className="text-2xl">{countryData.flag}</span>
+              <span className={`fi fi-${code}`} style={{ width: 24, height: 18, borderRadius: 0, display: "inline-block" }} />
               <div>
                 <h1 className="text-base font-bold text-gray-900 leading-tight">Escorts in {countryData.name}</h1>
                 <p className="text-xs text-gray-400">Browse verified profiles</p>

@@ -162,7 +162,7 @@ export default function AdminInboxPage() {
                   <div className="flex items-center gap-1 mt-1">
                     <Tag size={9} color={catColor(m.category)} />
                     <span className="text-[10px] capitalize" style={{ color: catColor(m.category) }}>{m.category}</span>
-                    {m.replied && <span className="ml-2 text-[10px] text-green-600">✓ Replied</span>}
+                    {m.replied && <span className="ml-2 text-[10px] text-green-600">Replied</span>}
                   </div>
                 </button>
               ))}
@@ -218,7 +218,7 @@ export default function AdminInboxPage() {
                   {selected.reply_body && (
                     <div className="mt-6 p-4 rounded-xl" style={{ background: "#F5F5F7", border: "1px solid #E5E5E5" }}>
                       <p className="text-[11px] font-semibold text-green-700 mb-2">
-                        ✓ Replied {selected.replied_at ? new Date(selected.replied_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : ""}
+                        Replied {selected.replied_at ? new Date(selected.replied_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : ""}
                       </p>
                       <p className="text-[13px] text-gray-600 whitespace-pre-wrap">{selected.reply_body}</p>
                     </div>

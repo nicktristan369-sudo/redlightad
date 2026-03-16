@@ -194,7 +194,7 @@ export default function PremiumCarousel({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={l.profile_image} alt={l.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                 ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center text-4xl text-gray-400">👤</div>
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100"><svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
                 )}
 
                 {/* Ribbon badge */}

@@ -30,6 +30,7 @@ interface Activity {
   type: "listing" | "user" | "payment" | "payout" | "marketplace";
   text: string;
   time: string;
+  status?: string;
 }
 
 const ACTIVITY_ICONS = {
@@ -154,7 +155,8 @@ export default function AdminOverviewPage() {
         acts.push({
           id: m.created_at + "m",
           type: "marketplace",
-          text: `${m.status === "pending" ? "⚠️ Pending review" : m.status === "approved" ? "Approved" : "Rejected"} — Marketplace: ${m.title}${m.profiles?.full_name ? ` by ${m.profiles.full_name}` : ""}`,
+          status: m.status,
+          text: `${m.status === "pending" ? "Pending review" : m.status === "approved" ? "Approved" : "Rejected"} — Marketplace: ${m.title}${m.profiles?.full_name ? ` by ${m.profiles.full_name}` : ""}`,
           time: new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
           href: "/admin/marketplace",
         });
@@ -242,7 +244,7 @@ export default function AdminOverviewPage() {
                       {ACTIVITY_ICONS[a.type]}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[12px] leading-snug ${a.type === "marketplace" && a.text.includes("⚠️") ? "font-semibold text-gray-900" : "text-gray-700"}`}>
+                      <p className={`text-[12px] leading-snug ${a.type === "marketplace" && a.status === "pending" ? "font-semibold text-gray-900" : "text-gray-700"}`}>
                         {a.text}
                       </p>
                       <div className="flex items-center gap-1 mt-0.5">

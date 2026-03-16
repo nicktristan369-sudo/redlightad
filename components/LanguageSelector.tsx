@@ -44,7 +44,7 @@ export default function LanguageSelector() {
             >
               <span className={`fi fi-${lang.flagCode} flex-shrink-0`} style={{ width: "18px", height: "13px", display: "inline-block" }} />
               <span>{lang.name}</span>
-              {code === locale && <span className="ml-auto text-gray-400 text-xs">✓</span>}
+              {code === locale && <svg className="ml-auto w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>}
             </button>
           ))}
         </div>

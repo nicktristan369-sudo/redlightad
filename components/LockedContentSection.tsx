@@ -110,7 +110,7 @@ export default function LockedContentSection({ listingId }: Props) {
   return (
     <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 mt-6">
       <div className="flex items-center gap-2 mb-5">
-        <span className="text-lg">🔴</span>
+        <span className="w-3 h-3 rounded-full bg-red-600 flex-shrink-0 inline-block" />
         <h3 className="text-base font-bold text-gray-900">Eksklusivt indhold</h3>
         <span className="ml-auto text-xs text-gray-400">{items.length} {items.length === 1 ? "item" : "items"}</span>
       </div>
@@ -134,9 +134,9 @@ export default function LockedContentSection({ listingId }: Props) {
                       <>
                         <video src={firstMedia} className="w-full h-full object-cover blur-sm scale-110 opacity-60" muted />
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                          <span className="text-3xl">🔒</span>
+                          <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                           <span className="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
-                            🔴 {item.coin_price} coins
+                            {item.coin_price} coins
                           </span>
                         </div>
                       </>
@@ -150,9 +150,9 @@ export default function LockedContentSection({ listingId }: Props) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={firstMedia} alt={item.title} className="w-full h-full object-cover blur-sm scale-110 opacity-60" />
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                          <span className="text-3xl">🔒</span>
+                          <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                           <span className="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
-                            🔴 {item.coin_price} coins
+                            {item.coin_price} coins
                           </span>
                         </div>
                       </>
@@ -186,7 +186,7 @@ export default function LockedContentSection({ listingId }: Props) {
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <p className="text-sm font-semibold text-gray-900">{item.title}</p>
                   {isPurchased && (
-                    <span className="flex-shrink-0 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">✓ Låst op</span>
+                    <span className="flex-shrink-0 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">Låst op</span>
                   )}
                 </div>
                 {item.description && (
@@ -198,7 +198,7 @@ export default function LockedContentSection({ listingId }: Props) {
                     disabled={buyingId === item.id}
                     className="w-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
                   >
-                    {buyingId === item.id ? "..." : `Lås op for ${item.coin_price} 🔴`}
+                    {buyingId === item.id ? "..." : `Lås op for ${item.coin_price} coins`}
                   </button>
                 )}
               </div>
@@ -212,7 +212,7 @@ export default function LockedContentSection({ listingId }: Props) {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <div className="text-center mb-4">
-              <span className="text-4xl">🔴</span>
+              <svg className="w-10 h-10 text-red-200 mx-auto" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
               <h3 className="text-lg font-bold text-gray-900 mt-2">Ikke nok coins</h3>
               <p className="text-gray-500 text-sm mt-1">
                 Du har <strong>{coinBalance}</strong> coins — du mangler <strong>{coinModal.needed - coinBalance}</strong> mere

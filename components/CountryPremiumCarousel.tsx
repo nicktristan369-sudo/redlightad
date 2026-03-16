@@ -87,7 +87,7 @@ export default function CountryPremiumCarousel({ country, countryName }: Props) 
                 {l.profile_image
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={l.profile_image} alt={l.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  : <div className="w-full h-full bg-gray-200 flex items-center justify-center text-3xl text-gray-400">👤</div>}
+                  : <div className="w-full h-full flex items-center justify-center bg-gray-100"><svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
                 {tierBadge(l.premium_tier)}
                 <div className="absolute bottom-0 left-0 right-0 p-3 text-white">

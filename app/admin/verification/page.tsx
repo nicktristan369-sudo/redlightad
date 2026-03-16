@@ -95,7 +95,7 @@ export default function AdminVerificationPage() {
           <div className="relative max-w-2xl w-full mx-4" onClick={e => e.stopPropagation()}>
             <img src={docPreview} alt="Document" className="w-full rounded-xl object-contain max-h-[80vh]" /> {/* eslint-disable-line @next/next/no-img-element */}
             <button onClick={() => setDocPreview(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center text-[14px]">✕</button>
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center text-[14px]"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button>
           </div>
         </div>
       )}

@@ -68,13 +68,13 @@ export async function POST(req: NextRequest) {
     // Send email notification to seller
     if (sellerEmail && process.env.RESEND_API_KEY) {
       const subject = action === "approve"
-        ? `✅ Your marketplace item has been approved!`
-        : `❌ Your marketplace item was not approved`;
+        ? `Your marketplace item has been approved!`
+        : `Your marketplace item was not approved.`;
 
       const html = action === "approve"
         ? `
           <div style="font-family:sans-serif;max-width:500px;margin:0 auto">
-            <h2 style="color:#000">Good news, ${sellerName}! 🎉</h2>
+            <h2 style="color:#000">Good news, ${sellerName}!</h2>
             <p>Your marketplace item <strong>${item.title}</strong> has been <strong style="color:#16A34A">approved</strong> and is now live on RedLightAD Marketplace.</p>
             <a href="https://redlightad.com/marketplace" style="display:inline-block;padding:10px 20px;background:#000;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin-top:12px">View Marketplace →</a>
             <p style="color:#9CA3AF;font-size:12px;margin-top:24px">RedLightAD · <a href="https://redlightad.com" style="color:#9CA3AF">redlightad.com</a></p>

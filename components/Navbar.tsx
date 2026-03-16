@@ -204,7 +204,7 @@ export default function Navbar() {
             {/* Coin balance */}
             {user && coinBalance !== null && (
               <Link href="/dashboard/wallet" className="flex items-center gap-1 text-[13px] font-semibold text-red-600 hover:text-red-700 transition-colors">
-                🔴 {coinBalance}
+                <span className="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" />{coinBalance}
               </Link>
             )}
 
@@ -391,7 +391,7 @@ export default function Navbar() {
                       onMouseLeave={e => { e.currentTarget.style.background = selectedCategory === cat ? "#000" : "transparent" }}
                     >
                       {cat}
-                      {selectedCategory === cat && <span className="text-white text-xs">✓</span>}
+                      {selectedCategory === cat && <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -438,7 +438,7 @@ export default function Navbar() {
                       onMouseLeave={e => { e.currentTarget.style.background = selectedGender === g ? "#000" : "transparent" }}
                     >
                       {g}
-                      {selectedGender === g && <span className="text-white text-xs">✓</span>}
+                      {selectedGender === g && <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />}
                     </button>
                   ))}
                 </div>

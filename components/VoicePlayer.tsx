@@ -8,7 +8,7 @@ export default function VoicePlayer() {
   return (
     <div className="flex items-center gap-4 rounded-xl bg-white p-4 shadow-md">
       {/* Icon */}
-      <span className="text-2xl text-red-600">🎙️</span>
+      <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zM7 9.5A5 5 0 0 0 17 9.5v1a7 7 0 0 1-4 6.32V19h3v2H8v-2h3v-2.18A7 7 0 0 1 7 10.5v-1z"/></svg>
 
       {/* Content */}
       <div className="flex-1">

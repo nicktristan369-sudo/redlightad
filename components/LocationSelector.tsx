@@ -61,7 +61,7 @@ export default function LocationSelector({ value, onChange, compact = false }: L
           onChange({ country: iso, countryName: name, region: "", regionName: "", city: "" })
         }}
       >
-        <option value="">🌍 Land</option>
+        <option value="">Land</option>
         <optgroup label="Populære lande">
           {POPULAR_ISOS.map(iso => (
             <option key={iso} value={iso}>{POPULAR_NAMES[iso]}</option>
@@ -85,7 +85,7 @@ export default function LocationSelector({ value, onChange, compact = false }: L
             onChange({ ...value, region: iso, regionName: name, city: "" })
           }}
         >
-          <option value="">📍 Region</option>
+          <option value="">Region</option>
           {states.map(s => (
             <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
           ))}
@@ -99,7 +99,7 @@ export default function LocationSelector({ value, onChange, compact = false }: L
           value={value.city}
           onChange={(e) => onChange({ ...value, city: e.target.value })}
         >
-          <option value="">🏙️ By</option>
+          <option value="">By</option>
           {cityOptions.map(c => (
             <option key={`${c.name}-${c.stateCode}`} value={c.name}>{c.name}</option>
           ))}

@@ -69,7 +69,7 @@ export default function Footer() {
             <h3 className="text-xs font-semibold tracking-widest uppercase text-white mb-4">{t.footer_company}</h3>
             <ul className="space-y-2 text-sm">
               {[
-                { label: "🛍 Marketplace", href: "/marketplace" },
+                { label: "Marketplace", href: "/marketplace" },
                 { label: t.footer_about, href: "/about" },
                 { label: t.footer_press, href: "/press" },
                 { label: t.footer_advertise, href: "/advertise" },
@@ -113,7 +113,7 @@ export default function Footer() {
             All profiles listed on RedLightAd.com charge for their time and companionship only. Anything else that may occur is a matter of coincidence and choice between consenting adults. By using this site you accept that we do not support or advertise sexually based business activities in any form. You hereby declare that you offer your time and companionship only. We do not support any forms of sexual activity based business partnerships — every advertiser must be an independent individual.
           </p>
           <p className="text-xs font-medium text-gray-300">
-            🚫 Say NO to human trafficking.
+            Say NO to human trafficking.
           </p>
         </div>
 

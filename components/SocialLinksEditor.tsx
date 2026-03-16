@@ -4,13 +4,13 @@ import { useState } from "react";
 import { Lock, Unlock, Plus, Trash2 } from "lucide-react";
 import type { SocialPlatform, SocialLinks, SocialLinkConfig } from "./SocialLinksSection";
 
-const PLATFORMS: { value: SocialPlatform; label: string; icon: string; placeholder: string }[] = [
-  { value: "snapchat",  label: "Snapchat",     icon: "👻", placeholder: "snapchat brugernavn" },
-  { value: "instagram", label: "Instagram",    icon: "📷", placeholder: "instagram.com/ditprofil" },
-  { value: "onlyfans",  label: "OnlyFans",     icon: "🔞", placeholder: "onlyfans.com/ditprofil" },
-  { value: "telegram",  label: "Telegram",     icon: "✈️", placeholder: "@telegram_brugernavn" },
-  { value: "whatsapp",  label: "WhatsApp",     icon: "💬", placeholder: "+45 12345678" },
-  { value: "twitter_x", label: "X (Twitter)",  icon: "𝕏", placeholder: "@twitter_brugernavn" },
+const PLATFORMS: { value: SocialPlatform; label: string; color: string; placeholder: string }[] = [
+  { value: "snapchat",  label: "Snapchat",   color: "#FFFC00", placeholder: "snapchat brugernavn" },
+  { value: "instagram", label: "Instagram",  color: "#E1306C", placeholder: "instagram.com/ditprofil" },
+  { value: "onlyfans",  label: "OnlyFans",   color: "#00AFF0", placeholder: "onlyfans.com/ditprofil" },
+  { value: "telegram",  label: "Telegram",   color: "#0088CC", placeholder: "@telegram_brugernavn" },
+  { value: "whatsapp",  label: "WhatsApp",   color: "#25D366", placeholder: "+45 12345678" },
+  { value: "twitter_x", label: "X (Twitter)", color: "#000",   placeholder: "@twitter_brugernavn" },
 ];
 
 interface Props {
@@ -55,7 +55,7 @@ export default function SocialLinksEditor({ value, onChange, isPremium }: Props)
         return (
           <div key={platform} className="rounded-xl p-3 space-y-2" style={{ border: "1px solid #E5E5E5" }}>
             <div className="flex items-center gap-2">
-              <span className="text-[16px]">{meta.icon}</span>
+              <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: meta.color }} />
               <span className="text-[13px] font-semibold text-gray-700 flex-1">{meta.label}</span>
               <button onClick={() => removePlatform(platform)}
                 className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors">
@@ -129,7 +129,7 @@ export default function SocialLinksEditor({ value, onChange, isPremium }: Props)
               style={{ border: "1px dashed #D1D5DB", background: "#FAFAFA", color: "#6B7280" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "#000"; e.currentTarget.style.color = "#000"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#D1D5DB"; e.currentTarget.style.color = "#6B7280"; }}>
-              <Plus size={11} /> {p.icon} {p.label}
+              <Plus size={11} /> <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: p.color }} /> {p.label}
             </button>
           ))}
         </div>

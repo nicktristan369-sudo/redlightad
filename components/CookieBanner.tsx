@@ -32,7 +32,7 @@ export default function CookieBanner() {
         {!showSettings ? (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-semibold text-gray-900 mb-0.5">We use cookies 🍪</p>
+              <p className="text-[14px] font-semibold text-gray-900 mb-0.5">We use cookies</p>
               <p className="text-[13px] text-gray-500">
                 We use cookies to improve your experience and for analytics.{" "}
                 <Link href="/cookies" className="underline hover:text-gray-900 transition-colors">

@@ -78,7 +78,7 @@ export default async function CountryAdFeed({ country }: Props) {
                 {l.profile_image
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={l.profile_image} alt={l.title} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-3xl text-gray-300">👤</div>}
+                  : <div className="w-full h-full flex items-center justify-center bg-gray-100"><svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>}
               </div>
               {/* Info */}
               <div className="flex-1 min-w-0">
@@ -91,7 +91,7 @@ export default async function CountryAdFeed({ country }: Props) {
                   </div>
                   {l.premium_tier && l.premium_tier !== "basic" && (
                     <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider bg-gray-900 text-white px-2 py-0.5 rounded-full">
-                      {l.premium_tier === "vip" ? "👑 VIP" : l.premium_tier.toUpperCase()}
+                      {l.premium_tier === "vip" ? "VIP" : l.premium_tier.toUpperCase()}
                     </span>
                   )}
                 </div>

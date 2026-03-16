@@ -196,7 +196,7 @@ export default function AdminSmsPage() {
                       background: broadcastTarget === t ? "#000" : "#F3F4F6",
                       color: broadcastTarget === t ? "#fff" : "#6B7280",
                     }}>
-                    <Users size={12} /> {t === "phonebook" ? "📒 Phonebook" : t}
+                    <Users size={12} /> {t === "phonebook" ? "Phonebook" : t}
                   </button>
                 ))}
               </div>
