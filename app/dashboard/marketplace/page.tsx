@@ -235,7 +235,7 @@ export default function DashboardMarketplacePage() {
                     {/* Coins display */}
                     <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg"
                       style={{ background: "#FFF8F8", border: "1px solid #FEE2E2" }}>
-                      <span className="text-[13px]">🔴</span>
+                      
                       <span className="text-[14px] font-bold text-gray-900">
                         {form.coin_price ? `${form.coin_price} coins` : "—"}
                       </span>
@@ -295,7 +295,7 @@ export default function DashboardMarketplacePage() {
                     <Upload size={18} />
                     {previewFile ? previewFile.name : "Upload teaser (video)"}
                   </button>
-                  <p className="mt-1 text-[11px] text-gray-400">⚠️ Må ikke indeholde eksplicit indhold</p>
+                  <p className="mt-1 text-[11px] text-gray-400">Må ikke indeholde eksplicit indhold</p>
                 </div>
 
                 {/* Full content */}
@@ -334,7 +334,7 @@ export default function DashboardMarketplacePage() {
           <div className="text-[14px] text-gray-400">Loading...</div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-[#E5E5E5]">
-            <p className="text-[32px] mb-2">🛍</p>
+            <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
             <p className="text-[16px] font-semibold text-gray-900">No listings yet</p>
             <p className="text-[13px] text-gray-500 mt-1">Create your first listing to start selling</p>
           </div>
@@ -366,7 +366,7 @@ export default function DashboardMarketplacePage() {
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-[13px] text-gray-600">{CATEGORY_LABELS[item.category]}</td>
                     <td className="px-4 py-3">
-                      <span className="text-[13px] font-semibold" style={{ color: "#CC0000" }}>🔴 {item.coin_price}</span>
+                      <span className="text-[13px] font-semibold" style={{ color: "#CC0000" }}>{item.coin_price} coins</span>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell"><StatusBadge status={item.status} /></td>
                     <td className="px-4 py-3 hidden md:table-cell text-[13px] text-gray-600">{item.purchase_count}</td>

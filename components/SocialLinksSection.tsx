@@ -14,13 +14,14 @@ export interface SocialLinkConfig {
 
 export type SocialLinks = Partial<Record<SocialPlatform, SocialLinkConfig>>;
 
-const PLATFORM_META: Record<SocialPlatform, { label: string; icon: string; color: string; prefix?: string }> = {
-  snapchat:  { label: "Snapchat",  icon: "👻", color: "#FFFC00", prefix: "snapchat.com/add/" },
-  instagram: { label: "Instagram", icon: "📷", color: "#E1306C" },
-  onlyfans:  { label: "OnlyFans",  icon: "🔞", color: "#00AFF0" },
-  telegram:  { label: "Telegram",  icon: "✈️", color: "#0088CC" },
-  whatsapp:  { label: "WhatsApp",  icon: "💬", color: "#25D366" },
-  twitter_x: { label: "X (Twitter)", icon: "𝕏", color: "#000" },
+const PLATFORM_META: Record<SocialPlatform, { label: string;
+ color: string; prefix?: string }> = {
+  snapchat:  { label: "Snapchat",  color: "#FFFC00", prefix: "snapchat.com/add/" },
+  instagram: { label: "Instagram", color: "#E1306C" },
+  onlyfans:  { label: "OnlyFans",  color: "#00AFF0" },
+  telegram:  { label: "Telegram",  color: "#0088CC" },
+  whatsapp:  { label: "WhatsApp",  color: "#25D366" },
+  twitter_x: { label: "X (Twitter)", color: "#000" },
 };
 
 interface Props {
@@ -80,7 +81,7 @@ export default function SocialLinksSection({ listingId, socialLinks, isPremium, 
             <div key={platform} className="flex items-center gap-3 px-4 py-3 rounded-xl"
               style={{ background: "#F9FAFB", border: "1px solid #F3F4F6" }}>
               {/* Icon */}
-              <span className="text-[18px] flex-shrink-0">{meta.icon}</span>
+              <span className="text-[18px] flex-shrink-0"><span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: meta.color }} /></span>
 
               {/* Label */}
               <span className="text-[13px] font-semibold text-gray-700 w-24 flex-shrink-0">{meta.label}</span>

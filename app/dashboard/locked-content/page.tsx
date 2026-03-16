@@ -154,7 +154,7 @@ export default function LockedContentPage() {
 
         {items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-            <div className="text-5xl mb-4">🔒</div>
+            <div className="mb-4"><svg className="w-8 h-8 text-gray-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div>
             <p className="font-semibold text-gray-900 mb-1">Ingen indhold endnu</p>
             <p className="text-gray-400 text-sm mb-5">Upload eksklusivt indhold og sæt en coin-pris</p>
             <button
@@ -177,7 +177,7 @@ export default function LockedContentPage() {
                       <img src={item.media_urls[0]} alt={item.title} className="w-full h-full object-cover" />
                     )}
                     <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      🔴 {item.coin_price}
+                      {item.coin_price} coins
                     </span>
                   </div>
                 )}

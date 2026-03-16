@@ -392,7 +392,7 @@ const it = makeSimple({
   search_placeholder: "Cerca profili, città o parole chiave...",
   filter_all_countries: "Tutti i paesi", filter_all_categories: "Tutte le categorie",
   filter_all_genders: "Tutti i generi", filter_search_btn: "Cerca", filter_clear: "Cancella",
-  footer_adults_only: "🔞 Solo adulti — 18+",
+  footer_adults_only: "Solo adulti — 18+",
   footer_copyright: "© 2026 RedLightAd.com — Tutti i diritti riservati.",
   auth_login_title: "Bentornato", auth_login_btn: "Accedi",
 })
@@ -406,7 +406,7 @@ const pt = makeSimple({
   search_placeholder: "Buscar perfis, cidade ou palavra-chave...",
   filter_all_countries: "Todos os países", filter_all_categories: "Todas as categorias",
   filter_all_genders: "Todos os gêneros", filter_search_btn: "Buscar", filter_clear: "Limpar",
-  footer_adults_only: "🔞 Somente adultos — 18+",
+  footer_adults_only: "Somente adultos — 18+",
   footer_copyright: "© 2026 RedLightAd.com — Todos os direitos reservados.",
   auth_login_title: "Bem-vindo de volta", auth_login_btn: "Entrar",
 })

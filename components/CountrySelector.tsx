@@ -50,7 +50,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
         <div className="px-6 pt-6 pb-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-black text-gray-900">🌍 Select Your Country</h2>
+              <h2 className="text-xl font-black text-gray-900">Select Your Country</h2>
               <p className="text-sm text-gray-400 mt-0.5">Choose where you want to browse</p>
             </div>
             {onClose && (
@@ -77,7 +77,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
         <div className="overflow-y-auto flex-1 px-6 py-4">
           {!search && (
             <>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">🔥 Popular</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Popular</p>
               <div className="grid grid-cols-3 gap-2 mb-6">
                 {popularCountries.map(c => (
                   <button
