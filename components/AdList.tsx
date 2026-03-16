@@ -1,5 +1,8 @@
-import { createServerClient } from "@/lib/supabaseServer"
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { FileText } from "lucide-react"
 
 interface Listing {
   id: string
@@ -15,23 +18,15 @@ interface Listing {
   about: string | null
   languages: string[]
   premium_tier: string | null
-  status: string
-  phone: string | null
   created_at: string
-}
-
-function tierOrder(tier: string | null | undefined): number {
-  if (tier === "vip") return 0
-  if (tier === "featured") return 1
-  return 2
 }
 
 function tierBadge(tier: string | null | undefined) {
   if (!tier) return null
   const labels: Record<string, { label: string; style: string }> = {
-    vip: { label: "VIP", style: "bg-black text-yellow-400 border border-yellow-400/50" },
+    vip:      { label: "VIP",      style: "bg-black text-yellow-400 border border-yellow-400/50" },
     featured: { label: "FEATURED", style: "bg-black text-gray-300 border border-gray-500/50" },
-    basic: { label: "PREMIUM", style: "bg-black/80 text-yellow-500 border border-yellow-500/40" },
+    basic:    { label: "PREMIUM",  style: "bg-black/80 text-yellow-500 border border-yellow-500/40" },
   }
   const b = labels[tier]
   if (!b) return null
@@ -52,24 +47,41 @@ function timeAgo(dateStr: string): string {
   return `${days} day${days > 1 ? "s" : ""} ago`
 }
 
-export default async function AdList() {
-  const supabase = createServerClient()
+interface Props {
+  country?: string
+  category?: string
+  limit?: number
+}
 
-  const { data: listings } = await supabase
-    .from("listings")
-    .select("id, title, profile_image, video_url, age, gender, category, location, city, country, about, languages, premium_tier, status, phone, created_at")
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(50)
+export default function AdList({ country, category, limit = 50 }: Props) {
+  const [listings, setListings] = useState<Listing[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const ads = listings || []
-  const sorted = [...ads].sort((a, b) => tierOrder(a.premium_tier) - tierOrder(b.premium_tier))
+  useEffect(() => {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (country)  params.set("country",  country)
+    if (category) params.set("category", category)
+    fetch(`/api/listings?${params}`)
+      .then(r => r.json())
+      .then(d => { setListings(d.listings ?? []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [country, category, limit])
 
-  if (sorted.length === 0) {
+  if (loading) {
+    return (
+      <section className="py-8 max-w-5xl mx-auto px-4">
+        <div className="flex justify-center py-16">
+          <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+        </div>
+      </section>
+    )
+  }
+
+  if (listings.length === 0) {
     return (
       <section className="py-8 max-w-5xl mx-auto px-4">
         <div className="text-center py-16 text-gray-400">
-          <p className="text-5xl mb-4">📋</p>
+          <FileText size={40} color="#D1D5DB" className="mx-auto mb-4" />
           <p className="text-lg">Ingen aktive annoncer endnu</p>
         </div>
       </section>
@@ -79,11 +91,11 @@ export default async function AdList() {
   return (
     <section className="py-6 max-w-5xl mx-auto px-4">
       <div className="space-y-4">
-        {sorted.map((ad) => {
+        {listings.map((ad) => {
           const displayLocation = ad.city || ad.location || ""
           const description = ad.about || ""
           return (
-            <Link key={ad.id} href={`/annoncer/${ad.id}`} className="block">
+            <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
                 <div className="flex">
                   {/* Left: thumbnail */}
@@ -111,7 +123,9 @@ export default async function AdList() {
                       <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                        <span className="text-4xl text-gray-400">👤</span>
+                        <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
                       </div>
                     )}
                     {tierBadge(ad.premium_tier)}
@@ -123,12 +137,16 @@ export default async function AdList() {
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
                         <span className="flex-shrink-0 inline-flex items-center gap-1 bg-gray-900 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
                           Verified
                         </span>
                       </div>
                       <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
                         Posted {timeAgo(ad.created_at)}
                       </p>
                       <p className="text-sm text-gray-600 line-clamp-2 mb-3">{description}</p>
@@ -137,8 +155,8 @@ export default async function AdList() {
                     {/* Tags */}
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-3 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-3">
                       {[
-                        { label: "AGE", value: ad.age },
-                        { label: "GENDER", value: ad.gender },
+                        { label: "AGE",      value: ad.age },
+                        { label: "GENDER",   value: ad.gender },
                         { label: "CATEGORY", value: ad.category },
                         { label: "LOCATION", value: displayLocation },
                         { label: "LANGUAGE", value: ad.languages?.[0] || "—" },

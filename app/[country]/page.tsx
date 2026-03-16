@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Navbar from "@/components/Navbar"
 import CountryPremiumCarousel from "@/components/CountryPremiumCarousel"
-import CountryAdFeed from "@/components/CountryAdFeed"
+import AdList from "@/components/AdList"
 import CountryNotAvailable from "@/components/CountryNotAvailable"
 import { getCountry, SUPPORTED_CODES } from "@/lib/countries"
 
@@ -53,7 +53,7 @@ export default async function CountryPage({ params }: Props) {
           </div>
 
           <CountryPremiumCarousel country={code} countryName={countryData.name} />
-          <CountryAdFeed country={code} />
+          <AdList country={code} limit={40} />
         </main>
       )}
     </>
