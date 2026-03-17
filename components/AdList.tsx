@@ -19,6 +19,7 @@ interface Listing {
   languages: string[]
   premium_tier: string | null
   created_at: string
+  images?: string[] | null
 }
 
 function tierBadge(tier: string | null | undefined) {
@@ -98,57 +99,73 @@ export default function AdList({ country, category, limit = 50 }: Props) {
             <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
 
-                {/* ── MOBILE layout (hidden on md+) ── */}
-                <div className="md:hidden p-3 flex flex-col gap-2">
-                  {/* Top: image left + info right */}
-                  <div className="flex gap-3">
-                    {/* Thumbnail 120x120 */}
-                    <div className="relative flex-shrink-0 w-[120px] h-[120px] rounded-xl overflow-hidden bg-gray-100">
-                      {ad.video_url ? (
-                        <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
-                      ) : ad.profile_image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
+                {/* ── MOBILE layout — overlay style (hidden on md+) ── */}
+                <div className="md:hidden">
+                  {/* Image with overlaid text */}
+                  <div className="relative w-full bg-gray-900 overflow-hidden" style={{ height: 250 }}>
+                    {/* Photo / video */}
+                    {ad.video_url ? (
+                      <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+                    ) : ad.profile_image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                        <svg className="w-12 h-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* Dark gradient overlay */}
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.88) 100%)" }} />
+
+                    {/* Top-left: Verified badge */}
+                    <div className="absolute top-2.5 left-2.5">
+                      <span className="inline-flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/20 uppercase tracking-wider">
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Verified
+                      </span>
+                      {ad.premium_tier && (
+                        <span className={`block mt-1 text-[9px] font-black tracking-widest px-2 py-0.5 rounded-full uppercase ${ad.premium_tier === "vip" ? "bg-yellow-500 text-black" : "bg-gray-700 text-gray-200"}`}>
+                          {ad.premium_tier.toUpperCase()}
+                        </span>
                       )}
-                      {tierBadge(ad.premium_tier)}
                     </div>
 
-                    {/* Info right */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                      {/* Title + verified */}
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <h3 className="font-bold text-[14px] text-gray-900 leading-tight truncate">{ad.title}</h3>
-                          <svg className="w-3.5 h-3.5 flex-shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                          </svg>
-                        </div>
-                        {/* Info line 1: age · gender · category */}
-                        <p className="text-[11px] text-gray-400 truncate leading-tight">
-                          {[ad.age, ad.gender, ad.category].filter(Boolean).join(" · ")}
-                        </p>
-                        {/* Info line 2: location · language */}
-                        <p className="text-[11px] text-gray-400 truncate leading-tight">
-                          {[displayLocation, ad.languages?.[0]].filter(Boolean).join(" · ")}
-                        </p>
-                      </div>
-                      {/* Description */}
-                      {description && (
-                        <p className="text-[12px] text-gray-500 line-clamp-2 leading-snug mt-1">{description}</p>
-                      )}
+                    {/* Top-right: camera + photo count */}
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-white text-[10px] font-semibold">
+                        {ad.images?.length ?? 1}
+                      </span>
+                    </div>
+
+                    {/* Bottom overlay: name, location, time */}
+                    <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6">
+                      <p className="text-white font-black uppercase leading-tight truncate" style={{ fontSize: 15, letterSpacing: "0.04em" }}>
+                        {ad.title}
+                      </p>
+                      <p className="text-white font-semibold uppercase leading-tight truncate mt-0.5" style={{ fontSize: 11, opacity: 0.85 }}>
+                        {[displayLocation, ad.country].filter(Boolean).join(", ")}
+                      </p>
+                      <p className="text-white mt-1" style={{ fontSize: 10, opacity: 0.55 }}>
+                        Posted {timeAgo(ad.created_at)}
+                      </p>
                     </div>
                   </div>
 
-                  {/* CTA */}
-                  <span className="block w-full bg-gray-900 text-white text-[13px] font-semibold py-2 rounded-xl text-center">
-                    View Profile →
-                  </span>
+                  {/* CTA below image */}
+                  <div className="px-3 py-2.5">
+                    <span className="block w-full bg-gray-900 text-white text-[13px] font-semibold py-2 rounded-xl text-center">
+                      View Profile →
+                    </span>
+                  </div>
                 </div>
 
                 {/* ── DESKTOP layout (hidden below md) ── */}
