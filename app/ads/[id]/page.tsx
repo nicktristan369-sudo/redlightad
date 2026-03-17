@@ -9,6 +9,7 @@ import ContactSection from "@/components/ContactSection";
 import SocialLinksSection from "@/components/SocialLinksSection";
 import TravelBox from "@/components/TravelBox";
 import type { TravelEntry } from "@/components/TravelBox";
+import StickyActionBar from "@/components/StickyActionBar";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 
@@ -120,7 +121,7 @@ export default function AdDetailPage() {
   return (
     <>
       <Navbar />
-      <main className="bg-gray-50 min-h-screen">
+      <main className="bg-gray-50 min-h-screen pb-20 md:pb-0">
         <div className="mx-auto max-w-7xl px-4 py-8">
           {/* Breadcrumb */}
           <nav className="mb-4 flex items-center gap-1 text-sm">
@@ -212,6 +213,13 @@ export default function AdDetailPage() {
           </div>
         </div>
       </main>
+
+      <StickyActionBar
+        phone={ad.phone}
+        whatsapp={ad.whatsapp}
+        listingId={ad.id}
+        listingTitle={ad.title}
+      />
 
       <footer className="border-t border-gray-200 bg-white px-6 py-8 text-center text-sm text-gray-500">
         &copy; 2026 RedLightAD. All rights reserved.
