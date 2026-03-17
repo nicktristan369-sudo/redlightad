@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare, Crown, MapPin, ChevronDown } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare, Crown, MapPin, ChevronDown, Star } from "lucide-react";
 import Link from "next/link";
 import { SUPPORTED_COUNTRIES } from "@/lib/countries";
 
@@ -11,7 +11,7 @@ function getFlag(countryName: string): string {
   const match = SUPPORTED_COUNTRIES.find(
     c => c.name.toLowerCase() === countryName.toLowerCase()
   );
-  return match?.flag ?? "🌍";
+  return match?.flag ?? "";
 }
 
 interface Listing {
@@ -22,6 +22,7 @@ interface Listing {
   country: string | null;
   status: string;
   tier: string | null;
+  in_carousel: boolean;
   profile_image: string | null;
   created_at: string;
   user_id: string;
@@ -50,10 +51,10 @@ const TIER_COLOR: Record<string, string> = {
 
 /* ── Inline Tier Dropdown ── */
 const TIER_STYLE: Record<string, { bg: string; color: string; border: string }> = {
-  vip:      { bg: "#FFFBEB", color: "#B45309", border: "#FCD34D" },
-  featured: { bg: "#EFF6FF", color: "#1D4ED8", border: "#BFDBFE" },
-  basic:    { bg: "#F9FAFB", color: "#4B5563", border: "#E5E7EB" },
-  standard: { bg: "#F9FAFB", color: "#9CA3AF", border: "#E5E7EB" },
+  vip:      { bg: "#FEF08A", color: "#78350F", border: "#F59E0B" },
+  featured: { bg: "#BFDBFE", color: "#1E3A8A", border: "#3B82F6" },
+  basic:    { bg: "#E5E7EB", color: "#374151", border: "#D1D5DB" },
+  standard: { bg: "#F3F4F6", color: "#6B7280", border: "#E5E7EB" },
 };
 
 function TierDropdown({ listingId, currentTier, onSet }: {
@@ -137,14 +138,15 @@ function TierDropdown({ listingId, currentTier, onSet }: {
 
 /* ── Main ── */
 export default function AdminAnnoncerPage() {
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [tab, setTab]           = useState<Tab>("pending");
-  const [search, setSearch]     = useState("");
-  const [country, setCountry]   = useState("all");
-  const [page, setPage]         = useState(1);
-  const [busy, setBusy]         = useState<string | null>(null);
-  const [bulkLoading, setBulkLoading] = useState(false);
+  const [listings, setListings]         = useState<Listing[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [tab, setTab]                   = useState<Tab>("pending");
+  const [search, setSearch]             = useState("");
+  const [country, setCountry]           = useState("all");
+  const [page, setPage]                 = useState(1);
+  const [busy, setBusy]                 = useState<string | null>(null);
+  const [carouselBusy, setCarouselBusy] = useState<string | null>(null);
+  const [bulkLoading, setBulkLoading]   = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -185,6 +187,17 @@ export default function AdminAnnoncerPage() {
   const setTier = (id: string, tier: string | null) =>
     setListings(p => p.map(l => l.id === id ? { ...l, tier } : l));
 
+  const toggleCarousel = async (id: string, current: boolean) => {
+    setCarouselBusy(id);
+    await fetch("/api/admin/listings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingId: id, action: "set_carousel", in_carousel: !current }),
+    });
+    setListings(p => p.map(l => l.id === id ? { ...l, in_carousel: !current } : l));
+    setCarouselBusy(null);
+  };
+
   const bulkApprove = async () => {
     const pending = filtered.filter(l => l.status === "pending");
     if (!pending.length) return;
@@ -208,8 +221,8 @@ export default function AdminAnnoncerPage() {
     all:      listings.length,
   };
 
-  // Unique countries for filter
-  const countries = ["all", ...Array.from(new Set(listings.map(l => l.country).filter(Boolean))).sort()] as string[];
+  // All supported countries sorted alphabetically for filter
+  const allCountries = [...SUPPORTED_COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
 
   const q = search.toLowerCase();
   const base = tab === "all" ? listings : listings.filter(l => l.status === tab);
@@ -263,7 +276,7 @@ export default function AdminAnnoncerPage() {
           ))}
         </div>
 
-        {/* Country filter — flag + full name */}
+        {/* Country filter — alle lande fra SUPPORTED_COUNTRIES */}
         <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2" style={{ border: "1px solid #E5E5E5" }}>
           <MapPin size={13} color="#9CA3AF" />
           <select
@@ -271,13 +284,10 @@ export default function AdminAnnoncerPage() {
             onChange={e => setCountry(e.target.value)}
             className="text-[13px] bg-transparent outline-none text-gray-700 cursor-pointer"
           >
-            <option value="all">All countries</option>
-            {countries
-              .filter(c => c !== "all")
-              .sort((a, b) => a.localeCompare(b))
-              .map(c => (
-                <option key={c} value={c}>{getFlag(c)} {c}</option>
-              ))}
+            <option value="all">🌍 All countries</option>
+            {allCountries.map(c => (
+              <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
+            ))}
           </select>
         </div>
 
@@ -305,14 +315,15 @@ export default function AdminAnnoncerPage() {
               <thead>
                 <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
                   {[
-                    { label: "",         w: "w-12" },
-                    { label: "Listing",  w: "w-[220px]" },
-                    { label: "Category", w: "" },
-                    { label: "Location", w: "w-[160px]" },
-                    { label: "Tier",     w: "w-[140px]" },
-                    { label: "Status",   w: "" },
-                    { label: "Date",     w: "" },
-                    { label: "Actions",  w: "" },
+                    { label: "",          w: "w-12" },
+                    { label: "Listing",   w: "w-[220px]" },
+                    { label: "Category",  w: "" },
+                    { label: "Location",  w: "w-[160px]" },
+                    { label: "Tier",      w: "w-[148px]" },
+                    { label: "Carousel",  w: "w-[80px]" },
+                    { label: "Status",    w: "" },
+                    { label: "Date",      w: "" },
+                    { label: "Actions",   w: "" },
                   ].map(h => (
                     <th key={h.label} className={`px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider ${h.w}`}
                       style={{ color: "#9CA3AF" }}>{h.label}</th>
@@ -362,6 +373,20 @@ export default function AdminAnnoncerPage() {
                       {/* Tier — editable dropdown */}
                       <td className="px-4 py-3">
                         <TierDropdown listingId={l.id} currentTier={l.tier} onSet={setTier} />
+                      </td>
+                      {/* Carousel toggle */}
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => toggleCarousel(l.id, l.in_carousel)}
+                          disabled={carouselBusy === l.id}
+                          title={l.in_carousel ? "Fjern fra carousel" : "Tilføj til carousel"}
+                          className="p-1.5 rounded-md transition-all disabled:opacity-40"
+                          style={{ color: l.in_carousel ? "#F59E0B" : "#D1D5DB" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "#FFFBEB"; e.currentTarget.style.color = "#F59E0B"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = l.in_carousel ? "#F59E0B" : "#D1D5DB"; }}
+                        >
+                          <Star size={16} fill={l.in_carousel ? "#F59E0B" : "none"} />
+                        </button>
                       </td>
                       {/* Status */}
                       <td className="px-4 py-3">

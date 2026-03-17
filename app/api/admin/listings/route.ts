@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from("listings")
-      .select("id, title, category, gender, age, country, city, status, created_at, profile_image, user_id, premium_tier")
+      .select("id, title, category, gender, age, country, city, status, created_at, profile_image, user_id, premium_tier, in_carousel")
       .order("created_at", { ascending: false });
 
     if (status && status !== "all") query = query.eq("status", status);
@@ -44,7 +44,8 @@ export async function GET(req: NextRequest) {
 
     const enriched = listings.map((l: Record<string, unknown>) => ({
       ...l,
-      tier: (l.premium_tier as string | null),
+      tier:       (l.premium_tier as string | null),
+      in_carousel: (l.in_carousel as boolean) ?? false,
       user_name:  profileMap[l.user_id as string]?.full_name ?? null,
       user_email: profileMap[l.user_id as string]?.email ?? null,
     }));
@@ -59,12 +60,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as {
       listingId: string;
-      action: "approve" | "reject" | "delete" | "set_tier";
+      action: "approve" | "reject" | "delete" | "set_tier" | "set_carousel";
       tier?: string | null;
+      in_carousel?: boolean;
     };
-    const { listingId, action, tier } = body;
+    const { listingId, action, tier, in_carousel } = body;
 
-    if (!listingId || !["approve", "reject", "delete", "set_tier"].includes(action)) {
+    if (!listingId || !["approve", "reject", "delete", "set_tier", "set_carousel"].includes(action)) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
@@ -72,6 +74,15 @@ export async function POST(req: NextRequest) {
 
     if (action === "delete") {
       const { error } = await supabase.from("listings").delete().eq("id", listingId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "set_carousel") {
+      const { error } = await supabase
+        .from("listings")
+        .update({ in_carousel: in_carousel ?? false })
+        .eq("id", listingId);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ success: true });
     }
