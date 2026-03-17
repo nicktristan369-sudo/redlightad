@@ -97,19 +97,71 @@ export default function AdList({ country, category, limit = 50 }: Props) {
           return (
             <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-                <div className="flex">
-                  {/* Left: thumbnail */}
-                  <div className="relative flex-shrink-0 w-[180px] h-[220px] sm:w-[200px] sm:h-[240px] bg-gray-100">
+
+                {/* ── MOBILE layout (hidden on md+) ── */}
+                <div className="md:hidden">
+                  {/* Title row */}
+                  <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
+                    <h3 className="font-bold text-[15px] text-gray-900 leading-tight">{ad.title}</h3>
+                    <span className="flex-shrink-0 inline-flex items-center gap-1 bg-gray-900 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                      Verified
+                    </span>
+                  </div>
+
+                  {/* Full-width image */}
+                  <div className="relative w-full h-[200px] bg-gray-100">
                     {ad.video_url ? (
                       <>
-                        <video
-                          src={ad.video_url}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          className="w-full h-full object-cover"
-                        />
+                        <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </>
+                    ) : ad.profile_image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                        <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
+                    {tierBadge(ad.premium_tier)}
+                  </div>
+
+                  {/* Info + description + CTA */}
+                  <div className="px-3 py-3 space-y-2">
+                    {/* Compact info row */}
+                    <p className="text-[11px] text-gray-400 truncate">
+                      {[ad.age, ad.gender, ad.category, displayLocation, ad.languages?.[0]]
+                        .filter(Boolean).join(" · ")}
+                    </p>
+                    {/* Description */}
+                    {description && (
+                      <p className="text-[13px] text-gray-600 line-clamp-2 leading-snug">{description}</p>
+                    )}
+                    {/* CTA */}
+                    <span className="block w-full bg-gray-900 text-white text-[13px] font-semibold py-2.5 rounded-xl text-center">
+                      View Profile
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── DESKTOP layout (hidden below md) ── */}
+                <div className="hidden md:flex">
+                  {/* Left: thumbnail */}
+                  <div className="relative flex-shrink-0 w-[200px] h-[240px] bg-gray-100">
+                    {ad.video_url ? (
+                      <>
+                        <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
                             <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -151,9 +203,7 @@ export default function AdList({ country, category, limit = 50 }: Props) {
                       </p>
                       <p className="text-sm text-gray-600 line-clamp-2 mb-3">{description}</p>
                     </div>
-
-                    {/* Tags */}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-3 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-3">
+                    <div className="grid grid-cols-5 gap-x-3 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-3">
                       {[
                         { label: "AGE",      value: ad.age },
                         { label: "GENDER",   value: ad.gender },
@@ -167,8 +217,6 @@ export default function AdList({ country, category, limit = 50 }: Props) {
                         </div>
                       ))}
                     </div>
-
-                    {/* CTA */}
                     <div className="flex items-center gap-2">
                       <span className="flex-1 bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2.5 rounded-xl text-center transition-colors">
                         View Profile
@@ -176,6 +224,7 @@ export default function AdList({ country, category, limit = 50 }: Props) {
                     </div>
                   </div>
                 </div>
+
               </div>
             </Link>
           )
