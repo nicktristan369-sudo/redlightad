@@ -439,8 +439,8 @@ export default function AdminAnnoncerPage() {
                             onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}>
                             <Eye size={14} />
                           </Link>
-                          <Link href={`/dashboard/annoncer/${l.id}/edit`} target="_blank"
-                            className="p-1.5 rounded-md transition-colors" title="Edit"
+                          <Link href={`/admin/listings/${l.id}/edit`}
+                            className="p-1.5 rounded-md transition-colors" title="Admin Edit"
                             style={{ color: "#9CA3AF" }}
                             onMouseEnter={e => { e.currentTarget.style.color = "#111"; e.currentTarget.style.background = "#F3F4F6"; }}
                             onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}>
