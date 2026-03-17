@@ -63,16 +63,36 @@ function TierDropdown({ listingId, currentTier, onSet }: {
   onSet: (id: string, tier: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
   const [busy, setBusy] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  // Close on outside click
   useEffect(() => {
+    if (!open) return;
     const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        btnRef.current && !btnRef.current.contains(e.target as Node) &&
+        menuRef.current && !menuRef.current.contains(e.target as Node)
+      ) setOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
-  }, []);
+  }, [open]);
+
+  // Close on scroll so fixed menu tracks correctly
+  useEffect(() => {
+    if (!open) return;
+    const h = () => setOpen(false);
+    window.addEventListener("scroll", h, true);
+    return () => window.removeEventListener("scroll", h, true);
+  }, [open]);
+
+  const handleOpen = () => {
+    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+    setOpen(v => !v);
+  };
 
   const select = async (tier: string | null) => {
     if (tier === currentTier) { setOpen(false); return; }
@@ -92,21 +112,33 @@ function TierDropdown({ listingId, currentTier, onSet }: {
   const label = currentTier ? currentTier.charAt(0).toUpperCase() + currentTier.slice(1) : "Standard";
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
-        onClick={() => setOpen(v => !v)}
+        ref={btnRef}
+        onClick={handleOpen}
         disabled={busy}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all disabled:opacity-40 whitespace-nowrap"
         style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
       >
         {currentTier && currentTier !== "basic" && <Crown size={11} />}
         {label}
-        <ChevronDown size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={11} className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && (
+
+      {/* Fixed-position menu — floats above overflow containers */}
+      {open && rect && (
         <div
-          className="absolute z-50 left-0 mt-1 w-40 rounded-xl shadow-xl overflow-hidden"
-          style={{ background: "#fff", border: "1px solid #E5E5E5", top: "100%" }}
+          ref={menuRef}
+          className="rounded-xl shadow-2xl overflow-hidden"
+          style={{
+            position: "fixed",
+            top: rect.bottom + 4,
+            left: rect.left,
+            width: 160,
+            background: "#fff",
+            border: "1px solid #E5E5E5",
+            zIndex: 9999,
+          }}
         >
           <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sæt Tier</p>
@@ -124,7 +156,7 @@ function TierDropdown({ listingId, currentTier, onSet }: {
                 onMouseLeave={e => { e.currentTarget.style.background = active ? ts.bg : "transparent"; }}
               >
                 {t.value && t.value !== "basic" && <Crown size={12} color={ts.color} />}
-                {(!t.value || t.value === "basic") && <span className="w-3 h-3" />}
+                {(!t.value || t.value === "basic") && <span className="w-3 h-3 flex-shrink-0" />}
                 <span className="text-[13px] font-semibold" style={{ color: ts.color }}>{t.label}</span>
                 {active && <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: ts.color }} />}
               </button>
@@ -132,7 +164,7 @@ function TierDropdown({ listingId, currentTier, onSet }: {
           })}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
