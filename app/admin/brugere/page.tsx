@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { Search, Ban, Trash2, FileText, BadgeCheck, Crown, Archive } from "lucide-react";
+import { Search, Ban, Trash2, FileText, BadgeCheck, Crown, Archive, MapPin } from "lucide-react";
 
 /* ───── Types ───── */
 interface Profile {
@@ -156,17 +156,29 @@ export default function AdminBrugerePage() {
   const [arcLoading, setArcLoading] = useState(false);
   const [tab, setTab]             = useState<Tab>("all");
   const [search, setSearch]       = useState("");
+  const [country, setCountry]     = useState("all");
+  const [countries, setCountries] = useState<string[]>([]);
   const [page, setPage]           = useState(1);
+  const [total, setTotal]         = useState(0);
   const [busy, setBusy]           = useState<string | null>(null);
   const [deleteId, setDeleteId]   = useState<string | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/users");
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(PAGE_SIZE),
+      tab,
+    });
+    if (search) params.set("search", search);
+    if (country !== "all") params.set("country", country);
+    const res = await fetch(`/api/admin/users?${params}`);
     const json = await res.json();
     setProfiles(json.users ?? []);
+    setTotal(json.total ?? 0);
+    if (json.countries?.length) setCountries(json.countries);
     setLoading(false);
-  }, []);
+  }, [page, tab, search, country]);
 
   const loadArchived = useCallback(async () => {
     if (archived.length) return; // already loaded
@@ -179,7 +191,7 @@ export default function AdminBrugerePage() {
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
   useEffect(() => { if (tab === "archived") loadArchived(); }, [tab, loadArchived]);
-  useEffect(() => { setPage(1); }, [tab, search]);
+  useEffect(() => { setPage(1); }, [tab, search, country]);
 
   const mutate = async (id: string, action: "ban" | "unban" | "verify") => {
     setBusy(id);
@@ -211,38 +223,28 @@ export default function AdminBrugerePage() {
   const setPremium = (id: string, tier: string | null) =>
     setProfiles(p => p.map(u => u.id === id ? { ...u, subscription_tier: tier } : u));
 
-  /* counts */
+  /* counts — server-side total for active tab, local for archived */
   const counts = {
-    all:       profiles.length,
-    providers: profiles.filter(u => u.account_type === "provider").length,
-    customers: profiles.filter(u => u.account_type === "customer").length,
-    banned:    profiles.filter(u => u.is_banned).length,
-    verified:  profiles.filter(u => u.is_verified).length,
+    all:       tab === "all"       ? total : profiles.length,
+    providers: tab === "providers" ? total : profiles.filter(u => u.account_type === "provider").length,
+    customers: tab === "customers" ? total : profiles.filter(u => u.account_type === "customer").length,
+    banned:    tab === "banned"    ? total : profiles.filter(u => u.is_banned).length,
+    verified:  tab === "verified"  ? total : profiles.filter(u => u.is_verified).length,
     archived:  archived.length,
   };
 
-  /* filter + paginate active users */
+  /* server already filters + paginates — just handle archived client-side */
   const q = search.toLowerCase();
-  const base = tab === "all"       ? profiles
-    : tab === "providers"          ? profiles.filter(u => u.account_type === "provider")
-    : tab === "customers"          ? profiles.filter(u => u.account_type === "customer")
-    : tab === "banned"             ? profiles.filter(u => u.is_banned)
-    : tab === "verified"           ? profiles.filter(u => u.is_verified)
-    : profiles;
-
-  const filtered = tab !== "archived"
-    ? base.filter(u => !q || u.email?.toLowerCase().includes(q) || u.full_name?.toLowerCase().includes(q) || u.country?.toLowerCase().includes(q))
-    : [];
-
   const arcFiltered = archived.filter(a =>
     !q || a.email?.toLowerCase().includes(q) || a.full_name?.toLowerCase().includes(q) || a.country?.toLowerCase().includes(q)
   );
 
-  const activeList = tab !== "archived" ? filtered : [];
-  const archiveList = tab === "archived" ? arcFiltered : [];
-  const displayList = tab === "archived" ? archiveList : activeList;
-  const pages = Math.max(1, Math.ceil(displayList.length / PAGE_SIZE));
-  const paged = displayList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const displayList  = tab === "archived" ? arcFiltered : profiles;
+  const serverTotal  = tab === "archived" ? arcFiltered.length : total;
+  const pages        = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
+  const paged        = tab === "archived"
+    ? arcFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    : profiles; // already paginated by server
 
   const TABS: { key: Tab; label: string; danger?: boolean }[] = [
     { key: "all",       label: "Alle" },
@@ -279,11 +281,15 @@ export default function AdminBrugerePage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-[22px] font-bold text-gray-900">Brugere</h1>
-          <p className="text-[13px] text-gray-400 mt-0.5">{counts.all} aktive · {archived.length} arkiverede</p>
+          <p className="text-[13px] text-gray-400 mt-0.5">
+            {total > 0 ? `${total.toLocaleString()} brugere` : `${counts.all} aktive`}
+            {country !== "all" ? ` i ${country}` : ""}
+            {" · "}{archived.length} arkiverede
+          </p>
         </div>
       </div>
 
-      {/* Tabs + Search */}
+      {/* Tabs + Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="flex flex-wrap gap-0.5 p-1 rounded-lg" style={{ background: "#F3F4F6" }}>
           {TABS.map(t => (
@@ -304,11 +310,29 @@ export default function AdminBrugerePage() {
             </button>
           ))}
         </div>
+        {/* Country filter */}
+        {!loading && countries.length > 0 && (
+          <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2" style={{ border: "1px solid #E5E5E5" }}>
+            <MapPin size={13} color="#9CA3AF" />
+            <select
+              value={country}
+              onChange={e => setCountry(e.target.value)}
+              className="text-[13px] bg-transparent outline-none text-gray-700 cursor-pointer"
+            >
+              <option value="all">Alle lande</option>
+              {countries.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Search */}
         <div className="flex items-center gap-2 flex-1 min-w-[180px] max-w-xs bg-white rounded-lg px-3 py-2"
           style={{ border: "1px solid #E5E5E5" }}>
           <Search size={13} color="#9CA3AF" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Søg navn, email, land…"
+            placeholder="Søg navn, email…"
             className="flex-1 text-[13px] bg-transparent outline-none text-gray-900 placeholder-gray-400" />
         </div>
       </div>
@@ -479,7 +503,7 @@ export default function AdminBrugerePage() {
         {pages > 1 && (
           <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: "1px solid #F3F4F6" }}>
             <p className="text-[12px] text-gray-400">
-              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, displayList.length)} af {displayList.length}
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, serverTotal)} af {serverTotal.toLocaleString()}
             </p>
             <div className="flex gap-1 flex-wrap">
               {Array.from({ length: Math.min(pages, 10) }, (_, i) => i + 1).map(n => (

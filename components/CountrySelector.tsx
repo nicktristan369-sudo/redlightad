@@ -29,7 +29,14 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
   }, [visible])
 
   const handleSelect = (code: string) => {
-    try { localStorage.setItem("selected_country", code) } catch { /* ignore */ }
+    try {
+      localStorage.setItem("selected_country", code)
+      // Store name too so PremiumCarousel can filter by country name
+      const match = SUPPORTED_COUNTRIES.find(c => c.code === code)
+      if (match) localStorage.setItem("selected_country_name", match.name)
+      // Notify same-tab listeners (storage event only fires cross-tab)
+      window.dispatchEvent(new Event("countryChanged"))
+    } catch { /* ignore */ }
     setVisible(false)
     onClose?.()
     router.push(`/${code}`)

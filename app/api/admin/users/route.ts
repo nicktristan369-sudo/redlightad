@@ -9,17 +9,61 @@ const getClient = () =>
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-/* ─── GET: list all active users ─── */
-export async function GET() {
+/* ─── GET: list active users with server-side filtering + pagination ─── */
+export async function GET(req: NextRequest) {
   try {
-    const supabase = getClient();
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, email, full_name, account_type, country, is_admin, is_banned, is_verified, phone, phone_verified, whatsapp, avatar_url, subscription_tier, created_at")
-      .order("created_at", { ascending: false });
+    const { searchParams } = new URL(req.url);
+    const page    = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+    const limit   = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "25", 10)));
+    const country = searchParams.get("country");   // optional
+    const search  = searchParams.get("search");    // optional
+    const tab     = searchParams.get("tab") ?? "all"; // all | providers | customers | banned | verified
 
+    const supabase = getClient();
+    const from = (page - 1) * limit;
+    const to   = from + limit - 1;
+
+    let query = supabase
+      .from("profiles")
+      .select(
+        "id, email, full_name, account_type, country, is_admin, is_banned, is_verified, phone, phone_verified, whatsapp, avatar_url, subscription_tier, created_at",
+        { count: "exact" }
+      )
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (country && country !== "all") query = query.eq("country", country);
+    if (tab === "providers") query = query.eq("account_type", "provider");
+    if (tab === "customers") query = query.eq("account_type", "customer");
+    if (tab === "banned")    query = query.eq("is_banned", true);
+    if (tab === "verified")  query = query.eq("is_verified", true);
+    if (search) {
+      query = query.or(
+        `email.ilike.%${search}%,full_name.ilike.%${search}%,country.ilike.%${search}%`
+      );
+    }
+
+    const { data, error, count } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ users: data ?? [] });
+
+    // Also return unique countries for the filter dropdown (lightweight query)
+    const { data: countryRows } = await supabase
+      .from("profiles")
+      .select("country")
+      .not("country", "is", null)
+      .order("country");
+
+    const uniqueCountries = Array.from(
+      new Set((countryRows ?? []).map((r: { country: string }) => r.country).filter(Boolean))
+    ).sort();
+
+    return NextResponse.json({
+      users: data ?? [],
+      total: count ?? 0,
+      page,
+      limit,
+      countries: uniqueCountries,
+    });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

@@ -79,10 +79,34 @@ export default function PremiumCarousel({
   const [listings, setListings] = useState<PremiumListing[]>(
     excludeId ? MOCK_LISTINGS.filter(l => l.id !== excludeId) : MOCK_LISTINGS
   )
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
   const [fading, setFading] = useState(false)
   const [hovered, setHovered] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Read selected country from localStorage (set by CountrySelector)
+  useEffect(() => {
+    const read = () => {
+      try {
+        const code = localStorage.getItem("selected_country")
+        setSelectedCountry(code ?? null)
+      } catch { /* ignore */ }
+    }
+    read()
+    // Listen for country changes from other components
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "selected_country") read()
+    }
+    window.addEventListener("storage", onStorage)
+    // Also poll for same-tab changes via a custom event
+    const onCountryChange = () => read()
+    window.addEventListener("countryChanged", onCountryChange)
+    return () => {
+      window.removeEventListener("storage", onStorage)
+      window.removeEventListener("countryChanged", onCountryChange)
+    }
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -90,11 +114,36 @@ export default function PremiumCarousel({
       .from("listings")
       .select("id, title, profile_image, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at")
       .eq("status", "active")
-      .not("premium_tier", "is", null)
-      .limit(20)
+      .in("premium_tier", ["vip", "featured", "basic"])
+      .order("premium_tier", { ascending: true }) // vip first alphabetically? no — order by tier weight
+      .limit(30)
     if (excludeId) query = query.neq("id", excludeId)
-    query.then(({ data }) => { if (data && data.length > 0) setListings(data as PremiumListing[]) })
-  }, [excludeId])
+    // Country filter: map country code → country name via listings.country field
+    if (selectedCountry) {
+      // listings.country stores full name (e.g. "Denmark"), selectedCountry is a code (e.g. "dk")
+      // Try to resolve: if we have country name in localStorage use that, otherwise skip filter
+      try {
+        const stored = localStorage.getItem("selected_country_name")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (stored) query = (query as any).ilike("country", stored)
+      } catch { /* ignore */ }
+    }
+    query.then(({ data }) => {
+      if (data && data.length > 0) {
+        // Sort: vip first, then featured, then basic
+        const order: Record<string, number> = { vip: 0, featured: 1, basic: 2 }
+        const sorted = [...data].sort((a, b) =>
+          (order[(a as PremiumListing).premium_tier ?? ""] ?? 9) -
+          (order[(b as PremiumListing).premium_tier ?? ""] ?? 9)
+        )
+        setListings(sorted as PremiumListing[])
+        setOffset(0)
+      } else if (data && data.length === 0 && selectedCountry) {
+        // No premium listings in this country — hide carousel
+        setListings([])
+      }
+    })
+  }, [excludeId, selectedCountry])
 
   const rotate = useCallback(() => {
     if (listings.length <= VISIBLE_COUNT) return
