@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Navbar from "@/components/Navbar"
-import CountryPremiumCarousel from "@/components/CountryPremiumCarousel"
+import PremiumCarousel from "@/components/PremiumCarousel"
 import AdList from "@/components/AdList"
 import CountryNotAvailable from "@/components/CountryNotAvailable"
 import { getCountry, SUPPORTED_CODES } from "@/lib/countries"
@@ -52,7 +52,7 @@ export default async function CountryPage({ params }: Props) {
             </div>
           </div>
 
-          <CountryPremiumCarousel country={code} countryName={countryData.name} />
+          <PremiumCarousel country={countryData.name} title={`Premium i ${countryData.name}`} subtitle="Top verificerede profiler" />
           <AdList country={code} limit={40} />
         </main>
       )}
