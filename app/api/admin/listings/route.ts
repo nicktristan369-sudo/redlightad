@@ -1,6 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Map full country name → possible DB values (code variants + full name)
+// Listings may be stored as "DK", "dk", "Denmark" etc.
+const COUNTRY_ALIASES: Record<string, string[]> = {
+  "denmark":        ["denmark", "dk", "DK", "Danmark"],
+  "sweden":         ["sweden", "se", "SE", "Sverige"],
+  "norway":         ["norway", "no", "NO", "Norge"],
+  "finland":        ["finland", "fi", "FI"],
+  "germany":        ["germany", "de", "DE", "Deutschland"],
+  "netherlands":    ["netherlands", "nl", "NL"],
+  "united kingdom": ["united kingdom", "gb", "GB", "uk", "UK"],
+  "france":         ["france", "fr", "FR"],
+  "spain":          ["spain", "es", "ES"],
+  "italy":          ["italy", "it", "IT"],
+  "switzerland":    ["switzerland", "ch", "CH"],
+  "austria":        ["austria", "at", "AT"],
+  "belgium":        ["belgium", "be", "BE"],
+  "poland":         ["poland", "pl", "PL"],
+  "thailand":       ["thailand", "th", "TH"],
+  "uae":            ["uae", "ae", "AE", "United Arab Emirates"],
+  "singapore":      ["singapore", "sg", "SG"],
+  "japan":          ["japan", "jp", "JP"],
+  "usa":            ["usa", "us", "US", "United States"],
+  "canada":         ["canada", "ca", "CA"],
+  "australia":      ["australia", "au", "AU"],
+};
+
+function getCountryFilter(name: string): string {
+  const aliases = COUNTRY_ALIASES[name.toLowerCase()];
+  if (aliases && aliases.length > 0) {
+    return aliases.map(a => `country.eq.${a}`).join(",");
+  }
+  // Fallback: exact match + uppercase code
+  return `country.eq.${name},country.eq.${name.toUpperCase().slice(0, 2)}`;
+}
+
 export const dynamic = "force-dynamic";
 
 const getClient = () =>
@@ -23,7 +58,8 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false });
 
     if (status && status !== "all") query = query.eq("status", status);
-    if (country && country !== "all") query = query.eq("country", country);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (country && country !== "all") query = (query as any).or(getCountryFilter(country));
 
     const { data: listings, error } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
