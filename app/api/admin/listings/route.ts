@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from("listings")
-      .select("id, title, category, gender, age, country, city, status, created_at, profile_image, user_id, premium_tier, in_carousel")
+      .select("id, title, category, gender, age, country, city, status, created_at, profile_image, user_id, premium_tier")
       .order("created_at", { ascending: false });
 
     if (status && status !== "all") query = query.eq("status", status);
@@ -44,10 +44,10 @@ export async function GET(req: NextRequest) {
 
     const enriched = listings.map((l: Record<string, unknown>) => ({
       ...l,
-      tier:       (l.premium_tier as string | null),
-      in_carousel: (l.in_carousel as boolean) ?? false,
-      user_name:  profileMap[l.user_id as string]?.full_name ?? null,
-      user_email: profileMap[l.user_id as string]?.email ?? null,
+      tier:        (l.premium_tier as string | null),
+      in_carousel: false, // default until migration 20260317010000_in_carousel.sql is applied
+      user_name:   profileMap[l.user_id as string]?.full_name ?? null,
+      user_email:  profileMap[l.user_id as string]?.email ?? null,
     }));
 
     return NextResponse.json({ listings: enriched });
