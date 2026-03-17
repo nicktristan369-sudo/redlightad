@@ -2,8 +2,17 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare, Crown, MapPin } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare, Crown, MapPin, ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { SUPPORTED_COUNTRIES } from "@/lib/countries";
+
+// Resolve flag emoji from country name stored in listings
+function getFlag(countryName: string): string {
+  const match = SUPPORTED_COUNTRIES.find(
+    c => c.name.toLowerCase() === countryName.toLowerCase()
+  );
+  return match?.flag ?? "🌍";
+}
 
 interface Listing {
   id: string;
@@ -40,6 +49,13 @@ const TIER_COLOR: Record<string, string> = {
 };
 
 /* ── Inline Tier Dropdown ── */
+const TIER_STYLE: Record<string, { bg: string; color: string; border: string }> = {
+  vip:      { bg: "#FFFBEB", color: "#B45309", border: "#FCD34D" },
+  featured: { bg: "#EFF6FF", color: "#1D4ED8", border: "#BFDBFE" },
+  basic:    { bg: "#F9FAFB", color: "#4B5563", border: "#E5E7EB" },
+  standard: { bg: "#F9FAFB", color: "#9CA3AF", border: "#E5E7EB" },
+};
+
 function TierDropdown({ listingId, currentTier, onSet }: {
   listingId: string;
   currentTier: string | null;
@@ -70,25 +86,25 @@ function TierDropdown({ listingId, currentTier, onSet }: {
     setOpen(false);
   };
 
+  const key = currentTier ?? "standard";
+  const s = TIER_STYLE[key] ?? TIER_STYLE.standard;
+  const label = currentTier ? currentTier.charAt(0).toUpperCase() + currentTier.slice(1) : "Standard";
+
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(v => !v)}
         disabled={busy}
-        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-colors disabled:opacity-40"
-        style={{
-          background: currentTier ? "#F9FAFB" : "transparent",
-          color: currentTier ? (TIER_COLOR[currentTier] ?? "#6B7280") : "#9CA3AF",
-          border: `1px solid ${currentTier ? "#E5E7EB" : "transparent"}`,
-        }}
-        title="Sæt tier"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all disabled:opacity-40 whitespace-nowrap"
+        style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
       >
-        {currentTier ? <Crown size={10} /> : null}
-        {currentTier ? currentTier.toUpperCase() : "—"}
+        {currentTier && currentTier !== "basic" && <Crown size={11} />}
+        {label}
+        <ChevronDown size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div
-          className="absolute z-50 left-0 mt-1 w-36 rounded-xl shadow-xl overflow-hidden"
+          className="absolute z-50 left-0 mt-1 w-40 rounded-xl shadow-xl overflow-hidden"
           style={{ background: "#fff", border: "1px solid #E5E5E5", top: "100%" }}
         >
           <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
@@ -96,21 +112,20 @@ function TierDropdown({ listingId, currentTier, onSet }: {
           </div>
           {TIERS.map(t => {
             const active = t.value === currentTier;
+            const ts = TIER_STYLE[t.value ?? "standard"] ?? TIER_STYLE.standard;
             return (
               <button
                 key={String(t.value)}
                 onClick={() => select(t.value)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors"
-                style={{
-                  background: active ? "#F9FAFB" : "transparent",
-                  borderBottom: "1px solid #F9FAFB",
-                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors"
+                style={{ background: active ? ts.bg : "transparent" }}
                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#F9FAFB"; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = active ? ts.bg : "transparent"; }}
               >
-                {t.value && <Crown size={11} color={t.color} />}
-                <span className="text-[12px] font-semibold" style={{ color: t.color }}>{t.label}</span>
-                {active && <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.color }} />}
+                {t.value && t.value !== "basic" && <Crown size={12} color={ts.color} />}
+                {(!t.value || t.value === "basic") && <span className="w-3 h-3" />}
+                <span className="text-[13px] font-semibold" style={{ color: ts.color }}>{t.label}</span>
+                {active && <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: ts.color }} />}
               </button>
             );
           })}
@@ -248,7 +263,7 @@ export default function AdminAnnoncerPage() {
           ))}
         </div>
 
-        {/* Country filter */}
+        {/* Country filter — flag + full name */}
         <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2" style={{ border: "1px solid #E5E5E5" }}>
           <MapPin size={13} color="#9CA3AF" />
           <select
@@ -257,9 +272,12 @@ export default function AdminAnnoncerPage() {
             className="text-[13px] bg-transparent outline-none text-gray-700 cursor-pointer"
           >
             <option value="all">All countries</option>
-            {countries.filter(c => c !== "all").map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+            {countries
+              .filter(c => c !== "all")
+              .sort((a, b) => a.localeCompare(b))
+              .map(c => (
+                <option key={c} value={c}>{getFlag(c)} {c}</option>
+              ))}
           </select>
         </div>
 
@@ -286,9 +304,18 @@ export default function AdminAnnoncerPage() {
             <table className="w-full">
               <thead>
                 <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
-                  {["", "Listing", "Category", "Location", "Tier", "Status", "Date", "Actions"].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"
-                      style={{ color: "#9CA3AF" }}>{h}</th>
+                  {[
+                    { label: "",         w: "w-12" },
+                    { label: "Listing",  w: "w-[220px]" },
+                    { label: "Category", w: "" },
+                    { label: "Location", w: "w-[160px]" },
+                    { label: "Tier",     w: "w-[140px]" },
+                    { label: "Status",   w: "" },
+                    { label: "Date",     w: "" },
+                    { label: "Actions",  w: "" },
+                  ].map(h => (
+                    <th key={h.label} className={`px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider ${h.w}`}
+                      style={{ color: "#9CA3AF" }}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
@@ -307,15 +334,30 @@ export default function AdminAnnoncerPage() {
                           : <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold"
                               style={{ background: "#F3F4F6", color: "#9CA3AF" }}>N/A</div>}
                       </td>
-                      {/* Title */}
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <p className="text-[13px] font-semibold text-gray-900 truncate">{l.title}</p>
+                      {/* Title + tier badge */}
+                      <td className="px-4 py-3 max-w-[220px]">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-[13px] font-semibold text-gray-900 truncate">{l.title}</p>
+                          {l.tier === "vip" && (
+                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full flex-shrink-0"
+                              style={{ background: "#FFFBEB", color: "#B45309", border: "1px solid #FCD34D" }}>VIP</span>
+                          )}
+                          {l.tier === "featured" && (
+                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full flex-shrink-0"
+                              style={{ background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>FEAT</span>
+                          )}
+                        </div>
                       </td>
                       {/* Category */}
                       <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">{l.category ?? "—"}</td>
-                      {/* Location */}
-                      <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
-                        {[l.city, l.country].filter(Boolean).join(", ") || "—"}
+                      {/* Location — flag + by, land */}
+                      <td className="px-4 py-3 text-[12px] text-gray-600 whitespace-nowrap">
+                        {l.country ? (
+                          <span className="flex items-center gap-1.5">
+                            <span>{getFlag(l.country)}</span>
+                            <span>{[l.city, l.country].filter(Boolean).join(", ")}</span>
+                          </span>
+                        ) : "—"}
                       </td>
                       {/* Tier — editable dropdown */}
                       <td className="px-4 py-3">
