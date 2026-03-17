@@ -137,6 +137,7 @@ export default function AdDetailPage() {
                 totalPhotos={(ad.images ?? []).length}
                 name={ad.title}
                 hasVoiceMessage={!!ad.voice_message_url}
+                isLoggedIn={currentUserId !== null}
               />
 
               {/* About */}

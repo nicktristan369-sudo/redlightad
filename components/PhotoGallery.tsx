@@ -1,18 +1,26 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Maximize2, Lock } from "lucide-react";
+import Link from "next/link";
 
 interface PhotoGalleryProps {
   images: string[];
   totalPhotos: number;
   name: string;
+  isLoggedIn?: boolean;
 }
 
-export default function PhotoGallery({ images, totalPhotos, name }: PhotoGalleryProps) {
+export default function PhotoGallery({
+  images,
+  totalPhotos,
+  name,
+  isLoggedIn = false,
+}: PhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lockModalOpen, setLockModalOpen] = useState(false);
   const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const thumbStripRef = useRef<HTMLDivElement>(null);
   const galTouchStart = useRef<number | null>(null);
@@ -22,14 +30,21 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
   const prevIdx = (activeIndex - 1 + count) % count;
   const nextIdx = (activeIndex + 1) % count;
 
+  // Image 0 is always free — index 1+ requires login
+  const isLocked = (index: number) => !isLoggedIn && index > 0;
+
   // ── Auto-slide every 3s ──────────────────────────────────────
   const resetAutoSlide = useCallback(() => {
     if (autoSlideRef.current) clearInterval(autoSlideRef.current);
     if (count <= 1) return;
     autoSlideRef.current = setInterval(() => {
-      setActiveIndex((i) => (i + 1) % count);
+      setActiveIndex((i) => {
+        const next = (i + 1) % count;
+        // Skip locked images in auto-slide for non-logged users
+        return isLocked(next) ? 0 : next;
+      });
     }, 3000);
-  }, [count]);
+  }, [count, isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     resetAutoSlide();
@@ -38,31 +53,54 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
 
   // ── Gallery navigation ───────────────────────────────────────
   const goTo = useCallback((index: number) => {
+    if (isLocked(index)) {
+      setLockModalOpen(true);
+      return;
+    }
     setActiveIndex(index);
     resetAutoSlide();
     if (thumbStripRef.current) {
       const btn = thumbStripRef.current.children[index] as HTMLElement | undefined;
       btn?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
-  }, [resetAutoSlide]);
+  }, [resetAutoSlide, isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const prevGal = () => goTo(prevIdx);
-  const nextGal = () => goTo(nextIdx);
+  const prevGal = () => {
+    const idx = (activeIndex - 1 + count) % count;
+    // Find closest non-locked going backwards
+    for (let i = 1; i <= count; i++) {
+      const candidate = (activeIndex - i + count) % count;
+      if (!isLocked(candidate)) { goTo(candidate); return; }
+    }
+  };
+  const nextGal = () => {
+    // Find closest non-locked going forward
+    for (let i = 1; i <= count; i++) {
+      const candidate = (activeIndex + i) % count;
+      if (!isLocked(candidate)) { goTo(candidate); return; }
+    }
+  };
 
   // ── Lightbox ─────────────────────────────────────────────────
   const openLightbox = useCallback((index: number) => {
+    if (isLocked(index)) {
+      setLockModalOpen(true);
+      return;
+    }
     setLightboxIndex(index);
     setLightboxOpen(true);
     if (autoSlideRef.current) clearInterval(autoSlideRef.current);
-  }, []);
+  }, [isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
     resetAutoSlide();
   }, [resetAutoSlide]);
 
-  const lbPrev = useCallback(() => setLightboxIndex((i) => (i - 1 + count) % count), [count]);
-  const lbNext = useCallback(() => setLightboxIndex((i) => (i + 1) % count), [count]);
+  const lbPrev = useCallback(() =>
+    setLightboxIndex((i) => (i - 1 + count) % count), [count]);
+  const lbNext = useCallback(() =>
+    setLightboxIndex((i) => (i + 1) % count), [count]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -76,11 +114,19 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
     return () => window.removeEventListener("keydown", handler);
   }, [lightboxOpen, closeLightbox, lbPrev, lbNext]);
 
+  // Lock modal — Escape closes
+  useEffect(() => {
+    if (!lockModalOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setLockModalOpen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lockModalOpen]);
+
   // Body scroll lock
   useEffect(() => {
-    document.body.style.overflow = lightboxOpen ? "hidden" : "";
+    document.body.style.overflow = (lightboxOpen || lockModalOpen) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [lightboxOpen]);
+  }, [lightboxOpen, lockModalOpen]);
 
   // ── Touch/swipe handlers ─────────────────────────────────────
   const handleGalTouchStart = (e: React.TouchEvent) => { galTouchStart.current = e.touches[0].clientX; };
@@ -100,6 +146,22 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
   };
 
   if (count === 0) return null;
+
+  // Locked image overlay (reusable)
+  const LockedOverlay = () => (
+    <div
+      className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)" }}
+    >
+      <div className="flex items-center justify-center rounded-full"
+        style={{ width: 36, height: 36, background: "rgba(255,255,255,0.15)" }}>
+        <Lock size={16} color="#fff" />
+      </div>
+      <span className="text-[11px] font-semibold text-white/80 tracking-wide uppercase">
+        Gratis konto
+      </span>
+    </div>
+  );
 
   return (
     <>
@@ -130,18 +192,19 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
               <div
                 className="relative flex-shrink-0 overflow-hidden rounded-xl cursor-pointer transition-opacity duration-300 hover:opacity-60"
                 style={{ width: "20%", aspectRatio: "3/4", opacity: 0.4 }}
-                onClick={prevGal}
+                onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
               >
-                <img
-                  src={images[prevIdx]}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
+                <img src={images[prevIdx]} alt="" className="w-full h-full object-cover" draggable={false} />
+                {isLocked(prevIdx) && (
+                  <div className="absolute inset-0 flex items-center justify-center"
+                    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
+                    <Lock size={18} color="#fff" />
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Center image — active, large */}
+            {/* Center image — active */}
             <div
               className="relative flex-1 overflow-hidden rounded-xl cursor-pointer group"
               style={{ aspectRatio: "3/4", maxHeight: "380px", maxWidth: "340px" }}
@@ -154,13 +217,11 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
                 draggable={false}
               />
               {/* Counter */}
-              <div
-                className="absolute top-2.5 left-3 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white select-none"
-                style={{ background: "rgba(0,0,0,0.55)" }}
-              >
+              <div className="absolute top-2.5 left-3 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white select-none"
+                style={{ background: "rgba(0,0,0,0.55)" }}>
                 {activeIndex + 1} / {count}
               </div>
-              {/* Expand button */}
+              {/* Expand */}
               <button
                 className="absolute top-2.5 right-2.5 flex items-center justify-center rounded-lg transition-colors hover:bg-black/70"
                 style={{ width: 30, height: 30, background: "rgba(0,0,0,0.50)" }}
@@ -176,14 +237,15 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
               <div
                 className="relative flex-shrink-0 overflow-hidden rounded-xl cursor-pointer transition-opacity duration-300 hover:opacity-60"
                 style={{ width: "20%", aspectRatio: "3/4", opacity: 0.4 }}
-                onClick={nextGal}
+                onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
               >
-                <img
-                  src={images[nextIdx]}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
+                <img src={images[nextIdx]} alt="" className="w-full h-full object-cover" draggable={false} />
+                {isLocked(nextIdx) && (
+                  <div className="absolute inset-0 flex items-center justify-center"
+                    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
+                    <Lock size={18} color="#fff" />
+                  </div>
+                )}
               </div>
             )}
 
@@ -212,14 +274,19 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
                   onClick={() => goTo(i)}
                   className="relative flex-shrink-0 overflow-hidden rounded-lg transition-all duration-200"
                   style={{
-                    width: 52,
-                    height: 52,
+                    width: 52, height: 52,
                     opacity: i === activeIndex ? 1 : 0.45,
                     outline: i === activeIndex ? "2px solid #fff" : "2px solid transparent",
                     outlineOffset: "1px",
                   }}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" draggable={false} />
+                  {isLocked(i) && (
+                    <div className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
+                      <Lock size={12} color="rgba(255,255,255,0.9)" />
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
@@ -244,10 +311,8 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
               className="w-full h-full object-cover"
               draggable={false}
             />
-            <div
-              className="absolute top-3 right-3 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white select-none"
-              style={{ background: "rgba(0,0,0,0.55)" }}
-            >
+            <div className="absolute top-3 right-3 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white select-none"
+              style={{ background: "rgba(0,0,0,0.55)" }}>
               {activeIndex + 1} / {count}
             </div>
             <button
@@ -276,6 +341,12 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
                   }}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" draggable={false} />
+                  {isLocked(i) && (
+                    <div className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
+                      <Lock size={11} color="rgba(255,255,255,0.9)" />
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
@@ -336,8 +407,7 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
                   textTransform: "uppercase",
                   color: "rgba(255,255,255,0.60)",
                   textShadow: "1px 1px 3px rgba(0,0,0,0.85), 0 0 8px rgba(0,0,0,0.55)",
-                  fontFamily:
-                    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
                 }}
               >
                 REDLIGHTAD.COM
@@ -345,10 +415,8 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
             </div>
 
             {/* Counter */}
-            <div
-              className="absolute top-3 left-3 text-[12px] font-semibold text-white rounded-full px-2.5 py-1 select-none"
-              style={{ background: "rgba(0,0,0,0.55)" }}
-            >
+            <div className="absolute top-3 left-3 text-[12px] font-semibold text-white rounded-full px-2.5 py-1 select-none"
+              style={{ background: "rgba(0,0,0,0.55)" }}>
               {lightboxIndex + 1} / {count}
             </div>
           </div>
@@ -384,6 +452,63 @@ export default function PhotoGallery({ images, totalPhotos, name }: PhotoGallery
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════
+          LOCK MODAL — gratis konto krævet
+          ════════════════════════════════════════════════════════ */}
+      {lockModalOpen && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
+          style={{ background: "rgba(0,0,0,0.55)" }}
+          onClick={() => setLockModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-sm bg-white rounded-2xl p-8 text-center"
+            style={{ boxShadow: "0 24px 60px rgba(0,0,0,0.18)", border: "1px solid #E5E5E5" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close */}
+            <button
+              onClick={() => setLockModalOpen(false)}
+              className="absolute top-4 right-4 flex items-center justify-center rounded-full transition-colors hover:bg-gray-100"
+              style={{ width: 32, height: 32 }}
+            >
+              <X size={16} color="#9CA3AF" />
+            </button>
+
+            {/* Lock icon */}
+            <div className="flex items-center justify-center rounded-2xl mx-auto mb-5"
+              style={{ width: 56, height: 56, background: "#F5F5F7" }}>
+              <Lock size={24} color="#111" strokeWidth={1.8} />
+            </div>
+
+            <h2 className="text-[20px] font-black text-gray-900 mb-2 leading-tight">
+              Opret en gratis konto<br />for at se alle billeder
+            </h2>
+            <p className="text-[14px] text-gray-500 mb-7 leading-relaxed">
+              Registrering er gratis og tager under 1 minut. Ingen betaling krævet.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/register"
+                className="block w-full py-3 rounded-xl text-[15px] font-semibold text-white text-center transition-colors"
+                style={{ background: "#000" }}
+                onClick={() => setLockModalOpen(false)}
+              >
+                Opret gratis konto
+              </Link>
+              <Link
+                href="/login"
+                className="block w-full py-3 rounded-xl text-[15px] font-medium text-gray-700 text-center border border-[#E5E5E5] transition-colors hover:bg-gray-50"
+                onClick={() => setLockModalOpen(false)}
+              >
+                Log ind
+              </Link>
+            </div>
+          </div>
         </div>
       )}
     </>
