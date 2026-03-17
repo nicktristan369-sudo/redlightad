@@ -30,9 +30,10 @@ const getServiceClient = () =>
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authClient = await getAuthClient();
     const { data: { user } } = await authClient.auth.getUser();
     if (!user) return NextResponse.json({ error: "Ikke autoriseret" }, { status: 401 });
@@ -43,7 +44,7 @@ export async function POST(
     const { data: listing, error: lErr } = await db
       .from("listings")
       .select("id, user_id, premium_tier, location_changed_at")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", user.id)
       .single();
 
@@ -90,7 +91,7 @@ export async function POST(
         location: city,
         location_changed_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", user.id);
 
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });

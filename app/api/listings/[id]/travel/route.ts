@@ -23,14 +23,15 @@ const getServiceClient = () =>
 /* ── GET — public, returns entries for a listing ── */
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const db = getServiceClient();
     const { data, error } = await db
       .from("listing_travel")
       .select("id, from_date, to_date, city, country")
-      .eq("listing_id", params.id)
+      .eq("listing_id", id)
       .order("from_date", { ascending: true });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -43,9 +44,10 @@ export async function GET(
 /* ── POST — add entry OR toggle show_travel_schedule ── */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authClient = await getAuthClient();
     const { data: { user } } = await authClient.auth.getUser();
     if (!user) return NextResponse.json({ error: "Ikke autoriseret" }, { status: 401 });
@@ -56,7 +58,7 @@ export async function POST(
     const { data: listing } = await db
       .from("listings")
       .select("id, user_id, premium_tier")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", user.id)
       .single();
 
@@ -87,7 +89,7 @@ export async function POST(
       const { error } = await db
         .from("listings")
         .update({ show_travel_schedule: body.show ?? false })
-        .eq("id", params.id)
+        .eq("id", id)
         .eq("user_id", user.id);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ success: true });
@@ -101,7 +103,7 @@ export async function POST(
 
     const { data: entry, error } = await db
       .from("listing_travel")
-      .insert({ listing_id: params.id, from_date, to_date, city, country })
+      .insert({ listing_id: id, from_date, to_date, city, country })
       .select()
       .single();
 
@@ -115,9 +117,10 @@ export async function POST(
 /* ── DELETE — remove entry ── */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authClient = await getAuthClient();
     const { data: { user } } = await authClient.auth.getUser();
     if (!user) return NextResponse.json({ error: "Ikke autoriseret" }, { status: 401 });
@@ -132,7 +135,7 @@ export async function DELETE(
       .from("listing_travel")
       .delete()
       .eq("id", travel_id)
-      .eq("listing_id", params.id);
+      .eq("listing_id", id);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
