@@ -7,6 +7,8 @@ import AdDetailClient from "./AdDetailClient";
 import AdSidebar from "@/components/AdSidebar";
 import ContactSection from "@/components/ContactSection";
 import SocialLinksSection from "@/components/SocialLinksSection";
+import TravelBox from "@/components/TravelBox";
+import type { TravelEntry } from "@/components/TravelBox";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 
@@ -38,6 +40,7 @@ interface Listing {
   video_url: string | null;
   premium_tier: string | null;
   social_links: SocialLinks | null;
+  show_travel_schedule: boolean | null;
   status: string;
 }
 
@@ -46,6 +49,7 @@ export default function AdDetailPage() {
   const [ad, setAd] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [travelEntries, setTravelEntries] = useState<TravelEntry[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -64,6 +68,15 @@ export default function AdDetailPage() {
         .single();
 
       setAd(data ?? null);
+
+      // Fetch travel entries if show_travel_schedule is enabled
+      if (data?.show_travel_schedule) {
+        fetch(`/api/listings/${id}/travel`)
+          .then(r => r.json())
+          .then(d => { if (d.entries) setTravelEntries(d.entries); })
+          .catch(() => {});
+      }
+
       setLoading(false);
     };
     load();
@@ -141,6 +154,10 @@ export default function AdDetailPage() {
               />
 
               {/* About */}
+              {ad.show_travel_schedule && travelEntries.length > 0 && (
+                <TravelBox entries={travelEntries} />
+              )}
+
               {ad.about && (
                 <div className="rounded-xl bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
                   <h3 className="mb-3 text-lg font-bold text-gray-900">Om mig</h3>
