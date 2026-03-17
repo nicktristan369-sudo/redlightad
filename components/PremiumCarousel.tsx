@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { createClient } from "@/lib/supabase"
+import { SUPPORTED_COUNTRIES } from "@/lib/countries"
 import Link from "next/link"
 
 interface PremiumListing {
@@ -91,6 +92,22 @@ export default function PremiumCarousel({
     }
   }, [])
 
+  // Build OR filter covering full name + ISO code variants for a country
+  function buildCountryFilter(name: string): string {
+    const c = SUPPORTED_COUNTRIES.find(c => c.name.toLowerCase() === name.toLowerCase())
+    const code = c?.code ?? ""
+    const variants = [
+      name,                          // "Denmark"
+      name.toLowerCase(),            // "denmark"
+      code.toUpperCase(),            // "DK"
+      code.toLowerCase(),            // "dk"
+    ]
+    // Remove duplicates and empty strings
+    return [...new Set(variants.filter(Boolean))]
+      .map(v => `country.eq.${v}`)
+      .join(",")
+  }
+
   // Fetch from Supabase on mount + when country changes
   useEffect(() => {
     const supabase = createClient()
@@ -105,7 +122,7 @@ export default function PremiumCarousel({
 
     if (excludeId) query = query.neq("id", excludeId)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (selectedCountry) query = (query as any).ilike("country", selectedCountry)
+    if (selectedCountry) query = (query as any).or(buildCountryFilter(selectedCountry))
 
     query.then(({ data, error }) => {
       if (error) {
@@ -118,7 +135,7 @@ export default function PremiumCarousel({
           .limit(40)
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fb = selectedCountry ? (fallbackQuery as any).ilike("country", selectedCountry) : fallbackQuery
+        const fb = selectedCountry ? (fallbackQuery as any).or(buildCountryFilter(selectedCountry)) : fallbackQuery
         const base = excludeId ? fb.neq("id", excludeId) : fb
 
         base.then(({ data: d2 }: { data: PremiumListing[] | null }) => {
