@@ -110,36 +110,37 @@ export default function PremiumCarousel({
 
   useEffect(() => {
     const supabase = createClient()
+
+    // Resolve country name from localStorage
+    let countryName: string | null = null
+    try {
+      countryName = localStorage.getItem("selected_country_name")
+    } catch { /* ignore */ }
+
+    // Fetch: premium tier OR manually pinned to carousel
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at")
+      .select("id, title, profile_image, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel")
       .eq("status", "active")
-      .in("premium_tier", ["vip", "featured", "basic"])
-      .order("premium_tier", { ascending: true }) // vip first alphabetically? no — order by tier weight
-      .limit(30)
+      .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
+      .limit(40)
+
     if (excludeId) query = query.neq("id", excludeId)
-    // Country filter: map country code → country name via listings.country field
-    if (selectedCountry) {
-      // listings.country stores full name (e.g. "Denmark"), selectedCountry is a code (e.g. "dk")
-      // Try to resolve: if we have country name in localStorage use that, otherwise skip filter
-      try {
-        const stored = localStorage.getItem("selected_country_name")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (stored) query = (query as any).ilike("country", stored)
-      } catch { /* ignore */ }
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (countryName) query = (query as any).ilike("country", countryName)
+
     query.then(({ data }) => {
       if (data && data.length > 0) {
-        // Sort: vip first, then featured, then basic
-        const order: Record<string, number> = { vip: 0, featured: 1, basic: 2 }
-        const sorted = [...data].sort((a, b) =>
-          (order[(a as PremiumListing).premium_tier ?? ""] ?? 9) -
-          (order[(b as PremiumListing).premium_tier ?? ""] ?? 9)
-        )
+        // Sort: in_carousel pinned first, then vip → featured → basic
+        const tierOrder: Record<string, number> = { vip: 1, featured: 2, basic: 3 }
+        const sorted = [...data].sort((a, b) => {
+          const ac = (a as PremiumListing & { in_carousel?: boolean }).in_carousel ? 0 : (tierOrder[(a as PremiumListing).premium_tier ?? ""] ?? 9)
+          const bc = (b as PremiumListing & { in_carousel?: boolean }).in_carousel ? 0 : (tierOrder[(b as PremiumListing).premium_tier ?? ""] ?? 9)
+          return ac - bc
+        })
         setListings(sorted as PremiumListing[])
         setOffset(0)
-      } else if (data && data.length === 0 && selectedCountry) {
-        // No premium listings in this country — hide carousel
+      } else {
         setListings([])
       }
     })
