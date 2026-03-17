@@ -72,3 +72,19 @@ export function buildCountryOrFilter(input: string): string {
     .map(v => `country.eq.${v}`)
     .join(",")
 }
+
+/**
+ * Returns an array of all country DB variants for use with Supabase .in()
+ * Input: ISO code ("dk") or full name ("Denmark")
+ */
+export function getCountryVariants(input: string): string[] {
+  const byCode = SUPPORTED_COUNTRIES.find(c => c.code === input.toLowerCase())
+  const byName = SUPPORTED_COUNTRIES.find(c => c.name.toLowerCase() === input.toLowerCase())
+  const c = byCode ?? byName
+
+  const variants = c
+    ? [c.name, c.name.toLowerCase(), c.code.toUpperCase(), c.code.toLowerCase()]
+    : [input, input.toLowerCase(), input.toUpperCase()]
+
+  return [...new Set(variants.filter(Boolean))]
+}
