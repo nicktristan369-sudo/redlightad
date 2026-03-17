@@ -53,3 +53,22 @@ export const SUPPORTED_CODES = new Set(SUPPORTED_COUNTRIES.map(c => c.code))
 export function getCountry(code: string): Country | undefined {
   return SUPPORTED_COUNTRIES.find(c => c.code === code.toLowerCase())
 }
+
+/**
+ * Build a Supabase OR-filter string covering all country variants:
+ * ISO code (dk/DK) + full name (Denmark) + lowercase name (denmark)
+ * Input can be ISO code ("dk") or full name ("Denmark")
+ */
+export function buildCountryOrFilter(input: string): string {
+  const byCode = SUPPORTED_COUNTRIES.find(c => c.code === input.toLowerCase())
+  const byName = SUPPORTED_COUNTRIES.find(c => c.name.toLowerCase() === input.toLowerCase())
+  const c = byCode ?? byName
+
+  const variants = c
+    ? [c.name, c.name.toLowerCase(), c.code.toUpperCase(), c.code.toLowerCase()]
+    : [input, input.toLowerCase(), input.toUpperCase(), input.toUpperCase().slice(0, 2)]
+
+  return [...new Set(variants.filter(Boolean))]
+    .map(v => `country.eq.${v}`)
+    .join(",")
+}
