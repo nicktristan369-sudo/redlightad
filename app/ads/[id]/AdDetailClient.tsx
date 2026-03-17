@@ -8,6 +8,7 @@ interface AdDetailClientProps {
   totalPhotos: number;
   name: string;
   hasVoiceMessage: boolean;
+  isLoggedIn?: boolean;
 }
 
 export default function AdDetailClient({
@@ -15,10 +16,11 @@ export default function AdDetailClient({
   totalPhotos,
   name,
   hasVoiceMessage,
+  isLoggedIn = false,
 }: AdDetailClientProps) {
   return (
     <>
-      <PhotoGallery images={images} totalPhotos={totalPhotos} name={name} />
+      <PhotoGallery images={images} totalPhotos={totalPhotos} name={name} isLoggedIn={isLoggedIn} />
       {hasVoiceMessage && (
         <div className="mt-6">
           <VoicePlayer />
