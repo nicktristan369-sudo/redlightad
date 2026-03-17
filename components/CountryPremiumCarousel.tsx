@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase"
-import { buildCountryOrFilter } from "@/lib/countries"
+import { getCountryVariants } from "@/lib/countries"
 import Link from "next/link"
 
 interface Listing {
@@ -44,15 +44,14 @@ export default function CountryPremiumCarousel({ country, countryName }: Props) 
 
   useEffect(() => {
     const supabase = createClient()
-    // Match all country variants: dk → Denmark/DK/dk/denmark
-    const countryFilter = buildCountryOrFilter(country)
+    // Match all country variants: dk → ["Denmark","denmark","DK","dk"]
+    const countryVariants = getCountryVariants(country)
 
     supabase
       .from("listings")
       .select("id, title, profile_image, age, city, location, premium_tier, in_carousel")
       .eq("status", "active")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .or(countryFilter as any)
+      .in("country", countryVariants)
       .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
       .limit(12)
       .then(({ data, error }) => {
@@ -62,8 +61,7 @@ export default function CountryPremiumCarousel({ country, countryName }: Props) 
             .from("listings")
             .select("id, title, profile_image, age, city, location, premium_tier")
             .eq("status", "active")
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .or(countryFilter as any)
+            .in("country", countryVariants)
             .in("premium_tier", ["vip", "featured", "basic"])
             .limit(12)
             .then(({ data: d2 }) => { if (d2 && d2.length > 0) setListings(d2) })
