@@ -55,6 +55,8 @@ interface PremiumCarouselProps {
   subtitle?: string
   excludeId?: string
   bgClass?: string
+  /** If set, overrides localStorage country — pass ISO code ("dk") or full name ("Denmark") */
+  country?: string
 }
 
 export default function PremiumCarousel({
@@ -62,21 +64,24 @@ export default function PremiumCarousel({
   subtitle = "Top verified members",
   excludeId,
   bgClass = "bg-[#F8F8F8]",
+  country: countryProp,
 }: PremiumCarouselProps) {
   const [listings, setListings] = useState<PremiumListing[]>([])
   const [loaded, setLoaded] = useState(false)
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
+  const [localCountry, setLocalCountry] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
   const [fading, setFading] = useState(false)
   const [hovered, setHovered] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Read selected country from localStorage
+  // If country prop is set, use it directly — skip localStorage
+  // Otherwise read from localStorage (forside with CountrySelector)
   useEffect(() => {
+    if (countryProp) return // prop takes priority, no localStorage needed
     const read = () => {
       try {
         const name = localStorage.getItem("selected_country_name")
-        setSelectedCountry(name ?? null)
+        setLocalCountry(name ?? null)
       } catch { /* ignore */ }
     }
     read()
@@ -90,7 +95,10 @@ export default function PremiumCarousel({
       window.removeEventListener("storage", onStorage)
       window.removeEventListener("countryChanged", onCountryChange)
     }
-  }, [])
+  }, [countryProp])
+
+  // Resolved country: prop wins, then localStorage, then null (= all countries)
+  const selectedCountry = countryProp ?? localCountry
 
   // Fetch from Supabase on mount + when country changes
   useEffect(() => {
