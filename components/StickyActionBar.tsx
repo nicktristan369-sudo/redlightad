@@ -79,6 +79,13 @@ function ContactModal({ phone, whatsapp, onClose }: { phone: string | null; what
         {!phone && !whatsapp && (
           <p className="text-[14px] text-gray-400 text-center py-4">Ingen kontaktinfo tilgængeligt</p>
         )}
+        {/* Info hint */}
+        <div className="flex items-start gap-2 rounded-xl bg-gray-50 px-3 py-2.5 mt-1">
+          <span className="text-[13px] text-gray-400 flex-shrink-0 mt-px">💡</span>
+          <p className="text-[12px] text-gray-400 leading-relaxed">
+            Husk at nævne at du fandt annoncen på <strong className="text-gray-500">RedLightAD.com</strong>
+          </p>
+        </div>
       </div>
     </Sheet>
   )
@@ -139,7 +146,7 @@ function MessageModal({
             style={{ background: "#111" }}>
             <Phone size={18} />
             <div>
-              <div>📱 Send SMS</div>
+              <div>Send SMS</div>
               <div className="text-[11px] font-normal opacity-70 mt-0.5">{phone}</div>
             </div>
           </a>
@@ -152,7 +159,7 @@ function MessageModal({
             style={{ background: "#DC2626" }}>
             <MessageSquare size={18} />
             <div>
-              <div>💬 Send besked på platformen</div>
+              <div>Send besked på platformen</div>
               <div className="text-[11px] font-normal opacity-80 mt-0.5">100% anonymt</div>
             </div>
           </button>
