@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare, Crown, MapPin } from "lucide-react";
 import Link from "next/link";
 
 interface Listing {
@@ -10,7 +10,7 @@ interface Listing {
   title: string;
   category: string | null;
   city: string | null;
-  location: string | null;
+  country: string | null;
   status: string;
   tier: string | null;
   profile_image: string | null;
@@ -28,31 +28,120 @@ const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }>
   draft:    { bg: "#F3F4F6", color: "#4B5563", label: "Draft" },
 };
 
-const TIER_BADGE: Record<string, string> = {
-  basic:    "#6B7280",
-  featured: "#2563EB",
-  vip:      "#C9A84C",
+const TIERS: { value: string | null; label: string; color: string }[] = [
+  { value: "vip",      label: "VIP",      color: "#C9A84C" },
+  { value: "featured", label: "Featured", color: "#2563EB" },
+  { value: "basic",    label: "Basic",    color: "#6B7280" },
+  { value: null,       label: "Standard", color: "#9CA3AF" },
+];
+
+const TIER_COLOR: Record<string, string> = {
+  vip: "#C9A84C", featured: "#2563EB", basic: "#6B7280",
 };
 
+/* ── Inline Tier Dropdown ── */
+function TierDropdown({ listingId, currentTier, onSet }: {
+  listingId: string;
+  currentTier: string | null;
+  onSet: (id: string, tier: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const select = async (tier: string | null) => {
+    if (tier === currentTier) { setOpen(false); return; }
+    setBusy(true);
+    await fetch("/api/admin/listings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingId, action: "set_tier", tier }),
+    });
+    onSet(listingId, tier);
+    setBusy(false);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        disabled={busy}
+        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-colors disabled:opacity-40"
+        style={{
+          background: currentTier ? "#F9FAFB" : "transparent",
+          color: currentTier ? (TIER_COLOR[currentTier] ?? "#6B7280") : "#9CA3AF",
+          border: `1px solid ${currentTier ? "#E5E7EB" : "transparent"}`,
+        }}
+        title="Sæt tier"
+      >
+        {currentTier ? <Crown size={10} /> : null}
+        {currentTier ? currentTier.toUpperCase() : "—"}
+      </button>
+      {open && (
+        <div
+          className="absolute z-50 left-0 mt-1 w-36 rounded-xl shadow-xl overflow-hidden"
+          style={{ background: "#fff", border: "1px solid #E5E5E5", top: "100%" }}
+        >
+          <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sæt Tier</p>
+          </div>
+          {TIERS.map(t => {
+            const active = t.value === currentTier;
+            return (
+              <button
+                key={String(t.value)}
+                onClick={() => select(t.value)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors"
+                style={{
+                  background: active ? "#F9FAFB" : "transparent",
+                  borderBottom: "1px solid #F9FAFB",
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#F9FAFB"; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+              >
+                {t.value && <Crown size={11} color={t.color} />}
+                <span className="text-[12px] font-semibold" style={{ color: t.color }}>{t.label}</span>
+                {active && <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.color }} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main ── */
 export default function AdminAnnoncerPage() {
   const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("pending");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [tab, setTab]           = useState<Tab>("pending");
+  const [search, setSearch]     = useState("");
+  const [country, setCountry]   = useState("all");
+  const [page, setPage]         = useState(1);
+  const [busy, setBusy]         = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/listings");
+    const url = `/api/admin/listings${country !== "all" ? `?country=${encodeURIComponent(country)}` : ""}`;
+    const res = await fetch(url);
     const json = await res.json();
     setListings(json.listings ?? []);
     setLoading(false);
-  }, []);
+  }, [country]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { setPage(1); }, [tab, search]);
+  useEffect(() => { setPage(1); }, [tab, search, country]);
 
   const update = async (id: string, status: "active" | "rejected") => {
     setBusy(id);
@@ -78,6 +167,9 @@ export default function AdminAnnoncerPage() {
     setBusy(null);
   };
 
+  const setTier = (id: string, tier: string | null) =>
+    setListings(p => p.map(l => l.id === id ? { ...l, tier } : l));
+
   const bulkApprove = async () => {
     const pending = filtered.filter(l => l.status === "pending");
     if (!pending.length) return;
@@ -101,10 +193,13 @@ export default function AdminAnnoncerPage() {
     all:      listings.length,
   };
 
+  // Unique countries for filter
+  const countries = ["all", ...Array.from(new Set(listings.map(l => l.country).filter(Boolean))).sort()] as string[];
+
   const q = search.toLowerCase();
   const base = tab === "all" ? listings : listings.filter(l => l.status === tab);
   const filtered = base.filter(l =>
-    !q || l.title?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(q) || l.location?.toLowerCase().includes(q)
+    !q || l.title?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(q) || l.country?.toLowerCase().includes(q)
   );
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -122,7 +217,7 @@ export default function AdminAnnoncerPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-[22px] font-bold text-gray-900">Listings</h1>
-          <p className="text-[13px] text-gray-400 mt-0.5">{counts.all} total listings</p>
+          <p className="text-[13px] text-gray-400 mt-0.5">{counts.all} listings{country !== "all" ? ` in ${country}` : ""}</p>
         </div>
         {tab === "pending" && counts.pending > 0 && (
           <button onClick={bulkApprove} disabled={bulkLoading}
@@ -134,8 +229,9 @@ export default function AdminAnnoncerPage() {
         )}
       </div>
 
-      {/* Tabs + Search */}
+      {/* Filters row */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
+        {/* Tabs */}
         <div className="flex gap-0.5 p-1 rounded-lg" style={{ background: "#F3F4F6" }}>
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
@@ -151,6 +247,23 @@ export default function AdminAnnoncerPage() {
             </button>
           ))}
         </div>
+
+        {/* Country filter */}
+        <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2" style={{ border: "1px solid #E5E5E5" }}>
+          <MapPin size={13} color="#9CA3AF" />
+          <select
+            value={country}
+            onChange={e => setCountry(e.target.value)}
+            className="text-[13px] bg-transparent outline-none text-gray-700 cursor-pointer"
+          >
+            <option value="all">All countries</option>
+            {countries.filter(c => c !== "all").map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Search */}
         <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-xs bg-white rounded-lg px-3 py-2"
           style={{ border: "1px solid #E5E5E5" }}>
           <Search size={13} color="#9CA3AF" />
@@ -189,7 +302,8 @@ export default function AdminAnnoncerPage() {
                       {/* Thumb */}
                       <td className="pl-4 py-3 w-12">
                         {l.profile_image
-                          ? <img src={l.profile_image} alt="" className="w-9 h-9 rounded-lg object-cover" /> // eslint-disable-line @next/next/no-img-element
+                          // eslint-disable-next-line @next/next/no-img-element
+                          ? <img src={l.profile_image} alt="" className="w-9 h-9 rounded-lg object-cover" />
                           : <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold"
                               style={{ background: "#F3F4F6", color: "#9CA3AF" }}>N/A</div>}
                       </td>
@@ -200,13 +314,12 @@ export default function AdminAnnoncerPage() {
                       {/* Category */}
                       <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">{l.category ?? "—"}</td>
                       {/* Location */}
-                      <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">{l.city ?? l.location ?? "—"}</td>
-                      {/* Tier */}
+                      <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
+                        {[l.city, l.country].filter(Boolean).join(", ") || "—"}
+                      </td>
+                      {/* Tier — editable dropdown */}
                       <td className="px-4 py-3">
-                        {l.tier ? (
-                          <span className="text-[11px] font-semibold uppercase"
-                            style={{ color: TIER_BADGE[l.tier] ?? "#6B7280" }}>{l.tier}</span>
-                        ) : <span className="text-[11px] text-gray-300">—</span>}
+                        <TierDropdown listingId={l.id} currentTier={l.tier} onSet={setTier} />
                       </td>
                       {/* Status */}
                       <td className="px-4 py-3">
@@ -220,14 +333,14 @@ export default function AdminAnnoncerPage() {
                       {/* Actions */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <Link href={`/annoncer/${l.id}`} target="_blank"
+                          <Link href={`/ads/${l.id}`} target="_blank"
                             className="p-1.5 rounded-md transition-colors" title="Preview"
                             style={{ color: "#9CA3AF" }}
                             onMouseEnter={e => { e.currentTarget.style.color = "#111"; e.currentTarget.style.background = "#F3F4F6"; }}
                             onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}>
                             <Eye size={14} />
                           </Link>
-                          <Link href={`/dashboard/annoncer/edit/${l.id}`} target="_blank"
+                          <Link href={`/dashboard/annoncer/${l.id}/edit`} target="_blank"
                             className="p-1.5 rounded-md transition-colors" title="Edit"
                             style={{ color: "#9CA3AF" }}
                             onMouseEnter={e => { e.currentTarget.style.color = "#111"; e.currentTarget.style.background = "#F3F4F6"; }}
@@ -276,7 +389,7 @@ export default function AdminAnnoncerPage() {
               {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
             </p>
             <div className="flex gap-1">
-              {Array.from({ length: pages }, (_, i) => i + 1).map(n => (
+              {Array.from({ length: Math.min(pages, 10) }, (_, i) => i + 1).map(n => (
                 <button key={n} onClick={() => setPage(n)}
                   className="w-7 h-7 rounded-md text-[12px] font-medium transition-colors"
                   style={{ background: n === page ? "#000" : "transparent", color: n === page ? "#fff" : "#6B7280" }}>
