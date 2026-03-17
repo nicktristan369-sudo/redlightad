@@ -5,6 +5,10 @@ import { Lock, Shield, EyeOff, Star, Globe, CheckCircle, CreditCard } from "luci
 export const metadata = {
   title: "About Us — RedLightAD",
   description: "RedLightAD is Europe's leading premium adult advertising platform — built on privacy, safety, and discretion.",
+  openGraph: {
+    title: "About Us — RedLightAD",
+    description: "RedLightAD is Europe's leading premium adult advertising platform.",
+  },
 };
 
 export default function AboutPage() {
