@@ -99,60 +99,56 @@ export default function AdList({ country, category, limit = 50 }: Props) {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
 
                 {/* ── MOBILE layout (hidden on md+) ── */}
-                <div className="md:hidden">
-                  {/* Title row */}
-                  <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
-                    <h3 className="font-bold text-[15px] text-gray-900 leading-tight">{ad.title}</h3>
-                    <span className="flex-shrink-0 inline-flex items-center gap-1 bg-gray-900 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
-                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      Verified
-                    </span>
-                  </div>
-
-                  {/* Full-width image */}
-                  <div className="relative w-full h-[200px] bg-gray-100">
-                    {ad.video_url ? (
-                      <>
+                <div className="md:hidden p-3 flex flex-col gap-2">
+                  {/* Top: image left + info right */}
+                  <div className="flex gap-3">
+                    {/* Thumbnail 120x120 */}
+                    <div className="relative flex-shrink-0 w-[120px] h-[120px] rounded-xl overflow-hidden bg-gray-100">
+                      {ad.video_url ? (
                         <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
-                            </svg>
-                          </div>
+                      ) : ad.profile_image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                          <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
                         </div>
-                      </>
-                    ) : ad.profile_image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                        <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                      )}
+                      {tierBadge(ad.premium_tier)}
+                    </div>
+
+                    {/* Info right */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      {/* Title + verified */}
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <h3 className="font-bold text-[14px] text-gray-900 leading-tight truncate">{ad.title}</h3>
+                          <svg className="w-3.5 h-3.5 flex-shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </div>
+                        {/* Info line 1: age · gender · category */}
+                        <p className="text-[11px] text-gray-400 truncate leading-tight">
+                          {[ad.age, ad.gender, ad.category].filter(Boolean).join(" · ")}
+                        </p>
+                        {/* Info line 2: location · language */}
+                        <p className="text-[11px] text-gray-400 truncate leading-tight">
+                          {[displayLocation, ad.languages?.[0]].filter(Boolean).join(" · ")}
+                        </p>
                       </div>
-                    )}
-                    {tierBadge(ad.premium_tier)}
+                      {/* Description */}
+                      {description && (
+                        <p className="text-[12px] text-gray-500 line-clamp-2 leading-snug mt-1">{description}</p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Info + description + CTA */}
-                  <div className="px-3 py-3 space-y-2">
-                    {/* Compact info row */}
-                    <p className="text-[11px] text-gray-400 truncate">
-                      {[ad.age, ad.gender, ad.category, displayLocation, ad.languages?.[0]]
-                        .filter(Boolean).join(" · ")}
-                    </p>
-                    {/* Description */}
-                    {description && (
-                      <p className="text-[13px] text-gray-600 line-clamp-2 leading-snug">{description}</p>
-                    )}
-                    {/* CTA */}
-                    <span className="block w-full bg-gray-900 text-white text-[13px] font-semibold py-2.5 rounded-xl text-center">
-                      View Profile
-                    </span>
-                  </div>
+                  {/* CTA */}
+                  <span className="block w-full bg-gray-900 text-white text-[13px] font-semibold py-2 rounded-xl text-center">
+                    View Profile →
+                  </span>
                 </div>
 
                 {/* ── DESKTOP layout (hidden below md) ── */}
