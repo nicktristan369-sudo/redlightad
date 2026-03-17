@@ -8,8 +8,12 @@ import LocationSelector from "@/components/LocationSelector";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import SocialLinksEditor from "@/components/SocialLinksEditor";
 import type { SocialLinks } from "@/components/SocialLinksSection";
-import { Crown, CheckCircle, AlertTriangle } from "lucide-react";
+import { Crown, CheckCircle, AlertTriangle, Plus, Trash2, Eye, EyeOff } from "lucide-react";
+import LocationSwitchPanel from "@/components/LocationSwitchPanel";
+import type { TravelEntry } from "@/components/TravelBox";
 import { CATEGORIES } from "@/lib/constants/categories";
+import { SUPPORTED_COUNTRIES } from "@/lib/countries";
+const SUPPORTED_COUNTRIES_SORTED = [...SUPPORTED_COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
 import { GENDERS } from "@/lib/constants/genders";
 import {
   BODY_BUILD_OPTIONS, HAIR_COLOR_OPTIONS, EYE_COLOR_OPTIONS,
@@ -72,6 +76,16 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   // voice + social
   const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
+
+  // location switch
+  const [locationChangedAt, setLocationChangedAt] = useState<string | null>(null);
+
+  // travel schedule
+  const [travelEntries, setTravelEntries] = useState<TravelEntry[]>([]);
+  const [showTravelSchedule, setShowTravelSchedule] = useState(false);
+  const [travelLoading, setTravelLoading] = useState(false);
+  const [newTravel, setNewTravel] = useState({ from_date: "", to_date: "", city: "", country: "" });
+  const [travelError, setTravelError] = useState("");
   const [timezone, setTimezone] = useState("Europe/Copenhagen");
   const [openingHours, setOpeningHours] = useState<OpeningHours>(defaultHours());
 
@@ -96,6 +110,43 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         ? prev[field].filter((v: string) => v !== value)
         : [...prev[field], value],
     }));
+
+  /* ── Travel helpers ── */
+  const addTravelEntry = async () => {
+    const { from_date, to_date, city, country } = newTravel;
+    if (!from_date || !to_date || !city || !country) { setTravelError("Udfyld alle felter"); return; }
+    setTravelLoading(true); setTravelError("");
+    try {
+      const res = await fetch(`/api/listings/${id}/travel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from_date, to_date, city, country }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setTravelError(json.error ?? "Fejl"); return; }
+      setTravelEntries(prev => [...prev, json.entry].sort((a, b) => a.from_date.localeCompare(b.from_date)));
+      setNewTravel({ from_date: "", to_date: "", city: "", country: "" });
+    } catch { setTravelError("Noget gik galt"); }
+    finally { setTravelLoading(false); }
+  };
+
+  const deleteTravelEntry = async (travelId: string) => {
+    await fetch(`/api/listings/${id}/travel`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ travel_id: travelId }),
+    });
+    setTravelEntries(prev => prev.filter(e => e.id !== travelId));
+  };
+
+  const toggleTravelVisibility = async (show: boolean) => {
+    setShowTravelSchedule(show);
+    await fetch(`/api/listings/${id}/travel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "toggle_visibility", show }),
+    });
+  };
 
   /* ─── Load listing ─── */
   useEffect(() => {
@@ -169,6 +220,14 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
       if (listing.opening_hours) {
         setOpeningHours(prev => ({ ...prev, ...listing.opening_hours }));
       }
+      if (listing.location_changed_at) setLocationChangedAt(listing.location_changed_at);
+      if (listing.show_travel_schedule) setShowTravelSchedule(listing.show_travel_schedule);
+
+      // Fetch travel entries
+      fetch(`/api/listings/${id}/travel`)
+        .then(r => r.json())
+        .then(d => { if (d.entries) setTravelEntries(d.entries); })
+        .catch(() => {});
 
       setPageLoading(false);
     };
@@ -604,6 +663,129 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                     )}
                   </div>
                   <SocialLinksEditor value={socialLinks} onChange={setSocialLinks} isPremium={isPremium} />
+                </div>
+
+                {/* ── Skift Lokation (Premium only) ── */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[13px] font-semibold text-gray-900">Skift Lokation</p>
+                    {!isPremium && (
+                      <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">Premium only</span>
+                    )}
+                  </div>
+                  {isPremium ? (
+                    <LocationSwitchPanel
+                      listingId={id}
+                      currentCountry={form.country}
+                      currentCity={form.location}
+                      locationChangedAt={locationChangedAt}
+                      onSuccess={(country, city) => {
+                        updateField("country", country);
+                        updateField("location", city);
+                        setLocationChangedAt(new Date().toISOString());
+                      }}
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
+                      <Crown size={18} color="#B45309" className="mx-auto mb-2" />
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Skift din lokation 1 gang om dagen</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Travel Schedule (Premium only) ── */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[13px] font-semibold text-gray-900">Travel Schedule</p>
+                    {!isPremium && (
+                      <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">Premium only</span>
+                    )}
+                  </div>
+                  {isPremium ? (
+                    <div className="space-y-3">
+                      {/* Visibility toggle */}
+                      <button
+                        onClick={() => toggleTravelVisibility(!showTravelSchedule)}
+                        className="flex items-center gap-2 text-[13px] font-medium rounded-xl border px-4 py-2.5 transition-colors w-full"
+                        style={{
+                          background: showTravelSchedule ? "#F0FDF4" : "#F9FAFB",
+                          borderColor: showTravelSchedule ? "#86EFAC" : "#E5E7EB",
+                          color: showTravelSchedule ? "#15803D" : "#6B7280",
+                        }}
+                      >
+                        {showTravelSchedule ? <Eye size={14} /> : <EyeOff size={14} />}
+                        {showTravelSchedule ? "Travel schedule er offentligt" : "Travel schedule er skjult"}
+                      </button>
+
+                      {/* Existing entries */}
+                      {travelEntries.length > 0 && (
+                        <div className="space-y-1.5">
+                          {travelEntries.map(e => (
+                            <div key={e.id} className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2.5">
+                              <span className="text-[12px] text-gray-500 flex-shrink-0 whitespace-nowrap">
+                                {new Date(e.from_date + "T00:00:00").toLocaleDateString("da-DK", { day: "numeric", month: "short" })} – {new Date(e.to_date + "T00:00:00").toLocaleDateString("da-DK", { day: "numeric", month: "short" })}
+                              </span>
+                              <span className="text-[13px] text-gray-700 flex-1 truncate">{e.city}, {e.country}</span>
+                              <button onClick={() => deleteTravelEntry(e.id)}
+                                className="p-1 rounded transition-colors flex-shrink-0"
+                                style={{ color: "#9CA3AF" }}
+                                onMouseEnter={e2 => { e2.currentTarget.style.color = "#DC2626"; }}
+                                onMouseLeave={e2 => { e2.currentTarget.style.color = "#9CA3AF"; }}>
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add new entry */}
+                      <div className="rounded-xl border border-dashed border-gray-300 p-4 space-y-2.5">
+                        <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider">Tilføj destination</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] text-gray-400 block mb-1">Fra dato</label>
+                            <input type="date" value={newTravel.from_date}
+                              onChange={e => setNewTravel(p => ({ ...p, from_date: e.target.value }))}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[11px] text-gray-400 block mb-1">Til dato</label>
+                            <input type="date" value={newTravel.to_date}
+                              onChange={e => setNewTravel(p => ({ ...p, to_date: e.target.value }))}
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none" />
+                          </div>
+                        </div>
+                        <input type="text" placeholder="By (fx København)"
+                          value={newTravel.city}
+                          onChange={e => setNewTravel(p => ({ ...p, city: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none placeholder-gray-400" />
+                        <select value={newTravel.country}
+                          onChange={e => setNewTravel(p => ({ ...p, country: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none bg-white">
+                          <option value="">Vælg land…</option>
+                          {SUPPORTED_COUNTRIES_SORTED.map(c => (
+                            <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
+                          ))}
+                        </select>
+                        {travelError && <p className="text-[12px] text-red-500">{travelError}</p>}
+                        <button onClick={addTravelEntry} disabled={travelLoading}
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold text-white transition-colors disabled:opacity-50"
+                          style={{ background: "#000" }}>
+                          <Plus size={14} />
+                          {travelLoading ? "Gemmer…" : "Tilføj"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
+                      <Crown size={18} color="#B45309" className="mx-auto mb-2" />
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Vis fremtidige rejseplaner på din profil</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                    </div>
+                  )}
                 </div>
 
                 {/* Åbningstider */}
