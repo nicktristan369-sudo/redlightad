@@ -219,6 +219,7 @@ export default function AdDetailPage() {
         whatsapp={ad.whatsapp}
         listingId={ad.id}
         listingTitle={ad.title}
+        isLoggedIn={currentUserId !== null}
       />
 
       <footer className="border-t border-gray-200 bg-white px-6 py-8 text-center text-sm text-gray-500">
