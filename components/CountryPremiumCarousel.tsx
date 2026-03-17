@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase"
+import { buildCountryOrFilter } from "@/lib/countries"
 import Link from "next/link"
 
 interface Listing {
@@ -43,14 +44,42 @@ export default function CountryPremiumCarousel({ country, countryName }: Props) 
 
   useEffect(() => {
     const supabase = createClient()
+    // Match all country variants: dk → Denmark/DK/dk/denmark
+    const countryFilter = buildCountryOrFilter(country)
+
     supabase
       .from("listings")
-      .select("id, title, profile_image, age, city, location, premium_tier")
+      .select("id, title, profile_image, age, city, location, premium_tier, in_carousel")
       .eq("status", "active")
-      .ilike("country", country)
-      .not("premium_tier", "is", null)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .or(countryFilter as any)
+      .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
       .limit(12)
-      .then(({ data }) => { if (data && data.length > 0) setListings(data) })
+      .then(({ data, error }) => {
+        if (error) {
+          // Fallback without in_carousel (migration pending)
+          supabase
+            .from("listings")
+            .select("id, title, profile_image, age, city, location, premium_tier")
+            .eq("status", "active")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .or(countryFilter as any)
+            .in("premium_tier", ["vip", "featured", "basic"])
+            .limit(12)
+            .then(({ data: d2 }) => { if (d2 && d2.length > 0) setListings(d2) })
+          return
+        }
+        if (data && data.length > 0) {
+          // Sort: in_carousel pinned first, then vip → featured → basic
+          const tierOrder: Record<string, number> = { vip: 1, featured: 2, basic: 3 }
+          const sorted = [...data].sort((a, b) => {
+            const ac = (a as { in_carousel?: boolean }).in_carousel ? 0 : (tierOrder[a.premium_tier ?? ""] ?? 9)
+            const bc = (b as { in_carousel?: boolean }).in_carousel ? 0 : (tierOrder[b.premium_tier ?? ""] ?? 9)
+            return ac - bc
+          })
+          setListings(sorted)
+        }
+      })
   }, [country])
 
   useEffect(() => {

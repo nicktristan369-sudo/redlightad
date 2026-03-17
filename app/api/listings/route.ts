@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { buildCountryOrFilter } from "@/lib/countries";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +27,9 @@ export async function GET(req: NextRequest) {
       .limit(limit);
 
     if (country) {
-      // Support both ISO2 (DK) and slug (denmark) via ilike
-      query = query.or(`country.ilike.${country},country.ilike.${country.toUpperCase()}`);
+      // Support ISO2 (dk/DK) and full name (Denmark) — covers all DB variants
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      query = (query as any).or(buildCountryOrFilter(country));
     }
 
     if (category) {
