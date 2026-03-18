@@ -42,6 +42,139 @@ function isAvailableNow(
   } catch { return false }
 }
 
+// ── Mobile listing card with auto-cycling images ──────────────────────────
+function MobileAdCard({ ad, displayLocation, description, ago }: {
+  ad: Listing
+  displayLocation: string
+  description: string
+  ago: string
+}) {
+  const allImgs: string[] = [
+    ...(ad.images ?? []),
+    ...(ad.profile_image ? [ad.profile_image] : []),
+  ]
+  // Pad to at least 3
+  while (allImgs.length > 0 && allImgs.length < 3) allImgs.push(allImgs[0])
+
+  const [offset, setOffset] = useState(0)
+  useEffect(() => {
+    if (allImgs.length <= 3) return
+    const t = setInterval(() => setOffset(p => (p + 1) % (allImgs.length - 2)), 3000)
+    return () => clearInterval(t)
+  }, [allImgs.length])
+
+  const panels = allImgs.length >= 3
+    ? [allImgs[offset], allImgs[offset + 1], allImgs[offset + 2]]
+    : [null, null, null]
+
+  const photoCount = allImgs.length
+  const videoCount = ad.video_url ? 1 : 0
+
+  return (
+    <div className="md:hidden bg-white overflow-hidden"
+      style={{ borderRadius: 12, boxShadow: "0 1px 8px rgba(0,0,0,0.10)", border: "1px solid #E5E7EB" }}>
+
+      {/* ── Title (max 2 lines, bold, NOT uppercase) ── */}
+      <div className="px-3 pt-3 pb-2">
+        <h3 className="font-bold text-[15px] text-gray-900 leading-snug line-clamp-2">
+          {ad.title}
+        </h3>
+      </div>
+
+      {/* ── 3-panel equal-width images ── */}
+      <div className="flex h-[190px]" style={{ gap: 1 }}>
+        {panels.map((src, idx) => (
+          <div key={idx} className="relative overflow-hidden bg-gray-200 flex-1">
+            {src
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={src} alt="" className="w-full h-full object-cover" />
+              : <div className="w-full h-full bg-gray-200" />}
+
+            {/* VERIFIED — top-right of right panel, semi-transparent */}
+            {idx === 2 && (
+              <div className="absolute top-1.5 right-1.5">
+                <span className="inline-flex items-center gap-[3px] text-[8.5px] font-semibold px-1.5 py-[3px] rounded"
+                  style={{
+                    background: "rgba(0,0,0,0.30)",
+                    color: "rgba(255,255,255,0.80)",
+                    backdropFilter: "blur(3px)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                  }}>
+                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  VERIFIED
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Stats bar ── */}
+      <div className="flex items-center gap-2.5 px-3 py-2 border-t border-gray-100">
+        {/* Camera + count */}
+        <div className="flex items-center gap-1 text-[12px] text-gray-500">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="font-medium">{photoCount}</span>
+        </div>
+        {/* Video play icon */}
+        {videoCount > 0 && (
+          <div className="flex items-center">
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" strokeWidth={1.8}/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 9l5 3-5 3V9z"/>
+            </svg>
+          </div>
+        )}
+        {/* Posted time — right */}
+        <span className="ml-auto text-[12px] text-gray-500">posted {ago}</span>
+      </div>
+
+      {/* ── Description + READ MORE ── */}
+      <div className="px-3 pt-1 pb-2.5">
+        <p className="text-[13px] text-gray-700 leading-relaxed line-clamp-3">
+          {description || "Ingen beskrivelse."}
+        </p>
+        <span className="text-[13px] font-bold mt-1.5 block" style={{ color: "#DC2626" }}>
+          READ MORE →
+        </span>
+      </div>
+
+      {/* ── Action bar ── */}
+      <div className="flex" style={{ background: "#111" }}>
+        {/* RING */}
+        <a href={`tel:${ad.id}`} onClick={e => e.stopPropagation()}
+          className="flex items-center justify-center gap-1.5 py-3.5 text-[12px] font-bold text-white"
+          style={{ flex: 1, borderRight: "1px solid #333" }}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+          </svg>
+          RING
+        </a>
+        {/* Location */}
+        <div className="flex items-center justify-center gap-1 py-3.5 text-[11px] font-medium"
+          style={{ flex: 1.4, color: "#9CA3AF", borderRight: "1px solid #333" }}>
+          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span className="truncate">{[displayLocation, ad.country].filter(Boolean).join(", ")}</span>
+        </div>
+        {/* SE PROFIL */}
+        <div className="flex items-center justify-center py-3.5 text-[12px] font-black"
+          style={{ flex: 1, color: "#EF4444" }}>
+          SE PROFIL
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
 // Decorative audio waveform bars
 function Waveform() {
   const bars = [3,5,8,6,10,7,4,9,6,5,8,4,7,9,5,6,8,4,6,7,5,9,6,4,8,5,7,4,6,9]
@@ -131,146 +264,13 @@ export default function AdList({ country, category, limit = 50 }: Props) {
             <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
 
-                {/* ── MOBILE layout — ultimate design (hidden on md+) ── */}
-                {(() => {
-                  const allImgs: string[] = [
-                    ...(ad.images ?? []),
-                    ...(ad.profile_image ? [ad.profile_image] : []),
-                  ]
-                  const imgLeft    = allImgs[0] ?? null
-                  const imgCenter  = allImgs[1] ?? allImgs[0] ?? null
-                  const imgRight   = allImgs[2] ?? allImgs[0] ?? null
-                  const photoCount = allImgs.length
-                  const videoCount = ad.video_url ? 1 : 0
-                  const available  = isAvailableNow(ad.opening_hours, ad.timezone)
-                  return (
-                    <div className="md:hidden bg-white overflow-hidden"
-                      style={{ borderRadius: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.08)", border: "1px solid #E5E7EB" }}>
-
-                      {/* ── Row 1: Title + Verified badge ── */}
-                      <div className="flex items-start justify-between gap-2 px-3 pt-3 pb-2.5">
-                        <h3 className="font-black text-[14px] text-gray-900 uppercase leading-snug line-clamp-2 flex-1"
-                          style={{ letterSpacing: "0.025em" }}>
-                          {ad.title}
-                        </h3>
-                        <span className="flex-shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[9px] font-black uppercase tracking-wider"
-                          style={{ background: "#DC2626", color: "#fff" }}>
-                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/>
-                          </svg>
-                          VERIFIED
-                        </span>
-                      </div>
-
-                      {/* ── Row 2: 3-panel images — center 60%, sides 20% each ── */}
-                      <div className="flex h-[195px]" style={{ gap: 2 }}>
-                        {/* Left panel — dimmed, slightly smaller vertically */}
-                        <div className="overflow-hidden bg-gray-200 self-center" style={{ width: "20%", height: "85%" }}>
-                          {imgLeft
-                            // eslint-disable-next-line @next/next/no-img-element
-                            ? <img src={imgLeft} alt="" className="w-full h-full object-cover" style={{ opacity: 0.5 }} />
-                            : <div className="w-full h-full bg-gray-200" />}
-                        </div>
-                        {/* Center panel — full height, full opacity */}
-                        <div className="relative overflow-hidden bg-gray-300" style={{ width: "60%" }}>
-                          {imgCenter
-                            // eslint-disable-next-line @next/next/no-img-element
-                            ? <img src={imgCenter} alt={ad.title} className="w-full h-full object-cover" />
-                            : <div className="w-full h-full bg-gray-300" />}
-                          {/* Premium tier badge on center image */}
-                          {ad.premium_tier && (
-                            <div className="absolute top-1.5 left-1.5">
-                              <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${ad.premium_tier === "vip" ? "bg-yellow-400 text-black" : "bg-black/60 text-white"}`}>
-                                {ad.premium_tier.toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        {/* Right panel — dimmed, slightly smaller vertically */}
-                        <div className="overflow-hidden bg-gray-200 self-center" style={{ width: "20%", height: "85%" }}>
-                          {imgRight
-                            // eslint-disable-next-line @next/next/no-img-element
-                            ? <img src={imgRight} alt="" className="w-full h-full object-cover" style={{ opacity: 0.5 }} />
-                            : <div className="w-full h-full bg-gray-200" />}
-                        </div>
-                      </div>
-
-                      {/* ── Row 3: Stats bar ── */}
-                      <div className="flex items-center gap-3 px-3 py-2 border-t border-gray-100" style={{ background: "#F9FAFB" }}>
-                        {/* Photo count */}
-                        <div className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          {photoCount}
-                        </div>
-                        {/* Video count */}
-                        {videoCount > 0 && (
-                          <div className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
-                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                            </svg>
-                            {videoCount}
-                          </div>
-                        )}
-                        {/* Posted time — right aligned */}
-                        <span className="ml-auto text-[11px] text-gray-400 font-medium whitespace-nowrap">
-                          posted {timeAgo(ad.created_at)}
-                        </span>
-                      </div>
-
-                      {/* ── Row 4: Description ── */}
-                      <div className="px-3 pt-2.5 pb-2">
-                        {description ? (
-                          <>
-                            <p className="text-[13px] text-gray-600 leading-relaxed line-clamp-3">{description}</p>
-                            <span className="text-[12px] font-black mt-1 block" style={{ color: "#DC2626" }}>
-                              READ MORE →
-                            </span>
-                          </>
-                        ) : (
-                          <p className="text-[13px] text-gray-400 italic">Ingen beskrivelse</p>
-                        )}
-                        {/* Available indicator */}
-                        {available && (
-                          <div className="flex items-center gap-1.5 mt-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[11px] font-semibold text-green-600">Available now</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* ── Row 5: Action bar — RING | Location | SE PROFIL ── */}
-                      <div className="flex border-t border-gray-100">
-                        {/* RING — black bg */}
-                        <a href={`tel:${ad.id}`} onClick={e => e.stopPropagation()}
-                          className="flex items-center justify-center gap-1.5 py-3 text-[11px] font-black text-white uppercase tracking-wide"
-                          style={{ width: "30%", background: "#111" }}>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                          </svg>
-                          RING
-                        </a>
-                        {/* Location — gray */}
-                        <div className="flex items-center justify-center gap-1 py-3 text-[10px] font-medium text-gray-500 border-x border-gray-100"
-                          style={{ width: "40%" }}>
-                          <svg className="w-3 h-3 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                          </svg>
-                          <span className="truncate">{[displayLocation, ad.country].filter(Boolean).join(", ")}</span>
-                        </div>
-                        {/* SE PROFIL — red bg */}
-                        <div className="flex items-center justify-center py-3 text-[11px] font-black text-white uppercase tracking-wide"
-                          style={{ width: "30%", background: "#DC2626" }}>
-                          SE PROFIL
-                        </div>
-                      </div>
-
-                    </div>
-                  )
-                })()}
+                {/* ── MOBILE layout — MobileAdCard component ── */}
+                <MobileAdCard
+                  ad={ad}
+                  displayLocation={displayLocation}
+                  description={description}
+                  ago={timeAgo(ad.created_at)}
+                />
 
                 {/* ── DESKTOP layout (hidden below md) ── */}
                 <div className="hidden md:flex">
