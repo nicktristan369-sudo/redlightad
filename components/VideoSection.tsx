@@ -1,96 +1,294 @@
 "use client"
 
 import { useState } from "react"
-import { Play, Lock, X } from "lucide-react"
+import { Play, Lock, Heart, Eye, X, ShoppingCart } from "lucide-react"
+import Link from "next/link"
 
 interface Video {
   id: string
   url: string
   thumbnail_url: string | null
+  title: string | null
   is_locked: boolean
+  redcoin_price: number
+  views: number
+  likes: number
+  sort_order: number
 }
 
 interface VideoSectionProps {
   videos: Video[]
   isLoggedIn: boolean
   listingId: string
+  currentUserId?: string | null
 }
 
-export default function VideoSection({ videos, isLoggedIn }: VideoSectionProps) {
+function fmtNum(n: number) {
+  return n.toLocaleString("da-DK")
+}
+
+// ── Video Player Modal ──────────────────────────────────────────────
+function VideoModal({
+  video,
+  onClose,
+  isLoggedIn,
+  currentUserId,
+  hasPurchased,
+  onPurchase,
+}: {
+  video: Video
+  onClose: () => void
+  isLoggedIn: boolean
+  currentUserId: string | null
+  hasPurchased: boolean
+  onPurchase: (videoId: string) => void
+}) {
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(video.likes)
+  const [purchasing, setPurchasing] = useState(false)
+  const [purchaseError, setPurchaseError] = useState("")
+
+  const canWatch = !video.is_locked || hasPurchased
+
+  const handleLike = async () => {
+    if (!isLoggedIn) return
+    const action = liked ? "unlike" : "like"
+    setLiked(!liked)
+    setLikeCount(c => c + (liked ? -1 : 1))
+    await fetch("/api/videos/like", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ videoId: video.id, action }),
+    })
+  }
+
+  const handlePurchase = async () => {
+    if (!currentUserId) return
+    setPurchasing(true)
+    setPurchaseError("")
+    try {
+      const res = await fetch("/api/videos/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId: video.id, buyerId: currentUserId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        if (data.error === "insufficient_coins") setPurchaseError("Du har ikke nok RedCoins")
+        else setPurchaseError("Noget gik galt — prøv igen")
+      } else {
+        onPurchase(video.id)
+      }
+    } catch {
+      setPurchaseError("Netværksfejl — prøv igen")
+    }
+    setPurchasing(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center"
+      onClick={onClose}>
+      <div className="w-full max-w-3xl px-4" onClick={e => e.stopPropagation()}>
+
+        {/* Video / locked */}
+        <div className="relative rounded-xl overflow-hidden bg-[#0a0a0a]" style={{ aspectRatio: "16/9" }}>
+          {canWatch ? (
+            <>
+              <video
+                src={video.url}
+                controls
+                autoPlay
+                playsInline
+                className="w-full h-full object-contain"
+              />
+              {/* Vandmærke */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                <span style={{
+                  fontSize: "clamp(16px, 4vw, 36px)",
+                  fontWeight: 700,
+                  letterSpacing: "0.2em",
+                  color: "white",
+                  opacity: 0.15,
+                  textTransform: "uppercase",
+                  fontFamily: "-apple-system, sans-serif",
+                }}>
+                  REDLIGHTAD.COM
+                </span>
+              </div>
+            </>
+          ) : (
+            // Locked state
+            <div className="w-full h-full relative flex items-center justify-center">
+              {video.thumbnail_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={video.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover"
+                  style={{ filter: "blur(16px)" }} />
+              )}
+              <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.65)" }} />
+              <div className="relative z-10 flex flex-col items-center gap-4 px-6 text-center">
+                <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
+                  <Lock size={24} color="#fff" />
+                </div>
+                <p className="text-white font-semibold text-lg">Lås op for {video.redcoin_price} RedCoins</p>
+                {!isLoggedIn ? (
+                  <Link href="/register"
+                    className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: "#DC2626" }}>
+                    Opret konto for at købe
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      onClick={handlePurchase}
+                      disabled={purchasing}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+                      style={{ background: "#DC2626" }}>
+                      <ShoppingCart size={16} />
+                      {purchasing ? "Behandler..." : `Lås op — ${video.redcoin_price} RedCoins`}
+                    </button>
+                    {purchaseError && <p className="text-red-400 text-sm">{purchaseError}</p>}
+                    <Link href="/dashboard/buy-coins" className="text-white/60 text-xs hover:text-white">
+                      Køb flere RedCoins →
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Stats bar */}
+        <div className="mt-3 px-4 py-3 rounded-xl flex items-center gap-4"
+          style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}>
+          {video.title && (
+            <span className="text-white font-semibold text-sm flex-1 truncate">{video.title}</span>
+          )}
+          <span className="flex items-center gap-1 text-white/60 text-xs">
+            <Eye size={12} /> {fmtNum(video.views)}
+          </span>
+          <button onClick={handleLike} disabled={!isLoggedIn}
+            className="flex items-center gap-1 text-xs transition-colors disabled:opacity-40"
+            style={{ color: liked ? "#ef4444" : "rgba(255,255,255,0.6)" }}>
+            <Heart size={12} fill={liked ? "#ef4444" : "none"} stroke={liked ? "#ef4444" : "currentColor"} />
+            {fmtNum(likeCount)}
+          </button>
+        </div>
+      </div>
+
+      {/* Close button */}
+      <button onClick={onClose}
+        className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full"
+        style={{ background: "rgba(255,255,255,0.12)" }}>
+        <X size={20} color="#fff" />
+      </button>
+    </div>
+  )
+}
+
+// ── Video Thumbnail Card ────────────────────────────────────────────
+function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
+  return (
+    <button onClick={onClick}
+      className="relative w-full overflow-hidden rounded-xl group transition-transform duration-200 hover:scale-[1.03]"
+      style={{ aspectRatio: "16/9", background: "#111" }}>
+
+      {/* Thumbnail */}
+      {video.thumbnail_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={video.thumbnail_url} alt={video.title ?? "Video"}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          style={{ filter: video.is_locked ? "blur(8px)" : "none" }} />
+      ) : (
+        <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+          <Play size={28} color="rgba(255,255,255,0.4)" />
+        </div>
+      )}
+
+      {/* Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center"
+        style={{ background: "rgba(0,0,0,0.25)" }}>
+        {video.is_locked ? (
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
+              <Lock size={18} color="#fff" />
+            </div>
+            <span className="text-[10px] text-white/90 font-semibold bg-red-600 rounded px-1.5 py-0.5">
+              {video.redcoin_price} RC
+            </span>
+          </div>
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-black/40 flex items-center justify-center group-hover:bg-black/60 transition-colors">
+            <Play size={18} color="#fff" fill="#fff" />
+          </div>
+        )}
+      </div>
+
+      {/* Views bottom left */}
+      <div className="absolute bottom-2 left-2 flex items-center gap-1 text-[10px] text-white/80"
+        style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+        <Eye size={10} /> {fmtNum(video.views)}
+      </div>
+    </button>
+  )
+}
+
+// ── Main VideoSection ───────────────────────────────────────────────
+export default function VideoSection({ videos, isLoggedIn, listingId, currentUserId }: VideoSectionProps) {
   const [activeVideo, setActiveVideo] = useState<Video | null>(null)
+  const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set())
 
   if (!videos.length) return null
 
-  const displayVideos = videos.slice(0, 3)
+  const handleOpen = (video: Video) => {
+    setActiveVideo(video)
+    fetch("/api/videos/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ videoId: video.id }),
+    }).catch(() => {})
+  }
+
+  const handlePurchase = (videoId: string) => {
+    setPurchasedIds(prev => new Set([...prev, videoId]))
+  }
 
   return (
     <>
-      <div style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "24px" }}>
-        <h3 className="text-base font-bold text-gray-900 mb-4 uppercase">My Videos</h3>
+      <div className="mt-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-bold text-gray-900 uppercase tracking-wide">
+            My Videos
+          </h2>
+          <span className="text-sm text-gray-400">{videos.length} video{videos.length !== 1 ? "er" : ""}</span>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {displayVideos.map(video => (
-            <div key={video.id} className="relative rounded-xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
-              {video.thumbnail_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={video.thumbnail_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                  <Play size={24} color="#fff" />
-                </div>
-              )}
-
-              {video.is_locked && !isLoggedIn ? (
-                <div
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-1"
-                  style={{ backdropFilter: "blur(8px)", background: "rgba(0,0,0,0.5)" }}
-                >
-                  <Lock size={20} color="#fff" />
-                  <span className="text-[11px] text-white/80">Log ind for at se</span>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setActiveVideo(video)}
-                  className="absolute inset-0 flex items-center justify-center cursor-pointer"
-                  style={{ background: "rgba(0,0,0,0.25)" }}
-                >
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                    <Play size={18} color="#fff" fill="#fff" />
-                  </div>
-                </button>
-              )}
-            </div>
+        {/* Grid: 2 cols mobil, 3 cols desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {videos.slice(0, 6).map(v => (
+            <VideoCard key={v.id} video={v} onClick={() => handleOpen(v)} />
           ))}
         </div>
 
+        {/* Watch all knap */}
         <button
-          className="mt-4 w-full py-3 rounded-xl text-sm font-semibold text-white"
-          style={{ background: "#DC2626" }}
-        >
-          WATCH MY VIDEOS &rarr;
+          onClick={() => videos[0] && handleOpen(videos[0])}
+          className="mt-4 w-full py-3 rounded-xl text-sm font-semibold text-white text-center transition-opacity hover:opacity-90"
+          style={{ background: "#DC2626" }}>
+          WATCH MY VIDEOS →
         </button>
       </div>
 
-      {/* Video modal */}
+      {/* Modal */}
       {activeVideo && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
-          onClick={() => setActiveVideo(null)}
-        >
-          <video
-            src={activeVideo.url}
-            controls
-            autoPlay
-            className="max-w-[95vw] max-h-[90vh] rounded-xl"
-            onClick={e => e.stopPropagation()}
-          />
-          <button
-            onClick={() => setActiveVideo(null)}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        <VideoModal
+          video={activeVideo}
+          onClose={() => setActiveVideo(null)}
+          isLoggedIn={isLoggedIn}
+          currentUserId={currentUserId ?? null}
+          hasPurchased={purchasedIds.has(activeVideo.id)}
+          onPurchase={handlePurchase}
+        />
       )}
     </>
   )
