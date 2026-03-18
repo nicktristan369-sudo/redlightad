@@ -54,7 +54,7 @@ export default function AdDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [travelEntries, setTravelEntries] = useState<TravelEntry[]>([]);
-  const [videos, setVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; is_locked: boolean }[]>([]);
+  const [videos, setVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; title: string | null; is_locked: boolean; redcoin_price: number; views: number; likes: number; sort_order: number }[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -78,9 +78,9 @@ export default function AdDetailPage() {
       if (data) {
         const { data: vids } = await supabase
           .from("listing_videos")
-          .select("id, url, thumbnail_url, is_locked")
+          .select("id, url, thumbnail_url, title, is_locked, redcoin_price, views, likes, sort_order")
           .eq("listing_id", data.id)
-          .order("created_at", { ascending: true });
+          .order("sort_order", { ascending: true });
         if (vids) setVideos(vids);
       }
 
@@ -187,13 +187,13 @@ export default function AdDetailPage() {
               {/* Videos — desktop */}
               {videos.length > 0 && (
                 <div className="hidden md:block">
-                  <VideoSection videos={videos} isLoggedIn={currentUserId !== null} listingId={ad.id} />
+                  <VideoSection videos={videos} isLoggedIn={currentUserId !== null} listingId={ad.id} currentUserId={currentUserId} />
                 </div>
               )}
               {/* Videos — mobile */}
               {videos.length > 0 && (
                 <div className="md:hidden">
-                  <VideoSection videos={videos} isLoggedIn={currentUserId !== null} listingId={ad.id} />
+                  <VideoSection videos={videos} isLoggedIn={currentUserId !== null} listingId={ad.id} currentUserId={currentUserId} />
                 </div>
               )}
 

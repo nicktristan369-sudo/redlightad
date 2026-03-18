@@ -74,9 +74,11 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
   // videos
-  const [existingVideos, setExistingVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; is_locked: boolean }[]>([]);
+  const [existingVideos, setExistingVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; is_locked: boolean; title: string | null; redcoin_price: number }[]>([]);
   const [newVideoFiles, setNewVideoFiles] = useState<File[]>([]);
   const [newVideoLocked, setNewVideoLocked] = useState<boolean[]>([]);
+  const [newVideoTitles, setNewVideoTitles] = useState<string[]>([]);
+  const [newVideoPrices, setNewVideoPrices] = useState<number[]>([]);
   const [videoUploading, setVideoUploading] = useState(false);
 
   // voice + social
@@ -335,6 +337,8 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
             url: result.url,
             thumbnail_url: thumbUrl,
             is_locked: newVideoLocked[i] ?? false,
+            title: newVideoTitles[i] || null,
+            redcoin_price: newVideoPrices[i] || 0,
           });
         }
         setVideoUploading(false);
@@ -930,14 +934,35 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                   {/* Eksisterende videoer */}
                   {existingVideos.map(v => (
-                    <div key={v.id} className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl mb-2">
-                      {v.thumbnail_url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={v.thumbnail_url} alt="" className="w-16 h-12 object-cover rounded" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-700 truncate">{v.url.split("/").pop()}</p>
-                        <label className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                    <div key={v.id} className="flex flex-col gap-2 p-3 border border-gray-200 rounded-xl mb-2">
+                      <div className="flex items-center gap-3">
+                        {v.thumbnail_url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={v.thumbnail_url} alt="" className="w-16 h-12 object-cover rounded" />
+                        )}
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          <input type="text" placeholder="Videotitel" value={v.title ?? ""}
+                            onChange={async e => {
+                              const supabase = createClient();
+                              await supabase.from("listing_videos").update({ title: e.target.value }).eq("id", v.id);
+                              setExistingVideos(prev => prev.map(x => x.id === v.id ? { ...x, title: e.target.value } : x));
+                            }}
+                            className="text-sm border rounded px-2 py-1 flex-1" />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const supabase = createClient();
+                            await supabase.from("listing_videos").delete().eq("id", v.id);
+                            setExistingVideos(prev => prev.filter(x => x.id !== v.id));
+                          }}
+                          className="text-red-500 hover:text-red-700 text-sm font-medium"
+                        >
+                          Slet
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-sm text-gray-500">
                           <input
                             type="checkbox"
                             checked={v.is_locked}
@@ -947,20 +972,19 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                               setExistingVideos(prev => prev.map(x => x.id === v.id ? { ...x, is_locked: e.target.checked } : x));
                             }}
                           />
-                          Låst (kræver login)
+                          Låst (kræver RedCoins)
                         </label>
+                        {v.is_locked && (
+                          <input type="number" min={0} placeholder="Pris i RC" value={v.redcoin_price ?? 0}
+                            onChange={async e => {
+                              const price = parseInt(e.target.value) || 0;
+                              const supabase = createClient();
+                              await supabase.from("listing_videos").update({ redcoin_price: price }).eq("id", v.id);
+                              setExistingVideos(prev => prev.map(x => x.id === v.id ? { ...x, redcoin_price: price } : x));
+                            }}
+                            className="text-sm border rounded px-2 py-1 w-24" />
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const supabase = createClient();
-                          await supabase.from("listing_videos").delete().eq("id", v.id);
-                          setExistingVideos(prev => prev.filter(x => x.id !== v.id));
-                        }}
-                        className="text-red-500 hover:text-red-700 text-sm font-medium"
-                      >
-                        Slet
-                      </button>
                     </div>
                   ))}
 
@@ -975,6 +999,8 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         const files = Array.from(e.target.files ?? []).slice(0, 10 - existingVideos.length - newVideoFiles.length);
                         setNewVideoFiles(prev => [...prev, ...files]);
                         setNewVideoLocked(prev => [...prev, ...files.map(() => false)]);
+                        setNewVideoTitles(prev => [...prev, ...files.map(() => "")]);
+                        setNewVideoPrices(prev => [...prev, ...files.map(() => 0)]);
                       }}
                     />
                     <svg className="w-7 h-7 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
@@ -983,26 +1009,40 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                   {/* Preview nye videoer */}
                   {newVideoFiles.map((f, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 border border-blue-200 rounded-xl bg-blue-50 mt-2">
-                      <span className="text-sm text-gray-700 flex-1 truncate">{f.name}</span>
-                      <label className="flex items-center gap-1 text-sm text-gray-600">
-                        <input
-                          type="checkbox"
-                          checked={newVideoLocked[i]}
-                          onChange={e => setNewVideoLocked(prev => prev.map((v, j) => j === i ? e.target.checked : v))}
-                        />
-                        Låst
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNewVideoFiles(prev => prev.filter((_, j) => j !== i));
-                          setNewVideoLocked(prev => prev.filter((_, j) => j !== i));
-                        }}
-                        className="text-red-500 hover:text-red-700 font-medium"
-                      >
-                        ✕
-                      </button>
+                    <div key={i} className="flex flex-col gap-2 p-3 border border-blue-200 rounded-xl bg-blue-50 mt-2">
+                      <div className="flex items-center gap-3">
+                        <input type="text" placeholder="Videotitel" value={newVideoTitles[i] ?? ""}
+                          onChange={e => setNewVideoTitles(prev => prev.map((t, j) => j === i ? e.target.value : t))}
+                          className="text-sm border rounded px-2 py-1 flex-1" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewVideoFiles(prev => prev.filter((_, j) => j !== i));
+                            setNewVideoLocked(prev => prev.filter((_, j) => j !== i));
+                            setNewVideoTitles(prev => prev.filter((_, j) => j !== i));
+                            setNewVideoPrices(prev => prev.filter((_, j) => j !== i));
+                          }}
+                          className="text-red-500 hover:text-red-700 font-medium"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-500 truncate max-w-[150px]">{f.name}</span>
+                        <label className="flex items-center gap-1 text-sm text-gray-600">
+                          <input
+                            type="checkbox"
+                            checked={newVideoLocked[i]}
+                            onChange={e => setNewVideoLocked(prev => prev.map((v, j) => j === i ? e.target.checked : v))}
+                          />
+                          Låst
+                        </label>
+                        {newVideoLocked[i] && (
+                          <input type="number" min={0} placeholder="Pris i RC" value={newVideoPrices[i] ?? 0}
+                            onChange={e => setNewVideoPrices(prev => prev.map((p, j) => j === i ? (parseInt(e.target.value) || 0) : p))}
+                            className="text-sm border rounded px-2 py-1 w-24" />
+                        )}
+                      </div>
                     </div>
                   ))}
 
