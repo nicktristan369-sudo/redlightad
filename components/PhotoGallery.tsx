@@ -24,6 +24,7 @@ export default function PhotoGallery({
   const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const thumbStripRef = useRef<HTMLDivElement>(null);
   const galTouchStart = useRef<number | null>(null);
+  const userSwiped = useRef(false);
   const lbTouchStart = useRef<number | null>(null);
 
   const count = images.length;
@@ -36,7 +37,7 @@ export default function PhotoGallery({
   // ── Auto-slide every 3s ──────────────────────────────────────
   const resetAutoSlide = useCallback(() => {
     if (autoSlideRef.current) clearInterval(autoSlideRef.current);
-    if (count <= 1) return;
+    if (count <= 1 || userSwiped.current) return;
     autoSlideRef.current = setInterval(() => {
       setActiveIndex((i) => {
         const next = (i + 1) % count;
@@ -133,7 +134,7 @@ export default function PhotoGallery({
   const handleGalTouchEnd = (e: React.TouchEvent) => {
     if (galTouchStart.current === null) return;
     const diff = galTouchStart.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) diff > 0 ? nextGal() : prevGal();
+    if (Math.abs(diff) > 40) { userSwiped.current = true; diff > 0 ? nextGal() : prevGal(); }
     galTouchStart.current = null;
   };
 
@@ -302,7 +303,7 @@ export default function PhotoGallery({
         >
           <div
             className="relative cursor-pointer"
-            style={{ aspectRatio: "4/5" }}
+            style={{ height: "60vh" }}
             onClick={() => openLightbox(activeIndex)}
           >
             <img
@@ -311,12 +312,12 @@ export default function PhotoGallery({
               className="w-full h-full object-cover"
               draggable={false}
             />
-            <div className="absolute top-3 right-3 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white select-none"
+            <div className="absolute top-3 right-3 rounded-md px-2.5 py-1 text-[12px] font-semibold text-white select-none"
               style={{ background: "rgba(0,0,0,0.55)" }}>
               {activeIndex + 1} / {count}
             </div>
             <button
-              className="absolute top-3 left-3 flex items-center justify-center rounded-lg"
+              className="absolute top-3 left-3 flex items-center justify-center rounded"
               style={{ width: 30, height: 30, background: "rgba(0,0,0,0.50)" }}
               onClick={(e) => { e.stopPropagation(); openLightbox(activeIndex); }}
             >
