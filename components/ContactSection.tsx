@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef, useEffect, useState } from "react"
 import { Phone, MessageCircle, Mail } from "lucide-react"
 
 interface ContactInfo {
@@ -28,13 +29,95 @@ function SnapchatIcon({ size = 16 }: { size?: number }) {
   )
 }
 
+function maskValue(value: string, showChars = 6): string {
+  const cleaned = value.replace(/\s/g, "")
+  if (cleaned.length <= showChars) return value
+  const visible = value.slice(0, showChars + Math.floor((value.length - cleaned.length) * 0.5))
+  return visible + " ****"
+}
+
+function CanvasText({ text, fontSize = 14 }: { text: string; fontSize?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    const dpr = window.devicePixelRatio || 1
+    const font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
+    ctx.font = font
+    const metrics = ctx.measureText(text)
+    const w = Math.ceil(metrics.width) + 16
+    const h = fontSize + 10
+    canvas.width = w * dpr
+    canvas.height = h * dpr
+    canvas.style.width = w + "px"
+    canvas.style.height = h + "px"
+    ctx.scale(dpr, dpr)
+    ctx.font = font
+    ctx.fillStyle = "#111827"
+    ctx.textBaseline = "middle"
+    ctx.fillText(text, 8, h / 2)
+  }, [text, fontSize])
+  return <canvas ref={canvasRef} style={{ display: "inline-block", verticalAlign: "middle" }} />
+}
+
+function ContactRow({
+  label, value, href, icon,
+}: {
+  label: string
+  value: string
+  href?: string
+  icon: React.ReactNode
+  isPhone?: boolean
+}) {
+  const [revealed, setReveal] = useState(false)
+
+  const row = (
+    <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5">
+      <span className="text-gray-500 flex-shrink-0">{icon}</span>
+      <span className="text-sm text-gray-500 flex-shrink-0">{label}</span>
+      <div className="ml-auto flex items-center gap-2">
+        {revealed ? (
+          <CanvasText text={value} fontSize={13} />
+        ) : (
+          <span className="text-sm font-semibold text-gray-900 select-none">
+            {maskValue(value)}
+          </span>
+        )}
+        {!revealed && (
+          <button
+            onClick={e => { e.preventDefault(); e.stopPropagation(); setReveal(true) }}
+            className="text-[11px] font-semibold px-2 py-0.5 rounded-md text-white flex-shrink-0"
+            style={{ background: "#DC2626" }}
+          >
+            VIS
+          </button>
+        )}
+      </div>
+    </div>
+  )
+
+  if (revealed && href) {
+    return (
+      <a href={href} target={href.startsWith("http") ? "_blank" : undefined}
+        rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+        className="block hover:opacity-80 transition-opacity">
+        {row}
+      </a>
+    )
+  }
+  return <div>{row}</div>
+}
+
 export default function ContactSection({ contact }: { contact: ContactInfo }) {
-  const items = [
+  const rows = [
     contact.phone && {
       label: "Ring",
       href: `tel:${contact.phone}`,
       value: contact.phone,
       icon: <Phone size={16} className="text-gray-500" />,
+      isPhone: true,
     },
     contact.whatsapp && {
       label: "WhatsApp",
@@ -59,31 +142,22 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
       value: contact.email,
       icon: <Mail size={16} className="text-gray-500" />,
     },
-  ].filter(Boolean) as { label: string; href?: string; value: string; icon: React.ReactNode }[]
+  ].filter(Boolean) as { label: string; href?: string; value: string; icon: React.ReactNode; isPhone?: boolean }[]
 
-  if (!items.length) return null
+  if (!rows.length) return null
 
   return (
-    <div style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "24px" }}>
+    <div style={{ position: "relative", background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "24px" }}>
+      {/* Honeypot — skjult for brugere, fanges af scrapers */}
+      <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", opacity: 0, pointerEvents: "none", height: 0, overflow: "hidden" }}>
+        <span>+45 0000 0000</span><span>+45 1111 1111</span>
+      </div>
+
       <h3 className="text-base font-bold text-gray-900 mb-4">Contact Info</h3>
       <div className="space-y-2.5">
-        {items.map((item, i) => {
-          const content = (
-            <div key={i} className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5">
-              <span className="text-gray-500">{item.icon}</span>
-              <span className="text-sm text-gray-500">{item.label}</span>
-              <span className="ml-auto text-sm font-semibold text-gray-900">{item.value}</span>
-            </div>
-          )
-          if (item.href) {
-            return (
-              <a key={i} href={item.href} className="block hover:opacity-80 transition-opacity" target={item.href.startsWith("http") ? "_blank" : undefined} rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}>
-                {content}
-              </a>
-            )
-          }
-          return content
-        })}
+        {rows.map((row, i) => (
+          <ContactRow key={i} {...row} />
+        ))}
       </div>
     </div>
   )
