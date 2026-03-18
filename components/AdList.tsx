@@ -19,7 +19,39 @@ interface Listing {
   languages: string[]
   premium_tier: string | null
   created_at: string
+  voice_message_url?: string | null
   images?: string[] | null
+  opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null
+  timezone?: string | null
+}
+
+function isAvailableNow(
+  hours: Record<string, { open: string; close: string; closed: boolean }> | null | undefined,
+  tz: string | null | undefined
+): boolean {
+  if (!hours || !tz) return false
+  try {
+    const day = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" }).format(new Date()).toLowerCase()
+    const h = hours[day]
+    if (!h || h.closed) return false
+    const now = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date())
+    const [ch, cm] = now.split(":").map(Number)
+    const [oh, om] = h.open.split(":").map(Number)
+    const [clh, clm] = h.close.split(":").map(Number)
+    return (ch * 60 + cm) >= (oh * 60 + om) && (ch * 60 + cm) < (clh * 60 + clm)
+  } catch { return false }
+}
+
+// Decorative audio waveform bars
+function Waveform() {
+  const bars = [3,5,8,6,10,7,4,9,6,5,8,4,7,9,5,6,8,4,6,7,5,9,6,4,8,5,7,4,6,9]
+  return (
+    <div className="flex items-center gap-[1.5px] h-4">
+      {bars.map((h, i) => (
+        <div key={i} className="w-[2px] rounded-full bg-gray-400" style={{ height: `${h}px` }} />
+      ))}
+    </div>
+  )
 }
 
 function tierBadge(tier: string | null | undefined) {
@@ -99,74 +131,151 @@ export default function AdList({ country, category, limit = 50 }: Props) {
             <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
 
-                {/* ── MOBILE layout — overlay style (hidden on md+) ── */}
-                <div className="md:hidden">
-                  {/* Image with overlaid text */}
-                  <div className="relative w-full bg-gray-900 overflow-hidden" style={{ height: 250 }}>
-                    {/* Photo / video */}
-                    {ad.video_url ? (
-                      <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
-                    ) : ad.profile_image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                        <svg className="w-12 h-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                    )}
+                {/* ── MOBILE layout — reference card style (hidden on md+) ── */}
+                {(() => {
+                  const allImgs: string[] = [
+                    ...(ad.images ?? []),
+                    ...(ad.profile_image ? [ad.profile_image] : []),
+                  ]
+                  const imgLeft   = allImgs[0] ?? null
+                  const imgCenter = allImgs[1] ?? allImgs[0] ?? null
+                  const imgRight  = allImgs[2] ?? allImgs[0] ?? null
+                  const photoCount = allImgs.length
+                  const videoCount = ad.video_url ? 1 : 0
+                  const hasAudio   = !!ad.voice_message_url
+                  const available  = isAvailableNow(ad.opening_hours, ad.timezone)
+                  const postTime   = new Date(ad.created_at).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+                  return (
+                    <div className="md:hidden bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
 
-                    {/* Dark gradient overlay */}
-                    <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.88) 100%)" }} />
-
-                    {/* Top-left: Verified badge */}
-                    <div className="absolute top-2.5 left-2.5">
-                      <span className="inline-flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/20 uppercase tracking-wider">
-                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Verified
-                      </span>
-                      {ad.premium_tier && (
-                        <span className={`block mt-1 text-[9px] font-black tracking-widest px-2 py-0.5 rounded-full uppercase ${ad.premium_tier === "vip" ? "bg-yellow-500 text-black" : "bg-gray-700 text-gray-200"}`}>
-                          {ad.premium_tier.toUpperCase()}
+                      {/* ── Row 1: Title + Verified ── */}
+                      <div className="flex items-start justify-between gap-2 px-3 pt-3 pb-2">
+                        <h3 className="font-black text-[14px] text-gray-900 uppercase leading-snug line-clamp-2 flex-1"
+                          style={{ letterSpacing: "0.02em" }}>
+                          {ad.title}
+                        </h3>
+                        <span className="flex-shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wider"
+                          style={{ background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>
+                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/>
+                          </svg>
+                          VERIFIED
                         </span>
+                      </div>
+
+                      {/* ── Row 2: 3-panel image ── */}
+                      <div className="flex gap-0.5 h-[200px] mx-0">
+                        {/* Left panel */}
+                        <div className="w-[22%] relative overflow-hidden bg-gray-200">
+                          {imgLeft
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={imgLeft} alt="" className="w-full h-full object-cover opacity-80" />
+                            : <div className="w-full h-full bg-gray-200" />}
+                        </div>
+                        {/* Center panel — largest */}
+                        <div className="flex-1 relative overflow-hidden bg-gray-300">
+                          {imgCenter
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={imgCenter} alt={ad.title} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full bg-gray-300" />}
+                          {ad.premium_tier && (
+                            <div className="absolute top-2 left-2">
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest ${ad.premium_tier === "vip" ? "bg-yellow-400 text-black" : "bg-gray-800 text-gray-200"}`}>
+                                {ad.premium_tier.toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {/* Right panel */}
+                        <div className="w-[22%] relative overflow-hidden bg-gray-200">
+                          {imgRight
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={imgRight} alt="" className="w-full h-full object-cover opacity-80" />
+                            : <div className="w-full h-full bg-gray-200" />}
+                        </div>
+                      </div>
+
+                      {/* ── Row 3: Stats bar ── */}
+                      <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-y border-gray-100">
+                        {/* Photo count */}
+                        <div className="flex items-center gap-1 text-[11px] text-gray-500 font-semibold">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {photoCount}
+                        </div>
+                        {/* Video count */}
+                        {videoCount > 0 && (
+                          <div className="flex items-center gap-1 text-[11px] text-gray-500 font-semibold">
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                            </svg>
+                            {videoCount}
+                          </div>
+                        )}
+                        {/* Audio waveform */}
+                        {hasAudio && (
+                          <div className="flex items-center gap-1.5 flex-1">
+                            <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" clipRule="evenodd" />
+                            </svg>
+                            <Waveform />
+                          </div>
+                        )}
+                        {/* Time */}
+                        <span className="ml-auto text-[11px] text-gray-400 font-medium whitespace-nowrap">
+                          {postTime}
+                        </span>
+                      </div>
+
+                      {/* ── Row 4: Description ── */}
+                      {description && (
+                        <div className="px-3 pt-2 pb-1">
+                          <p className="text-[12px] text-gray-600 leading-relaxed line-clamp-3">{description}</p>
+                          <button className="text-[11px] font-bold mt-1" style={{ color: "#DC2626" }}>
+                            READ MORE →
+                          </button>
+                        </div>
                       )}
-                    </div>
 
-                    {/* Top-right: camera + photo count */}
-                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="text-white text-[10px] font-semibold">
-                        {ad.images?.length ?? 1}
-                      </span>
-                    </div>
+                      {/* ── Row 5: Available ── */}
+                      {available && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-[12px] font-bold text-green-600">Available</span>
+                        </div>
+                      )}
 
-                    {/* Bottom overlay: name, location, time */}
-                    <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6">
-                      <p className="text-white font-black uppercase leading-tight truncate" style={{ fontSize: 15, letterSpacing: "0.04em" }}>
-                        {ad.title}
-                      </p>
-                      <p className="text-white font-semibold uppercase leading-tight truncate mt-0.5" style={{ fontSize: 11, opacity: 0.85 }}>
-                        {[displayLocation, ad.country].filter(Boolean).join(", ")}
-                      </p>
-                      <p className="text-white mt-1" style={{ fontSize: 10, opacity: 0.55 }}>
-                        Posted {timeAgo(ad.created_at)}
-                      </p>
-                    </div>
-                  </div>
+                      {/* ── Row 6: Bottom action bar ── */}
+                      <div className="flex border-t border-gray-100 divide-x divide-gray-100 mt-1">
+                        {/* RING */}
+                        <a href={`tel:${ad.id}`}
+                          onClick={e => e.stopPropagation()}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black text-gray-900 uppercase tracking-wide">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                          </svg>
+                          RING
+                        </a>
+                        {/* Location */}
+                        <div className="flex-1 flex items-center justify-center gap-1 py-2.5 text-[10px] text-gray-500 font-semibold">
+                          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                          </svg>
+                          <span className="truncate">{[displayLocation, ad.country].filter(Boolean).join(", ")}</span>
+                        </div>
+                        {/* See profile */}
+                        <div className="flex-1 flex items-center justify-center py-2.5 text-[11px] font-black uppercase tracking-wide"
+                          style={{ color: "#DC2626" }}>
+                          SE PROFIL
+                        </div>
+                      </div>
 
-                  {/* CTA below image */}
-                  <div className="px-3 py-2.5">
-                    <span className="block w-full bg-gray-900 text-white text-[13px] font-semibold py-2 rounded-xl text-center">
-                      View Profile →
-                    </span>
-                  </div>
-                </div>
+                    </div>
+                  )
+                })()}
 
                 {/* ── DESKTOP layout (hidden below md) ── */}
                 <div className="hidden md:flex">
