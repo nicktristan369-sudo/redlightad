@@ -22,9 +22,9 @@ export default function PhotoGallery({
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lockModalOpen, setLockModalOpen] = useState(false);
   const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const thumbStripRef = useRef<HTMLDivElement>(null);
   const galTouchStart = useRef<number | null>(null);
-  const userSwiped = useRef(false);
   const lbTouchStart = useRef<number | null>(null);
 
   const count = images.length;
@@ -34,23 +34,37 @@ export default function PhotoGallery({
   // Image 0 is always free — index 1+ requires login
   const isLocked = (index: number) => !isLoggedIn && index > 0;
 
-  // ── Auto-slide every 3s ──────────────────────────────────────
-  const resetAutoSlide = useCallback(() => {
+  // ── Auto-slide every 3s (only across unlocked images) ───────
+  const startAutoSlide = useCallback(() => {
     if (autoSlideRef.current) clearInterval(autoSlideRef.current);
-    if (count <= 1 || userSwiped.current) return;
+    const unlockedCount = images.filter((_, i) => !isLocked(i)).length;
+    if (unlockedCount <= 1) return;
     autoSlideRef.current = setInterval(() => {
-      setActiveIndex((i) => {
-        const next = (i + 1) % count;
-        // Skip locked images in auto-slide for non-logged users
-        return isLocked(next) ? 0 : next;
+      setActiveIndex((prev) => {
+        let next = (prev + 1) % count;
+        let attempts = 0;
+        while (isLocked(next) && attempts < count) {
+          next = (next + 1) % count;
+          attempts++;
+        }
+        return isLocked(next) ? prev : next;
       });
     }, 3000);
-  }, [count, isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [count, isLoggedIn, images.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const scheduleRestart = useCallback(() => {
+    if (autoSlideRef.current) clearInterval(autoSlideRef.current);
+    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+    restartTimerRef.current = setTimeout(startAutoSlide, 5000);
+  }, [startAutoSlide]);
 
   useEffect(() => {
-    resetAutoSlide();
-    return () => { if (autoSlideRef.current) clearInterval(autoSlideRef.current); };
-  }, [resetAutoSlide]);
+    startAutoSlide();
+    return () => {
+      if (autoSlideRef.current) clearInterval(autoSlideRef.current);
+      if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+    };
+  }, [startAutoSlide]);
 
   // ── Gallery navigation ───────────────────────────────────────
   const goTo = useCallback((index: number) => {
@@ -59,12 +73,12 @@ export default function PhotoGallery({
       return;
     }
     setActiveIndex(index);
-    resetAutoSlide();
+    scheduleRestart();
     if (thumbStripRef.current) {
       const btn = thumbStripRef.current.children[index] as HTMLElement | undefined;
       btn?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
-  }, [resetAutoSlide, isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scheduleRestart, isLoggedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const prevGal = () => {
     const idx = (activeIndex - 1 + count) % count;
@@ -95,8 +109,8 @@ export default function PhotoGallery({
 
   const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
-    resetAutoSlide();
-  }, [resetAutoSlide]);
+    scheduleRestart();
+  }, [scheduleRestart]);
 
   const lbPrev = useCallback(() =>
     setLightboxIndex((i) => (i - 1 + count) % count), [count]);
@@ -134,7 +148,7 @@ export default function PhotoGallery({
   const handleGalTouchEnd = (e: React.TouchEvent) => {
     if (galTouchStart.current === null) return;
     const diff = galTouchStart.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) { userSwiped.current = true; diff > 0 ? nextGal() : prevGal(); }
+    if (Math.abs(diff) > 40) { diff > 0 ? nextGal() : prevGal(); }
     galTouchStart.current = null;
   };
 
