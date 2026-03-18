@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { X, ChevronLeft, ChevronRight, Maximize2, Lock } from "lucide-react";
 import Link from "next/link";
 
@@ -34,23 +34,24 @@ export default function PhotoGallery({
   // Image 0 is always free — index 1+ requires login
   const isLocked = (index: number) => !isLoggedIn && index > 0;
 
+  // Indexes of unlocked images (for auto-slide + counter)
+  const unlockedIndexes = useMemo(
+    () => images.map((_, i) => i).filter(i => !isLocked(i)),
+    [images.length, isLoggedIn] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
   // ── Auto-slide every 3s (only across unlocked images) ───────
   const startAutoSlide = useCallback(() => {
     if (autoSlideRef.current) clearInterval(autoSlideRef.current);
-    const unlockedCount = images.filter((_, i) => !isLocked(i)).length;
-    if (unlockedCount <= 1) return;
+    if (unlockedIndexes.length <= 1) return;
     autoSlideRef.current = setInterval(() => {
       setActiveIndex((prev) => {
-        let next = (prev + 1) % count;
-        let attempts = 0;
-        while (isLocked(next) && attempts < count) {
-          next = (next + 1) % count;
-          attempts++;
-        }
-        return isLocked(next) ? prev : next;
+        const pos = unlockedIndexes.indexOf(prev);
+        const nextPos = (pos + 1) % unlockedIndexes.length;
+        return unlockedIndexes[nextPos];
       });
     }, 3000);
-  }, [count, isLoggedIn, images.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [unlockedIndexes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scheduleRestart = useCallback(() => {
     if (autoSlideRef.current) clearInterval(autoSlideRef.current);
@@ -231,10 +232,12 @@ export default function PhotoGallery({
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.015]"
                 draggable={false}
               />
-              {/* Counter */}
+              {/* Counter — only unlocked images */}
               <div className="absolute top-2.5 left-3 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white select-none"
                 style={{ background: "rgba(0,0,0,0.55)" }}>
-                {activeIndex + 1} / {count}
+                {unlockedIndexes.includes(activeIndex)
+                  ? `${unlockedIndexes.indexOf(activeIndex) + 1} / ${unlockedIndexes.length}`
+                  : "-/-"}
               </div>
               {/* Expand */}
               <button
@@ -328,7 +331,9 @@ export default function PhotoGallery({
             />
             <div className="absolute top-3 right-3 rounded-md px-2.5 py-1 text-[12px] font-semibold text-white select-none"
               style={{ background: "rgba(0,0,0,0.55)" }}>
-              {activeIndex + 1} / {count}
+              {unlockedIndexes.includes(activeIndex)
+                ? `${unlockedIndexes.indexOf(activeIndex) + 1} / ${unlockedIndexes.length}`
+                : "-/-"}
             </div>
             <button
               className="absolute top-3 left-3 flex items-center justify-center rounded"
@@ -429,10 +434,12 @@ export default function PhotoGallery({
               </span>
             </div>
 
-            {/* Counter */}
+            {/* Counter — only unlocked images */}
             <div className="absolute top-3 left-3 text-[12px] font-semibold text-white rounded-full px-2.5 py-1 select-none"
               style={{ background: "rgba(0,0,0,0.55)" }}>
-              {lightboxIndex + 1} / {count}
+              {unlockedIndexes.includes(lightboxIndex)
+                ? `${unlockedIndexes.indexOf(lightboxIndex) + 1} / ${unlockedIndexes.length}`
+                : "-/-"}
             </div>
           </div>
 
