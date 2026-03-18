@@ -245,6 +245,8 @@ export default function AdDetailPage() {
         listingId={ad.id}
         listingTitle={ad.title}
         isLoggedIn={currentUserId !== null}
+        profileImage={ad.images?.[0] ?? null}
+        name={ad.title}
       />
 
       <footer className="border-t border-gray-200 bg-white px-6 py-8 text-center text-sm text-gray-500">
