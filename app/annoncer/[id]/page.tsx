@@ -130,7 +130,7 @@ export default async function AnnonceDetailPage({ params }: { params: Promise<{ 
                 </div>
 
                 {/* Contact — locked */}
-                <ContactSection />
+                <ContactSection contact={{}} />
               </div>
             </div>
           </div>

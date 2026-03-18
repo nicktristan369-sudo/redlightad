@@ -73,6 +73,12 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
+  // videos
+  const [existingVideos, setExistingVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; is_locked: boolean }[]>([]);
+  const [newVideoFiles, setNewVideoFiles] = useState<File[]>([]);
+  const [newVideoLocked, setNewVideoLocked] = useState<boolean[]>([]);
+  const [videoUploading, setVideoUploading] = useState(false);
+
   // voice + social
   const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
@@ -220,6 +226,10 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
       if (listing.opening_hours) {
         setOpeningHours(prev => ({ ...prev, ...listing.opening_hours }));
       }
+      // Fetch existing videos
+      const { data: vids } = await supabase.from("listing_videos").select("*").eq("listing_id", id);
+      if (vids) setExistingVideos(vids);
+
       if (listing.location_changed_at) setLocationChangedAt(listing.location_changed_at);
       if (listing.show_travel_schedule) setShowTravelSchedule(listing.show_travel_schedule);
 
@@ -310,6 +320,26 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
       }).eq("id", id).eq("user_id", user.id);
 
       if (updateErr) throw updateErr;
+
+      // Upload new videos
+      if (newVideoFiles.length > 0) {
+        setVideoUploading(true);
+        const { uploadMedia } = await import("@/lib/uploadImages");
+        for (let i = 0; i < newVideoFiles.length; i++) {
+          const result = await uploadMedia(newVideoFiles[i]);
+          const thumbUrl = result.url
+            .replace("/upload/", "/upload/so_0/")
+            .replace(/\.(mp4|mov|webm)$/, ".jpg");
+          await supabase.from("listing_videos").insert({
+            listing_id: id,
+            url: result.url,
+            thumbnail_url: thumbUrl,
+            is_locked: newVideoLocked[i] ?? false,
+          });
+        }
+        setVideoUploading(false);
+      }
+
       setSuccess(true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Noget gik galt. Prøv igen.");
@@ -891,6 +921,93 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+
+                {/* Videoer */}
+                <div>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Mine Videoer</p>
+
+                  {/* Eksisterende videoer */}
+                  {existingVideos.map(v => (
+                    <div key={v.id} className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl mb-2">
+                      {v.thumbnail_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={v.thumbnail_url} alt="" className="w-16 h-12 object-cover rounded" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-700 truncate">{v.url.split("/").pop()}</p>
+                        <label className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                          <input
+                            type="checkbox"
+                            checked={v.is_locked}
+                            onChange={async (e) => {
+                              const supabase = createClient();
+                              await supabase.from("listing_videos").update({ is_locked: e.target.checked }).eq("id", v.id);
+                              setExistingVideos(prev => prev.map(x => x.id === v.id ? { ...x, is_locked: e.target.checked } : x));
+                            }}
+                          />
+                          Låst (kræver login)
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const supabase = createClient();
+                          await supabase.from("listing_videos").delete().eq("id", v.id);
+                          setExistingVideos(prev => prev.filter(x => x.id !== v.id));
+                        }}
+                        className="text-red-500 hover:text-red-700 text-sm font-medium"
+                      >
+                        Slet
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Upload nye videoer */}
+                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-gray-400 transition-colors">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      multiple
+                      className="hidden"
+                      onChange={e => {
+                        const files = Array.from(e.target.files ?? []).slice(0, 10 - existingVideos.length - newVideoFiles.length);
+                        setNewVideoFiles(prev => [...prev, ...files]);
+                        setNewVideoLocked(prev => [...prev, ...files.map(() => false)]);
+                      }}
+                    />
+                    <svg className="w-7 h-7 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+                    <span className="text-[13px] text-gray-400">+ Upload video (maks 10 i alt)</span>
+                  </label>
+
+                  {/* Preview nye videoer */}
+                  {newVideoFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 border border-blue-200 rounded-xl bg-blue-50 mt-2">
+                      <span className="text-sm text-gray-700 flex-1 truncate">{f.name}</span>
+                      <label className="flex items-center gap-1 text-sm text-gray-600">
+                        <input
+                          type="checkbox"
+                          checked={newVideoLocked[i]}
+                          onChange={e => setNewVideoLocked(prev => prev.map((v, j) => j === i ? e.target.checked : v))}
+                        />
+                        Låst
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewVideoFiles(prev => prev.filter((_, j) => j !== i));
+                          setNewVideoLocked(prev => prev.filter((_, j) => j !== i));
+                        }}
+                        className="text-red-500 hover:text-red-700 font-medium"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+
+                  {videoUploading && (
+                    <p className="text-sm text-gray-500 mt-2">Uploader videoer...</p>
                   )}
                 </div>
 

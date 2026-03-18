@@ -8,6 +8,7 @@ import PhotoGallery from "@/components/PhotoGallery";
 import VoicePlayer from "@/components/VoicePlayer";
 import AdSidebar from "@/components/AdSidebar";
 import ContactSection from "@/components/ContactSection";
+import VideoSection from "@/components/VideoSection";
 import SocialLinksSection from "@/components/SocialLinksSection";
 import TravelBox from "@/components/TravelBox";
 import type { TravelEntry } from "@/components/TravelBox";
@@ -53,6 +54,7 @@ export default function AdDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [travelEntries, setTravelEntries] = useState<TravelEntry[]>([]);
+  const [videos, setVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; is_locked: boolean }[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -71,6 +73,16 @@ export default function AdDetailPage() {
         .single();
 
       setAd(data ?? null);
+
+      // Fetch videos
+      if (data) {
+        const { data: vids } = await supabase
+          .from("listing_videos")
+          .select("id, url, thumbnail_url, is_locked")
+          .eq("listing_id", data.id)
+          .order("created_at", { ascending: true });
+        if (vids) setVideos(vids);
+      }
 
       // Fetch travel entries if show_travel_schedule is enabled
       if (data?.show_travel_schedule) {
@@ -172,6 +184,19 @@ export default function AdDetailPage() {
                   isLoggedIn={currentUserId !== null}
                 />
               </div>
+              {/* Videos — desktop */}
+              {videos.length > 0 && (
+                <div className="hidden md:block">
+                  <VideoSection videos={videos} isLoggedIn={currentUserId !== null} listingId={ad.id} />
+                </div>
+              )}
+              {/* Videos — mobile */}
+              {videos.length > 0 && (
+                <div className="md:hidden">
+                  <VideoSection videos={videos} isLoggedIn={currentUserId !== null} listingId={ad.id} />
+                </div>
+              )}
+
               {/* Mobile voice player */}
               {ad.voice_message_url && (
                 <div className="md:hidden">
