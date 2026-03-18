@@ -71,28 +71,24 @@ function ContactRow({
 }) {
   const [revealed, setReveal] = useState(false)
 
-  const valueEl = revealed ? (
-    <CanvasText text={value} fontSize={13} />
-  ) : (
-    <span className="text-sm font-semibold text-gray-900 select-none truncate">
-      {value}
-    </span>
-  )
-
   const inner = (
     <div className="flex items-center gap-3 px-4 py-3 relative group">
       {/* Icon */}
       <span className="flex-shrink-0 w-5 flex items-center justify-center">{icon}</span>
 
-      {/* Value + fade overlay */}
+      {/* Value */}
       <div className="flex-1 min-w-0 relative overflow-hidden">
-        {valueEl}
-        {/* Gradient fade — hidden when revealed */}
-        {!revealed && (
-          <div
-            className="absolute inset-y-0 right-0 w-16 pointer-events-none"
-            style={{ background: "linear-gradient(to right, transparent 0%, white 100%)" }}
-          />
+        {revealed ? (
+          <CanvasText text={value} fontSize={13} />
+        ) : (
+          // Skjult: viser prikker + gradient fade
+          <div className="flex items-center gap-1 select-none">
+            <span className="text-sm font-semibold text-gray-400 tracking-widest">••••••••••</span>
+            <div
+              className="absolute inset-y-0 right-0 w-12 pointer-events-none"
+              style={{ background: "linear-gradient(to right, transparent 0%, white 100%)" }}
+            />
+          </div>
         )}
       </div>
 
