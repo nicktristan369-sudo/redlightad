@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import AdDetailClient from "./AdDetailClient";
+import PhotoGallery from "@/components/PhotoGallery";
+import VoicePlayer from "@/components/VoicePlayer";
 import AdSidebar from "@/components/AdSidebar";
 import ContactSection from "@/components/ContactSection";
 import SocialLinksSection from "@/components/SocialLinksSection";
@@ -122,9 +124,14 @@ export default function AdDetailPage() {
     <>
       <Navbar />
       <main className="bg-gray-50 min-h-screen pb-20 md:pb-0">
-        <div className="mx-auto max-w-7xl px-4 py-8">
-          {/* Breadcrumb */}
-          <nav className="mb-4 flex items-center gap-1 text-sm">
+        {/* Mobile-only: full-width gallery at top */}
+        <div className="md:hidden">
+          <PhotoGallery images={ad.images ?? []} totalPhotos={(ad.images ?? []).length} name={ad.title} isLoggedIn={currentUserId !== null} />
+        </div>
+
+        <div className="mx-auto max-w-7xl px-4 pt-3 md:pt-8 pb-8">
+          {/* Desktop Breadcrumb */}
+          <nav className="hidden md:flex mb-4 items-center gap-1 text-sm">
             <a href="/" className="text-gray-500 hover:text-red-600">Home</a>
             <span className="text-red-500">/</span>
             <a href={`/country/${ad.country.toLowerCase()}`} className="text-gray-500 hover:text-red-600">{ad.country}</a>
@@ -132,9 +139,18 @@ export default function AdDetailPage() {
             <span className="text-gray-900 font-medium">{ad.title}</span>
           </nav>
 
+          {/* Mobile Breadcrumb card */}
+          <nav className="md:hidden mb-3 flex items-center gap-1 text-sm bg-white rounded-lg shadow px-3 py-2">
+            <a href="/" className="text-[#e11d48] hover:underline font-medium">Home</a>
+            <span className="text-[#e11d48]">/</span>
+            <a href={`/country/${ad.country.toLowerCase()}`} className="text-[#e11d48] hover:underline font-medium">{ad.country}</a>
+            <span className="text-[#e11d48]">/</span>
+            <span className="text-gray-900 font-medium truncate">{ad.title}</span>
+          </nav>
+
           {/* Title */}
           <div className="mb-6 flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900">{ad.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{ad.title}</h1>
             {isPremium && (
               <span className="rounded-full bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
                 {ad.premium_tier}
@@ -146,13 +162,22 @@ export default function AdDetailPage() {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left */}
             <div className="lg:col-span-2 space-y-6">
-              <AdDetailClient
-                images={ad.images ?? []}
-                totalPhotos={(ad.images ?? []).length}
-                name={ad.title}
-                hasVoiceMessage={!!ad.voice_message_url}
-                isLoggedIn={currentUserId !== null}
-              />
+              {/* Desktop gallery + voice */}
+              <div className="hidden md:block">
+                <AdDetailClient
+                  images={ad.images ?? []}
+                  totalPhotos={(ad.images ?? []).length}
+                  name={ad.title}
+                  hasVoiceMessage={!!ad.voice_message_url}
+                  isLoggedIn={currentUserId !== null}
+                />
+              </div>
+              {/* Mobile voice player */}
+              {ad.voice_message_url && (
+                <div className="md:hidden">
+                  <VoicePlayer />
+                </div>
+              )}
 
               {/* About */}
               {ad.show_travel_schedule && travelEntries.length > 0 && (
