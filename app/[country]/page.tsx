@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Navbar from "@/components/Navbar"
+import FilterBar from "@/components/FilterBar"
 import PremiumCarousel from "@/components/PremiumCarousel"
 import AdList from "@/components/AdList"
 import CountryNotAvailable from "@/components/CountryNotAvailable"
@@ -37,6 +38,7 @@ export default async function CountryPage({ params }: Props) {
   return (
     <>
       <Navbar />
+      <FilterBar />
       {!countryData ? (
         <CountryNotAvailable countryCode={code} />
       ) : (

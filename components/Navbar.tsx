@@ -1,61 +1,21 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X, Search, ChevronDown, MapPin, LayoutGrid, Users, SlidersHorizontal, Globe, Home, Star, CheckCircle, Play, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Star, CheckCircle, Play, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import {
-  BODY_BUILD_OPTIONS,
-  HAIR_COLOR_OPTIONS,
-  EYE_COLOR_OPTIONS,
-  GROOMING_OPTIONS,
-  BRA_SIZE_OPTIONS,
-  NATIONALITY_OPTIONS,
-} from "@/lib/listingOptions";
-import { CATEGORIES } from "@/lib/constants/categories";
-import { GENDERS } from "@/lib/constants/genders";
 
 export default function Navbar() {
   const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<{ email: string; id: string } | null>(null);
-  const [customSearchOpen, setCustomSearchOpen] = useState(false);
-  const [categoryOpen, setCategoryOpen] = useState(false);
-  const [genderOpen, setGenderOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedGender, setSelectedGender] = useState<string | null>(null);
-  const [categoryRect, setCategoryRect] = useState<DOMRect | null>(null);
-  const [genderRect, setGenderRect] = useState<DOMRect | null>(null);
-  const categoryRef = useRef<HTMLButtonElement>(null);
-  const genderRef = useRef<HTMLButtonElement>(null);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
   const [showCountrySelector, setShowCountrySelector] = useState(false);
-  const customSearchRef = useRef<HTMLDivElement>(null);
-
-  const [filters, setFilters] = useState({
-    ageMin: "", ageMax: "",
-    heightMin: "", heightMax: "",
-    weightMin: "", weightMax: "",
-    body_build: "", hair_color: "", eye_color: "",
-    grooming: "", bra_size: "", nationality: "",
-    outcall: false, handicap_friendly: false,
-    has_own_place: false, is_trans: false, old_ads: false,
-  });
-
-  const resetFilters = () => setFilters({
-    ageMin: "", ageMax: "",
-    heightMin: "", heightMax: "",
-    weightMin: "", weightMax: "",
-    body_build: "", hair_color: "", eye_color: "",
-    grooming: "", bra_size: "", nationality: "",
-    outcall: false, handicap_friendly: false,
-    has_own_place: false, is_trans: false, old_ads: false,
-  });
 
   useEffect(() => {
     try {
@@ -84,45 +44,6 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Close custom search on click outside or ESC
-  useEffect(() => {
-    if (!customSearchOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (customSearchRef.current && !customSearchRef.current.contains(e.target as Node)) {
-        setCustomSearchOpen(false);
-      }
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setCustomSearchOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [customSearchOpen]);
-
-  // Close category/gender dropdowns on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (categoryRef.current && !categoryRef.current.contains(t)) setCategoryOpen(false);
-      if (genderRef.current && !genderRef.current.contains(t)) setGenderOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // Update rect on scroll so fixed dropdown follows the button
-  useEffect(() => {
-    const onScroll = () => {
-      if (categoryOpen && categoryRef.current) setCategoryRect(categoryRef.current.getBoundingClientRect());
-      if (genderOpen && genderRef.current) setGenderRect(genderRef.current.getBoundingClientRect());
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [categoryOpen, genderOpen]);
 
   return (
     <>
@@ -346,229 +267,7 @@ export default function Navbar() {
         )}
       </nav>
 
-      {/* ── Filter bar ── */}
-      <div className="bg-white border-b border-[#E5E5E5]">
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-2.5">
-          <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-
-            {/* Category dropdown */}
-            <div className="relative flex-shrink-0">
-              <button
-                ref={categoryRef}
-                onClick={() => {
-                  const r = categoryRef.current?.getBoundingClientRect() ?? null;
-                  setCategoryRect(r);
-                  setCategoryOpen(o => !o);
-                  setGenderOpen(false);
-                }}
-                className="inline-flex items-center gap-2 border bg-white px-4 py-2 text-[14px] font-medium transition-colors whitespace-nowrap"
-                style={{ borderRadius: "8px", borderColor: categoryOpen ? "#000" : "#D1D5DB", color: selectedCategory ? "#000" : "#374151" }}
-              >
-                <LayoutGrid size={14} color="#6B7280" />
-                {selectedCategory || t.filter_all_categories}
-                <ChevronDown size={12} color="#6B7280" className={`transition-transform duration-150 ${categoryOpen ? "rotate-180" : ""}`} />
-              </button>
-              {categoryOpen && categoryRect && (
-                <div className="fixed z-[9999] w-52 animate-dropdown"
-                  style={{ top: categoryRect.bottom + 6, left: categoryRect.left, background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: "8px" }}>
-                  <button
-                    onClick={() => { setSelectedCategory(null); setCategoryOpen(false); }}
-                    className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg"
-                    style={{ color: "#6B7280" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#F5F5F5")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                  >
-                    {t.filter_all_categories}
-                  </button>
-                  <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
-                  {CATEGORIES.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => { setSelectedCategory(cat); setCategoryOpen(false); }}
-                      className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg flex items-center justify-between"
-                      style={{ background: selectedCategory === cat ? "#000" : "transparent", color: selectedCategory === cat ? "#fff" : "#111" }}
-                      onMouseEnter={e => { if (selectedCategory !== cat) e.currentTarget.style.background = "#F5F5F5" }}
-                      onMouseLeave={e => { e.currentTarget.style.background = selectedCategory === cat ? "#000" : "transparent" }}
-                    >
-                      {cat}
-                      {selectedCategory === cat && <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Gender dropdown */}
-            <div className="relative flex-shrink-0">
-              <button
-                ref={genderRef}
-                onClick={() => {
-                  const r = genderRef.current?.getBoundingClientRect() ?? null;
-                  setGenderRect(r);
-                  setGenderOpen(o => !o);
-                  setCategoryOpen(false);
-                }}
-                className="inline-flex items-center gap-2 border bg-white px-4 py-2 text-[14px] font-medium transition-colors whitespace-nowrap"
-                style={{ borderRadius: "8px", borderColor: genderOpen ? "#000" : "#D1D5DB", color: selectedGender ? "#000" : "#374151" }}
-              >
-                <Users size={14} color="#6B7280" />
-                {selectedGender || t.filter_all_genders}
-                <ChevronDown size={12} color="#6B7280" className={`transition-transform duration-150 ${genderOpen ? "rotate-180" : ""}`} />
-              </button>
-              {genderOpen && genderRect && (
-                <div className="fixed z-[9999] w-44 animate-dropdown"
-                  style={{ top: genderRect.bottom + 6, left: genderRect.left, background: "#fff", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: "8px" }}>
-                  <button
-                    onClick={() => { setSelectedGender(null); setGenderOpen(false); }}
-                    className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg"
-                    style={{ color: "#6B7280" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#F5F5F5")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                  >
-                    {t.filter_all_genders}
-                  </button>
-                  <div style={{ height: "1px", background: "#F3F4F6", margin: "4px 0" }} />
-                  {GENDERS.map(g => (
-                    <button
-                      key={g}
-                      onClick={() => { setSelectedGender(g); setGenderOpen(false); }}
-                      className="w-full text-left px-4 py-2.5 text-[14px] font-medium transition-colors duration-150 rounded-lg flex items-center justify-between"
-                      style={{ background: selectedGender === g ? "#000" : "transparent", color: selectedGender === g ? "#fff" : "#111" }}
-                      onMouseEnter={e => { if (selectedGender !== g) e.currentTarget.style.background = "#F5F5F5" }}
-                      onMouseLeave={e => { e.currentTarget.style.background = selectedGender === g ? "#000" : "transparent" }}
-                    >
-                      {g}
-                      {selectedGender === g && <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Filters */}
-            <button
-              onClick={() => setCustomSearchOpen(!customSearchOpen)}
-              className={`flex-shrink-0 inline-flex items-center gap-2 border px-4 py-2 text-[14px] font-medium transition-colors whitespace-nowrap ${
-                customSearchOpen
-                  ? "border-gray-900 bg-gray-900 text-white"
-                  : "border-[#D1D5DB] bg-white text-[#374151] hover:border-[#9CA3AF]"
-              }`}
-              style={{ borderRadius: "8px" }}
-            >
-              <SlidersHorizontal size={14} color={customSearchOpen ? "#fff" : "#6B7280"} />
-              Filters
-              <ChevronDown size={12} color={customSearchOpen ? "#fff" : "#6B7280"} className={`transition-transform ${customSearchOpen ? "rotate-180" : ""}`} />
-            </button>
-
-          </div>
-
-          {/* Custom search dropdown */}
-          {customSearchOpen && (
-            <div
-              ref={customSearchRef}
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-full max-w-[800px] bg-white rounded-2xl shadow-xl border border-gray-100 p-5 z-50"
-            >
-              {/* Fysiske mål */}
-              <h4 className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-3">Fysiske mål</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                {[
-                  { label: "Alder", minKey: "ageMin", maxKey: "ageMax", min: 18, max: 99 },
-                  { label: "Højde (cm)", minKey: "heightMin", maxKey: "heightMax", min: 140, max: 220 },
-                  { label: "Vægt (kg)", minKey: "weightMin", maxKey: "weightMax", min: 40, max: 150 },
-                ].map((r) => (
-                  <div key={r.label}>
-                    <span className="block text-xs text-gray-500 mb-1">{r.label}</span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min={r.min}
-                        max={r.max}
-                        placeholder="Min"
-                        value={filters[r.minKey as keyof typeof filters] as string}
-                        onChange={(e) => setFilters((p) => ({ ...p, [r.minKey]: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
-                      />
-                      <span className="text-gray-400">—</span>
-                      <input
-                        type="number"
-                        min={r.min}
-                        max={r.max}
-                        placeholder="Max"
-                        value={filters[r.maxKey as keyof typeof filters] as string}
-                        onChange={(e) => setFilters((p) => ({ ...p, [r.maxKey]: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Udseende */}
-              <h4 className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-3">Udseende</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                {[
-                  { label: "Kropsbygning", key: "body_build", options: BODY_BUILD_OPTIONS },
-                  { label: "Hårfarve", key: "hair_color", options: HAIR_COLOR_OPTIONS },
-                  { label: "Øjenfarve", key: "eye_color", options: EYE_COLOR_OPTIONS },
-                  { label: "Intimbelshåring", key: "grooming", options: GROOMING_OPTIONS },
-                  { label: "BH-størrelse", key: "bra_size", options: BRA_SIZE_OPTIONS },
-                  { label: "Nationalitet", key: "nationality", options: NATIONALITY_OPTIONS },
-                ].map((s) => (
-                  <div key={s.key}>
-                    <span className="block text-xs text-gray-500 mb-1">{s.label}</span>
-                    <select
-                      value={filters[s.key as keyof typeof filters] as string}
-                      onChange={(e) => setFilters((p) => ({ ...p, [s.key]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
-                    >
-                      <option value="">Alle</option>
-                      {s.options.map((o) => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </div>
-                ))}
-              </div>
-
-              {/* Checkboxes */}
-              <h4 className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-3">Ekstra</h4>
-              <div className="flex flex-wrap gap-x-5 gap-y-2 mb-5">
-                {[
-                  { key: "outcall", label: "Kører escort" },
-                  { key: "handicap_friendly", label: "Modtager handicappede" },
-                  { key: "has_own_place", label: "Har eget sted" },
-                  { key: "is_trans", label: "Trans" },
-                  { key: "old_ads", label: "Gamle annoncer" },
-                ].map((c) => (
-                  <label key={c.key} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters[c.key as keyof typeof filters] as boolean}
-                      onChange={(e) => setFilters((p) => ({ ...p, [c.key]: e.target.checked }))}
-                      className="rounded border-gray-300 text-gray-900 focus:ring-gray-500"
-                    />
-                    {c.label}
-                  </label>
-                ))}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
-                <button
-                  onClick={resetFilters}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Ryd filtre
-                </button>
-                <button
-                  onClick={() => setCustomSearchOpen(false)}
-                  className="bg-gray-900 hover:bg-black text-white text-sm font-semibold px-6 py-2 rounded-full transition-colors"
-                >
-                  Vis resultater
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Filter bar is now rendered separately via <FilterBar /> component */}
     </>
   );
 }
