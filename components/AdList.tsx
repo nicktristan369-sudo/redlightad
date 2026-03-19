@@ -217,17 +217,18 @@ function timeAgo(dateStr: string): string {
 interface Props {
   country?: string
   category?: string
+  city?: string
   limit?: number
 }
 
-function AdListInner({ country: propCountry, category: propCategory, limit = 50 }: Props) {
+function AdListInner({ country: propCountry, category: propCategory, city: propCity, limit = 50 }: Props) {
   const searchParams = useSearchParams()
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
 
   // URL params take priority, props as fallback
   const country = searchParams.get("country") ?? propCountry ?? ""
-  const city = searchParams.get("city") ?? ""
+  const city = searchParams.get("city") ?? propCity ?? ""
   const category = searchParams.get("category") ?? propCategory ?? ""
   const gender = searchParams.get("gender") ?? ""
   const q = searchParams.get("q") ?? ""
