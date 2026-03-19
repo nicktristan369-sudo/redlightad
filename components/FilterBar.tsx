@@ -2,375 +2,375 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ChevronDown, X, MapPin, Grid3X3, Users, Search } from "lucide-react"
+import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
 import { GENDERS } from "@/lib/constants/genders"
 
-// ── Country emoji flag mapping ──────────────────────────────────────────
-function getCountryEmoji(countryName: string): string {
-  const mapping: Record<string, string> = {
-    "Denmark": "🇩🇰", "Sweden": "🇸🇪", "Norway": "🇳🇴", "Finland": "🇫🇮",
-    "Germany": "🇩🇪", "France": "🇫🇷", "Spain": "🇪🇸", "United Kingdom": "🇬🇧",
-    "USA": "🇺🇸", "United States": "🇺🇸", "Netherlands": "🇳🇱", "Belgium": "🇧🇪",
-    "Switzerland": "🇨🇭", "Austria": "🇦🇹", "Italy": "🇮🇹", "Portugal": "🇵🇹",
-    "Poland": "🇵🇱", "Czech Republic": "🇨🇿", "Hungary": "🇭🇺", "Romania": "🇷🇴",
-    "Bulgaria": "🇧🇬", "Greece": "🇬🇷", "Thailand": "🇹🇭", "Japan": "🇯🇵",
-    "Australia": "🇦🇺", "Canada": "🇨🇦", "Brazil": "🇧🇷", "Mexico": "🇲🇽",
-    "Russia": "🇷🇺", "Ukraine": "🇺🇦", "Turkey": "🇹🇷", "UAE": "🇦🇪",
-    "Singapore": "🇸🇬", "South Africa": "🇿🇦", "New Zealand": "🇳🇿",
-    "Hong Kong": "🇭🇰", "Malaysia": "🇲🇾", "Philippines": "🇵🇭",
-    "Vietnam": "🇻🇳", "Indonesia": "🇮🇩", "India": "🇮🇳", "Argentina": "🇦🇷",
+function getCountryEmoji(name: string): string {
+  const map: Record<string, string> = {
+    "Denmark": "🇩🇰","Sweden": "🇸🇪","Norway": "🇳🇴","Finland": "🇫🇮",
+    "Germany": "🇩🇪","France": "🇫🇷","Spain": "🇪🇸","United Kingdom": "🇬🇧",
+    "USA": "🇺🇸","United States": "🇺🇸","Netherlands": "🇳🇱","Belgium": "🇧🇪",
+    "Switzerland": "🇨🇭","Austria": "🇦🇹","Italy": "🇮🇹","Portugal": "🇵🇹",
+    "Poland": "🇵🇱","Czech Republic": "🇨🇿","Hungary": "🇭🇺","Romania": "🇷🇴",
+    "Bulgaria": "🇧🇬","Greece": "🇬🇷","Thailand": "🇹🇭","Japan": "🇯🇵",
+    "Australia": "🇦🇺","Canada": "🇨🇦","Brazil": "🇧🇷","Mexico": "🇲🇽",
+    "Russia": "🇷🇺","Ukraine": "🇺🇦","Turkey": "🇹🇷","UAE": "🇦🇪",
+    "Singapore": "🇸🇬","South Africa": "🇿🇦",
   }
-  return mapping[countryName] ?? "🌍"
+  return map[name] ?? "🌍"
 }
 
-// ── Category Dropdown ───────────────────────────────────────────────────
-function CategoryDropdown({
-  current,
-  onSelect,
-  onClose,
-}: {
-  current: string
-  onSelect: (v: string) => void
-  onClose: () => void
-}) {
+// ── Simple dropdown container ─────────────────────────────────────────
+function DropMenu({ children }: { children: React.ReactNode }) {
   return (
-    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
-      <button
-        onClick={() => { onSelect(""); onClose() }}
-        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${!current ? "text-red-600 font-semibold" : "text-gray-700"}`}
-      >
-        All categories
-      </button>
-      <div className="h-px bg-gray-100 mx-2" />
-      {CATEGORIES.map(c => (
-        <button
-          key={c}
-          onClick={() => { onSelect(c); onClose() }}
-          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${current === c ? "text-red-600 font-semibold" : "text-gray-700"}`}
-        >
-          {c}
-        </button>
-      ))}
+    <div
+      className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
+      style={{ minWidth: "200px", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+    >
+      {children}
     </div>
   )
 }
 
-// ── Gender Dropdown ─────────────────────────────────────────────────────
-function GenderDropdown({
-  current,
-  onSelect,
-  onClose,
-}: {
-  current: string
-  onSelect: (v: string) => void
-  onClose: () => void
-}) {
+// ── Category ─────────────────────────────────────────────────────────
+function CategoryMenu({ current, onSelect }: { current: string; onSelect: (v: string) => void }) {
   return (
-    <div className="absolute top-full left-0 mt-2 w-44 bg-white rounded shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
-      <button
-        onClick={() => { onSelect(""); onClose() }}
-        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${!current ? "text-red-600 font-semibold" : "text-gray-700"}`}
-      >
-        All
-      </button>
-      <div className="h-px bg-gray-100 mx-2" />
-      {GENDERS.map(g => (
+    <DropMenu>
+      {["", ...CATEGORIES].map(c => (
         <button
-          key={g}
-          onClick={() => { onSelect(g); onClose() }}
-          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${current === g ? "text-red-600 font-semibold" : "text-gray-700"}`}
+          key={c || "__all"}
+          onClick={() => onSelect(c)}
+          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
+            current === c ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
+          }`}
         >
-          {g}
+          {c || "All categories"}
         </button>
       ))}
-    </div>
+    </DropMenu>
   )
 }
 
-// ── Location Dropdown (2-step: Country → City) ──────────────────────────
-function LocationDropdown({
+// ── Gender ───────────────────────────────────────────────────────────
+function GenderMenu({ current, onSelect }: { current: string; onSelect: (v: string) => void }) {
+  return (
+    <DropMenu>
+      {["", ...GENDERS].map(g => (
+        <button
+          key={g || "__all"}
+          onClick={() => onSelect(g)}
+          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
+            current === g ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
+          }`}
+        >
+          {g || "All"}
+        </button>
+      ))}
+    </DropMenu>
+  )
+}
+
+// ── Location (2-trins: Land → By) ────────────────────────────────────
+function LocationMenu({
   currentCountry,
   currentCity,
   onSelect,
-  onClose,
 }: {
   currentCountry: string
   currentCity: string
   onSelect: (v: { country: string; city: string }) => void
-  onClose: () => void
 }) {
   const [countries, setCountries] = useState<{ name: string }[]>([])
   const [cities, setCities] = useState<{ name: string }[]>([])
-  const [selectedCountry, setSelectedCountry] = useState(currentCountry)
+  const [selCountry, setSelCountry] = useState(currentCountry)
   const [step, setStep] = useState<"country" | "city">(currentCountry ? "city" : "country")
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch("/api/listings/locations")
-      .then(r => r.json())
-      .then(d => setCountries(d.countries ?? []))
-      .catch(() => {})
+    fetch("/api/listings/locations").then(r => r.json()).then(d => setCountries(d.countries ?? [])).catch(() => {})
   }, [])
 
   useEffect(() => {
-    if (!selectedCountry) return
+    if (!selCountry) return
     setLoading(true)
-    fetch(`/api/listings/locations?country=${encodeURIComponent(selectedCountry)}`)
+    fetch(`/api/listings/locations?country=${encodeURIComponent(selCountry)}`)
       .then(r => r.json())
       .then(d => { setCities(d.cities ?? []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [selectedCountry])
+  }, [selCountry])
 
-  const filteredCountries = countries.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = countries.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
 
   if (step === "country") {
     return (
-      <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded shadow-xl border border-gray-100 z-50 overflow-hidden">
-        {/* Search */}
-        <div className="p-3 border-b border-gray-100">
+      <DropMenu>
+        <div className="p-2 border-b border-gray-100">
           <input
             autoFocus
             placeholder="Search country..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full text-sm px-3 py-2 border border-gray-200 rounded outline-none focus:border-gray-400"
+            className="w-full text-sm px-3 py-1.5 border border-gray-200 outline-none focus:border-gray-400"
+            style={{ borderRadius: 0 }}
           />
         </div>
-        {/* Country list */}
-        <div className="max-h-64 overflow-y-auto">
+        <div className="max-h-60 overflow-y-auto">
           <button
-            onClick={() => { onSelect({ country: "", city: "" }); onClose() }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-600"
+            onClick={() => onSelect({ country: "", city: "" })}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 border-b border-gray-100"
           >
-            <span>🌍</span> All countries
+            🌍 All countries
           </button>
-          {filteredCountries.map(c => (
+          {filtered.map(c => (
             <button
               key={c.name}
-              onClick={() => { setSelectedCountry(c.name); setStep("city"); setSearch("") }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-800"
+              onClick={() => { setSelCountry(c.name); setStep("city") }}
+              className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
+                currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+              }`}
             >
-              <span style={{ borderRadius: 0 }}>{getCountryEmoji(c.name)}</span>
-              <span>{c.name}</span>
+              <span>{getCountryEmoji(c.name)}</span> {c.name}
             </button>
           ))}
-          {filteredCountries.length === 0 && (
-            <div className="px-4 py-3 text-sm text-gray-400 text-center">No countries found</div>
-          )}
+          {filtered.length === 0 && <p className="px-4 py-3 text-sm text-gray-400 text-center">No results</p>}
         </div>
-      </div>
+      </DropMenu>
     )
   }
 
-  // Step: city
   return (
-    <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded shadow-xl border border-gray-100 z-50 overflow-hidden">
-      {/* Back header */}
+    <DropMenu>
       <button
         onClick={() => { setStep("country"); setSearch("") }}
-        className="w-full flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+        className="w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 border-b border-gray-200"
       >
-        <span>←</span>
-        <span style={{ borderRadius: 0 }}>{getCountryEmoji(selectedCountry)}</span>
-        {selectedCountry}
+        ← {getCountryEmoji(selCountry)} {selCountry}
       </button>
-      {/* Cities */}
-      <div className="max-h-64 overflow-y-auto">
+      <div className="max-h-60 overflow-y-auto">
         <button
-          onClick={() => { onSelect({ country: selectedCountry, city: "" }); onClose() }}
-          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-600"
+          onClick={() => onSelect({ country: selCountry, city: "" })}
+          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 border-b border-gray-100"
         >
-          All cities in {selectedCountry}
+          All cities
         </button>
         {loading ? (
           <div className="flex justify-center py-4">
             <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
           </div>
-        ) : cities.length === 0 ? (
-          <div className="px-4 py-3 text-sm text-gray-400 text-center">No cities found</div>
-        ) : (
-          cities.map(city => (
-            <button
-              key={city.name}
-              onClick={() => { onSelect({ country: selectedCountry, city: city.name }); onClose() }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm ${currentCity === city.name ? "text-red-600 font-semibold" : "text-gray-800"}`}
-            >
-              <MapPin size={12} /> {city.name}
-            </button>
-          ))
+        ) : cities.map(city => (
+          <button
+            key={city.name}
+            onClick={() => onSelect({ country: selCountry, city: city.name })}
+            className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
+              currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+            }`}
+          >
+            <MapPin size={11} /> {city.name}
+          </button>
+        ))}
+        {!loading && cities.length === 0 && (
+          <p className="px-4 py-3 text-sm text-gray-400 text-center">No cities found</p>
         )}
       </div>
-    </div>
+    </DropMenu>
   )
 }
 
-// ── Inner FilterBar (uses useSearchParams) ──────────────────────────────
+// ── Pill button ───────────────────────────────────────────────────────
+function Pill({
+  icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-between gap-2 w-full px-3 py-2 text-sm font-medium border transition-colors ${
+        active
+          ? "border-red-500 text-red-600 bg-red-50"
+          : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+      }`}
+      style={{ borderRadius: 0 }}
+    >
+      <span className="flex items-center gap-1.5">
+        {icon}
+        <span className="truncate max-w-[110px]">{label}</span>
+      </span>
+      <ChevronDown size={12} className="flex-shrink-0" />
+    </button>
+  )
+}
+
+// ── Inner (uses useSearchParams) ──────────────────────────────────────
 function FilterBarInner() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const containerRef = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState<string | null>(null)
+  const [q, setQ] = useState(searchParams.get("q") ?? "")
 
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const category = searchParams.get("category") ?? ""
+  const country = searchParams.get("country") ?? ""
+  const city = searchParams.get("city") ?? ""
+  const gender = searchParams.get("gender") ?? ""
 
-  // Read current values from URL
-  const currentCategory = searchParams.get("category") ?? ""
-  const currentCountry = searchParams.get("country") ?? ""
-  const currentCity = searchParams.get("city") ?? ""
-  const currentGender = searchParams.get("gender") ?? ""
-  const currentQ = searchParams.get("q") ?? ""
-  const [searchValue, setSearchValue] = useState(currentQ)
-
-  // Update URL params
-  const updateParams = (updates: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString())
-    Object.entries(updates).forEach(([k, v]) => {
-      if (v) params.set(k, v)
-      else params.delete(k)
-    })
-    const qs = params.toString()
+  const update = (changes: Record<string, string>) => {
+    const p = new URLSearchParams(searchParams.toString())
+    Object.entries(changes).forEach(([k, v]) => v ? p.set(k, v) : p.delete(k))
+    const qs = p.toString()
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    setOpen(null)
   }
 
-  // Close dropdown on click outside
+  // Click outside → close
   useEffect(() => {
-    if (!openDropdown) return
+    if (!open) return
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpenDropdown(null)
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(null)
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
-  }, [openDropdown])
+  }, [open])
 
-  // Close on ESC
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenDropdown(null)
-    }
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(null) }
     document.addEventListener("keydown", handler)
     return () => document.removeEventListener("keydown", handler)
   }, [])
 
-  const hasFilters = currentCategory || currentCountry || currentCity || currentGender || currentQ
+  const toggle = (key: string) => setOpen(o => o === key ? null : key)
 
-  const pillBase = "flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-all whitespace-nowrap"
-  const pillActive = "border border-red-500 text-red-600 bg-red-50"
-  const pillInactive = "bg-[#F5F5F7] text-gray-700 hover:bg-gray-200"
-
-  // Location pill label
-  const locationLabel = currentCity
-    ? `📍 ${currentCity}`
-    : currentCountry
-      ? `${getCountryEmoji(currentCountry)} ${currentCountry}`
+  const locationLabel = city
+    ? `📍 ${city}`
+    : country
+      ? `${getCountryEmoji(country)} ${country}`
       : "Location"
 
-  return (
-    <div
-      ref={containerRef}
-      className="bg-white border-b border-gray-100"
-      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-    >
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-2.5">
-        <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden flex-nowrap">
+  const hasFilters = category || country || city || gender || q
 
-          {/* Search input */}
-          <div className="relative flex-shrink-0">
+  return (
+    <div ref={ref} className="bg-white border-b border-gray-200" style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+      <div className="max-w-7xl mx-auto px-3 md:px-6 py-2">
+
+        {/* Search — full width top row on mobile */}
+        <div className="relative mb-2 md:hidden">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") update({ q }) }}
+            onBlur={() => { if (q !== (searchParams.get("q") ?? "")) update({ q }) }}
+            className="w-full h-9 pl-8 pr-3 text-sm bg-white border border-gray-200 outline-none focus:border-gray-400"
+            style={{ borderRadius: 0 }}
+          />
+        </div>
+
+        {/* Pills row */}
+        <div className="flex items-stretch gap-0">
+
+          {/* Search — desktop only, left of pills */}
+          <div className="relative hidden md:block mr-2">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               type="text"
               placeholder="Search..."
-              value={searchValue}
-              onChange={e => setSearchValue(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") updateParams({ q: searchValue }) }}
-              onBlur={() => updateParams({ q: searchValue })}
-              className="h-9 w-40 md:w-48 pl-8 pr-3 text-sm bg-white border border-gray-200 rounded outline-none focus:border-gray-400 transition-colors"
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") update({ q }) }}
+              onBlur={() => { if (q !== (searchParams.get("q") ?? "")) update({ q }) }}
+              className="h-9 w-44 pl-8 pr-3 text-sm bg-white border border-gray-200 outline-none focus:border-gray-400"
+              style={{ borderRadius: 0 }}
             />
           </div>
 
-          {/* Category pill */}
-          <div className="relative flex-shrink-0">
-            <button
-              onClick={() => setOpenDropdown(o => o === "category" ? null : "category")}
-              className={`${pillBase} ${currentCategory ? pillActive : pillInactive}`}
-            >
-              <Grid3X3 size={14} />
-              {currentCategory || "Category"}
-              <ChevronDown size={12} />
-            </button>
-            {openDropdown === "category" && (
-              <CategoryDropdown
-                current={currentCategory}
-                onSelect={v => { updateParams({ category: v }); setOpenDropdown(null) }}
-                onClose={() => setOpenDropdown(null)}
-              />
-            )}
-          </div>
+          {/* Mobile: 2x2 grid — Desktop: single row */}
+          <div className="grid grid-cols-2 gap-px md:flex md:gap-px flex-1">
 
-          {/* Location pill */}
-          <div className="relative flex-shrink-0">
-            <button
-              onClick={() => setOpenDropdown(o => o === "location" ? null : "location")}
-              className={`${pillBase} ${currentCountry || currentCity ? pillActive : pillInactive}`}
-            >
-              <MapPin size={14} />
-              {locationLabel}
-              <ChevronDown size={12} />
-            </button>
-            {openDropdown === "location" && (
-              <LocationDropdown
-                currentCountry={currentCountry}
-                currentCity={currentCity}
-                onSelect={({ country, city }) => updateParams({ country, city })}
-                onClose={() => setOpenDropdown(null)}
+            {/* Category */}
+            <div className="relative">
+              <Pill
+                icon={<Grid3X3 size={13} />}
+                label={category || "Category"}
+                active={!!category}
+                onClick={() => toggle("category")}
               />
-            )}
-          </div>
+              {open === "category" && (
+                <CategoryMenu current={category} onSelect={v => update({ category: v })} />
+              )}
+            </div>
 
-          {/* Gender pill */}
-          <div className="relative flex-shrink-0">
-            <button
-              onClick={() => setOpenDropdown(o => o === "gender" ? null : "gender")}
-              className={`${pillBase} ${currentGender ? pillActive : pillInactive}`}
-            >
-              <Users size={14} />
-              {currentGender || "Gender"}
-              <ChevronDown size={12} />
-            </button>
-            {openDropdown === "gender" && (
-              <GenderDropdown
-                current={currentGender}
-                onSelect={v => { updateParams({ gender: v }); setOpenDropdown(null) }}
-                onClose={() => setOpenDropdown(null)}
+            {/* Location */}
+            <div className="relative">
+              <Pill
+                icon={<MapPin size={13} />}
+                label={locationLabel}
+                active={!!(country || city)}
+                onClick={() => toggle("location")}
               />
-            )}
-          </div>
+              {open === "location" && (
+                <LocationMenu
+                  currentCountry={country}
+                  currentCity={city}
+                  onSelect={({ country: c, city: ci }) => update({ country: c, city: ci })}
+                />
+              )}
+            </div>
 
-          {/* Clear all */}
-          {hasFilters && (
-            <button
-              onClick={() => { updateParams({ category: "", country: "", city: "", gender: "", q: "" }); setSearchValue("") }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 flex-shrink-0"
-            >
-              <X size={12} /> Clear all
-            </button>
-          )}
+            {/* Gender */}
+            <div className="relative">
+              <Pill
+                icon={<Users size={13} />}
+                label={gender || "Gender"}
+                active={!!gender}
+                onClick={() => toggle("gender")}
+              />
+              {open === "gender" && (
+                <GenderMenu current={gender} onSelect={v => update({ gender: v })} />
+              )}
+            </div>
+
+            {/* Filters / Clear */}
+            <div className="relative">
+              {hasFilters ? (
+                <button
+                  onClick={() => { update({ category: "", country: "", city: "", gender: "", q: "" }); setQ("") }}
+                  className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-red-200 text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+                  style={{ borderRadius: 0 }}
+                >
+                  <X size={13} /> Clear
+                </button>
+              ) : (
+                <button
+                  className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+                  style={{ borderRadius: 0 }}
+                >
+                  <SlidersHorizontal size={13} /> Filters
+                </button>
+              )}
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-// ── Exported FilterBar with Suspense boundary ───────────────────────────
 export default function FilterBar() {
   return (
     <Suspense fallback={
-      <div className="bg-white border-b border-gray-100 h-[52px]" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }} />
+      <div className="bg-white border-b border-gray-200 h-[100px] md:h-[56px]" />
     }>
       <FilterBarInner />
     </Suspense>
