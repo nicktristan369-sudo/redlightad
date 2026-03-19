@@ -73,7 +73,7 @@ function MobileAdCard({ ad, displayLocation, description, ago }: {
 
   return (
     <div className="md:hidden bg-white overflow-hidden"
-      style={{ borderRadius: 12, boxShadow: "0 1px 8px rgba(0,0,0,0.10)", border: "1px solid #E5E7EB" }}>
+      style={{ borderRadius: 4, boxShadow: "0 1px 8px rgba(0,0,0,0.10)", border: "1px solid #E5E7EB" }}>
 
       {/* ── Title (max 2 lines, bold, NOT uppercase) ── */}
       <div className="px-3 pt-3 pb-2">
@@ -198,7 +198,7 @@ function tierBadge(tier: string | null | undefined) {
   const b = labels[tier]
   if (!b) return null
   return (
-    <span className={`absolute top-2 left-2 text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded-full ${b.style}`}>
+    <span className={`absolute top-2 left-2 text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded ${b.style}`}>
       {b.label}
     </span>
   )
@@ -230,6 +230,7 @@ function AdListInner({ country: propCountry, category: propCategory, limit = 50 
   const city = searchParams.get("city") ?? ""
   const category = searchParams.get("category") ?? propCategory ?? ""
   const gender = searchParams.get("gender") ?? ""
+  const q = searchParams.get("q") ?? ""
 
   useEffect(() => {
     setLoading(true)
@@ -238,11 +239,12 @@ function AdListInner({ country: propCountry, category: propCategory, limit = 50 
     if (city)     params.set("city",     city)
     if (category) params.set("category", category)
     if (gender)   params.set("gender",   gender)
+    if (q)        params.set("q",        q)
     fetch(`/api/listings?${params}`)
       .then(r => r.json())
       .then(d => { setListings(d.listings ?? []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [country, city, category, gender, limit])
+  }, [country, city, category, gender, q, limit])
 
   if (loading) {
     return (
@@ -273,7 +275,7 @@ function AdListInner({ country: propCountry, category: propCategory, limit = 50 
           const description = ad.about || ""
           return (
             <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+              <div className="bg-white rounded shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
 
                 {/* ── MOBILE layout — MobileAdCard component ── */}
                 <MobileAdCard
@@ -316,7 +318,7 @@ function AdListInner({ country: propCountry, category: propCategory, limit = 50 
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
-                        <span className="flex-shrink-0 inline-flex items-center gap-1 bg-gray-900 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
+                        <span className="flex-shrink-0 inline-flex items-center gap-1 bg-gray-900 text-white text-[10px] font-semibold px-2.5 py-1 rounded">
                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                           </svg>
@@ -346,7 +348,7 @@ function AdListInner({ country: propCountry, category: propCategory, limit = 50 
                       ))}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="flex-1 bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2.5 rounded-xl text-center transition-colors">
+                      <span className="flex-1 bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2.5 rounded text-center transition-colors">
                         View Profile
                       </span>
                     </div>

@@ -174,7 +174,7 @@ export default function PhotoGallery({
       {/* ════════════════════════════════════════════════════════
           GALLERY — inline on ad page
           ════════════════════════════════════════════════════════ */}
-      <div className="rounded-2xl overflow-hidden border border-[#E5E5E5]">
+      <div className="rounded-sm overflow-hidden border border-[#E5E5E5]">
 
         {/* ── DESKTOP: 3-panel layout ─────────────────────────── */}
         <div className="hidden md:block">
@@ -186,7 +186,7 @@ export default function PhotoGallery({
             {count > 1 && (
               <button
                 onClick={prevGal}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded-full transition-all hover:bg-white/25"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded transition-all hover:bg-white/25"
                 style={{ width: 36, height: 36, background: "rgba(255,255,255,0.14)" }}
               >
                 <ChevronLeft size={20} color="#fff" />
@@ -196,7 +196,7 @@ export default function PhotoGallery({
             {/* Left image — dimmed */}
             {count > 1 && (
               <div
-                className="relative flex-shrink-0 overflow-hidden rounded-xl cursor-pointer transition-opacity duration-300 hover:opacity-60"
+                className="relative flex-shrink-0 overflow-hidden rounded cursor-pointer transition-opacity duration-300 hover:opacity-60"
                 style={{ width: "20%", aspectRatio: "3/4", opacity: 0.4 }}
                 onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
               >
@@ -212,7 +212,7 @@ export default function PhotoGallery({
 
             {/* Center image — active */}
             <div
-              className="relative flex-1 overflow-hidden rounded-xl cursor-pointer group"
+              className="relative flex-1 overflow-hidden rounded cursor-pointer group"
               style={{ aspectRatio: "3/4", maxHeight: "380px", maxWidth: "340px" }}
               onClick={() => openLightbox(activeIndex)}
             >
@@ -223,13 +223,13 @@ export default function PhotoGallery({
                 draggable={false}
               />
               {/* Counter — all images */}
-              <div className="absolute top-2.5 left-3 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white select-none"
+              <div className="absolute top-2.5 left-3 rounded px-2.5 py-1 text-[12px] font-semibold text-white select-none"
                 style={{ background: "rgba(0,0,0,0.55)" }}>
                 {activeIndex + 1} / {count}
               </div>
               {/* Expand */}
               <button
-                className="absolute top-2.5 right-2.5 flex items-center justify-center rounded-lg transition-colors hover:bg-black/70"
+                className="absolute top-2.5 right-2.5 flex items-center justify-center rounded transition-colors hover:bg-black/70"
                 style={{ width: 30, height: 30, background: "rgba(0,0,0,0.50)" }}
                 onClick={(e) => { e.stopPropagation(); openLightbox(activeIndex); }}
                 aria-label="Fullscreen"
@@ -241,7 +241,7 @@ export default function PhotoGallery({
             {/* Right image — dimmed */}
             {count > 1 && (
               <div
-                className="relative flex-shrink-0 overflow-hidden rounded-xl cursor-pointer transition-opacity duration-300 hover:opacity-60"
+                className="relative flex-shrink-0 overflow-hidden rounded cursor-pointer transition-opacity duration-300 hover:opacity-60"
                 style={{ width: "20%", aspectRatio: "3/4", opacity: 0.4 }}
                 onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
               >
@@ -259,7 +259,7 @@ export default function PhotoGallery({
             {count > 1 && (
               <button
                 onClick={nextGal}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded-full transition-all hover:bg-white/25"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded transition-all hover:bg-white/25"
                 style={{ width: 36, height: 36, background: "rgba(255,255,255,0.14)" }}
               >
                 <ChevronRight size={20} color="#fff" />
@@ -278,7 +278,7 @@ export default function PhotoGallery({
                 <button
                   key={i}
                   onClick={() => goTo(i)}
-                  className="relative flex-shrink-0 overflow-hidden rounded-lg transition-all duration-200"
+                  className="relative flex-shrink-0 overflow-hidden rounded transition-all duration-200"
                   style={{
                     width: 52, height: 52,
                     opacity: i === activeIndex ? 1 : 0.45,
@@ -301,7 +301,7 @@ export default function PhotoGallery({
 
         {/* ── MOBILE: fullscreen single + swipe ───────────────── */}
         <div
-          className="md:hidden"
+          className="md:hidden mx-2"
           style={{ background: "#1C1C1E" }}
           onTouchStart={handleGalTouchStart}
           onTouchEnd={handleGalTouchEnd}
@@ -338,7 +338,7 @@ export default function PhotoGallery({
                 <button
                   key={i}
                   onClick={() => goTo(i)}
-                  className="relative flex-shrink-0 overflow-hidden rounded-md"
+                  className="relative flex-shrink-0 overflow-hidden"
                   style={{
                     width: 44, height: 44,
                     opacity: i === activeIndex ? 1 : 0.45,
@@ -384,7 +384,7 @@ export default function PhotoGallery({
                 maxWidth: "92vw",
                 maxHeight: "92vh",
                 objectFit: "contain",
-                borderRadius: "10px",
+                borderRadius: "4px",
                 pointerEvents: "none",
                 userSelect: "none",
                 WebkitUserSelect: "none",
@@ -430,7 +430,7 @@ export default function PhotoGallery({
           {/* Close */}
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 flex items-center justify-center rounded-full transition-all hover:bg-white/20"
+            className="absolute top-4 right-4 flex items-center justify-center rounded transition-all hover:bg-white/20"
             style={{ width: 40, height: 40, background: "rgba(255,255,255,0.12)" }}
             aria-label="Close"
           >
@@ -442,7 +442,7 @@ export default function PhotoGallery({
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); lbPrev(); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full transition-all hover:bg-white/20"
+                className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center rounded transition-all hover:bg-white/20"
                 style={{ width: 44, height: 44, background: "rgba(255,255,255,0.12)" }}
                 aria-label="Previous"
               >
@@ -450,7 +450,7 @@ export default function PhotoGallery({
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); lbNext(); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full transition-all hover:bg-white/20"
+                className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center rounded transition-all hover:bg-white/20"
                 style={{ width: 44, height: 44, background: "rgba(255,255,255,0.12)" }}
                 aria-label="Next"
               >
@@ -471,21 +471,21 @@ export default function PhotoGallery({
           onClick={() => setLockModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-sm bg-white rounded-2xl p-8 text-center"
+            className="relative w-full max-w-sm bg-white rounded p-8 text-center"
             style={{ boxShadow: "0 24px 60px rgba(0,0,0,0.18)", border: "1px solid #E5E5E5" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close */}
             <button
               onClick={() => setLockModalOpen(false)}
-              className="absolute top-4 right-4 flex items-center justify-center rounded-full transition-colors hover:bg-gray-100"
+              className="absolute top-4 right-4 flex items-center justify-center rounded transition-colors hover:bg-gray-100"
               style={{ width: 32, height: 32 }}
             >
               <X size={16} color="#9CA3AF" />
             </button>
 
             {/* Lock icon */}
-            <div className="flex items-center justify-center rounded-2xl mx-auto mb-5"
+            <div className="flex items-center justify-center rounded mx-auto mb-5"
               style={{ width: 56, height: 56, background: "#F5F5F7" }}>
               <Lock size={24} color="#111" strokeWidth={1.8} />
             </div>
@@ -500,7 +500,7 @@ export default function PhotoGallery({
             <div className="flex flex-col gap-3">
               <Link
                 href="/register"
-                className="block w-full py-3 rounded-xl text-[15px] font-semibold text-white text-center transition-colors"
+                className="block w-full py-3 rounded text-[15px] font-semibold text-white text-center transition-colors"
                 style={{ background: "#000" }}
                 onClick={() => setLockModalOpen(false)}
               >
@@ -508,7 +508,7 @@ export default function PhotoGallery({
               </Link>
               <Link
                 href="/login"
-                className="block w-full py-3 rounded-xl text-[15px] font-medium text-gray-700 text-center border border-[#E5E5E5] transition-colors hover:bg-gray-50"
+                className="block w-full py-3 rounded text-[15px] font-medium text-gray-700 text-center border border-[#E5E5E5] transition-colors hover:bg-gray-50"
                 onClick={() => setLockModalOpen(false)}
               >
                 Log ind

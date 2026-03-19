@@ -137,7 +137,7 @@ export default function AdDetailPage() {
       <Navbar />
       <main className="bg-gray-50 min-h-screen pb-20 md:pb-0">
         {/* Mobile-only: full-width gallery at top */}
-        <div className="md:hidden">
+        <div className="md:hidden px-3">
           <PhotoGallery images={ad.images ?? []} totalPhotos={(ad.images ?? []).length} name={ad.title} isLoggedIn={currentUserId !== null} />
         </div>
 
@@ -152,7 +152,7 @@ export default function AdDetailPage() {
           </nav>
 
           {/* Mobile Breadcrumb card */}
-          <nav className="md:hidden mb-3 flex items-center gap-1 text-sm bg-white rounded-lg shadow px-3 py-2">
+          <nav className="md:hidden mb-3 flex items-center gap-1 text-sm bg-white rounded shadow px-3 py-2">
             <a href="/" className="text-[#e11d48] hover:underline font-medium">Home</a>
             <span className="text-[#e11d48]">/</span>
             <a href={`/country/${ad.country.toLowerCase()}`} className="text-[#e11d48] hover:underline font-medium">{ad.country}</a>
@@ -164,7 +164,7 @@ export default function AdDetailPage() {
           <div className="mb-6 flex items-center gap-3">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{ad.title}</h1>
             {isPremium && (
-              <span className="rounded-full bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
+              <span className="rounded bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
                 {ad.premium_tier}
               </span>
             )}
@@ -210,7 +210,7 @@ export default function AdDetailPage() {
               )}
 
               {ad.about && (
-                <div className="rounded-xl bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
+                <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
                   <h3 className="mb-3 text-lg font-bold text-gray-900">Om mig</h3>
                   <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">{ad.about}</p>
                 </div>
@@ -218,11 +218,11 @@ export default function AdDetailPage() {
 
               {/* Services */}
               {ad.services && ad.services.length > 0 && (
-                <div className="rounded-xl bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
+                <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
                   <h3 className="mb-4 text-lg font-bold text-gray-900">Services</h3>
                   <div className="flex flex-wrap gap-2">
                     {ad.services.map(s => (
-                      <span key={s} className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">{s}</span>
+                      <span key={s} className="rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">{s}</span>
                     ))}
                   </div>
                 </div>
