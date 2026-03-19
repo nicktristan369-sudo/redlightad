@@ -96,3 +96,134 @@ export function getCountryByName(name: string): Country | undefined {
 export function slugify(text: string): string {
   return text.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
 }
+
+// ── Full country list (hardcoded) ──────────────────────────────────────
+export interface CountryEntry { name: string; code: string }
+
+export const COUNTRIES: { europe: CountryEntry[]; worldwide: CountryEntry[] } = {
+  europe: [
+    { name: "Albania", code: "al" },
+    { name: "Andorra", code: "ad" },
+    { name: "Armenia", code: "am" },
+    { name: "Austria", code: "at" },
+    { name: "Belarus", code: "by" },
+    { name: "Belgium", code: "be" },
+    { name: "Bosnia Herzegovina", code: "ba" },
+    { name: "Bulgaria", code: "bg" },
+    { name: "Croatia", code: "hr" },
+    { name: "Cyprus", code: "cy" },
+    { name: "Czech Republic", code: "cz" },
+    { name: "Denmark", code: "dk" },
+    { name: "Estonia", code: "ee" },
+    { name: "Finland", code: "fi" },
+    { name: "France", code: "fr" },
+    { name: "Georgia", code: "ge" },
+    { name: "Germany", code: "de" },
+    { name: "Greece", code: "gr" },
+    { name: "Hungary", code: "hu" },
+    { name: "Iceland", code: "is" },
+    { name: "Ireland", code: "ie" },
+    { name: "Italy", code: "it" },
+    { name: "Kosovo", code: "xk" },
+    { name: "Latvia", code: "lv" },
+    { name: "Liechtenstein", code: "li" },
+    { name: "Lithuania", code: "lt" },
+    { name: "Luxembourg", code: "lu" },
+    { name: "Malta", code: "mt" },
+    { name: "Moldova", code: "md" },
+    { name: "Monaco", code: "mc" },
+    { name: "Montenegro", code: "me" },
+    { name: "Netherlands", code: "nl" },
+    { name: "North Macedonia", code: "mk" },
+    { name: "Norway", code: "no" },
+    { name: "Poland", code: "pl" },
+    { name: "Portugal", code: "pt" },
+    { name: "Romania", code: "ro" },
+    { name: "Russia", code: "ru" },
+    { name: "Serbia", code: "rs" },
+    { name: "Slovakia", code: "sk" },
+    { name: "Slovenia", code: "si" },
+    { name: "Spain", code: "es" },
+    { name: "Sweden", code: "se" },
+    { name: "Switzerland", code: "ch" },
+    { name: "Turkey", code: "tr" },
+    { name: "UK", code: "uk" },
+    { name: "Ukraine", code: "ua" },
+  ],
+  worldwide: [
+    { name: "Algeria", code: "dz" },
+    { name: "Angola", code: "ao" },
+    { name: "Argentina", code: "ar" },
+    { name: "Australia", code: "au" },
+    { name: "Azerbaijan", code: "az" },
+    { name: "Bahrain", code: "bh" },
+    { name: "Bangladesh", code: "bd" },
+    { name: "Brazil", code: "br" },
+    { name: "Cambodia", code: "kh" },
+    { name: "Cameroon", code: "cm" },
+    { name: "Canada", code: "ca" },
+    { name: "Chile", code: "cl" },
+    { name: "China", code: "cn" },
+    { name: "Colombia", code: "co" },
+    { name: "Costa Rica", code: "cr" },
+    { name: "Ecuador", code: "ec" },
+    { name: "Egypt", code: "eg" },
+    { name: "Ghana", code: "gh" },
+    { name: "India", code: "in" },
+    { name: "Indonesia", code: "id" },
+    { name: "Israel", code: "il" },
+    { name: "Ivory Coast", code: "ci" },
+    { name: "Jamaica", code: "jm" },
+    { name: "Japan", code: "jp" },
+    { name: "Jordan", code: "jo" },
+    { name: "Kazakhstan", code: "kz" },
+    { name: "Kenya", code: "ke" },
+    { name: "Kuwait", code: "kw" },
+    { name: "Lebanon", code: "lb" },
+    { name: "Malaysia", code: "my" },
+    { name: "Mexico", code: "mx" },
+    { name: "Morocco", code: "ma" },
+    { name: "Nepal", code: "np" },
+    { name: "New Zealand", code: "nz" },
+    { name: "Nigeria", code: "ng" },
+    { name: "Oman", code: "om" },
+    { name: "Pakistan", code: "pk" },
+    { name: "Panama", code: "pa" },
+    { name: "Peru", code: "pe" },
+    { name: "Philippines", code: "ph" },
+    { name: "Qatar", code: "qa" },
+    { name: "Saudi Arabia", code: "sa" },
+    { name: "Senegal", code: "sn" },
+    { name: "Singapore", code: "sg" },
+    { name: "South Africa", code: "za" },
+    { name: "South Korea", code: "kr" },
+    { name: "Sri Lanka", code: "lk" },
+    { name: "Taiwan", code: "tw" },
+    { name: "Thailand", code: "th" },
+    { name: "Tunisia", code: "tn" },
+    { name: "UAE", code: "ae" },
+    { name: "Uganda", code: "ug" },
+    { name: "USA", code: "us" },
+    { name: "Uzbekistan", code: "uz" },
+  ],
+}
+
+// All countries flat + extended SUPPORTED_CODES
+export const ALL_COUNTRIES: CountryEntry[] = [...COUNTRIES.europe, ...COUNTRIES.worldwide]
+export const ALL_COUNTRY_CODES = new Set(ALL_COUNTRIES.map(c => c.code))
+export const EXTENDED_SUPPORTED_CODES = new Set([...SUPPORTED_CODES, ...ALL_COUNTRY_CODES])
+
+export function getCountryEntryByName(name: string): CountryEntry | undefined {
+  return ALL_COUNTRIES.find(c => c.name.toLowerCase() === name.toLowerCase())
+}
+
+export function getCountryEntryByCode(code: string): CountryEntry | undefined {
+  return ALL_COUNTRIES.find(c => c.code === code.toLowerCase())
+}
+
+// Emoji flag from 2-letter ISO code
+export function codeToEmoji(code: string): string {
+  const c = code.toUpperCase()
+  if (c.length !== 2) return "🌍"
+  return String.fromCodePoint(...[...c].map(ch => 0x1F1E6 - 65 + ch.charCodeAt(0)))
+}
