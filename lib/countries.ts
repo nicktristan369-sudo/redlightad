@@ -88,3 +88,11 @@ export function getCountryVariants(input: string): string[] {
 
   return [...new Set(variants.filter(Boolean))]
 }
+
+export function getCountryByName(name: string): Country | undefined {
+  return SUPPORTED_COUNTRIES.find(c => c.name.toLowerCase() === name.toLowerCase())
+}
+
+export function slugify(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+}

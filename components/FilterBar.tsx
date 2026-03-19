@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
 import { GENDERS } from "@/lib/constants/genders"
+import { SUPPORTED_COUNTRIES, getCountryByName, slugify } from "@/lib/countries"
 
 function getCountryEmoji(name: string): string {
   const map: Record<string, string> = {
@@ -209,6 +210,21 @@ function Pill({
   )
 }
 
+// Parse country/city from path: /dk → dk, /dk/copenhagen → dk + copenhagen
+function parsePathLocation(pathname: string): { countryCode: string; citySlug: string } {
+  const parts = pathname.split("/").filter(Boolean)
+  // Skip known non-country paths
+  const skip = new Set(["dashboard", "admin", "api", "ads", "annoncer", "marketplace", "login", "register", "support", "about", "privacy", "terms", "cookies", "premium", "unlock", "opret-annonce"])
+  if (parts.length === 0 || skip.has(parts[0])) return { countryCode: "", citySlug: "" }
+  const countryCode = parts[0] // e.g. "dk"
+  const citySlug = parts[1] ?? "" // e.g. "copenhagen"
+  return { countryCode, citySlug }
+}
+
+function unslugify(slug: string): string {
+  return slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+}
+
 // ── Inner (uses useSearchParams) ──────────────────────────────────────
 function FilterBarInner() {
   const router = useRouter()
@@ -219,9 +235,22 @@ function FilterBarInner() {
   const [q, setQ] = useState(searchParams.get("q") ?? "")
 
   const category = searchParams.get("category") ?? ""
-  const country = searchParams.get("country") ?? ""
-  const city = searchParams.get("city") ?? ""
   const gender = searchParams.get("gender") ?? ""
+
+  // Location: read from URL path
+  const { countryCode, citySlug } = parsePathLocation(pathname)
+  const countryObj = SUPPORTED_COUNTRIES.find(c => c.code === countryCode)
+  const currentCountryName = countryObj?.name ?? ""
+  const currentCityName = citySlug ? unslugify(citySlug) : ""
+
+  // Navigate location via URL path
+  const navigateLocation = ({ country, city }: { country: string; city: string }) => {
+    if (!country) { router.push("/"); setOpen(null); return }
+    const c = getCountryByName(country) ?? SUPPORTED_COUNTRIES.find(x => x.name === country)
+    if (!c) { setOpen(null); return }
+    if (!city) { router.push(`/${c.code}`); setOpen(null); return }
+    router.push(`/${c.code}/${slugify(city)}`); setOpen(null)
+  }
 
   const update = (changes: Record<string, string>) => {
     const p = new URLSearchParams(searchParams.toString())
@@ -249,13 +278,13 @@ function FilterBarInner() {
 
   const toggle = (key: string) => setOpen(o => o === key ? null : key)
 
-  const locationLabel = city
-    ? `📍 ${city}`
-    : country
-      ? `${getCountryEmoji(country)} ${country}`
+  const locationLabel = currentCityName
+    ? `📍 ${currentCityName}`
+    : currentCountryName
+      ? `${getCountryEmoji(currentCountryName)} ${currentCountryName}`
       : "Location"
 
-  const hasFilters = category || country || city || gender || q
+  const hasFilters = category || countryCode || citySlug || gender || q
 
   return (
     <div ref={ref} className="bg-white border-b border-gray-200" style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
@@ -315,14 +344,14 @@ function FilterBarInner() {
               <Pill
                 icon={<MapPin size={13} />}
                 label={locationLabel}
-                active={!!(country || city)}
+                active={!!(countryCode || citySlug)}
                 onClick={() => toggle("location")}
               />
               {open === "location" && (
                 <LocationMenu
-                  currentCountry={country}
-                  currentCity={city}
-                  onSelect={({ country: c, city: ci }) => update({ country: c, city: ci })}
+                  currentCountry={currentCountryName}
+                  currentCity={currentCityName}
+                  onSelect={navigateLocation}
                 />
               )}
             </div>
@@ -344,7 +373,7 @@ function FilterBarInner() {
             <div className="relative">
               {hasFilters ? (
                 <button
-                  onClick={() => { update({ category: "", country: "", city: "", gender: "", q: "" }); setQ("") }}
+                  onClick={() => { router.push("/"); update({ category: "", gender: "", q: "" }); setQ("") }}
                   className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-red-200 text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
                   style={{ borderRadius: 0 }}
                 >
