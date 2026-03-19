@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
     const limit    = Math.min(parseInt(searchParams.get("limit") ?? "50"), 100);
     const category = searchParams.get("category");
     const gender   = searchParams.get("gender");
+    const q        = searchParams.get("q");
 
     const supabase = getClient();
 
@@ -43,6 +44,10 @@ export async function GET(req: NextRequest) {
 
     if (gender) {
       query = query.ilike("gender", gender);
+    }
+
+    if (q) {
+      query = query.or(`title.ilike.%${q}%,about.ilike.%${q}%`);
     }
 
     const { data: listings, error } = await query;

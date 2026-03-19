@@ -166,7 +166,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         position: "relative",
         background: "#fff",
         border: "1px solid #E5E5E5",
-        borderRadius: "12px",
+        borderRadius: "4px",
         boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
         overflow: "hidden",
       }}

@@ -91,7 +91,7 @@ function VideoModal({
       <div className="w-full max-w-3xl px-4" onClick={e => e.stopPropagation()}>
 
         {/* Video / locked */}
-        <div className="relative rounded-xl overflow-hidden bg-[#0a0a0a]" style={{ aspectRatio: "16/9" }}>
+        <div className="relative rounded overflow-hidden bg-[#0a0a0a]" style={{ aspectRatio: "16/9" }}>
           {canWatch ? (
             <>
               <video
@@ -132,7 +132,7 @@ function VideoModal({
                 <p className="text-white font-semibold text-lg">Lås op for {video.redcoin_price} RedCoins</p>
                 {!isLoggedIn ? (
                   <Link href="/register"
-                    className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+                    className="px-6 py-2.5 rounded text-sm font-semibold text-white"
                     style={{ background: "#DC2626" }}>
                     Opret konto for at købe
                   </Link>
@@ -141,7 +141,7 @@ function VideoModal({
                     <button
                       onClick={handlePurchase}
                       disabled={purchasing}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+                      className="flex items-center gap-2 px-6 py-2.5 rounded text-sm font-semibold text-white disabled:opacity-60"
                       style={{ background: "#DC2626" }}>
                       <ShoppingCart size={16} />
                       {purchasing ? "Behandler..." : `Lås op — ${video.redcoin_price} RedCoins`}
@@ -158,7 +158,7 @@ function VideoModal({
         </div>
 
         {/* Stats bar */}
-        <div className="mt-3 px-4 py-3 rounded-xl flex items-center gap-4"
+        <div className="mt-3 px-4 py-3 rounded flex items-center gap-4"
           style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}>
           {video.title && (
             <span className="text-white font-semibold text-sm flex-1 truncate">{video.title}</span>
@@ -177,7 +177,7 @@ function VideoModal({
 
       {/* Close button */}
       <button onClick={onClose}
-        className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full"
+        className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded"
         style={{ background: "rgba(255,255,255,0.12)" }}>
         <X size={20} color="#fff" />
       </button>
@@ -189,7 +189,7 @@ function VideoModal({
 function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="relative w-full overflow-hidden rounded-xl group transition-transform duration-200 hover:scale-[1.03]"
+      className="relative w-full overflow-hidden rounded group transition-transform duration-200 hover:scale-[1.03]"
       style={{ aspectRatio: "16/9", background: "#111" }}>
 
       {/* Thumbnail */}
@@ -209,7 +209,7 @@ function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
         style={{ background: "rgba(0,0,0,0.25)" }}>
         {video.is_locked ? (
           <div className="flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded bg-black/50 flex items-center justify-center">
               <Lock size={18} color="#fff" />
             </div>
             <span className="text-[10px] text-white/90 font-semibold bg-red-600 rounded px-1.5 py-0.5">
@@ -217,7 +217,7 @@ function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
             </span>
           </div>
         ) : (
-          <div className="w-10 h-10 rounded-full bg-black/40 flex items-center justify-center group-hover:bg-black/60 transition-colors">
+          <div className="w-10 h-10 rounded bg-black/40 flex items-center justify-center group-hover:bg-black/60 transition-colors">
             <Play size={18} color="#fff" fill="#fff" />
           </div>
         )}
@@ -273,7 +273,7 @@ export default function VideoSection({ videos, isLoggedIn, listingId, currentUse
         {/* Watch all knap */}
         <button
           onClick={() => videos[0] && handleOpen(videos[0])}
-          className="mt-4 w-full py-3 rounded-xl text-sm font-semibold text-white text-center transition-opacity hover:opacity-90"
+          className="mt-4 w-full py-3 rounded text-sm font-semibold text-white text-center transition-opacity hover:opacity-90"
           style={{ background: "#DC2626" }}>
           WATCH MY VIDEOS →
         </button>

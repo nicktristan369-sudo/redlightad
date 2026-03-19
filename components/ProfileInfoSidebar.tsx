@@ -41,7 +41,7 @@ export default function ProfileInfoSidebar({
   return (
     <>
       {/* Profile Info */}
-      <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+      <div className="rounded bg-white p-6 shadow-sm border border-gray-100">
         <h3 className="mb-4 text-base font-bold text-gray-900">Profilinfo</h3>
         <div className="space-y-0">
           {infoRows.map((row, i) => (
@@ -69,7 +69,7 @@ export default function ProfileInfoSidebar({
 
       {/* Rates */}
       {rates && rates.length > 0 && (
-        <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+        <div className="rounded bg-white p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-gray-900">Priser</h3>
             <span className="text-[11px] text-gray-400">{currency.code}</span>

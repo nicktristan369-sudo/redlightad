@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ChevronDown, X, MapPin, Grid3X3, Users } from "lucide-react"
+import { ChevronDown, X, MapPin, Grid3X3, Users, Search } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
 import { GENDERS } from "@/lib/constants/genders"
 
@@ -35,7 +35,7 @@ function CategoryDropdown({
   onClose: () => void
 }) {
   return (
-    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
       <button
         onClick={() => { onSelect(""); onClose() }}
         className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${!current ? "text-red-600 font-semibold" : "text-gray-700"}`}
@@ -67,7 +67,7 @@ function GenderDropdown({
   onClose: () => void
 }) {
   return (
-    <div className="absolute top-full left-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+    <div className="absolute top-full left-0 mt-2 w-44 bg-white rounded shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
       <button
         onClick={() => { onSelect(""); onClose() }}
         className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${!current ? "text-red-600 font-semibold" : "text-gray-700"}`}
@@ -129,7 +129,7 @@ function LocationDropdown({
 
   if (step === "country") {
     return (
-      <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+      <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded shadow-xl border border-gray-100 z-50 overflow-hidden">
         {/* Search */}
         <div className="p-3 border-b border-gray-100">
           <input
@@ -137,7 +137,7 @@ function LocationDropdown({
             placeholder="Search country..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-gray-400"
+            className="w-full text-sm px-3 py-2 border border-gray-200 rounded outline-none focus:border-gray-400"
           />
         </div>
         {/* Country list */}
@@ -168,7 +168,7 @@ function LocationDropdown({
 
   // Step: city
   return (
-    <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+    <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded shadow-xl border border-gray-100 z-50 overflow-hidden">
       {/* Back header */}
       <button
         onClick={() => { setStep("country"); setSearch("") }}
@@ -222,6 +222,8 @@ function FilterBarInner() {
   const currentCountry = searchParams.get("country") ?? ""
   const currentCity = searchParams.get("city") ?? ""
   const currentGender = searchParams.get("gender") ?? ""
+  const currentQ = searchParams.get("q") ?? ""
+  const [searchValue, setSearchValue] = useState(currentQ)
 
   // Update URL params
   const updateParams = (updates: Record<string, string>) => {
@@ -255,9 +257,9 @@ function FilterBarInner() {
     return () => document.removeEventListener("keydown", handler)
   }, [])
 
-  const hasFilters = currentCategory || currentCountry || currentCity || currentGender
+  const hasFilters = currentCategory || currentCountry || currentCity || currentGender || currentQ
 
-  const pillBase = "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap"
+  const pillBase = "flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-all whitespace-nowrap"
   const pillActive = "border border-red-500 text-red-600 bg-red-50"
   const pillInactive = "bg-[#F5F5F7] text-gray-700 hover:bg-gray-200"
 
@@ -274,8 +276,22 @@ function FilterBarInner() {
       className="bg-white border-b border-gray-100"
       style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-2.5">
         <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden flex-nowrap">
+
+          {/* Search input */}
+          <div className="relative flex-shrink-0">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchValue}
+              onChange={e => setSearchValue(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") updateParams({ q: searchValue }) }}
+              onBlur={() => updateParams({ q: searchValue })}
+              className="h-9 w-40 md:w-48 pl-8 pr-3 text-sm bg-white border border-gray-200 rounded outline-none focus:border-gray-400 transition-colors"
+            />
+          </div>
 
           {/* Category pill */}
           <div className="relative flex-shrink-0">
@@ -338,8 +354,8 @@ function FilterBarInner() {
           {/* Clear all */}
           {hasFilters && (
             <button
-              onClick={() => updateParams({ category: "", country: "", city: "", gender: "" })}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 flex-shrink-0"
+              onClick={() => { updateParams({ category: "", country: "", city: "", gender: "", q: "" }); setSearchValue("") }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 flex-shrink-0"
             >
               <X size={12} /> Clear all
             </button>
