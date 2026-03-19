@@ -5,7 +5,7 @@ import FilterBar from "@/components/FilterBar"
 import PremiumCarousel from "@/components/PremiumCarousel"
 import AdList from "@/components/AdList"
 import CountryNotAvailable from "@/components/CountryNotAvailable"
-import { getCountry, SUPPORTED_CODES } from "@/lib/countries"
+import { getCountry, EXTENDED_SUPPORTED_CODES, getCountryEntryByCode, codeToEmoji } from "@/lib/countries"
 
 interface Props {
   params: Promise<{ country: string }>
@@ -30,31 +30,32 @@ export default async function CountryPage({ params }: Props) {
   const code = country.toLowerCase()
   const countryData = getCountry(code)
 
-  if (!SUPPORTED_CODES.has(code)) {
-    // Invalid country code entirely
+  if (!EXTENDED_SUPPORTED_CODES.has(code)) {
     notFound()
   }
+
+  const entry = getCountryEntryByCode(code)
+  const displayName = countryData?.name ?? entry?.name ?? code.toUpperCase()
+  const flag = codeToEmoji(code)
 
   return (
     <>
       <Navbar />
       <FilterBar />
-      {!countryData ? (
+      {!countryData && !entry ? (
         <CountryNotAvailable countryCode={code} />
       ) : (
         <main className="bg-[#F5F5F7] min-h-screen">
-          {/* Country header */}
           <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3">
             <div className="mx-auto max-w-7xl flex items-center gap-2">
-              <span className={`fi fi-${code}`} style={{ width: 24, height: 18, borderRadius: 0, display: "inline-block" }} />
+              <span style={{ fontSize: 20 }}>{flag}</span>
               <div>
-                <h1 className="text-base font-bold text-gray-900 leading-tight">Escorts in {countryData.name}</h1>
+                <h1 className="text-base font-bold text-gray-900 leading-tight">Escorts in {displayName}</h1>
                 <p className="text-xs text-gray-400">Browse verified profiles</p>
               </div>
             </div>
           </div>
-
-          <PremiumCarousel country={countryData.name} title={`Premium i ${countryData.name}`} subtitle="Top verificerede profiler" />
+          <PremiumCarousel country={displayName} title={`Premium i ${displayName}`} subtitle="Top verificerede profiler" />
           <AdList country={code} limit={40} />
         </main>
       )}

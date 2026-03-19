@@ -5,7 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
 import { GENDERS } from "@/lib/constants/genders"
-import { SUPPORTED_COUNTRIES, getCountryByName, slugify } from "@/lib/countries"
+import { SUPPORTED_COUNTRIES, getCountryByName, slugify, COUNTRIES, getCountryEntryByCode, codeToEmoji, getCountryEntryByName } from "@/lib/countries"
 
 function getCountryEmoji(name: string): string {
   const map: Record<string, string> = {
@@ -82,19 +82,17 @@ function LocationMenu({
   currentCity: string
   onSelect: (v: { country: string; city: string }) => void
 }) {
-  const [countries, setCountries] = useState<{ name: string }[]>([])
   const [cities, setCities] = useState<{ name: string }[]>([])
   const [selCountry, setSelCountry] = useState(currentCountry)
+  const [selCode, setSelCode] = useState("")
   const [step, setStep] = useState<"country" | "city">(currentCountry ? "city" : "country")
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch("/api/listings/locations").then(r => r.json()).then(d => setCountries(d.countries ?? [])).catch(() => {})
-  }, [])
-
-  useEffect(() => {
     if (!selCountry) return
+    const entry = getCountryEntryByName(selCountry) ?? COUNTRIES.europe.find(c => c.name === selCountry) ?? COUNTRIES.worldwide.find(c => c.name === selCountry)
+    setSelCode(entry?.code ?? "")
     setLoading(true)
     fetch(`/api/listings/locations?country=${encodeURIComponent(selCountry)}`)
       .then(r => r.json())
@@ -102,12 +100,18 @@ function LocationMenu({
       .catch(() => setLoading(false))
   }, [selCountry])
 
-  const filtered = countries.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+  const allCountries = [...COUNTRIES.europe, ...COUNTRIES.worldwide]
+  const filteredEurope = COUNTRIES.europe.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+  const filteredWorldwide = COUNTRIES.worldwide.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
 
   if (step === "country") {
     return (
-      <DropMenu>
-        <div className="p-2 border-b border-gray-100">
+      <div
+        className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
+        style={{ width: "260px", maxHeight: "420px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+      >
+        {/* Search */}
+        <div className="p-2 border-b border-gray-100 flex-shrink-0">
           <input
             autoFocus
             placeholder="Search country..."
@@ -117,65 +121,99 @@ function LocationMenu({
             style={{ borderRadius: 0 }}
           />
         </div>
-        <div className="max-h-60 overflow-y-auto">
-          <button
-            onClick={() => onSelect({ country: "", city: "" })}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 border-b border-gray-100"
-          >
-            🌍 All countries
-          </button>
-          {filtered.map(c => (
-            <button
-              key={c.name}
-              onClick={() => { setSelCountry(c.name); setStep("city") }}
-              className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
-                currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
-              }`}
-            >
-              <span>{getCountryEmoji(c.name)}</span> {c.name}
-            </button>
-          ))}
-          {filtered.length === 0 && <p className="px-4 py-3 text-sm text-gray-400 text-center">No results</p>}
+        {/* All countries */}
+        <button
+          onClick={() => onSelect({ country: "", city: "" })}
+          className="flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 border-b border-gray-200"
+        >
+          🌍 All countries
+        </button>
+        {/* Scrollable list */}
+        <div className="overflow-y-auto flex-1">
+          {/* EUROPE section */}
+          {filteredEurope.length > 0 && (
+            <>
+              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
+                Europe
+              </div>
+              {filteredEurope.map(c => (
+                <button
+                  key={c.code}
+                  onClick={() => { setSelCountry(c.name); setStep("city"); setSearch("") }}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
+                    currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                  }`}
+                >
+                  <span>{codeToEmoji(c.code)}</span> {c.name}
+                </button>
+              ))}
+            </>
+          )}
+          {/* WORLDWIDE section */}
+          {filteredWorldwide.length > 0 && (
+            <>
+              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
+                Worldwide
+              </div>
+              {filteredWorldwide.map(c => (
+                <button
+                  key={c.code}
+                  onClick={() => { setSelCountry(c.name); setStep("city"); setSearch("") }}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
+                    currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                  }`}
+                >
+                  <span>{codeToEmoji(c.code)}</span> {c.name}
+                </button>
+              ))}
+            </>
+          )}
+          {filteredEurope.length === 0 && filteredWorldwide.length === 0 && (
+            <p className="px-4 py-4 text-sm text-gray-400 text-center">No results</p>
+          )}
         </div>
-      </DropMenu>
+      </div>
     )
   }
 
+  // Step: city
   return (
-    <DropMenu>
+    <div
+      className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
+      style={{ width: "260px", maxHeight: "360px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+    >
       <button
         onClick={() => { setStep("country"); setSearch("") }}
-        className="w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 border-b border-gray-200"
+        className="flex-shrink-0 w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 border-b border-gray-200"
       >
-        ← {getCountryEmoji(selCountry)} {selCountry}
+        <span>←</span> <span>{selCode ? codeToEmoji(selCode) : ""}</span> {selCountry}
       </button>
-      <div className="max-h-60 overflow-y-auto">
+      <div className="overflow-y-auto flex-1">
         <button
           onClick={() => onSelect({ country: selCountry, city: "" })}
           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 border-b border-gray-100"
         >
-          All cities
+          All cities in {selCountry}
         </button>
         {loading ? (
           <div className="flex justify-center py-4">
             <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
           </div>
+        ) : cities.length === 0 ? (
+          <p className="px-4 py-4 text-sm text-gray-400 text-center">No cities found</p>
         ) : cities.map(city => (
           <button
             key={city.name}
             onClick={() => onSelect({ country: selCountry, city: city.name })}
-            className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
+            className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
               currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
             }`}
           >
             <MapPin size={11} /> {city.name}
           </button>
         ))}
-        {!loading && cities.length === 0 && (
-          <p className="px-4 py-3 text-sm text-gray-400 text-center">No cities found</p>
-        )}
       </div>
-    </DropMenu>
+    </div>
   )
 }
 
@@ -246,7 +284,7 @@ function FilterBarInner() {
   // Navigate location via URL path
   const navigateLocation = ({ country, city }: { country: string; city: string }) => {
     if (!country) { router.push("/"); setOpen(null); return }
-    const c = getCountryByName(country) ?? SUPPORTED_COUNTRIES.find(x => x.name === country)
+    const c = getCountryEntryByName(country) ?? getCountryByName(country) ?? SUPPORTED_COUNTRIES.find(x => x.name === country)
     if (!c) { setOpen(null); return }
     if (!city) { router.push(`/${c.code}`); setOpen(null); return }
     router.push(`/${c.code}/${slugify(city)}`); setOpen(null)
@@ -281,7 +319,7 @@ function FilterBarInner() {
   const locationLabel = currentCityName
     ? `📍 ${currentCityName}`
     : currentCountryName
-      ? `${getCountryEmoji(currentCountryName)} ${currentCountryName}`
+      ? `${countryCode ? codeToEmoji(countryCode) : getCountryEmoji(currentCountryName)} ${currentCountryName}`
       : "Location"
 
   const hasFilters = category || countryCode || citySlug || gender || q
