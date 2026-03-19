@@ -14,8 +14,10 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const country  = searchParams.get("country");  // optional: filter by country (ISO2 or slug)
+    const city     = searchParams.get("city");     // optional: filter by city
     const limit    = Math.min(parseInt(searchParams.get("limit") ?? "50"), 100);
     const category = searchParams.get("category");
+    const gender   = searchParams.get("gender");
 
     const supabase = getClient();
 
@@ -31,8 +33,16 @@ export async function GET(req: NextRequest) {
       query = query.in("country", getCountryVariants(country));
     }
 
+    if (city) {
+      query = query.ilike("city", city);
+    }
+
     if (category) {
       query = query.ilike("category", category);
+    }
+
+    if (gender) {
+      query = query.ilike("gender", gender);
     }
 
     const { data: listings, error } = await query;

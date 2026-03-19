@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { FileText } from "lucide-react"
 
 interface Listing {
@@ -219,19 +220,29 @@ interface Props {
   limit?: number
 }
 
-export default function AdList({ country, category, limit = 50 }: Props) {
+function AdListInner({ country: propCountry, category: propCategory, limit = 50 }: Props) {
+  const searchParams = useSearchParams()
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
 
+  // URL params take priority, props as fallback
+  const country = searchParams.get("country") ?? propCountry ?? ""
+  const city = searchParams.get("city") ?? ""
+  const category = searchParams.get("category") ?? propCategory ?? ""
+  const gender = searchParams.get("gender") ?? ""
+
   useEffect(() => {
+    setLoading(true)
     const params = new URLSearchParams({ limit: String(limit) })
     if (country)  params.set("country",  country)
+    if (city)     params.set("city",     city)
     if (category) params.set("category", category)
+    if (gender)   params.set("gender",   gender)
     fetch(`/api/listings?${params}`)
       .then(r => r.json())
       .then(d => { setListings(d.listings ?? []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [country, category, limit])
+  }, [country, city, category, gender, limit])
 
   if (loading) {
     return (
@@ -348,5 +359,19 @@ export default function AdList({ country, category, limit = 50 }: Props) {
         })}
       </div>
     </section>
+  )
+}
+
+export default function AdList(props: Props) {
+  return (
+    <Suspense fallback={
+      <section className="py-8 max-w-5xl mx-auto px-4">
+        <div className="flex justify-center py-16">
+          <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+        </div>
+      </section>
+    }>
+      <AdListInner {...props} />
+    </Suspense>
   )
 }
