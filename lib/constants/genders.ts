@@ -1,8 +1,7 @@
 export const GENDERS = [
-  "Female",
-  "Male",
-  "Trans",
-  "Couple",
+  "Woman",
+  "Man",
+  "Trans / Non-binary",
 ] as const;
 
 export type Gender = (typeof GENDERS)[number];

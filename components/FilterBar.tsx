@@ -72,7 +72,7 @@ function GenderDropdown({
         onClick={() => { onSelect(""); onClose() }}
         className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${!current ? "text-red-600 font-semibold" : "text-gray-700"}`}
       >
-        All genders
+        All
       </button>
       <div className="h-px bg-gray-100 mx-2" />
       {GENDERS.map(g => (

@@ -301,7 +301,7 @@ export default function PhotoGallery({
 
         {/* ── MOBILE: fullscreen single + swipe ───────────────── */}
         <div
-          className="md:hidden mx-2"
+          className="md:hidden mx-3"
           style={{ background: "#1C1C1E" }}
           onTouchStart={handleGalTouchStart}
           onTouchEnd={handleGalTouchEnd}
@@ -317,7 +317,7 @@ export default function PhotoGallery({
               className="w-full h-full object-cover"
               draggable={false}
             />
-            <div className="absolute top-3 right-3 rounded-md px-2.5 py-1 text-[12px] font-semibold text-white select-none"
+            <div className="absolute top-3 right-3 rounded px-2.5 py-1 text-[12px] font-semibold text-white select-none"
               style={{ background: "rgba(0,0,0,0.55)" }}>
               {activeIndex + 1} / {count}
             </div>
@@ -384,7 +384,7 @@ export default function PhotoGallery({
                 maxWidth: "92vw",
                 maxHeight: "92vh",
                 objectFit: "contain",
-                borderRadius: "4px",
+                borderRadius: 0,
                 pointerEvents: "none",
                 userSelect: "none",
                 WebkitUserSelect: "none",

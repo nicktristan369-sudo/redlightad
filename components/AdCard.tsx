@@ -54,7 +54,7 @@ export default function AdCard({
 
   return (
     <Link href={`/ads/${id}`} className="block group">
-      <div className={`flex flex-col sm:flex-row gap-4 sm:gap-5 rounded-2xl bg-white p-4 transition-all hover:shadow-md relative ${
+      <div className={`flex flex-col sm:flex-row gap-4 sm:gap-5 rounded bg-white p-4 transition-all hover:shadow-md relative ${
         premium_tier === "vip" ? "ring-1 ring-yellow-300" : premium_tier === "featured" ? "ring-1 ring-blue-200" : "border border-gray-100"
       }`} style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
 
@@ -73,7 +73,7 @@ export default function AdCard({
 
         {/* Image */}
         <div
-          className="relative h-[200px] sm:h-[180px] w-full sm:w-[180px] flex-shrink-0 overflow-hidden rounded-xl"
+          className="relative h-[200px] sm:h-[180px] w-full sm:w-[180px] flex-shrink-0 overflow-hidden rounded"
           onMouseEnter={() => {
             if (hasVideo && videoRef.current) {
               videoRef.current.style.display = "block"
@@ -125,13 +125,13 @@ export default function AdCard({
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {locationDisplay && (
-              <span className="flex items-center gap-1 rounded-lg bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-100">
+              <span className="flex items-center gap-1 rounded bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-100">
                 <MapPin className="w-3 h-3" />
                 {locationDisplay}
               </span>
             )}
             {[`${age} ${t.ad_yrs}`, gender, category, language].filter(Boolean).map((tag) => (
-              <span key={tag} className="rounded-lg bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-100">
+              <span key={tag} className="rounded bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-100">
                 {tag}
               </span>
             ))}
