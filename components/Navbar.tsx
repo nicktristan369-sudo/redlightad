@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Crown, CheckCircle, Play, Film, Star, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
@@ -11,7 +12,9 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function Navbar() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [navSearch, setNavSearch] = useState("");
   const [user, setUser] = useState<{ email: string; id: string } | null>(null);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
@@ -104,9 +107,25 @@ export default function Navbar() {
 
           {/* Search — desktop */}
           <div className="hidden md:flex flex-1 max-w-md mx-auto relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <button
+              onClick={() => {
+                if (navSearch.trim()) router.push(`/search?q=${encodeURIComponent(navSearch.trim())}`)
+                else router.push("/search")
+              }}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            >
+              <Search className="w-4 h-4" />
+            </button>
             <input
               type="text"
+              value={navSearch}
+              onChange={e => setNavSearch(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  if (navSearch.trim()) router.push(`/search?q=${encodeURIComponent(navSearch.trim())}`)
+                  else router.push("/search")
+                }
+              }}
               placeholder={t.search_placeholder}
               className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-300 focus:bg-white focus:outline-none transition-all"
             />
