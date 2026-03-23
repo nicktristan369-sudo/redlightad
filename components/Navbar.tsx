@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Crown, CheckCircle, Play, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Crown, CheckCircle, Play, Film, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
@@ -84,6 +84,9 @@ export default function Navbar() {
             <Link href="/available-now" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               <span className="w-2 h-2 bg-green-500 rounded-full" />
               Available Now
+            </Link>
+            <Link href="/videos" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+              <Film size={14} /> Videos
             </Link>
             <Link href="/support" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               {t.nav_support}
