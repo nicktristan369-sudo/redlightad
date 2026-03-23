@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Crown, CheckCircle, Play, Film, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Crown, CheckCircle, Play, Film, Star, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
@@ -87,6 +87,9 @@ export default function Navbar() {
             </Link>
             <Link href="/videos" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               <Film size={14} /> Videos
+            </Link>
+            <Link href="/reviews" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+              <Star size={14} /> Reviews
             </Link>
             <Link href="/support" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               {t.nav_support}
@@ -200,7 +203,7 @@ export default function Navbar() {
                   { href: "/premium",        icon: <Crown size={18} />,        label: "Premium" },
                   { href: "/available-now",  icon: <CheckCircle size={18} />,  label: "Available Now" },
                   { href: "/videos",         icon: <Play size={18} />,         label: "Videos" },
-                  { href: "/reviews",        icon: <MessageSquare size={18} />,label: "Reviews" },
+                  { href: "/reviews",        icon: <Star size={18} />,        label: "Reviews" },
                   { href: "/marketplace",    icon: <ShoppingBag size={18} />,  label: "Marketplace" },
                 ].map(({ href, icon, label }) => (
                   <Link
