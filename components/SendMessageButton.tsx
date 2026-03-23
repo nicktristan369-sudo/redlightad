@@ -68,12 +68,15 @@ export default function SendMessageButton({ listingId, providerId }: SendMessage
       <button
         onClick={handleClick}
         disabled={loading}
-        className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full text-white font-semibold py-2.5 px-6 text-sm transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+        style={{ background: "#000", borderRadius: "8px" }}
+        onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = "#CC0000" }}
+        onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = "#000" }}
       >
         {loading ? (
           <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
         ) : (
-          <>💬 Send besked</>
+          "Send Message"
         )}
       </button>
       {error && <p className="text-red-500 text-xs mt-2 text-center">{error}</p>}

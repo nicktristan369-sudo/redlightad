@@ -1,16 +1,39 @@
 "use client";
 
 import { useState } from "react";
+import { Lock } from "lucide-react";
+import Link from "next/link";
+import VoiceMessagePlayer from "@/components/VoiceMessagePlayer";
 
 /* ---------- TYPES ---------- */
 interface AnnonceDetailClientProps {
   images: string[];
   totalPhotos: number;
   hasVoiceMessage: boolean;
+  voiceMessageUrl?: string | null;
   listingImages?: string[];
 }
 
 /* ========== LOCKED PHOTO GALLERY ========== */
+function UnlockButton() {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Link
+      href="/register"
+      className="block w-full py-3 text-sm font-semibold text-white text-center transition-all duration-200"
+      style={{
+        background: hovered ? "#CC0000" : "#000",
+        border: `1px solid ${hovered ? "#CC0000" : "#333"}`,
+        borderRadius: "8px",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      Create Free Account →
+    </Link>
+  );
+}
+
 function LockedPhotoGallery({
   images,
   totalPhotos,
@@ -76,54 +99,12 @@ function LockedPhotoGallery({
   );
 }
 
-/* ========== VOICE MESSAGE PLAYER ========== */
-function VoiceMessagePlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  return (
-    <div className="rounded-xl bg-white p-5 shadow-md">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="text-red-600 text-lg">🎙️</span>
-        <h3 className="font-semibold text-gray-900">Stemmebesked</h3>
-      </div>
-
-      <div className="flex items-center gap-4">
-        {/* Play / Pause button */}
-        <button
-          onClick={() => setIsPlaying(!isPlaying)}
-          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
-        >
-          {isPlaying ? (
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <rect x="5" y="4" width="3" height="12" rx="1" />
-              <rect x="12" y="4" width="3" height="12" rx="1" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M6.5 4.5v11l9-5.5-9-5.5z" />
-            </svg>
-          )}
-        </button>
-
-        {/* Progress bar */}
-        <div className="flex-1">
-          <div className="h-2 w-full rounded-full bg-gray-200">
-            <div className="h-2 rounded-full bg-red-600" style={{ width: "40%" }} />
-          </div>
-        </div>
-
-        {/* Time */}
-        <span className="text-sm text-gray-500 flex-shrink-0">1:02 / 2:34</span>
-      </div>
-    </div>
-  );
-}
-
 /* ========== MAIN CLIENT COMPONENT ========== */
 export default function AnnonceDetailClient({
   images,
   totalPhotos,
   hasVoiceMessage,
+  voiceMessageUrl,
   listingImages,
 }: AnnonceDetailClientProps) {
   const displayImages = listingImages && listingImages.length > 0 ? listingImages : images;
@@ -134,23 +115,31 @@ export default function AnnonceDetailClient({
       <LockedPhotoGallery images={displayImages} totalPhotos={displayTotal} />
 
       {/* Locked Banner */}
-      <div className="mt-6 rounded-xl border border-red-100 bg-gradient-to-r from-red-50 to-pink-50 p-5 text-center">
-        <div className="text-2xl mb-2">🔒</div>
-        <h3 className="text-lg font-bold text-gray-900 mb-1">
-          Se alle private billeder og videoer
+      <div
+        className="mt-6 p-6 text-center"
+        style={{ background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px" }}
+      >
+        <div className="flex items-center justify-center mb-3">
+          <Lock size={20} color="#000000" />
+        </div>
+        <h3 className="text-[20px] font-bold mb-2" style={{ color: "#000000" }}>
+          Unlock Private Content
         </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Opret en gratis konto for at få adgang til alle {totalPhotos} billeder
-          og eksklusive videoer
+        <p className="mb-5" style={{ fontSize: "14px", color: "#6B7280", lineHeight: "1.5" }}>
+          Create a free account to access all {totalPhotos} photos and exclusive videos
         </p>
-        <button className="w-full rounded-xl bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700 transition-colors cursor-pointer">
-          Opret gratis konto
-        </button>
+        <UnlockButton />
+        <p className="mt-3 text-[12px]" style={{ color: "#9CA3AF" }}>
+          Already have an account?{" "}
+          <Link href="/login" className="text-gray-900 underline underline-offset-2 hover:text-black transition-colors">
+            Log in
+          </Link>
+        </p>
       </div>
 
-      {hasVoiceMessage && (
+      {hasVoiceMessage && voiceMessageUrl && (
         <div className="mt-6">
-          <VoiceMessagePlayer />
+          <VoiceMessagePlayer url={voiceMessageUrl} />
         </div>
       )}
     </>

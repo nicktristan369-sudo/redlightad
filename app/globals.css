@@ -1,4 +1,26 @@
 @import "tailwindcss";
+@import "flag-icons/css/flag-icons.min.css";
+
+/* Square flags — no border radius */
+.fi { border-radius: 0 !important; }
+
+/* Dropdown fade+slide animation */
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-dropdown {
+  animation: dropdownIn 0.15s ease-out both;
+}
+
+/* Mobile menu slide-in from left */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.25s cubic-bezier(0.4,0,0.2,1) both;
+}
 
 :root {
   --bg: #F5F5F7;
@@ -12,6 +34,13 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+  --radius-sm: 2px;
+  --radius-default: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
 }
 
 body {
@@ -27,4 +56,13 @@ body {
 
 .animate-fadeSlideIn {
   animation: fadeSlideIn 0.4s ease-out;
+}
+
+/* Country empty-state CTA */
+.btn-post-ad {
+  background: #000;
+  transition: background 0.2s;
+}
+.btn-post-ad:hover {
+  background: #CC0000;
 }

@@ -1,8 +1,50 @@
 "use client"
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import DashboardLayout from "@/components/DashboardLayout"
 import Link from "next/link"
+import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
+
+const STATS = [
+  { label: "Aktive annoncer", value: "0", Icon: FileText },
+  { label: "Visninger i dag",  value: "0", Icon: Eye },
+  { label: "Nye beskeder",     value: "0", Icon: MessageSquare },
+]
+
+function QuickBtn({
+  href,
+  style,
+  children,
+}: {
+  href: string
+  style: "black" | "outline" | "gold"
+  children: React.ReactNode
+}) {
+  const [hov, setHov] = useState(false)
+  const base = "px-5 py-2.5 rounded-lg text-[13px] font-semibold transition-colors duration-200 inline-block"
+
+  const bg =
+    style === "black"
+      ? hov ? "#CC0000" : "#000"
+      : style === "gold"
+      ? hov ? "#B8973F" : "#C9A84C"
+      : hov ? "#F5F5F5" : "#fff"
+
+  const border = style === "outline" ? "1px solid #000" : "1px solid transparent"
+  const color = style === "outline" ? "#000" : "#fff"
+
+  return (
+    <Link
+      href={href}
+      className={base}
+      style={{ background: bg, border, color }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      {children}
+    </Link>
+  )
+}
 
 function DashboardContent() {
   const searchParams = useSearchParams()
@@ -14,46 +56,44 @@ function DashboardContent() {
       <div>
         {/* Success banner */}
         {upgraded && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex items-center gap-3">
-            <span className="text-2xl">🎉</span>
+          <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl"
+            style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+            <CheckCircle size={18} color="#16A34A" className="flex-shrink-0" />
             <div>
-              <p className="font-semibold text-green-800">Betaling gennemført!</p>
-              <p className="text-green-600 text-sm">Din annonce er opgraderet til {tier?.toUpperCase()} pakken. Gå til Mine annoncer for at se status.</p>
+              <p className="text-[14px] font-semibold text-green-800">Payment successful!</p>
+              <p className="text-[13px] text-green-600">
+                Your listing has been upgraded to {tier?.toUpperCase()}. See Mine annoncer for status.
+              </p>
             </div>
           </div>
         )}
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Oversigt</h1>
-        <p className="text-gray-500 mb-8">Velkommen til dit dashboard</p>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-[24px] font-bold text-gray-900">Oversigt</h1>
+          <p className="text-[14px] text-gray-400 mt-0.5">Velkommen til dit dashboard</p>
+        </div>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[
-            { label: "Aktive annoncer", value: "0", icon: "📋" },
-            { label: "Visninger i dag", value: "0", icon: "👁️" },
-            { label: "Nye beskeder", value: "0", icon: "💬" },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <span className="text-2xl">{stat.icon}</span>
-              <p className="text-3xl font-bold text-gray-900 mt-3">{stat.value}</p>
-              <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+          {STATS.map(({ label, value, Icon }) => (
+            <div key={label} className="bg-white p-5"
+              style={{ border: "1px solid #E5E5E5", borderRadius: "12px" }}>
+              <Icon size={20} color="#9CA3AF" />
+              <p className="text-[32px] font-bold text-gray-900 mt-3 leading-none">{value}</p>
+              <p className="text-[13px] mt-1.5" style={{ color: "#6B7280" }}>{label}</p>
             </div>
           ))}
         </div>
 
         {/* Quick actions */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Hurtige handlinger</h2>
-          <div className="flex flex-wrap gap-4">
-            <Link href="/opret-annonce" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-medium text-sm transition-colors">
-              ➕ Opret ny annonce
-            </Link>
-            <Link href="/dashboard/annoncer" className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium text-sm transition-colors">
-              📋 Se mine annoncer
-            </Link>
-            <Link href="/upgrade" className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-3 rounded-xl font-medium text-sm transition-colors">
-              👑 Opgrader til Premium
-            </Link>
+        <div className="bg-white p-6 mb-6"
+          style={{ border: "1px solid #E5E5E5", borderRadius: "12px" }}>
+          <h2 className="text-[15px] font-semibold text-gray-900 mb-4">Hurtige handlinger</h2>
+          <div className="flex flex-wrap gap-3">
+            <QuickBtn href="/opret-annonce" style="black">Opret ny annonce</QuickBtn>
+            <QuickBtn href="/dashboard/annoncer" style="outline">Se mine annoncer</QuickBtn>
+            <QuickBtn href="/upgrade" style="gold">Opgrader til Premium</QuickBtn>
           </div>
         </div>
       </div>

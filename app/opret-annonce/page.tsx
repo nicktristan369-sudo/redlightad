@@ -1,8 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import LocationSelector from "@/components/LocationSelector";
+import VoiceRecorder from "@/components/VoiceRecorder";
+import SocialLinksEditor from "@/components/SocialLinksEditor";
+import type { SocialLinks } from "@/components/SocialLinksSection";
+
+const DAYS_OF_WEEK = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const;
+type DayKey = typeof DAYS_OF_WEEK[number];
+const DAY_LABELS: Record<DayKey, string> = { monday:"Monday", tuesday:"Tuesday", wednesday:"Wednesday", thursday:"Thursday", friday:"Friday", saturday:"Saturday", sunday:"Sunday" };
+
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2); const m = i % 2 === 0 ? "00" : "30";
+  return `${String(h).padStart(2, "0")}:${m}`;
+});
+
+const TIMEZONE_OPTIONS = [
+  { group: "Europe", zones: ["Europe/Copenhagen","Europe/London","Europe/Paris","Europe/Berlin","Europe/Amsterdam","Europe/Oslo","Europe/Stockholm","Europe/Madrid","Europe/Rome","Europe/Athens","Europe/Warsaw","Europe/Helsinki","Europe/Zurich","Europe/Lisbon"] },
+  { group: "Americas", zones: ["America/New_York","America/Chicago","America/Denver","America/Los_Angeles","America/Toronto","America/Vancouver","America/Sao_Paulo","America/Bogota","America/Lima","America/Santiago","America/Mexico_City","America/Buenos_Aires"] },
+  { group: "Asia", zones: ["Asia/Dubai","Asia/Bangkok","Asia/Tokyo","Asia/Singapore","Asia/Hong_Kong","Asia/Seoul","Asia/Shanghai","Asia/Kolkata","Asia/Karachi","Asia/Istanbul","Asia/Riyadh","Asia/Jakarta"] },
+  { group: "Africa", zones: ["Africa/Cairo","Africa/Lagos","Africa/Johannesburg","Africa/Nairobi","Africa/Casablanca"] },
+  { group: "Pacific", zones: ["Pacific/Auckland","Pacific/Sydney","Pacific/Honolulu"] },
+];
+
+interface DayHours { open: string; close: string; closed: boolean; }
+type OpeningHours = Record<DayKey, DayHours>;
+import { CATEGORIES } from "@/lib/constants/categories";
+import { GENDERS } from "@/lib/constants/genders";
+import {
+  BODY_BUILD_OPTIONS,
+  HAIR_COLOR_OPTIONS,
+  EYE_COLOR_OPTIONS,
+  GROOMING_OPTIONS,
+  BRA_SIZE_OPTIONS,
+  NATIONALITY_OPTIONS,
+} from "@/lib/listingOptions";
 
 const SERVICE_OPTIONS = [
   "Dinner dates",
@@ -21,6 +54,36 @@ export default function OpretAnnoncePage() {
   const [success, setSuccess] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
+  const [userTier, setUserTier] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState("Europe/Copenhagen");
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(() => {
+    const defaults: Partial<OpeningHours> = {};
+    DAYS_OF_WEEK.forEach(d => { defaults[d] = { open: "09:00", close: "22:00", closed: d === "sunday" }; });
+    return defaults as OpeningHours;
+  });
+
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) setTimezone(tz);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    const fetchTier = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("listings")
+          .select("premium_tier").eq("user_id", user.id).not("premium_tier", "is", null).limit(1).single();
+        if (data?.premium_tier) setUserTier(data.premium_tier);
+      } catch { /* no tier */ }
+    };
+    fetchTier();
+  }, []);
   const [form, setForm] = useState({
     title: "",
     category: "",
@@ -43,9 +106,20 @@ export default function OpretAnnoncePage() {
     telegram: "",
     snapchat: "",
     email: "",
+    height: "",
+    weight: "",
+    body_build: "",
+    hair_color: "",
+    eye_color: "",
+    grooming: "",
+    bra_size: "",
+    nationality: "",
+    outcall: false,
+    handicap_friendly: false,
+    has_own_place: false,
   });
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -112,7 +186,22 @@ export default function OpretAnnoncePage() {
         email: form.email,
         images: imageUrls,
         profile_image: imageUrls[0] || null,
-        status: "draft",
+        height: form.height ? parseInt(form.height) : null,
+        weight: form.weight ? parseInt(form.weight) : null,
+        body_build: form.body_build || null,
+        hair_color: form.hair_color || null,
+        eye_color: form.eye_color || null,
+        grooming: form.grooming || null,
+        bra_size: form.bra_size || null,
+        nationality: form.nationality || null,
+        outcall: form.outcall,
+        handicap_friendly: form.handicap_friendly,
+        has_own_place: form.has_own_place,
+        opening_hours: openingHours,
+        timezone: timezone,
+        voice_message_url: voiceMessageUrl || null,
+        social_links: Object.keys(socialLinks).length > 0 ? socialLinks : null,
+        status: "pending",
       });
       if (error) throw error;
       setSuccess(true);
@@ -146,6 +235,17 @@ export default function OpretAnnoncePage() {
       telegram: "",
       snapchat: "",
       email: "",
+      height: "",
+      weight: "",
+      body_build: "",
+      hair_color: "",
+      eye_color: "",
+      grooming: "",
+      bra_size: "",
+      nationality: "",
+      outcall: false,
+      handicap_friendly: false,
+      has_own_place: false,
     });
     setImageFiles([]);
     setImagePreviews([]);
@@ -172,11 +272,11 @@ export default function OpretAnnoncePage() {
             </div>
             <h2 className="mb-2 text-2xl font-bold text-gray-900">Din annonce er oprettet!</h2>
             <p className="mb-6 text-gray-500">
-              Din annonce er gemt som kladde og vil blive gennemgået inden udgivelse.
+              Din annonce er sendt til godkendelse og vil v&aelig;re synlig inden for 24 timer.
             </p>
             <div className="flex gap-3">
               <a
-                href="/mine-annoncer"
+                href="/dashboard/annoncer"
                 className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Se mine annoncer
@@ -222,7 +322,7 @@ export default function OpretAnnoncePage() {
                 <span className="mt-1 text-xs text-gray-500">{s.label}</span>
               </div>
               {i < steps.length - 1 && (
-                <div className={`mx-3 mb-5 h-0.5 w-16 ${step > s.num ? "bg-red-300" : "bg-gray-200"}`} />
+                <div className={`mx-1.5 sm:mx-3 mb-5 h-0.5 w-8 sm:w-16 ${step > s.num ? "bg-red-300" : "bg-gray-200"}`} />
               )}
             </div>
           ))}
@@ -261,17 +361,16 @@ export default function OpretAnnoncePage() {
                     <option value="" disabled>
                       Vælg kategori
                     </option>
-                    <option value="Escort">Escort</option>
-                    <option value="Massage">Massage</option>
-                    <option value="Fetish">Fetish</option>
-                    <option value="Transgender">Transgender</option>
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Køn</label>
                   <div className="flex gap-3">
-                    {["Female", "Male", "Transgender"].map((g) => (
+                    {GENDERS.map((g) => (
                       <button
                         key={g}
                         type="button"
@@ -394,7 +493,10 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">Priser</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">Priser</label>
+                    <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1">Enter in USD — visitors see local currency</span>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <span className="mb-1 block text-xs text-gray-500">1 time</span>
@@ -438,6 +540,132 @@ export default function OpretAnnoncePage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Udseende & Detaljer */}
+                <div>
+                  <label className="mb-3 block text-sm font-semibold text-gray-900">Udseende & Detaljer</label>
+
+                  {/* Højde / Vægt */}
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Højde (cm)</span>
+                      <input
+                        type="number"
+                        min={100}
+                        max={250}
+                        value={form.height}
+                        onChange={(e) => updateField("height", e.target.value)}
+                        placeholder="170"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Vægt (kg)</span>
+                      <input
+                        type="number"
+                        min={30}
+                        max={200}
+                        value={form.weight}
+                        onChange={(e) => updateField("weight", e.target.value)}
+                        placeholder="60"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 2x2 selects */}
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Kropsbygning</span>
+                      <select
+                        value={form.body_build}
+                        onChange={(e) => updateField("body_build", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="">Vælg</option>
+                        {BODY_BUILD_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Hårfarve</span>
+                      <select
+                        value={form.hair_color}
+                        onChange={(e) => updateField("hair_color", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="">Vælg</option>
+                        {HAIR_COLOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Øjenfarve</span>
+                      <select
+                        value={form.eye_color}
+                        onChange={(e) => updateField("eye_color", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="">Vælg</option>
+                        {EYE_COLOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Intimbelshåring</span>
+                      <select
+                        value={form.grooming}
+                        onChange={(e) => updateField("grooming", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="">Vælg</option>
+                        {GROOMING_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* BH-størrelse */}
+                  <div className="mb-3">
+                    <span className="mb-1 block text-xs text-gray-500">BH-størrelse</span>
+                    <select
+                      value={form.bra_size}
+                      onChange={(e) => updateField("bra_size", e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    >
+                      <option value="">Vælg</option>
+                      {BRA_SIZE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Nationalitet */}
+                  <div className="mb-3">
+                    <span className="mb-1 block text-xs text-gray-500">Nationalitet</span>
+                    <select
+                      value={form.nationality}
+                      onChange={(e) => updateField("nationality", e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    >
+                      <option value="">Vælg</option>
+                      {NATIONALITY_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Checkboxes */}
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    {[
+                      { field: "outcall", label: "Kører escort" },
+                      { field: "handicap_friendly", label: "Modtager handicappede" },
+                      { field: "has_own_place", label: "Har eget sted" },
+                    ].map((c) => (
+                      <label key={c.field} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form[c.field as keyof typeof form] as boolean}
+                          onChange={(e) => updateField(c.field, e.target.checked)}
+                          className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                        />
+                        {c.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="mt-6 flex gap-3">
@@ -468,14 +696,14 @@ export default function OpretAnnoncePage() {
                   <label className="mb-2 block text-sm font-medium text-gray-700">Kontakt</label>
                   <div className="space-y-3">
                     {[
-                      { icon: "📞", label: "Telefon", field: "phone" },
-                      { icon: "💬", label: "WhatsApp", field: "whatsapp" },
-                      { icon: "✈️", label: "Telegram", field: "telegram" },
-                      { icon: "👻", label: "Snapchat", field: "snapchat" },
-                      { icon: "📧", label: "Email", field: "email" },
+                      { label: "Telefon",  field: "phone" },
+                      { label: "WhatsApp", field: "whatsapp" },
+                      { label: "Telegram", field: "telegram" },
+                      { label: "Snapchat", field: "snapchat" },
+                      { label: "Email",    field: "email" },
                     ].map((c) => (
                       <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                        <span className="text-lg">{c.icon}</span>
+                        <span className="w-4 h-4 rounded-sm bg-gray-200 flex-shrink-0" />
                         <span className="w-20 text-sm text-gray-500">{c.label}</span>
                         <input
                           type={c.field === "email" ? "email" : "text"}
@@ -489,7 +717,88 @@ export default function OpretAnnoncePage() {
                   </div>
                 </div>
 
+                {/* ── SOCIAL MEDIA LINKS ── */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-base font-bold text-gray-900">Social Media Links</p>
+                    {!["basic", "featured", "vip"].includes(userTier || "") && (
+                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                        Låsning kræver premium
+                      </span>
+                    )}
+                  </div>
+                  <SocialLinksEditor
+                    value={socialLinks}
+                    onChange={setSocialLinks}
+                    isPremium={["basic", "featured", "vip"].includes(userTier || "")}
+                  />
+                </div>
+
                 {/* Image upload area */}
+                {/* ── AVAILABILITY & OPENING HOURS ── */}
+                <div>
+                  <p className="text-base font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Availability & Opening Hours</p>
+
+                  {/* Timezone */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Your Timezone</label>
+                    <select
+                      value={timezone}
+                      onChange={e => setTimezone(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 bg-white"
+                    >
+                      {TIMEZONE_OPTIONS.map(group => (
+                        <optgroup key={group.group} label={group.group}>
+                          {group.zones.map(tz => (
+                            <option key={tz} value={tz}>{tz.replace(/_/g, " ").replace(/\//g, " / ")}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Opening hours table */}
+                  <div className="border border-gray-100 rounded-xl overflow-hidden">
+                    <div className="grid grid-cols-[120px_1fr_1fr_80px] gap-0 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                      <span>Day</span><span>Opens</span><span>Closes</span><span className="text-right">Closed</span>
+                    </div>
+                    {DAYS_OF_WEEK.map(day => {
+                      const h = openingHours[day];
+                      return (
+                        <div key={day} className={`grid grid-cols-[120px_1fr_1fr_80px] items-center gap-2 px-4 py-2.5 border-b border-gray-50 last:border-0 ${h.closed ? "bg-gray-50/60 opacity-60" : "bg-white"}`}>
+                          <span className="text-sm font-medium text-gray-800">{DAY_LABELS[day]}</span>
+                          <select
+                            disabled={h.closed}
+                            value={h.open}
+                            onChange={e => setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], open: e.target.value } }))}
+                            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:border-red-400 disabled:bg-gray-100 disabled:text-gray-400"
+                          >
+                            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                          <select
+                            disabled={h.closed}
+                            value={h.close}
+                            onChange={e => setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], close: e.target.value } }))}
+                            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:border-red-400 disabled:bg-gray-100 disabled:text-gray-400"
+                          >
+                            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], closed: !prev[day].closed } }))}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${h.closed ? "bg-gray-300" : "bg-red-500"}`}
+                            >
+                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${h.closed ? "translate-x-0.5" : "translate-x-4"}`} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">Toggle switches on the right to mark a day as closed</p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Billeder <span className="text-gray-400">(max 20 &bull; JPG, PNG &bull; max 5MB/stk)</span>
@@ -500,7 +809,7 @@ export default function OpretAnnoncePage() {
                     className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-red-400 transition-colors"
                     onClick={() => document.getElementById("image-input")?.click()}
                   >
-                    <div className="text-4xl mb-2">📷</div>
+                    <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     <p className="text-gray-500 text-sm font-medium">Klik for at uploade billeder</p>
                     <p className="text-xs text-gray-400 mt-1">Første billede bruges som profilbillede</p>
                     <input
@@ -527,7 +836,7 @@ export default function OpretAnnoncePage() {
 
                   {/* Preview thumbnails */}
                   {imagePreviews.length > 0 && (
-                    <div className="grid grid-cols-4 gap-3 mt-4">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
                       {imagePreviews.map((src, i) => (
                         <div key={i} className="relative group aspect-square">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -549,7 +858,7 @@ export default function OpretAnnoncePage() {
                             }}
                             className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            ✕
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                           </button>
                         </div>
                       ))}
@@ -597,10 +906,31 @@ export default function OpretAnnoncePage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
+              {/* Voice Message — Premium only */}
+              <div className="mt-6 rounded-2xl border border-gray-200 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                  <h3 className="font-semibold text-gray-900 text-sm">Voice Message</h3>
+                  {!["premium", "featured", "vip"].includes(userTier || "") && (
+                    <span className="ml-auto text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Premium only</span>
+                  )}
+                </div>
+                {["premium", "featured", "vip"].includes(userTier || "") ? (
+                  <VoiceRecorder
+                    onUpload={(url) => setVoiceMessageUrl(url)}
+                    existingUrl={voiceMessageUrl || null}
+                  />
+                ) : (
+                  <div className="rounded-xl bg-gray-50 border border-dashed border-gray-200 p-4 text-center">
+                    <p className="text-sm text-gray-400">Opgrader til Premium for at tilføje en voice message til din profil</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setStep(2)}
-                  className="rounded-xl border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="w-full sm:w-auto rounded-xl border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   ← Tilbage
                 </button>

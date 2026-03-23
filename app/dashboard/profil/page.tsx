@@ -45,7 +45,7 @@ export default function ProfilPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Kontotype</label>
             <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-700 text-sm border border-gray-200 capitalize">
-              {accountType === "provider" ? "Udbyder 💼" : accountType === "customer" ? "Kunde 👤" : "—"}
+              {accountType === "provider" ? "Udbyder" : accountType === "customer" ? "Kunde" : "—"}
             </div>
           </div>
 
@@ -57,7 +57,7 @@ export default function ProfilPage() {
             >
               Send nulstil adgangskode email
             </button>
-            {saved && <p className="text-green-600 text-sm mt-2">✅ Email sendt!</p>}
+            {saved && <p className="text-green-600 text-sm mt-2">Email sendt!</p>}
           </div>
         </div>
       </div>
