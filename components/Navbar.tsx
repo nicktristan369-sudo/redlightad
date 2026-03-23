@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Star, CheckCircle, Play, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Crown, CheckCircle, Play, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
@@ -78,8 +78,12 @@ export default function Navbar() {
             <Link href="/" className="text-sm font-semibold text-gray-900 hover:text-gray-600 transition-colors">
               {t.nav_home}
             </Link>
-            <Link href="/premium" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              👑 Premium
+            <Link href="/premium" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+              <Crown size={14} /> Premium
+            </Link>
+            <Link href="/available-now" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+              <span className="w-2 h-2 bg-green-500 rounded-full" />
+              Available Now
             </Link>
             <Link href="/support" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               {t.nav_support}
@@ -190,7 +194,7 @@ export default function Navbar() {
                 {[
                   { href: "/",               icon: <Home size={18} />,         label: "Home" },
                   { href: "/search",         icon: <Search size={18} />,       label: "Search" },
-                  { href: "/premium",        icon: <Star size={18} />,         label: "👑 Premium" },
+                  { href: "/premium",        icon: <Crown size={18} />,        label: "Premium" },
                   { href: "/available-now",  icon: <CheckCircle size={18} />,  label: "Available Now" },
                   { href: "/videos",         icon: <Play size={18} />,         label: "Videos" },
                   { href: "/reviews",        icon: <MessageSquare size={18} />,label: "Reviews" },
