@@ -78,6 +78,9 @@ export default function Navbar() {
             <Link href="/" className="text-sm font-semibold text-gray-900 hover:text-gray-600 transition-colors">
               {t.nav_home}
             </Link>
+            <Link href="/premium" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+              👑 Premium
+            </Link>
             <Link href="/support" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               {t.nav_support}
             </Link>
@@ -187,7 +190,7 @@ export default function Navbar() {
                 {[
                   { href: "/",               icon: <Home size={18} />,         label: "Home" },
                   { href: "/search",         icon: <Search size={18} />,       label: "Search" },
-                  { href: "/annoncer",       icon: <Star size={18} />,         label: "Premium Profiles" },
+                  { href: "/premium",        icon: <Star size={18} />,         label: "👑 Premium" },
                   { href: "/available-now",  icon: <CheckCircle size={18} />,  label: "Available Now" },
                   { href: "/videos",         icon: <Play size={18} />,         label: "Videos" },
                   { href: "/reviews",        icon: <MessageSquare size={18} />,label: "Reviews" },

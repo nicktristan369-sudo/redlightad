@@ -93,7 +93,7 @@ function DashboardContent() {
           <div className="flex flex-wrap gap-3">
             <QuickBtn href="/opret-annonce" style="black">Opret ny annonce</QuickBtn>
             <QuickBtn href="/dashboard/annoncer" style="outline">Se mine annoncer</QuickBtn>
-            <QuickBtn href="/dashboard/buy-coins" style="gold">Opgrader til Premium</QuickBtn>
+            <QuickBtn href="/upgrade" style="gold">Opgrader til Premium</QuickBtn>
           </div>
         </div>
       </div>
