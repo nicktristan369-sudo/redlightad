@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabaseServer"
+import { Crown } from "lucide-react"
 import Navbar from "@/components/Navbar"
 import FilterBar from "@/components/FilterBar"
 import AdCard from "@/components/AdCard"
@@ -38,7 +39,7 @@ export default async function PremiumProfilesPage() {
 
             {sorted.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
-                <p className="text-5xl mb-4">👑</p>
+                <p className="text-5xl mb-4"><Crown className="w-12 h-12 text-yellow-500 mx-auto" /></p>
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">No premium profiles yet</h2>
                 <p className="text-gray-500">Check back soon for verified premium members</p>
               </div>
@@ -49,7 +50,7 @@ export default async function PremiumProfilesPage() {
                     {/* Crown badge */}
                     <div className="absolute top-3 right-3 z-20 text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
                       style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.4)" }}>
-                      👑
+                      <Crown className="w-3 h-3" />
                     </div>
                     <AdCard
                       id={ad.id as number}
