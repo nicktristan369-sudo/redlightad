@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     params.append("metadata[tier]", tier)
     params.append("metadata[listing_id]", listingId || "")
     params.append("success_url", `${baseUrl}/dashboard?upgraded=true&tier=${tier}`)
-    params.append("cancel_url", `${baseUrl}/premium`)
+    params.append("cancel_url", `${baseUrl}/upgrade`)
 
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",

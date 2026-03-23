@@ -36,6 +36,9 @@ export default function Navbar() {
           <a href="/" className="text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors">
             {t.nav_home}
           </a>
+          <a href="/premium" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+            👑 Premium
+          </a>
           <a href="#" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
             {t.nav_support}
           </a>
@@ -94,6 +97,7 @@ export default function Navbar() {
         <div className="border-t border-gray-100 bg-white px-6 pb-6 md:hidden">
           <div className="flex flex-col gap-4 py-4">
             <a href="/" className="text-sm font-medium text-gray-900">{t.nav_home}</a>
+            <a href="/premium" className="text-sm font-medium text-gray-500">👑 Premium</a>
             <a href="#" className="text-sm font-medium text-gray-500">{t.nav_support}</a>
             <a href="/opret-annonce" className="text-sm font-medium text-gray-500">{t.nav_post_ad}</a>
           </div>

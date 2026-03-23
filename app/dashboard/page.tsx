@@ -51,7 +51,7 @@ function DashboardContent() {
             <Link href="/dashboard/annoncer" className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium text-sm transition-colors">
               📋 Se mine annoncer
             </Link>
-            <Link href="/premium" className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-3 rounded-xl font-medium text-sm transition-colors">
+            <Link href="/upgrade" className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-3 rounded-xl font-medium text-sm transition-colors">
               👑 Opgrader til Premium
             </Link>
           </div>

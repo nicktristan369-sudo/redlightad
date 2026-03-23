@@ -1,138 +1,79 @@
-"use client"
-import { useState } from "react"
-import { useSearchParams } from "next/navigation"
-import { PLANS } from "@/lib/plans"
+import { createServerClient } from "@/lib/supabaseServer"
 import Navbar from "@/components/Navbar"
-import { Suspense } from "react"
+import FilterBar from "@/components/FilterBar"
+import AdCard from "@/components/AdCard"
 
-function PremiumContent() {
-  const [loading, setLoading] = useState<string | null>(null)
-  const [error, setError] = useState("")
-  const searchParams = useSearchParams()
-  const listingId = searchParams.get("listing") || ""
-
-  const handleUpgrade = async (tier: string) => {
-    setLoading(tier)
-    setError("")
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, listingId }),
-      })
-      const data = await res.json()
-      if (data.url) window.location.href = data.url
-      else throw new Error(data.error || "Fejl")
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Noget gik galt")
-      setLoading(null)
-    }
-  }
-
-  const plans = [
-    { key: "basic", ...PLANS.basic },
-    { key: "featured", ...PLANS.featured },
-    { key: "vip", ...PLANS.vip },
-  ]
-
-  return (
-    <div className="bg-gray-50 min-h-screen">
-      <Navbar />
-      <div className="max-w-5xl mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Vælg din Premium pakke</h1>
-          <p className="text-gray-500 text-lg">Nå flere kunder og få mere synlighed</p>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-8 text-center text-sm">
-            {error}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {plans.map((plan) => {
-            const isFeatured = plan.key === "featured"
-            const isVip = plan.key === "vip"
-            return (
-              <div
-                key={plan.key}
-                className={`bg-white rounded-2xl shadow-sm border-2 p-8 flex flex-col relative ${
-                  isVip
-                    ? "border-yellow-400 shadow-yellow-100"
-                    : isFeatured
-                    ? "border-blue-500 shadow-blue-100"
-                    : "border-gray-200"
-                }`}
-              >
-                {isFeatured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-4 py-1 rounded-full">
-                    MEST POPULÆR
-                  </div>
-                )}
-                {isVip && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-gray-900 text-xs font-bold px-4 py-1 rounded-full">
-                    PREMIUM
-                  </div>
-                )}
-
-                <div className="mb-6">
-                  <div className="text-3xl mb-2">
-                    {isVip ? "👑" : isFeatured ? "⭐" : "📋"}
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900">{plan.name}</h2>
-                  <div className="mt-3">
-                    <span className="text-4xl font-bold text-gray-900">{plan.priceDisplay}</span>
-                    <span className="text-gray-500 text-sm">/måned</span>
-                  </div>
-                </div>
-
-                <ul className="space-y-3 flex-1 mb-8">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-green-500 font-bold flex-shrink-0">✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => handleUpgrade(plan.key)}
-                  disabled={loading === plan.key}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors disabled:opacity-60 ${
-                    isVip
-                      ? "bg-yellow-400 hover:bg-yellow-500 text-gray-900"
-                      : isFeatured
-                      ? "bg-blue-500 hover:bg-blue-600 text-white"
-                      : "bg-gray-900 hover:bg-gray-800 text-white"
-                  }`}
-                >
-                  {loading === plan.key ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      Behandler...
-                    </span>
-                  ) : (
-                    `Vælg ${plan.name}`
-                  )}
-                </button>
-              </div>
-            )
-          })}
-        </div>
-
-        <p className="text-center text-xs text-gray-400 mt-8">
-          Sikker betaling via Stripe • Test mode aktiv • Brug kort 4242 4242 4242 4242
-        </p>
-      </div>
-    </div>
-  )
+export const metadata = {
+  title: "Premium Profiles | RedLightAD",
+  description: "Browse verified premium escort profiles worldwide",
 }
 
-export default function PremiumPage() {
+export default async function PremiumProfilesPage() {
+  const supabase = createServerClient()
+
+  const { data: listings } = await supabase
+    .from("listings")
+    .select("*, users!inner(is_premium, is_featured)")
+    .eq("users.is_premium", true)
+    .order("created_at", { ascending: false })
+
+  // Sort featured first
+  const sorted = (listings || []).sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+    const aFeatured = (a.users as Record<string, unknown>)?.is_featured ? 1 : 0
+    const bFeatured = (b.users as Record<string, unknown>)?.is_featured ? 1 : 0
+    return bFeatured - aFeatured
+  })
+
   return (
-    <Suspense>
-      <PremiumContent />
-    </Suspense>
+    <>
+      <Navbar />
+      <FilterBar />
+      <main className="bg-[#F5F5F7]">
+        <section className="py-8">
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Premium Profiles</h1>
+              <p className="text-gray-500 mt-2">Verified premium members worldwide</p>
+            </div>
+
+            {sorted.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
+                <p className="text-5xl mb-4">👑</p>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">No premium profiles yet</h2>
+                <p className="text-gray-500">Check back soon for verified premium members</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {sorted.map((ad: Record<string, unknown>) => (
+                  <div key={ad.id as string} className="relative">
+                    {/* Crown badge */}
+                    <div className="absolute top-3 right-3 z-20 text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.4)" }}>
+                      👑
+                    </div>
+                    <AdCard
+                      id={ad.id as number}
+                      title={ad.title as string}
+                      image={ad.profile_image as string || "/placeholder.jpg"}
+                      verified={true}
+                      description={ad.about as string || ""}
+                      hasVoice={false}
+                      age={ad.age as number || 0}
+                      gender={ad.gender as string || ""}
+                      category={ad.category as string || ""}
+                      country={ad.country as string}
+                      city={ad.city as string}
+                      location={ad.location as string}
+                      language={(ad.languages as string[])?.[0] || ""}
+                      premium_tier={ad.premium_tier as string}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+    </>
   )
 }
