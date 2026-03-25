@@ -13,6 +13,7 @@ import SocialLinksSection from "@/components/SocialLinksSection";
 import TravelBox from "@/components/TravelBox";
 import type { TravelEntry } from "@/components/TravelBox";
 import StickyActionBar from "@/components/StickyActionBar";
+import ReportModal from "@/components/ReportModal";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 
@@ -54,6 +55,7 @@ export default function AdDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [travelEntries, setTravelEntries] = useState<TravelEntry[]>([]);
+  const [reportOpen, setReportOpen] = useState(false);
   const [videos, setVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; title: string | null; is_locked: boolean; redcoin_price: number; views: number; likes: number; sort_order: number }[]>([]);
 
   useEffect(() => {
@@ -272,6 +274,22 @@ export default function AdDetailPage() {
         isLoggedIn={currentUserId !== null}
         profileImage={ad.images?.[0] ?? null}
         name={ad.title}
+      />
+
+      {/* Report link */}
+      <div style={{ textAlign: "center", padding: "16px 0 8px" }}>
+        <button
+          onClick={() => setReportOpen(true)}
+          style={{ fontSize: 12, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+        >
+          ⚑ Report Profile
+        </button>
+      </div>
+      <ReportModal
+        listingId={ad.id}
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        isLoggedIn={currentUserId !== null}
       />
 
       <footer className="border-t border-gray-200 bg-white px-6 py-8 text-center text-sm text-gray-500">
