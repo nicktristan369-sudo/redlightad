@@ -199,7 +199,7 @@ export default function PremiumCarousel({
 
   return (
     <section className={`${bgClass} pt-5 pb-5`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-screen-xl mx-auto px-6">
         {/* Header */}
         <div className="mb-3 flex items-center justify-between">
           <div>

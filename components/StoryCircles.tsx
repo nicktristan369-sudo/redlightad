@@ -61,7 +61,7 @@ export default function StoryCircles({ country }: StoryCirclesProps) {
 
   return (
     <>
-      <div className="max-w-5xl mx-auto px-4" style={{ background: "#fff", borderBottom: "1px solid #F3F4F6" }}>
+      <div className="max-w-screen-xl mx-auto px-6" style={{ background: "#fff", borderBottom: "1px solid #F3F4F6" }}>
       <div
         style={{
           display: "flex",
