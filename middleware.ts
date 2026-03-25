@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 // Paths that are always public (no password required)
-const PUBLIC_PATHS = ["/unlock", "/api/unlock", "/_next", "/favicon"]
+const PUBLIC_PATHS = ["/unlock", "/api/", "/_next", "/favicon"]
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
