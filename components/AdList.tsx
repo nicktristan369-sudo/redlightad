@@ -3,7 +3,8 @@
 import { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { FileText } from "lucide-react"
+import { FileText, LayoutList, LayoutGrid } from "lucide-react"
+import AdCardGrid from "./AdCardGrid"
 
 interface Listing {
   id: string
@@ -72,8 +73,8 @@ function MobileAdCard({ ad, displayLocation, description, ago }: {
   const videoCount = ad.video_url ? 1 : 0
 
   return (
-    <div className="md:hidden bg-white overflow-hidden"
-      style={{ borderRadius: 4, boxShadow: "0 1px 8px rgba(0,0,0,0.10)", border: "1px solid #E5E7EB" }}>
+    <div className="md:hidden bg-white overflow-hidden rounded-none"
+      style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.10)", border: "1px solid #E5E7EB" }}>
 
       {/* ── Title (max 2 lines, bold, NOT uppercase) ── */}
       <div className="px-3 pt-3 pb-2">
@@ -198,7 +199,7 @@ function tierBadge(tier: string | null | undefined) {
   const b = labels[tier]
   if (!b) return null
   return (
-    <span className={`absolute top-2 left-2 text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded ${b.style}`}>
+    <span className={`absolute top-2 left-2 text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded-none ${b.style}`}>
       {b.label}
     </span>
   )
@@ -225,6 +226,15 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
   const searchParams = useSearchParams()
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
+  const [view, setView] = useState<"list" | "grid">("list")
+  useEffect(() => {
+    const saved = localStorage.getItem("viewMode")
+    if (saved === "list" || saved === "grid") setView(saved)
+  }, [])
+  const handleViewChange = (v: "list" | "grid") => {
+    setView(v)
+    localStorage.setItem("viewMode", v)
+  }
 
   // URL params take priority, props as fallback
   const country = searchParams.get("country") ?? propCountry ?? ""
@@ -270,97 +280,151 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
   return (
     <section className="py-6 max-w-5xl mx-auto px-4">
-      <div className="space-y-4">
-        {listings.map((ad) => {
-          const displayLocation = ad.city || ad.location || ""
-          const description = ad.about || ""
-          return (
-            <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
-              <div className="bg-white rounded shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+      {/* ── View toggle bar ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <span style={{ fontSize: "13px", color: "#6B7280" }}>{listings.length} profiles</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#fff", border: "1px solid #E5E7EB", padding: "4px", borderRadius: "2px" }}>
+          <button
+            onClick={() => handleViewChange("list")}
+            aria-label="List view"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "32px", height: "32px", border: "none", borderRadius: "2px", cursor: "pointer",
+              background: view === "list" ? "#FEE2E2" : "transparent",
+              color: view === "list" ? "#DC2626" : "#9CA3AF",
+              transition: "all 0.15s",
+            }}
+          >
+            <LayoutList size={18} />
+          </button>
+          <button
+            onClick={() => handleViewChange("grid")}
+            aria-label="Grid view"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "32px", height: "32px", border: "none", borderRadius: "2px", cursor: "pointer",
+              background: view === "grid" ? "#FEE2E2" : "transparent",
+              color: view === "grid" ? "#DC2626" : "#9CA3AF",
+              transition: "all 0.15s",
+            }}
+          >
+            <LayoutGrid size={18} />
+          </button>
+        </div>
+      </div>
 
-                {/* ── MOBILE layout — MobileAdCard component ── */}
-                <MobileAdCard
-                  ad={ad}
-                  displayLocation={displayLocation}
-                  description={description}
-                  ago={timeAgo(ad.created_at)}
-                />
+      {view === "grid" ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          {listings.map((ad) => (
+            <AdCardGrid
+              key={ad.id}
+              id={ad.id}
+              title={ad.title}
+              image={ad.profile_image || "/placeholder.jpg"}
+              verified={(ad as any).verified ?? false}
+              age={ad.age}
+              city={ad.city}
+              country={ad.country}
+              location={ad.location}
+              opening_hours={ad.opening_hours}
+              timezone={ad.timezone}
+              premium_tier={ad.premium_tier}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {listings.map((ad) => {
+            const displayLocation = ad.city || ad.location || ""
+            const description = ad.about || ""
+            return (
+              <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
+                <div className="bg-white rounded-none shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
 
-                {/* ── DESKTOP layout (hidden below md) ── */}
-                <div className="hidden md:flex">
-                  {/* Left: thumbnail */}
-                  <div className="relative flex-shrink-0 w-[200px] h-[240px] bg-gray-100">
-                    {ad.video_url ? (
-                      <>
-                        <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
-                            </svg>
+                  {/* ── MOBILE layout — MobileAdCard component ── */}
+                  <MobileAdCard
+                    ad={ad}
+                    displayLocation={displayLocation}
+                    description={description}
+                    ago={timeAgo(ad.created_at)}
+                  />
+
+                  {/* ── DESKTOP layout (hidden below md) ── */}
+                  <div className="hidden md:flex">
+                    {/* Left: thumbnail */}
+                    <div className="relative flex-shrink-0 w-[200px] h-[240px] bg-gray-100">
+                      {ad.video_url ? (
+                        <>
+                          <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                              </svg>
+                            </div>
                           </div>
-                        </div>
-                      </>
-                    ) : ad.profile_image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                        <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                    )}
-                    {tierBadge(ad.premium_tier)}
-                  </div>
-
-                  {/* Right: details */}
-                  <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
-                    <div>
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
-                        <span className="flex-shrink-0 inline-flex items-center gap-1 bg-gray-900 text-white text-[10px] font-semibold px-2.5 py-1 rounded">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </>
+                      ) : ad.profile_image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                          <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
-                          Verified
+                        </div>
+                      )}
+                      {tierBadge(ad.premium_tier)}
+                    </div>
+
+                    {/* Right: details */}
+                    <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
+                          <span className="flex-shrink-0 inline-flex items-center gap-1 bg-gray-900 text-white text-[10px] font-semibold px-2.5 py-1 rounded-none">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Verified
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          Posted {timeAgo(ad.created_at)}
+                        </p>
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">{description}</p>
+                      </div>
+                      <div className="grid grid-cols-5 gap-x-3 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-3">
+                        {[
+                          { label: "AGE",      value: ad.age },
+                          { label: "GENDER",   value: ad.gender },
+                          { label: "CATEGORY", value: ad.category },
+                          { label: "LOCATION", value: displayLocation },
+                          { label: "LANGUAGE", value: ad.languages?.[0] || "—" },
+                        ].map(({ label, value }) => (
+                          <div key={label}>
+                            <p className="text-[9px] font-semibold tracking-widest text-gray-400 uppercase">{label}</p>
+                            <p className="font-semibold text-gray-800 truncate">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="flex-1 bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2.5 rounded-none text-center transition-colors">
+                          View Profile
                         </span>
                       </div>
-                      <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Posted {timeAgo(ad.created_at)}
-                      </p>
-                      <p className="text-sm text-gray-600 line-clamp-2 mb-3">{description}</p>
-                    </div>
-                    <div className="grid grid-cols-5 gap-x-3 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-3">
-                      {[
-                        { label: "AGE",      value: ad.age },
-                        { label: "GENDER",   value: ad.gender },
-                        { label: "CATEGORY", value: ad.category },
-                        { label: "LOCATION", value: displayLocation },
-                        { label: "LANGUAGE", value: ad.languages?.[0] || "—" },
-                      ].map(({ label, value }) => (
-                        <div key={label}>
-                          <p className="text-[9px] font-semibold tracking-widest text-gray-400 uppercase">{label}</p>
-                          <p className="font-semibold text-gray-800 truncate">{value}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1 bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2.5 rounded text-center transition-colors">
-                        View Profile
-                      </span>
                     </div>
                   </div>
-                </div>
 
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </section>
   )
 }
