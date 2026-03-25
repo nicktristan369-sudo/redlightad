@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import FilterBar from "@/components/FilterBar";
 import PremiumCarousel from "@/components/PremiumCarousel";
 import AdList from "@/components/AdList";
+import StoryCircles from "@/components/StoryCircles";
 
 export default function Home() {
   return (
@@ -9,6 +10,7 @@ export default function Home() {
       <Navbar />
       <FilterBar />
       <main className="bg-[#F5F5F7]">
+        <StoryCircles />
         <PremiumCarousel />
         <AdList />
       </main>
