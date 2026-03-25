@@ -137,7 +137,7 @@ export default function AdDetailPage() {
   return (
     <>
       <Navbar />
-      <main className="bg-gray-50 min-h-screen pb-20 md:pb-0">
+      <main className="bg-gray-50 min-h-screen pb-20 md:pb-0" style={{ paddingTop: 12 }}>
         {/* Mobile-only: full-width gallery at top */}
         <div className="md:hidden px-3">
           <PhotoGallery images={ad.images ?? []} totalPhotos={(ad.images ?? []).length} name={ad.title} isLoggedIn={currentUserId !== null} />

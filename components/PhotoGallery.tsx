@@ -174,7 +174,7 @@ export default function PhotoGallery({
       {/* ════════════════════════════════════════════════════════
           GALLERY — inline on ad page
           ════════════════════════════════════════════════════════ */}
-      <div className="rounded-sm overflow-hidden border border-[#E5E5E5]">
+      <div className="overflow-hidden" style={{ border: "none", outline: "none", boxShadow: "none" }}>
 
         {/* ── DESKTOP: 3-panel layout ─────────────────────────── */}
         <div className="hidden md:block">
