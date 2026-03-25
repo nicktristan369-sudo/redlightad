@@ -32,9 +32,10 @@ function timeAgo(dateStr: string): string {
 interface AdCardGridProps {
   id: string | number
   title: string
+  display_name?: string | null
   image: string
   verified: boolean
-  age: number
+  age?: number | null
   city?: string | null
   country?: string | null
   location?: string
@@ -48,10 +49,13 @@ interface AdCardGridProps {
 }
 
 export default function AdCardGrid({
-  id, title, image, verified, city, country, location,
+  id, title, display_name, image, verified, age, city, country, location,
   category, created_at, opening_hours, timezone, premium_tier,
   hasStory = false, onStoryClick,
 }: AdCardGridProps) {
+  const displayTitle = display_name
+    ? `${display_name}${age ? `, ${age}` : ""}`
+    : title
   const locationDisplay = [city, country].filter(Boolean).join(", ") || location || ""
   const available = isAvailableNow(opening_hours, timezone)
   const ago = created_at ? timeAgo(created_at) : ""
@@ -160,7 +164,7 @@ export default function AdCardGrid({
               margin: 0, lineHeight: 1.3,
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
               maxWidth: "calc(100% - 20px)",
-            }}>{title}</p>
+            }}>{displayTitle}</p>
             {verified && <CheckCircle size={13} color="#DC2626" style={{ flexShrink: 0 }} />}
           </div>
 

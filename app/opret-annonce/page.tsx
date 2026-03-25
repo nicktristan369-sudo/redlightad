@@ -85,6 +85,7 @@ export default function OpretAnnoncePage() {
     fetchTier();
   }, []);
   const [form, setForm] = useState({
+    display_name: "",
     title: "",
     category: "",
     gender: "",
@@ -164,6 +165,7 @@ export default function OpretAnnoncePage() {
 
       const { error } = await supabase.from("listings").insert({
         user_id: user.id,
+        display_name: form.display_name,
         title: form.title,
         category: form.category,
         gender: form.gender,
@@ -214,6 +216,7 @@ export default function OpretAnnoncePage() {
 
   const resetForm = () => {
     setForm({
+      display_name: "",
       title: "",
       category: "",
       gender: "",
@@ -340,6 +343,38 @@ export default function OpretAnnoncePage() {
               <h2 className="mb-6 text-xl font-bold text-gray-900">Trin 1: Basis information</h2>
 
               <div className="space-y-5">
+                {/* Navn */}
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                    Dit navn <span style={{ color: "#DC2626" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Eks. Sofia, Anna, Maria..."
+                    value={form.display_name ?? ""}
+                    onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
+                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                {/* Alder */}
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                    Din alder <span style={{ color: "#DC2626" }}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={18}
+                    max={99}
+                    placeholder="18"
+                    value={form.age ?? ""}
+                    onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
+                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Annonce titel</label>
                   <input

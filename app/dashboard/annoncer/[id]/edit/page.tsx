@@ -98,7 +98,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   const [openingHours, setOpeningHours] = useState<OpeningHours>(defaultHours());
 
   const [form, setForm] = useState({
-    title: "", category: "", gender: "", age: "", location: "",
+    display_name: "", title: "", category: "", gender: "", age: "", location: "",
     country: "", countryName: "", region: "", regionName: "",
     about: "", services: [] as string[], languages: [] as string[],
     rate_1hour: "", rate_2hours: "", rate_overnight: "", rate_weekend: "",
@@ -187,6 +187,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
       // Pre-fill form
       setForm({
+        display_name: listing.display_name ?? "",
         title: listing.title ?? "",
         category: listing.category ?? "",
         gender: listing.gender ?? "",
@@ -279,6 +280,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
       ];
 
       const { error: updateErr } = await supabase.from("listings").update({
+        display_name:    form.display_name,
         title:           form.title,
         category:        form.category,
         gender:          form.gender,
@@ -474,6 +476,38 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
             <div>
               <h2 className="text-[18px] font-bold text-gray-900 mb-6">Trin 1: Basis information</h2>
               <div className="space-y-5">
+                {/* Navn */}
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                    Dit navn <span style={{ color: "#DC2626" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Eks. Sofia, Anna, Maria..."
+                    value={form.display_name ?? ""}
+                    onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
+                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                {/* Alder */}
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                    Din alder <span style={{ color: "#DC2626" }}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={18}
+                    max={99}
+                    placeholder="18"
+                    value={form.age ?? ""}
+                    onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
+                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
                 <div>
                   <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Annonce titel <span className="text-red-500">*</span></label>
                   <input type="text" value={form.title} onChange={e => updateField("title", e.target.value)}
