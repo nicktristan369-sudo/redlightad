@@ -15,7 +15,7 @@ import type { TravelEntry } from "@/components/TravelBox";
 import StickyActionBar from "@/components/StickyActionBar";
 import ReportModal from "@/components/ReportModal";
 import PhotoGrid from "@/components/PhotoGrid";
-import PrivateGalleryLocked from "@/components/PrivateGalleryLocked";
+import PrivateContentPreview from "@/components/PrivateContentPreview";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 
@@ -126,6 +126,7 @@ export default function AdDetailPage() {
     );
   }
 
+  const lockedVideos = videos.filter(v => v.is_locked);
   const isOwnListing = currentUserId === ad.user_id;
   const isPremium = !!ad.premium_tier;
 
@@ -259,18 +260,23 @@ export default function AdDetailPage() {
                 </div>
               )}
 
-              {/* Private/locked gallery */}
-              {(ad.locked_images ?? []).length > 0 && (
+              {/* Private content preview */}
+              {((ad.locked_images ?? []).length > 0 || lockedVideos.length > 0) && (
                 <div>
                   <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 20, marginBottom: 14 }}>
                     <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: 0 }}>
-                      Private Gallery{" "}
+                      Private Content{" "}
                       <span style={{ fontSize: 14, fontWeight: 400, color: "#9CA3AF" }}>
-                        ({(ad.locked_images ?? []).length} photos)
+                        ({(ad.locked_images ?? []).length + lockedVideos.length} items)
                       </span>
                     </h2>
                   </div>
-                  <PrivateGalleryLocked isLoggedIn={currentUserId !== null} count={(ad.locked_images ?? []).length} />
+                  <PrivateContentPreview
+                    lockedImages={ad.locked_images ?? []}
+                    lockedVideos={lockedVideos.filter(v => v.is_locked)}
+                    isLoggedIn={currentUserId !== null}
+                    listingId={ad.id}
+                  />
                 </div>
               )}
             </div>
