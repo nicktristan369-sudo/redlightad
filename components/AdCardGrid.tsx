@@ -36,21 +36,15 @@ interface AdCardGridProps {
 }
 
 export default function AdCardGrid({
-  id, title, image, verified, age, city, country, location,
+  id, title, image, verified, city, country, location,
   opening_hours, timezone, premium_tier, hasStory = false, onStoryClick,
 }: AdCardGridProps) {
   const locationDisplay = city || country || location || ""
   const available = isAvailableNow(opening_hours, timezone)
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes rlad-pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.35); }
-        }
-      `}} />
-
+    <Link href={`/ads/${id}`} style={{ display: "block", textDecoration: "none" }}>
+      {/* Outer container — overflow: visible so circle can stick out */}
       <div
         className="group"
         style={{
@@ -68,117 +62,99 @@ export default function AdCardGrid({
           ;(e.currentTarget as HTMLDivElement).style.boxShadow = "none"
         }}
       >
-        {/* ── Image ── */}
-        <Link href={`/ads/${id}`} style={{ display: "block", position: "relative", flexShrink: 0 }}>
-          <div style={{ position: "relative", width: "100%", aspectRatio: "3/4", overflow: "hidden", background: "#D1D5DB" }}>
-            <Image
-              src={image}
-              alt={title}
-              fill
-              style={{ objectFit: "cover", transition: "transform 0.3s ease" }}
-              className="group-hover:scale-105"
-              sizes="(max-width:640px) 50vw, 25vw"
-            />
+        {/* ── Image block — overflow: hidden ── */}
+        <div style={{ position: "relative", width: "100%", aspectRatio: "3/4", overflow: "hidden", background: "#D1D5DB", flexShrink: 0 }}>
+          <Image
+            src={image}
+            alt={title}
+            fill
+            style={{ objectFit: "cover", transition: "transform 0.3s ease" }}
+            className="group-hover:scale-105"
+            sizes="(max-width:640px) 50vw, 25vw"
+          />
 
-            {/* Dark gradient overlay */}
+          {/* Available dot — top left */}
+          {available && (
             <div style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 40%, transparent 70%)",
-              pointerEvents: "none",
+              position: "absolute", top: 8, left: 8,
+              width: 8, height: 8, borderRadius: "50%",
+              background: "#22C55E", boxShadow: "0 0 0 2px white",
             }} />
+          )}
 
-            {/* Available dot — top left */}
-            {available && (
-              <div style={{
-                position: "absolute", top: 8, left: 8,
-                width: 8, height: 8, borderRadius: "50%",
-                background: "#22C55E", boxShadow: "0 0 0 2px white",
-                animation: "rlad-pulse 1.8s ease-in-out infinite",
-              }} />
-            )}
-
-            {/* Verified badge — top right */}
-            {verified && (
-              <div style={{
-                position: "absolute", top: 8, right: 8,
-                background: "rgba(0,0,0,0.6)", color: "#fff",
-                fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
-                padding: "2px 6px",
-              }}>
-                ✓ VERIFIED
-              </div>
-            )}
-
-            {/* VIP badge */}
-            {premium_tier === "vip" && (
-              <div style={{
-                position: "absolute", top: available ? 26 : 8, left: 8,
-                fontSize: 9, fontWeight: 700, letterSpacing: "0.15em",
-                padding: "2px 6px",
-                backgroundColor: "rgba(0,0,0,0.75)", color: "#D4AF37",
-                border: "1px solid rgba(212,175,55,0.4)",
-              }}>VIP</div>
-            )}
-
-            {/* Name + city ON image, above circle */}
+          {/* Verified badge — top right */}
+          {verified && (
             <div style={{
-              position: "absolute", bottom: 40, left: 12, right: 12,
-              pointerEvents: "none",
-            }}>
-              <p style={{
-                color: "white", fontWeight: 700, fontSize: 13,
-                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                margin: 0, lineHeight: 1.3, textShadow: "0 1px 4px rgba(0,0,0,0.6)",
-              }}>{title}</p>
-              {locationDisplay && (
-                <p style={{
-                  color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 2,
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                  margin: "2px 0 0", textShadow: "0 1px 3px rgba(0,0,0,0.5)",
-                }}>{locationDisplay}</p>
-              )}
-            </div>
+              position: "absolute", top: 8, right: 8,
+              background: "rgba(0,0,0,0.6)", color: "#fff",
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
+              padding: "2px 6px",
+            }}>✓ VERIFIED</div>
+          )}
 
-            {/* Profile circle — centered, half outside bottom */}
-            <div
-              onClick={hasStory ? (e) => { e.preventDefault(); e.stopPropagation(); onStoryClick?.() } : undefined}
-              style={{
-                position: "absolute",
-                bottom: -30,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: 64, height: 64, borderRadius: "50%",
-                padding: hasStory ? 3 : 2,
-                background: hasStory
-                  ? "linear-gradient(135deg, #DC2626, #F59E0B)"
-                  : "white",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                cursor: hasStory ? "pointer" : "default",
-                zIndex: 10, flexShrink: 0,
-              }}
-            >
-              <div style={{
-                width: "100%", height: "100%", borderRadius: "50%",
-                overflow: "hidden", border: "2px solid white",
-                background: "#D1D5DB",
-              }}>
-                <Image
-                  src={image}
-                  alt={title}
-                  width={64}
-                  height={64}
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                />
-              </div>
+          {/* VIP badge */}
+          {premium_tier === "vip" && (
+            <div style={{
+              position: "absolute", bottom: 8, left: 8,
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.15em",
+              padding: "2px 6px",
+              backgroundColor: "rgba(0,0,0,0.75)", color: "#D4AF37",
+              border: "1px solid rgba(212,175,55,0.4)",
+            }}>VIP</div>
+          )}
+
+          {/* Profile circle — centered, bottom: -32px (half outside image) */}
+          <div
+            onClick={hasStory ? (e) => { e.preventDefault(); e.stopPropagation(); onStoryClick?.() } : undefined}
+            style={{
+              position: "absolute", bottom: -32,
+              left: "50%", transform: "translateX(-50%)",
+              width: 64, height: 64, borderRadius: "50%",
+              padding: hasStory ? 3 : 2,
+              background: hasStory
+                ? "linear-gradient(135deg, #DC2626, #F59E0B)"
+                : "white",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+              cursor: hasStory ? "pointer" : "default",
+              zIndex: 10,
+            }}
+          >
+            <div style={{
+              width: "100%", height: "100%", borderRadius: "50%",
+              overflow: "hidden", border: "2px solid white",
+              background: "#D1D5DB",
+            }}>
+              <Image
+                src={image}
+                alt={title}
+                width={64}
+                height={64}
+                style={{ objectFit: "cover", width: "100%", height: "100%" }}
+              />
             </div>
           </div>
-        </Link>
+        </div>
 
-        {/* ── Spacer for circle overhang ── */}
-        <Link href={`/ads/${id}`} style={{ display: "block", textDecoration: "none" }}>
-          <div style={{ height: 44, background: "white" }} />
-        </Link>
+        {/* ── White text section ── */}
+        <div style={{
+          background: "white",
+          paddingTop: 40, paddingBottom: 14,
+          paddingLeft: 12, paddingRight: 12,
+          textAlign: "center",
+        }}>
+          <p style={{
+            fontSize: 14, fontWeight: 700, color: "#111111",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            margin: 0, lineHeight: 1.3,
+          }}>{title}</p>
+          {locationDisplay && (
+            <p style={{
+              fontSize: 12, color: "#999999", marginTop: 3,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            }}>{locationDisplay}</p>
+          )}
+        </div>
       </div>
-    </>
+    </Link>
   )
 }
