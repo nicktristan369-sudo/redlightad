@@ -54,20 +54,25 @@ export default function AdCard({
 
   return (
     <Link href={`/ads/${id}`} className="block group">
-      <div className={`flex flex-col sm:flex-row gap-4 sm:gap-5 rounded-none bg-white p-4 transition-all hover:shadow-md relative ${
-        premium_tier === "vip" ? "ring-1 ring-yellow-300" : premium_tier === "featured" ? "ring-1 ring-blue-200" : "border border-gray-100"
-      }`} style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+      <div
+        className="flex flex-col sm:flex-row gap-4 sm:gap-5 rounded-none p-4 transition-all hover:shadow-md relative"
+        style={{
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          background: premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic" ? "#FFFAFA" : "#fff",
+          border: premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic"
+            ? "1px solid rgba(220,38,38,0.15)"
+            : "1px solid #F3F4F6",
+          borderLeft: premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic"
+            ? "3px solid #DC2626"
+            : "1px solid #F3F4F6",
+        }}
+      >
 
         {/* Premium badge */}
-        {premium_tier === "vip" && (
-          <div className="absolute top-3 left-3 z-10 text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
-            style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.4)" }}>
-            VIP
-          </div>
-        )}
-        {premium_tier === "featured" && (
-          <div className="absolute top-3 left-3 z-10 bg-blue-600 text-white text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-none">
-            Featured
+        {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") && (
+          <div className="absolute top-3 left-3 z-10 text-[10px] font-bold tracking-widest uppercase px-2 py-0.5"
+            style={{ background: "#DC2626", color: "#fff" }}>
+            👑 PREMIUM
           </div>
         )}
 

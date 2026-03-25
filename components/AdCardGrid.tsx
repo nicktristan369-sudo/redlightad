@@ -67,7 +67,9 @@ export default function AdCardGrid({
         className="group"
         style={{
           position: "relative",
-          border: "1px solid #E5E7EB",
+          border: (premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic")
+            ? "1px solid rgba(220,38,38,0.3)"
+            : "1px solid #E5E7EB",
           background: "#fff",
           borderRadius: 0,
           overflow: "visible",
@@ -111,15 +113,14 @@ export default function AdCardGrid({
             }}>✓ VERIFIED</div>
           )}
 
-          {/* VIP badge */}
-          {premium_tier === "vip" && (
+          {/* Premium badge */}
+          {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") && (
             <div style={{
-              position: "absolute", bottom: 8, left: 8,
-              fontSize: 9, fontWeight: 700, letterSpacing: "0.15em",
-              padding: "2px 6px",
-              backgroundColor: "rgba(0,0,0,0.75)", color: "#D4AF37",
-              border: "1px solid rgba(212,175,55,0.4)",
-            }}>VIP</div>
+              position: "absolute", top: available ? 24 : 8, left: 8,
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.1em",
+              padding: "2px 7px",
+              background: "#DC2626", color: "#fff",
+            }}>👑 PREMIUM</div>
           )}
         </div>
 
