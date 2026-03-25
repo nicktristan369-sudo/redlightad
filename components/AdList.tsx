@@ -280,22 +280,35 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
   return (
     <section className="py-6 max-w-5xl mx-auto px-4">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm text-gray-500">{listings.length} profiles</span>
-        <div className="flex gap-2">
+      {/* ── View toggle bar ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <span style={{ fontSize: "13px", color: "#6B7280" }}>{listings.length} profiles</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#fff", border: "1px solid #E5E7EB", padding: "4px", borderRadius: "2px" }}>
           <button
             onClick={() => handleViewChange("list")}
             aria-label="List view"
-            className="p-1.5 rounded-sm transition-colors"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "32px", height: "32px", border: "none", borderRadius: "2px", cursor: "pointer",
+              background: view === "list" ? "#FEE2E2" : "transparent",
+              color: view === "list" ? "#DC2626" : "#9CA3AF",
+              transition: "all 0.15s",
+            }}
           >
-            <LayoutList size={20} className={view === "list" ? "text-red-600" : "text-gray-400 hover:text-gray-600"} />
+            <LayoutList size={18} />
           </button>
           <button
             onClick={() => handleViewChange("grid")}
             aria-label="Grid view"
-            className="p-1.5 rounded-sm transition-colors"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "32px", height: "32px", border: "none", borderRadius: "2px", cursor: "pointer",
+              background: view === "grid" ? "#FEE2E2" : "transparent",
+              color: view === "grid" ? "#DC2626" : "#9CA3AF",
+              transition: "all 0.15s",
+            }}
           >
-            <LayoutGrid size={20} className={view === "grid" ? "text-red-600" : "text-gray-400 hover:text-gray-600"} />
+            <LayoutGrid size={18} />
           </button>
         </div>
       </div>
