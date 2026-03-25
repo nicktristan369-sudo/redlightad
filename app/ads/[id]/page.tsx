@@ -16,6 +16,7 @@ import StickyActionBar from "@/components/StickyActionBar";
 import ReportModal from "@/components/ReportModal";
 import PhotoGrid from "@/components/PhotoGrid";
 import PrivateContentPreview from "@/components/PrivateContentPreview";
+import MarketplaceSection from "@/components/MarketplaceSection";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 
@@ -279,6 +280,9 @@ export default function AdDetailPage() {
                   />
                 </div>
               )}
+
+              {/* Marketplace */}
+              <MarketplaceSection listingId={ad.id} isLoggedIn={currentUserId !== null} />
             </div>
 
             {/* Right sidebar */}
