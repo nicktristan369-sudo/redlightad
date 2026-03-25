@@ -61,14 +61,13 @@ export default function StoryCircles({ country }: StoryCirclesProps) {
 
   return (
     <>
+      <div className="max-w-5xl mx-auto px-4" style={{ background: "#fff", borderBottom: "1px solid #F3F4F6" }}>
       <div
         style={{
           display: "flex",
           overflowX: "auto",
           gap: 12,
-          padding: "12px 16px",
-          background: "#fff",
-          borderBottom: "1px solid #F3F4F6",
+          padding: "12px 0",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
         }}
@@ -153,6 +152,7 @@ export default function StoryCircles({ country }: StoryCirclesProps) {
             )
           })
         )}
+      </div>
       </div>
 
       {viewerOpen && (

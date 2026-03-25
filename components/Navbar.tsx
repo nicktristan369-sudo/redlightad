@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, Search, ChevronDown, MapPin, Globe, Home, Crown, CheckCircle, Play, Film, Star, MessageSquare, ShoppingBag, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
@@ -13,8 +13,9 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 export default function Navbar() {
   const { t } = useLanguage();
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [navSearch, setNavSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [user, setUser] = useState<{ email: string; id: string } | null>(null);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
@@ -47,6 +48,34 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [drawerOpen]);
+
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  const handleSearch = () => {
+    if (navSearch.trim()) router.push(`/search?q=${encodeURIComponent(navSearch.trim())}`);
+    else router.push("/search");
+    setSearchOpen(false);
+  };
+
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/premium", label: "Premium" },
+    { href: "/available-now", label: "Available Now" },
+    { href: "/videos", label: "Videos" },
+    { href: "/reviews", label: "Reviews" },
+    { href: "/marketplace", label: "Marketplace" },
+    { href: "/support", label: t.nav_support },
+    { href: "/opret-annonce", label: t.nav_post_ad, isPostAd: true },
+  ];
 
   return (
     <>
@@ -67,239 +96,357 @@ export default function Navbar() {
           }}
         />
       )}
-      {/* ── Main navbar ── */}
-      <nav className="sticky top-0 z-40 bg-white border-b border-gray-100" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 sm:px-6 h-16">
 
+      {/* ── Main navbar ── */}
+      <nav
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 40,
+          background: "#fff",
+          borderBottom: "1px solid #F3F3F3",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          height: "56px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1280px",
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            height: "56px",
+            padding: "0 16px",
+          }}
+        >
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0">
+          <Link href="/" style={{ flexShrink: 0 }}>
             <Logo variant="light" height={28} />
           </Link>
 
-          {/* Nav links — desktop */}
-          <div className="hidden md:flex items-center gap-6 ml-2">
-            <Link href="/" className="text-sm font-semibold text-gray-900 hover:text-gray-600 transition-colors">
-              {t.nav_home}
-            </Link>
-            <Link href="/premium" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              <Crown size={14} /> Premium
-            </Link>
-            <Link href="/available-now" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              <span className="w-2 h-2 bg-green-500 rounded-full" />
-              Available Now
-            </Link>
-            <Link href="/videos" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              <Film size={14} /> Videos
-            </Link>
-            <Link href="/reviews" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              <Star size={14} /> Reviews
-            </Link>
-            <Link href="/support" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              {t.nav_support}
-            </Link>
-            <Link href="/opret-annonce" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              {t.nav_post_ad}
-            </Link>
-            <Link href="/marketplace" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-              <ShoppingBag size={14} /> Marketplace
-            </Link>
-          </div>
-
-          {/* Search — desktop */}
-          <div className="hidden md:flex flex-1 max-w-md mx-auto relative">
+          {/* Right icons: Search + Hamburger */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Search icon */}
             <button
-              onClick={() => {
-                if (navSearch.trim()) router.push(`/search?q=${encodeURIComponent(navSearch.trim())}`)
-                else router.push("/search")
+              onClick={() => setSearchOpen(!searchOpen)}
+              style={{
+                padding: "8px",
+                borderRadius: "8px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
-              <Search className="w-4 h-4" />
+              <Search size={22} color="#374151" />
             </button>
-            <input
-              type="text"
-              value={navSearch}
-              onChange={e => setNavSearch(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter") {
-                  if (navSearch.trim()) router.push(`/search?q=${encodeURIComponent(navSearch.trim())}`)
-                  else router.push("/search")
-                }
+
+            {/* Hamburger icon */}
+            <button
+              onClick={() => setDrawerOpen(true)}
+              style={{
+                padding: "8px",
+                borderRadius: "8px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
-              placeholder={t.search_placeholder}
-              className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-300 focus:bg-white focus:outline-none transition-all"
-            />
-          </div>
-
-          {/* Right — desktop */}
-          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-
-            {/* Country + Language + separator */}
-            <div className="flex items-center gap-3">
-              {selectedCountry && (
-                <button
-                  onClick={() => setShowCountrySelector(true)}
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <MapPin size={12} className="text-gray-400 flex-shrink-0" />
-                  <span className={`fi fi-${selectedCountry.code} flex-shrink-0`} style={{ width: "15px", height: "11px", display: "inline-block" }} />
-                  <span>{selectedCountry.name}</span>
-                  <ChevronDown size={11} className="text-gray-400" />
-                </button>
-              )}
-              <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
-              <LanguageSelector />
-            </div>
-
-            {/* Separator before auth */}
-            <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
-
-            {/* Coin balance */}
-            {user && coinBalance !== null && (
-              <Link href="/dashboard/wallet" className="flex items-center gap-1 text-[13px] font-semibold text-red-600 hover:text-red-700 transition-colors">
-                <span className="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" />{coinBalance}
-              </Link>
-            )}
-
-            {/* Auth */}
-            {user ? (
-              <Link
-                href="/dashboard"
-                className="bg-gray-900 hover:bg-black text-white text-[13px] font-semibold px-4 py-2 transition-colors whitespace-nowrap"
-                style={{ borderRadius: "8px" }}
-              >
-                {t.nav_dashboard}
-              </Link>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login" className="text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
-                  {t.nav_login}
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-gray-900 hover:bg-black text-white text-[13px] font-semibold px-4 py-2 transition-colors whitespace-nowrap flex items-center gap-1"
-                  style={{ borderRadius: "8px" }}
-                >
-                  {t.nav_create_account} →
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Hamburger — mobile */}
-          <div className="flex md:hidden items-center gap-2 ml-auto">
-            <button className="p-2 rounded-lg hover:bg-gray-100" onClick={() => setMobileOpen(!mobileOpen)}>
-              {mobileOpen ? <X className="h-5 w-5 text-gray-700" /> : <Menu className="h-5 w-5 text-gray-700" />}
+              onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <Menu size={22} color="#374151" />
             </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
-        {/* Mobile menu — full-screen slide-in overlay */}
-        {mobileOpen && (
-          <div className="fixed inset-0 z-[9998] md:hidden flex">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/40"
-              onClick={() => setMobileOpen(false)}
-            />
-            {/* Panel */}
-            <div className="animate-slide-in-left relative flex flex-col w-[82vw] max-w-[340px] h-full overflow-y-auto" style={{ background: "#F5F5F7" }}>
-
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #E5E5E5" }}>
-                <Logo variant="light" height={24} />
-                <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors">
-                  <X size={20} color="#111" />
-                </button>
-              </div>
-
-              {/* Nav items */}
-              <nav className="flex flex-col py-3 px-3 gap-0.5">
-                {[
-                  { href: "/",               icon: <Home size={18} />,         label: "Home" },
-                  { href: "/search",         icon: <Search size={18} />,       label: "Search" },
-                  { href: "/premium",        icon: <Crown size={18} />,        label: "Premium" },
-                  { href: "/available-now",  icon: <CheckCircle size={18} />,  label: "Available Now" },
-                  { href: "/videos",         icon: <Play size={18} />,         label: "Videos" },
-                  { href: "/reviews",        icon: <Star size={18} />,        label: "Reviews" },
-                  { href: "/marketplace",    icon: <ShoppingBag size={18} />,  label: "Marketplace" },
-                ].map(({ href, icon, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={() => setMobileOpen(false)}
-                    className="group flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors"
-                    style={{ color: "#111" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#EBEBEB"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                  >
-                    <span style={{ color: "#9CA3AF" }} className="group-hover:text-[#CC0000] transition-colors">{icon}</span>
-                    {label}
-                  </Link>
-                ))}
-              </nav>
-
-              {/* Divider */}
-              <div style={{ height: "1px", background: "#E5E5E5", margin: "0 16px" }} />
-
-              {/* Auth section */}
-              <div className="flex flex-col gap-2 px-4 py-4">
-                {user ? (
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-center gap-2 py-3 rounded-xl text-[15px] font-semibold text-white transition-colors"
-                    style={{ background: "#000" }}
-                  >
-                    {t.nav_dashboard}
-                  </Link>
-                ) : (
-                  <>
-                    <Link
-                      href="/login"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors"
-                      style={{ color: "#111" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#EBEBEB"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                    >
-                      <LogIn size={18} color="#9CA3AF" />
-                      Log In
-                    </Link>
-                    <Link
-                      href="/register"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-center gap-2 py-3 rounded-xl text-[15px] font-semibold text-white transition-colors"
-                      style={{ background: "#CC0000" }}
-                    >
-                      <UserPlus size={16} />
-                      Sign Up
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              {/* Divider */}
-              <div style={{ height: "1px", background: "#E5E5E5", margin: "0 16px" }} />
-
-              {/* Language */}
-              <div className="px-4 py-4">
-                <div className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors"
-                  onMouseEnter={e => { e.currentTarget.style.background = "#EBEBEB"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                >
-                  <Globe size={18} color="#9CA3AF" />
-                  <span className="text-[15px] font-medium" style={{ color: "#111" }}>Language</span>
-                </div>
-              </div>
-
+        {/* Search bar dropdown */}
+        {searchOpen && (
+          <div
+            style={{
+              position: "absolute",
+              top: "56px",
+              left: 0,
+              right: 0,
+              background: "#fff",
+              borderBottom: "1px solid #E5E5E5",
+              padding: "12px 16px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              zIndex: 39,
+            }}
+          >
+            <div style={{ maxWidth: "600px", margin: "0 auto", position: "relative" }}>
+              <input
+                type="text"
+                value={navSearch}
+                onChange={e => setNavSearch(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
+                placeholder={t.search_placeholder}
+                autoFocus
+                style={{
+                  width: "100%",
+                  borderRadius: "9999px",
+                  border: "1px solid #E5E5E5",
+                  background: "#F9F9F9",
+                  padding: "10px 16px 10px 40px",
+                  fontSize: "14px",
+                  color: "#111",
+                  outline: "none",
+                }}
+              />
+              <button
+                onClick={handleSearch}
+                style={{
+                  position: "absolute",
+                  left: "14px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                }}
+              >
+                <Search size={16} color="#9CA3AF" />
+              </button>
             </div>
           </div>
         )}
       </nav>
 
-      {/* Filter bar is now rendered separately via <FilterBar /> component */}
+      {/* ── Overlay ── */}
+      <div
+        onClick={closeDrawer}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.4)",
+          zIndex: 9998,
+          opacity: drawerOpen ? 1 : 0,
+          pointerEvents: drawerOpen ? "auto" : "none",
+          transition: "opacity 0.25s ease",
+        }}
+      />
+
+      {/* ── Slide-in Drawer ── */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "280px",
+          maxWidth: "100vw",
+          background: "#fff",
+          zIndex: 9999,
+          transform: drawerOpen ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.25s ease",
+          display: "flex",
+          flexDirection: "column",
+          overflowY: "auto",
+        }}
+      >
+        {/* Close button */}
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "14px 16px 8px" }}>
+          <button
+            onClick={closeDrawer}
+            style={{
+              padding: "6px",
+              borderRadius: "8px",
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <X size={22} color="#111" />
+          </button>
+        </div>
+
+        {/* Nav links */}
+        <nav style={{ display: "flex", flexDirection: "column" }}>
+          {navLinks.map(({ href, label, isPostAd }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={closeDrawer}
+              style={{
+                padding: "14px 24px",
+                fontSize: "15px",
+                fontWeight: isPostAd ? 700 : 500,
+                color: isPostAd ? "#DC2626" : "#111",
+                textDecoration: "none",
+                transition: "background 0.15s ease",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Divider */}
+        <div style={{ height: "1px", background: "#E5E5E5", margin: "8px 16px" }} />
+
+        {/* Auth section */}
+        <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          {user ? (
+            <>
+              {coinBalance !== null && (
+                <Link
+                  href="/dashboard/wallet"
+                  onClick={closeDrawer}
+                  style={{
+                    padding: "14px 8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#DC2626",
+                    textDecoration: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#DC2626" }} />
+                  {coinBalance} coins
+                </Link>
+              )}
+              <Link
+                href="/dashboard"
+                onClick={closeDrawer}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  background: "#111",
+                  color: "#fff",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  transition: "background 0.15s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#000"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#111"; }}
+              >
+                {t.nav_dashboard}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                onClick={closeDrawer}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "1px solid #D1D5DB",
+                  background: "#fff",
+                  color: "#111",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  transition: "background 0.15s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#F9FAFB"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+              >
+                {t.nav_login}
+              </Link>
+              <Link
+                href="/register"
+                onClick={closeDrawer}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#DC2626",
+                  color: "#fff",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  transition: "background 0.15s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#B91C1C"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#DC2626"; }}
+              >
+                {t.nav_create_account}
+              </Link>
+            </>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: "1px", background: "#E5E5E5", margin: "8px 16px" }} />
+
+        {/* Language selector */}
+        <div style={{ padding: "8px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+            <Globe size={16} color="#9CA3AF" />
+            <span style={{ fontSize: "13px", fontWeight: 500, color: "#6B7280" }}>Language</span>
+          </div>
+          <LanguageSelector />
+        </div>
+
+        {/* Location selector */}
+        {selectedCountry && (
+          <div style={{ padding: "8px 24px" }}>
+            <button
+              onClick={() => { setShowCountrySelector(true); closeDrawer(); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#111",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "8px 0",
+              }}
+            >
+              <MapPin size={16} color="#9CA3AF" />
+              <span className={`fi fi-${selectedCountry.code}`} style={{ width: "16px", height: "12px", display: "inline-block" }} />
+              <span>{selectedCountry.name}</span>
+              <ChevronDown size={12} color="#9CA3AF" />
+            </button>
+          </div>
+        )}
+
+        {/* Spacer for bottom padding */}
+        <div style={{ height: "24px" }} />
+      </div>
+
+      {/* Mobile-specific: make drawer full-width on small screens */}
+      <style>{`
+        @media (max-width: 639px) {
+          div[style*="width: 280px"][style*="z-index: 9999"] {
+            width: 100vw !important;
+            max-width: 100vw !important;
+          }
+        }
+      `}</style>
     </>
   );
 }
