@@ -318,14 +318,24 @@ export default function AdDetailPage() {
         >
           <button onClick={() => setGridLightbox(null)} style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", color: "#fff", fontSize: 28, cursor: "pointer", zIndex: 101 }}>✕</button>
           <button onClick={(e) => { e.stopPropagation(); setGridLightbox(i => i !== null ? Math.max(0, i - 1) : null) }} style={{ position: "absolute", left: 16, background: "none", border: "none", color: "#fff", fontSize: 32, cursor: "pointer", zIndex: 101 }}>‹</button>
-          <img
-            src={(ad?.images ?? [])[gridLightbox]}
-            alt=""
-            onClick={e => e.stopPropagation()}
-            style={{ maxHeight: "90vh", maxWidth: "90vw", objectFit: "contain" }}
-          />
+          <div style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
+            <img
+              src={(ad?.images ?? [])[gridLightbox]}
+              alt=""
+              style={{ maxHeight: "90vh", maxWidth: "90vw", objectFit: "contain", display: "block" }}
+            />
+            {/* Vandmærke */}
+            <div style={{ position: "absolute", bottom: 12, right: 14, pointerEvents: "none", userSelect: "none", zIndex: 10 }}>
+              <span style={{
+                fontSize: 13, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
+                color: "rgba(255,255,255,0.60)",
+                textShadow: "1px 1px 3px rgba(0,0,0,0.85), 0 0 8px rgba(0,0,0,0.55)",
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+              }}>REDLIGHTAD.COM</span>
+            </div>
+          </div>
           <button onClick={(e) => { e.stopPropagation(); setGridLightbox(i => i !== null ? Math.min((ad?.images ?? []).length - 1, i + 1) : null) }} style={{ position: "absolute", right: 16, background: "none", border: "none", color: "#fff", fontSize: 32, cursor: "pointer", zIndex: 101 }}>›</button>
-          <div style={{ position: "absolute", bottom: 16, color: "#aaa", fontSize: 13 }}>{gridLightbox + 1} / {(ad?.images ?? []).length}</div>
+          <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", color: "#aaa", fontSize: 13 }}>{gridLightbox + 1} / {(ad?.images ?? []).length}</div>
         </div>
       )}
 
