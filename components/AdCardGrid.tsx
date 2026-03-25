@@ -44,11 +44,10 @@ export default function AdCardGrid({
 
   return (
     <>
-      {/* Pulse keyframe — injected once per card render (idempotent in DOM) */}
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes rlad-available-pulse {
+        @keyframes rlad-pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.3); }
+          50% { opacity: 0.6; transform: scale(1.35); }
         }
       `}} />
 
@@ -56,10 +55,9 @@ export default function AdCardGrid({
         className="group"
         style={{
           display: "flex", flexDirection: "column",
-          border: "1px solid #E5E7EB", background: "#F5F5F7",
-          overflow: "visible", borderRadius: 0,
+          border: "1px solid #E5E7EB", borderRadius: 0,
+          overflow: "visible", background: "white",
           transition: "transform 0.2s ease, box-shadow 0.2s ease",
-          cursor: "pointer",
         }}
         onMouseEnter={e => {
           (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"
@@ -70,7 +68,7 @@ export default function AdCardGrid({
           ;(e.currentTarget as HTMLDivElement).style.boxShadow = "none"
         }}
       >
-        {/* ── Image area ── */}
+        {/* ── Image ── */}
         <Link href={`/ads/${id}`} style={{ display: "block", position: "relative", flexShrink: 0 }}>
           <div style={{ position: "relative", width: "100%", aspectRatio: "3/4", overflow: "hidden", background: "#D1D5DB" }}>
             <Image
@@ -82,13 +80,20 @@ export default function AdCardGrid({
               sizes="(max-width:640px) 50vw, 25vw"
             />
 
-            {/* Available dot — top left, pulsing */}
+            {/* Dark gradient overlay */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 40%, transparent 70%)",
+              pointerEvents: "none",
+            }} />
+
+            {/* Available dot — top left */}
             {available && (
               <div style={{
                 position: "absolute", top: 8, left: 8,
                 width: 8, height: 8, borderRadius: "50%",
                 background: "#22C55E", boxShadow: "0 0 0 2px white",
-                animation: "rlad-available-pulse 1.8s ease-in-out infinite",
+                animation: "rlad-pulse 1.8s ease-in-out infinite",
               }} />
             )}
 
@@ -98,7 +103,7 @@ export default function AdCardGrid({
                 position: "absolute", top: 8, right: 8,
                 background: "rgba(0,0,0,0.6)", color: "#fff",
                 fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
-                padding: "2px 6px", display: "flex", alignItems: "center", gap: 3,
+                padding: "2px 6px",
               }}>
                 ✓ VERIFIED
               </div>
@@ -115,12 +120,34 @@ export default function AdCardGrid({
               }}>VIP</div>
             )}
 
-            {/* Profile circle — bottom left, half outside */}
+            {/* Name + city ON image, above circle */}
+            <div style={{
+              position: "absolute", bottom: 40, left: 12, right: 12,
+              pointerEvents: "none",
+            }}>
+              <p style={{
+                color: "white", fontWeight: 700, fontSize: 13,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                margin: 0, lineHeight: 1.3, textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+              }}>{title}</p>
+              {locationDisplay && (
+                <p style={{
+                  color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 2,
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  margin: "2px 0 0", textShadow: "0 1px 3px rgba(0,0,0,0.5)",
+                }}>{locationDisplay}</p>
+              )}
+            </div>
+
+            {/* Profile circle — centered, half outside bottom */}
             <div
               onClick={hasStory ? (e) => { e.preventDefault(); e.stopPropagation(); onStoryClick?.() } : undefined}
               style={{
-                position: "absolute", bottom: -28, left: 12,
-                width: 60, height: 60, borderRadius: "50%",
+                position: "absolute",
+                bottom: -30,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 64, height: 64, borderRadius: "50%",
                 padding: hasStory ? 3 : 2,
                 background: hasStory
                   ? "linear-gradient(135deg, #DC2626, #F59E0B)"
@@ -132,15 +159,14 @@ export default function AdCardGrid({
             >
               <div style={{
                 width: "100%", height: "100%", borderRadius: "50%",
-                overflow: "hidden",
-                border: "2px solid white",
+                overflow: "hidden", border: "2px solid white",
                 background: "#D1D5DB",
               }}>
                 <Image
                   src={image}
                   alt={title}
-                  width={60}
-                  height={60}
+                  width={64}
+                  height={64}
                   style={{ objectFit: "cover", width: "100%", height: "100%" }}
                 />
               </div>
@@ -148,22 +174,9 @@ export default function AdCardGrid({
           </div>
         </Link>
 
-        {/* ── Text area ── */}
-        <Link href={`/ads/${id}`} style={{ display: "block", textDecoration: "none", background: "white" }}>
-          <div style={{ padding: "36px 12px 14px" }}>
-            <p style={{
-              fontSize: 14, fontWeight: 700, color: "#111111",
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-              lineHeight: 1.2, margin: 0,
-            }}>{title}</p>
-            {locationDisplay && (
-              <p style={{
-                fontSize: 12, color: "#888888", marginTop: 2,
-                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                margin: "2px 0 0", padding: 0,
-              }}>{locationDisplay}</p>
-            )}
-          </div>
+        {/* ── Spacer for circle overhang ── */}
+        <Link href={`/ads/${id}`} style={{ display: "block", textDecoration: "none" }}>
+          <div style={{ height: 44, background: "white" }} />
         </Link>
       </div>
     </>
