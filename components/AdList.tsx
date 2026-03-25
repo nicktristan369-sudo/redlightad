@@ -3,8 +3,7 @@
 import { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { FileText } from "lucide-react"
-import ViewToggle from "./ViewToggle"
+import { FileText, LayoutList, LayoutGrid } from "lucide-react"
 import AdCardGrid from "./AdCardGrid"
 
 interface Listing {
@@ -229,12 +228,12 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<"list" | "grid">("list")
   useEffect(() => {
-    const saved = localStorage.getItem("rlad_view")
+    const saved = localStorage.getItem("viewMode")
     if (saved === "list" || saved === "grid") setView(saved)
   }, [])
   const handleViewChange = (v: "list" | "grid") => {
     setView(v)
-    localStorage.setItem("rlad_view", v)
+    localStorage.setItem("viewMode", v)
   }
 
   // URL params take priority, props as fallback
@@ -281,9 +280,24 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
   return (
     <section className="py-6 max-w-5xl mx-auto px-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-gray-500">{listings.length} results</span>
-        <ViewToggle view={view} onChange={handleViewChange} />
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-sm text-gray-500">{listings.length} profiles</span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleViewChange("list")}
+            aria-label="List view"
+            className="p-1.5 rounded-sm transition-colors"
+          >
+            <LayoutList size={20} className={view === "list" ? "text-red-600" : "text-gray-400 hover:text-gray-600"} />
+          </button>
+          <button
+            onClick={() => handleViewChange("grid")}
+            aria-label="Grid view"
+            className="p-1.5 rounded-sm transition-colors"
+          >
+            <LayoutGrid size={20} className={view === "grid" ? "text-red-600" : "text-gray-400 hover:text-gray-600"} />
+          </button>
+        </div>
       </div>
 
       {view === "grid" ? (
