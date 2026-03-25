@@ -242,6 +242,36 @@ export default function AdDetailPage() {
                   isOwnListing={isOwnListing}
                 />
               )}
+
+              {/* Public gallery */}
+              {(ad.images ?? []).length > 1 && (
+                <div>
+                  <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 20, marginBottom: 14 }}>
+                    <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: 0 }}>
+                      Gallery{" "}
+                      <span style={{ fontSize: 14, fontWeight: 400, color: "#9CA3AF" }}>
+                        ({(ad.images ?? []).length} photos)
+                      </span>
+                    </h2>
+                  </div>
+                  <PhotoGrid images={ad.images ?? []} onImageClick={() => {}} />
+                </div>
+              )}
+
+              {/* Private/locked gallery */}
+              {(ad.locked_images ?? []).length > 0 && (
+                <div>
+                  <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 20, marginBottom: 14 }}>
+                    <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: 0 }}>
+                      Private Gallery{" "}
+                      <span style={{ fontSize: 14, fontWeight: 400, color: "#9CA3AF" }}>
+                        ({(ad.locked_images ?? []).length} photos)
+                      </span>
+                    </h2>
+                  </div>
+                  <PrivateGalleryLocked isLoggedIn={currentUserId !== null} count={(ad.locked_images ?? []).length} />
+                </div>
+              )}
             </div>
 
             {/* Right sidebar */}
@@ -278,42 +308,6 @@ export default function AdDetailPage() {
         profileImage={ad.images?.[0] ?? null}
         name={ad.title}
       />
-
-      {/* Public gallery section */}
-      {(ad.images ?? []).length > 1 && (
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px 32px" }}>
-          <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 24, marginBottom: 16 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: 0 }}>
-              Gallery{" "}
-              <span style={{ fontSize: 14, fontWeight: 400, color: "#9CA3AF" }}>
-                ({(ad.images ?? []).length} photos)
-              </span>
-            </h2>
-          </div>
-          <PhotoGrid
-            images={ad.images ?? []}
-            onImageClick={() => {}}
-          />
-        </div>
-      )}
-
-      {/* Private/locked gallery */}
-      {(ad.locked_images ?? []).length > 0 && (
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px 32px" }}>
-          <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 24, marginBottom: 16 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: 0 }}>
-              Private Gallery{" "}
-              <span style={{ fontSize: 14, fontWeight: 400, color: "#9CA3AF" }}>
-                ({(ad.locked_images ?? []).length} photos)
-              </span>
-            </h2>
-          </div>
-          <PrivateGalleryLocked
-            isLoggedIn={currentUserId !== null}
-            count={(ad.locked_images ?? []).length}
-          />
-        </div>
-      )}
 
       {/* Report link */}
       <div style={{ textAlign: "center", padding: "16px 0 8px" }}>
