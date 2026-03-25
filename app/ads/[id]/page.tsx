@@ -59,6 +59,7 @@ export default function AdDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [travelEntries, setTravelEntries] = useState<TravelEntry[]>([]);
   const [reportOpen, setReportOpen] = useState(false);
+  const [gridLightbox, setGridLightbox] = useState<number | null>(null);
   const [videos, setVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; title: string | null; is_locked: boolean; redcoin_price: number; views: number; likes: number; sort_order: number }[]>([]);
 
   useEffect(() => {
@@ -254,7 +255,7 @@ export default function AdDetailPage() {
                       </span>
                     </h2>
                   </div>
-                  <PhotoGrid images={ad.images ?? []} onImageClick={() => {}} />
+                  <PhotoGrid images={ad.images ?? []} onImageClick={(i) => setGridLightbox(i)} />
                 </div>
               )}
 
@@ -308,6 +309,25 @@ export default function AdDetailPage() {
         profileImage={ad.images?.[0] ?? null}
         name={ad.title}
       />
+
+      {/* Grid lightbox */}
+      {gridLightbox !== null && (
+        <div
+          onClick={() => setGridLightbox(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <button onClick={() => setGridLightbox(null)} style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", color: "#fff", fontSize: 28, cursor: "pointer", zIndex: 101 }}>✕</button>
+          <button onClick={(e) => { e.stopPropagation(); setGridLightbox(i => i !== null ? Math.max(0, i - 1) : null) }} style={{ position: "absolute", left: 16, background: "none", border: "none", color: "#fff", fontSize: 32, cursor: "pointer", zIndex: 101 }}>‹</button>
+          <img
+            src={(ad?.images ?? [])[gridLightbox]}
+            alt=""
+            onClick={e => e.stopPropagation()}
+            style={{ maxHeight: "90vh", maxWidth: "90vw", objectFit: "contain" }}
+          />
+          <button onClick={(e) => { e.stopPropagation(); setGridLightbox(i => i !== null ? Math.min((ad?.images ?? []).length - 1, i + 1) : null) }} style={{ position: "absolute", right: 16, background: "none", border: "none", color: "#fff", fontSize: 32, cursor: "pointer", zIndex: 101 }}>›</button>
+          <div style={{ position: "absolute", bottom: 16, color: "#aaa", fontSize: 13 }}>{gridLightbox + 1} / {(ad?.images ?? []).length}</div>
+        </div>
+      )}
 
       {/* Report link */}
       <div style={{ textAlign: "center", padding: "16px 0 8px" }}>
