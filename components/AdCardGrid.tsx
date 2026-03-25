@@ -44,13 +44,15 @@ export default function AdCardGrid({
 
   return (
     <Link href={`/ads/${id}`} style={{ display: "block", textDecoration: "none" }}>
-      {/* Outer container — overflow: visible so circle can stick out */}
+      {/* YDRE container — position: relative, overflow: visible */}
       <div
         className="group"
         style={{
-          display: "flex", flexDirection: "column",
-          border: "1px solid #E5E7EB", borderRadius: 0,
-          overflow: "visible", background: "white",
+          position: "relative",
+          border: "1px solid #E5E7EB",
+          background: "#fff",
+          borderRadius: 0,
+          overflow: "visible",
           transition: "transform 0.2s ease, box-shadow 0.2s ease",
         }}
         onMouseEnter={e => {
@@ -62,15 +64,14 @@ export default function AdCardGrid({
           ;(e.currentTarget as HTMLDivElement).style.boxShadow = "none"
         }}
       >
-        {/* ── Image block — overflow: hidden ── */}
-        <div style={{ position: "relative", width: "100%", aspectRatio: "3/4", overflow: "hidden", background: "#D1D5DB", flexShrink: 0 }}>
-          <Image
+        {/* BILLEDE — overflow: hidden */}
+        <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden", background: "#D1D5DB" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={image}
             alt={title}
-            fill
-            style={{ objectFit: "cover", transition: "transform 0.3s ease" }}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.3s ease" }}
             className="group-hover:scale-105"
-            sizes="(max-width:640px) 50vw, 25vw"
           />
 
           {/* Available dot — top left */}
@@ -102,50 +103,45 @@ export default function AdCardGrid({
               border: "1px solid rgba(212,175,55,0.4)",
             }}>VIP</div>
           )}
-
-          {/* Profile circle — centered, bottom: -32px (half outside image) */}
-          <div
-            onClick={hasStory ? (e) => { e.preventDefault(); e.stopPropagation(); onStoryClick?.() } : undefined}
-            style={{
-              position: "absolute", bottom: -32,
-              left: "50%", transform: "translateX(-50%)",
-              width: 64, height: 64, borderRadius: "50%",
-              padding: hasStory ? 3 : 2,
-              background: hasStory
-                ? "linear-gradient(135deg, #DC2626, #F59E0B)"
-                : "white",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-              cursor: hasStory ? "pointer" : "default",
-              zIndex: 10,
-            }}
-          >
-            <div style={{
-              width: "100%", height: "100%", borderRadius: "50%",
-              overflow: "hidden", border: "2px solid white",
-              background: "#D1D5DB",
-            }}>
-              <Image
-                src={image}
-                alt={title}
-                width={64}
-                height={64}
-                style={{ objectFit: "cover", width: "100%", height: "100%" }}
-              />
-            </div>
-          </div>
         </div>
 
-        {/* ── White text section ── */}
-        <div style={{
-          background: "white",
-          paddingTop: 40, paddingBottom: 14,
-          paddingLeft: 12, paddingRight: 12,
-          textAlign: "center",
-        }}>
+        {/* CIRKEL — absolut relativt til YDRE container */}
+        <div
+          onClick={hasStory ? (e) => { e.preventDefault(); e.stopPropagation(); onStoryClick?.() } : undefined}
+          style={{
+            position: "absolute",
+            bottom: 58,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            border: "3px solid transparent",
+            backgroundImage: hasStory
+              ? "linear-gradient(white, white), linear-gradient(135deg, #DC2626, #F59E0B)"
+              : "linear-gradient(white, white), linear-gradient(white, white)",
+            backgroundOrigin: "border-box",
+            backgroundClip: "padding-box, border-box",
+            overflow: "hidden",
+            zIndex: 10,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+            cursor: hasStory ? "pointer" : "default",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image}
+            alt={title}
+            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%", display: "block" }}
+          />
+        </div>
+
+        {/* TEKST sektion */}
+        <div style={{ paddingTop: 40, paddingBottom: 14, paddingLeft: 12, paddingRight: 12, textAlign: "center", background: "white" }}>
           <p style={{
             fontSize: 14, fontWeight: 700, color: "#111111",
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             margin: 0, lineHeight: 1.3,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>{title}</p>
           {locationDisplay && (
             <p style={{
