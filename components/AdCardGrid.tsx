@@ -1,6 +1,6 @@
 "use client"
 import Link from "next/link"
-import Image from "next/image"
+import { CheckCircle } from "lucide-react"
 
 function isAvailableNow(
   hours: Record<string, { open: string; close: string; closed: boolean }> | null | undefined,
@@ -19,6 +19,16 @@ function isAvailableNow(
   } catch { return false }
 }
 
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
 interface AdCardGridProps {
   id: string | number
   title: string
@@ -28,6 +38,8 @@ interface AdCardGridProps {
   city?: string | null
   country?: string | null
   location?: string
+  category?: string
+  created_at?: string
   opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null
   timezone?: string | null
   premium_tier?: string | null
@@ -37,10 +49,12 @@ interface AdCardGridProps {
 
 export default function AdCardGrid({
   id, title, image, verified, city, country, location,
-  opening_hours, timezone, premium_tier, hasStory = false, onStoryClick,
+  category, created_at, opening_hours, timezone, premium_tier,
+  hasStory = false, onStoryClick,
 }: AdCardGridProps) {
-  const locationDisplay = city || country || location || ""
+  const locationDisplay = [city, country].filter(Boolean).join(", ") || location || ""
   const available = isAvailableNow(opening_hours, timezone)
+  const ago = created_at ? timeAgo(created_at) : ""
 
   return (
     <Link href={`/ads/${id}`} style={{ display: "block", textDecoration: "none" }}>
@@ -110,7 +124,7 @@ export default function AdCardGrid({
           onClick={hasStory ? (e) => { e.preventDefault(); e.stopPropagation(); onStoryClick?.() } : undefined}
           style={{
             position: "absolute",
-            bottom: 58,
+            bottom: 98,
             left: "50%",
             transform: "translateX(-50%)",
             width: 64,
@@ -137,18 +151,44 @@ export default function AdCardGrid({
         </div>
 
         {/* TEKST sektion */}
-        <div style={{ paddingTop: 40, paddingBottom: 14, paddingLeft: 12, paddingRight: 12, textAlign: "center", background: "white" }}>
-          <p style={{
-            fontSize: 14, fontWeight: 700, color: "#111111",
-            margin: 0, lineHeight: 1.3,
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          }}>{title}</p>
+        <div style={{ paddingTop: 40, paddingBottom: 12, paddingLeft: 12, paddingRight: 12, background: "white" }}>
+
+          {/* Navn + verified ikon */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+            <p style={{
+              fontSize: 14, fontWeight: 700, color: "#111111",
+              margin: 0, lineHeight: 1.3,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              maxWidth: "calc(100% - 20px)",
+            }}>{title}</p>
+            {verified && <CheckCircle size={13} color="#DC2626" style={{ flexShrink: 0 }} />}
+          </div>
+
+          {/* By + land */}
           {locationDisplay && (
             <p style={{
-              fontSize: 12, color: "#999999", marginTop: 3,
+              fontSize: 11, color: "#999999", textAlign: "center", marginTop: 2,
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>{locationDisplay}</p>
           )}
+
+          {/* Divider */}
+          <div style={{ height: 1, background: "#F3F4F6", margin: "10px 0" }} />
+
+          {/* Kategori + posted */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {category ? (
+              <span style={{
+                fontSize: 11, color: "#888888",
+                background: "#F5F5F7", padding: "2px 8px",
+                whiteSpace: "nowrap",
+              }}>{category}</span>
+            ) : <span />}
+            {ago && (
+              <span style={{ fontSize: 11, color: "#BBBBBB", whiteSpace: "nowrap" }}>{ago}</span>
+            )}
+          </div>
+
         </div>
       </div>
     </Link>

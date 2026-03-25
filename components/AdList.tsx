@@ -353,6 +353,8 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
               timezone={ad.timezone}
               premium_tier={ad.premium_tier}
               hasStory={storyIds.has(ad.id)}
+              category={ad.category}
+              created_at={ad.created_at}
             />
           ))}
         </div>
