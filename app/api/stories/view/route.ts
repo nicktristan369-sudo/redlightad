@@ -12,9 +12,11 @@ export async function POST(req: NextRequest) {
   const { story_id } = await req.json()
   if (!story_id) return NextResponse.json({ error: "Missing story_id" }, { status: 400 })
   const supabase = getClient()
-  await supabase.rpc("increment_story_views", { sid: story_id }).catch(() => {
-    // fallback: direct update
-    supabase.from("stories").update({ views: 1 }).eq("id", story_id)
-  })
+  try {
+    await supabase.rpc("increment_story_views", { sid: story_id })
+  } catch {
+    // fallback: direct increment
+    await supabase.from("stories").update({ views: 1 }).eq("id", story_id)
+  }
   return NextResponse.json({ ok: true })
 }

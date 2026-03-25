@@ -84,14 +84,12 @@ export default function StoryCircles({ country }: StoryCirclesProps) {
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0, width: 56 }}>
                 <div style={{
                   width: 52, height: 52, borderRadius: "50%",
-                  background: "#E5E7EB", animation: "pulse 1.5s ease-in-out infinite",
+                  background: "#E5E7EB", animation: "rlad-pulse 1.5s ease-in-out infinite",
                 }} />
                 <div style={{ width: 40, height: 8, borderRadius: 4, background: "#E5E7EB" }} />
               </div>
             ))}
-            <style jsx>{`
-              @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-            `}</style>
+            <style dangerouslySetInnerHTML={{ __html: `@keyframes rlad-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }` }} />
           </>
         ) : (
           groups.map((g, i) => {
