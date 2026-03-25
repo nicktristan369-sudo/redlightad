@@ -94,6 +94,7 @@ function DashboardContent() {
             <QuickBtn href="/opret-annonce" style="black">Opret ny annonce</QuickBtn>
             <QuickBtn href="/dashboard/annoncer" style="outline">Se mine annoncer</QuickBtn>
             <QuickBtn href="/upgrade" style="gold">Opgrader til Premium</QuickBtn>
+            <QuickBtn href="/dashboard/stories" style="outline">📸 Stories</QuickBtn>
           </div>
         </div>
       </div>

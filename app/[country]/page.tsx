@@ -5,6 +5,7 @@ import FilterBar from "@/components/FilterBar"
 import PremiumCarousel from "@/components/PremiumCarousel"
 import AdList from "@/components/AdList"
 import CountryNotAvailable from "@/components/CountryNotAvailable"
+import StoryCircles from "@/components/StoryCircles"
 import { getCountry, EXTENDED_SUPPORTED_CODES, getCountryEntryByCode, codeToEmoji } from "@/lib/countries"
 
 interface Props {
@@ -55,6 +56,7 @@ export default async function CountryPage({ params }: Props) {
               </div>
             </div>
           </div>
+          <StoryCircles country={code} />
           <PremiumCarousel country={displayName} title={`Premium i ${displayName}`} subtitle="Top verificerede profiler" />
           <AdList country={code} limit={40} />
         </main>
