@@ -227,6 +227,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<"list" | "grid">("list")
+  const [storyIds, setStoryIds] = useState<Set<string>>(new Set())
   useEffect(() => {
     const saved = localStorage.getItem("viewMode")
     if (saved === "list" || saved === "grid") setView(saved)
@@ -234,7 +235,29 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
   const handleViewChange = (v: "list" | "grid") => {
     setView(v)
     localStorage.setItem("viewMode", v)
+    if (v === "grid" && storyIds.size === 0) {
+      fetch("/api/stories")
+        .then(r => r.json())
+        .then(d => {
+          const ids = new Set<string>((d.groups ?? []).map((g: any) => g.listing_id as string))
+          setStoryIds(ids)
+        })
+        .catch(() => {})
+    }
   }
+  // Also fetch stories on mount if grid is default
+  useEffect(() => {
+    const saved = localStorage.getItem("viewMode")
+    if (saved === "grid") {
+      fetch("/api/stories")
+        .then(r => r.json())
+        .then(d => {
+          const ids = new Set<string>((d.groups ?? []).map((g: any) => g.listing_id as string))
+          setStoryIds(ids)
+        })
+        .catch(() => {})
+    }
+  }, [])
 
   // URL params take priority, props as fallback
   const country = searchParams.get("country") ?? propCountry ?? ""
@@ -314,7 +337,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
       </div>
 
       {view === "grid" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-2 gap-y-8">
           {listings.map((ad) => (
             <AdCardGrid
               key={ad.id}
@@ -329,6 +352,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
               opening_hours={ad.opening_hours}
               timezone={ad.timezone}
               premium_tier={ad.premium_tier}
+              hasStory={storyIds.has(ad.id)}
             />
           ))}
         </div>
