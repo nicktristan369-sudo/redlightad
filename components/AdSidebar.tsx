@@ -1,4 +1,5 @@
 import { Cake, User, Folder, MapPin, Languages } from "lucide-react";
+import RatesWithRC from "./RatesWithRC";
 
 interface AdSidebarProps {
   age: number;
@@ -8,10 +9,11 @@ interface AdSidebarProps {
   country: string;
   languages: string[];
   rates: { duration: string; price: string }[];
+  listingId?: string;
 }
 
 export default function AdSidebar({
-  age, gender, category, city, country, languages, rates,
+  age, gender, category, city, country, languages, rates, listingId,
 }: AdSidebarProps) {
   const infoRows = [
     { icon: <Cake size={15} color="#6B7280" />,      label: "Age",      value: String(age) },
@@ -37,15 +39,7 @@ export default function AdSidebar({
       <div className="my-5 h-px bg-gray-200" />
 
       <h3 className="mb-4 text-lg font-bold text-gray-900">Rates</h3>
-      <div className="overflow-hidden rounded-lg">
-        {rates.map((rate, i) => (
-          <div key={rate.duration}
-            className={`flex items-center justify-between px-3 py-2.5 ${i % 2 === 0 ? "bg-gray-50" : "bg-white"}`}>
-            <span className="text-sm text-gray-700">{rate.duration}</span>
-            <span className="text-sm font-bold text-red-600">{rate.price}</span>
-          </div>
-        ))}
-      </div>
+      <RatesWithRC rates={rates} listingId={listingId} />
     </div>
   );
 }
