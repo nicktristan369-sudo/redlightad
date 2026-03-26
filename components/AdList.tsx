@@ -282,7 +282,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
   if (loading) {
     return (
-      <section className="py-8 max-w-screen-xl mx-auto px-6">
+      <section className="py-8 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex justify-center py-16">
           <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
         </div>
@@ -292,7 +292,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
   if (listings.length === 0) {
     return (
-      <section className="py-8 max-w-screen-xl mx-auto px-6">
+      <section className="py-8 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="text-center py-16 text-gray-400">
           <FileText size={40} color="#D1D5DB" className="mx-auto mb-4" />
           <p className="text-lg">Ingen aktive annoncer endnu</p>
@@ -302,7 +302,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
   }
 
   return (
-    <section className="py-6 max-w-screen-xl mx-auto px-6">
+    <section className="py-6 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* ── View toggle bar ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
         <span style={{ fontSize: "13px", color: "#6B7280" }}>{listings.length} profiles</span>
@@ -337,7 +337,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
       </div>
 
       {view === "grid" ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8">
           {listings.map((ad) => (
             <AdCardGrid
               key={ad.id}
@@ -459,7 +459,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 export default function AdList(props: Props) {
   return (
     <Suspense fallback={
-      <section className="py-8 max-w-screen-xl mx-auto px-6">
+      <section className="py-8 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex justify-center py-16">
           <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
         </div>

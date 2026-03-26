@@ -111,13 +111,13 @@ export default function Navbar() {
       >
         <div
           style={{
-            maxWidth: "1280px",
+            maxWidth: "1280px", // max-w-7xl
             margin: "0 auto",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             height: "56px",
-            padding: "0 24px",
+            padding: "0 32px",
           }}
         >
           {/* Logo */}

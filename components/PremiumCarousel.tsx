@@ -199,7 +199,7 @@ export default function PremiumCarousel({
 
   return (
     <section className={`${bgClass} pt-5 pb-5`}>
-      <div className="max-w-screen-xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-3 flex items-center justify-between">
           <div>
@@ -243,8 +243,8 @@ export default function PremiumCarousel({
             const isFeatured = l.premium_tier === "featured"
 
             return (
-              <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0" style={{ width: "200px" }}>
-                <div className="relative overflow-hidden cursor-pointer" style={{ width: "200px", height: "300px" }}>
+              <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0" style={{ width: "160px" }}>
+                <div className="relative overflow-hidden cursor-pointer" style={{ width: "160px", height: "240px" }}>
                   {/* Image */}
                   {l.profile_image ? (
                     // eslint-disable-next-line @next/next/no-img-element
