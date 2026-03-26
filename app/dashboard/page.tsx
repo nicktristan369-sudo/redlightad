@@ -95,6 +95,7 @@ function DashboardContent() {
             <QuickBtn href="/dashboard/annoncer" style="outline">Se mine annoncer</QuickBtn>
             <QuickBtn href="/upgrade" style="gold">Opgrader til Premium</QuickBtn>
             <QuickBtn href="/dashboard/stories" style="outline">📸 Stories</QuickBtn>
+            <QuickBtn href="/dashboard/travel" style="outline">✈️ Travel Schedule</QuickBtn>
             <QuickBtn href="/dashboard/marketplace" style="outline">🛍 My Marketplace</QuickBtn>
             <QuickBtn href="/dashboard/earnings" style="outline">💰 Earnings</QuickBtn>
           </div>

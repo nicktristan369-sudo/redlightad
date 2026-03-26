@@ -12,6 +12,7 @@ import VideoSection from "@/components/VideoSection";
 import SocialLinksSection from "@/components/SocialLinksSection";
 import TravelBox from "@/components/TravelBox";
 import type { TravelEntry } from "@/components/TravelBox";
+import TravelScheduleSection from "@/components/TravelScheduleSection";
 import StickyActionBar from "@/components/StickyActionBar";
 import ReportModal from "@/components/ReportModal";
 import PhotoGrid from "@/components/PhotoGrid";
@@ -80,6 +81,9 @@ export default function AdDetailPage() {
         .single();
 
       setAd(data ?? null);
+
+      // Trigger travel check
+      fetch("/api/travel/check").catch(() => {});
 
       // Fetch videos
       if (data) {
@@ -216,6 +220,8 @@ export default function AdDetailPage() {
               {ad.show_travel_schedule && travelEntries.length > 0 && (
                 <TravelBox entries={travelEntries} />
               )}
+
+              <TravelScheduleSection listingId={ad.id} />
 
               {ad.about && (
                 <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
