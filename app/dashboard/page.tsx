@@ -98,6 +98,7 @@ function DashboardContent() {
             <QuickBtn href="/dashboard/travel" style="outline">✈️ Travel Schedule</QuickBtn>
             <QuickBtn href="/dashboard/marketplace" style="outline">🛍 My Marketplace</QuickBtn>
             <QuickBtn href="/dashboard/earnings" style="outline">💰 Earnings</QuickBtn>
+            <QuickBtn href="/dashboard/verify" style="outline">🪪 Verification</QuickBtn>
           </div>
         </div>
       </div>

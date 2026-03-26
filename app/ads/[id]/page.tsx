@@ -52,6 +52,7 @@ interface Listing {
   social_links: SocialLinks | null;
   show_travel_schedule: boolean | null;
   status: string;
+  kyc_status?: string | null;
 }
 
 export default function AdDetailPage() {
@@ -178,6 +179,16 @@ export default function AdDetailPage() {
             {isPremium && (
               <span className="rounded bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
                 {ad.premium_tier}
+              </span>
+            )}
+            {ad.kyc_status === "verified" && (
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                background: "#1D4ED8", color: "white",
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.8px",
+                padding: "3px 8px", textTransform: "uppercase" as const,
+              }}>
+                ✓ VERIFIED
               </span>
             )}
           </div>
