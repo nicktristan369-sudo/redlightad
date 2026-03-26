@@ -71,8 +71,8 @@ export default function AdCard({
         {/* Premium badge */}
         {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") && (
           <div className="absolute top-3 left-3 z-10 text-[10px] font-bold tracking-widest uppercase px-2 py-0.5"
-            style={{ background: "#DC2626", color: "#fff" }}>
-            👑 PREMIUM
+            style={{ background: "#111", color: "#fff", fontSize: 10, fontWeight: 600, letterSpacing: "0.8px", padding: "3px 8px", textTransform: "uppercase" as const }}>
+            PREMIUM
           </div>
         )}
 

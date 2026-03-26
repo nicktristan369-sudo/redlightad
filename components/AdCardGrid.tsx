@@ -117,10 +117,10 @@ export default function AdCardGrid({
           {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") && (
             <div style={{
               position: "absolute", top: available ? 24 : 8, left: 8,
-              fontSize: 9, fontWeight: 700, letterSpacing: "0.1em",
-              padding: "2px 7px",
-              background: "#DC2626", color: "#fff",
-            }}>👑 PREMIUM</div>
+              fontSize: 10, fontWeight: 600, letterSpacing: "0.8px",
+              padding: "3px 8px", textTransform: "uppercase",
+              background: "#111", color: "#fff",
+            }}>PREMIUM</div>
           )}
         </div>
 
