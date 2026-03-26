@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import Logo from "@/components/Logo"
+import dynamic from "next/dynamic"
 import {
   LayoutDashboard,
   FileText,
@@ -18,6 +19,8 @@ import {
   ShoppingBag,
   Tag,
 } from "lucide-react"
+
+const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
 
 const NAV_ITEMS = [
   { href: "/dashboard",                label: "Oversigt",            icon: LayoutDashboard },
@@ -95,11 +98,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="hidden md:flex w-60 flex-col fixed h-full z-10 bg-white"
         style={{ borderRight: "1px solid #E5E5E5" }}>
 
-        {/* Logo + email */}
+        {/* Logo + email + notifications */}
         <div className="px-5 py-5" style={{ borderBottom: "1px solid #F3F4F6" }}>
-          <Link href="/">
-            <Logo variant="light" height={22} />
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href="/">
+              <Logo variant="light" height={22} />
+            </Link>
+            <NotificationBell />
+          </div>
           {email && (
             <p className="text-[11px] text-gray-400 mt-2 truncate">{email}</p>
           )}

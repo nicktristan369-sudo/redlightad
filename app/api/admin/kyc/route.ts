@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { createNotification, sendEmail, emailTemplate } from "@/lib/notifications"
 
 const db = () =>
   createClient(
@@ -61,25 +62,20 @@ export async function PATCH(req: Request) {
       kyc_status: action === "approve" ? "verified" : "unverified",
     }).eq("id", submission.listing_id)
 
-    if (process.env.RESEND_API_KEY) {
-      try {
-        const { data: userData } = await supabase.auth.admin.getUserById(submission.user_id)
-        const userEmail = userData?.user?.email
-        if (userEmail) {
-          await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
-            body: JSON.stringify({
-              from: "RedLightAD <noreply@redlightad.com>",
-              to: userEmail,
-              subject: action === "approve" ? "Your RedLightAD account has been verified ✓" : "Your verification was not approved",
-              text: action === "approve"
-                ? "Congratulations! Your identity has been verified. You now have access to payouts and content sales."
-                : `Your verification was not approved: ${rejection_reason || "No reason provided"}\n\nYou can resubmit from your dashboard.`,
-            }),
-          })
-        }
-      } catch { /* email failed silently */ }
+    const { data: userData } = await supabase.auth.admin.getUserById(submission.user_id)
+    const userEmail = userData?.user?.email
+
+    if (action === "approve") {
+      await createNotification(submission.user_id, "kyc_approved", "Identity Verified", "Your identity has been verified. You now have access to payouts and content sales.")
+      if (userEmail) {
+        await sendEmail(userEmail, "Your RedLightAD account has been verified", emailTemplate("Identity Verified ✓", "Congratulations! Your identity has been successfully verified. You now have access to all features including payouts and content sales."))
+      }
+    } else {
+      const reason = rejection_reason || "Please resubmit with clearer documents"
+      await createNotification(submission.user_id, "kyc_rejected", "Verification Not Approved", reason)
+      if (userEmail) {
+        await sendEmail(userEmail, "RedLightAD — Verification update", emailTemplate("Verification Not Approved", `Your identity verification was not approved.<br><br>Reason: ${reason}<br><br>You can resubmit from your dashboard.`))
+      }
     }
 
     return NextResponse.json({ ok: true })
