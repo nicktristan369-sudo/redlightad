@@ -230,6 +230,7 @@ export default function AdminLayout({
         { href: "/admin/marketplace",  label: "Marketplace",  icon: ShoppingBag,     badge: pendingMarketplace },
         { href: "/admin/brugere",      label: "Users",        icon: Users },
         { href: "/admin/verification", label: "Verification", icon: BadgeCheck },
+        { href: "/admin/kyc",          label: "KYC / ID",      icon: BadgeCheck },
       ],
     },
     {
