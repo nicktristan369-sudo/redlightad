@@ -154,8 +154,10 @@ export async function POST(req: NextRequest) {
                 .map(phone => ({
                   phone,
                   source_url: current.url,
+                  source_domain: (() => { try { return new URL(current.url).hostname } catch { return '' } })(),
                   tag,
                   status: 'new',
+                  sms_status: 'pending',
                   is_duplicate: false,
                   first_seen: new Date().toISOString(),
                 }))

@@ -7,16 +7,21 @@ import { createClient } from "@/lib/supabase";
 import {
   Plus, Search, Phone, Mail, MessageCircle, Edit2, Trash2,
   Download, X, Check, Globe, Scan, Tag, AlertCircle, CheckCircle,
-  StopCircle,
+  StopCircle, Send, Eye, Link2,
 } from "lucide-react";
 
 interface ScrapedPhone {
   id: string;
   phone: string;
   source_url: string;
+  source_domain?: string;
   tag: string;
   is_duplicate?: boolean;
   first_seen?: string;
+  sms_status?: string;
+  sms_sent_at?: string;
+  invite_token?: string;
+  notes?: string;
   created_at: string;
 }
 
@@ -30,6 +35,12 @@ interface Contact {
   category: string;
   notes: string | null;
   created_at: string;
+}
+
+interface ScrapeHistory {
+  source_domain: string;
+  count: number;
+  last_scraped: string;
 }
 
 type Category = "partner" | "advertiser" | "vip_user" | "other";
@@ -51,6 +62,21 @@ function Badge({ cat }: { cat: string }) {
   );
 }
 
+const SMS_BADGES: Record<string, { label: string; bg: string; color: string }> = {
+  pending:   { label: "Pending",  bg: "#FEF3C7", color: "#92400E" },
+  sent:      { label: "Sendt",    bg: "#DBEAFE", color: "#1E40AF" },
+  clicked:   { label: "Klikket",  bg: "#EDE9FE", color: "#6D28D9" },
+  converted: { label: "Oprettet", bg: "#DCFCE7", color: "#14532D" },
+};
+
+function SmsBadge({ status }: { status: string }) {
+  const s = SMS_BADGES[status] ?? SMS_BADGES.pending;
+  return (
+    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+      style={{ background: s.bg, color: s.color }}>{s.label}</span>
+  );
+}
+
 interface ContactForm {
   name: string; email: string; phone: string; signal_username: string;
   telegram: string; category: string; notes: string;
@@ -58,6 +84,8 @@ interface ContactForm {
 const EMPTY: ContactForm = {
   name: "", email: "", phone: "", signal_username: "", telegram: "", category: "other", notes: "",
 };
+
+const DEFAULT_SMS_TEMPLATE = `Hej! Vi har set din annonce og vil gerne invitere dig til RedLightAD — Danmarks nye platform. Opret dig gratis i 30 dage her: [TOKEN] Mvh RedLightAD teamet`;
 
 function AdminPhonebookPage() {
   const searchParams = useSearchParams();
@@ -89,12 +117,23 @@ function AdminPhonebookPage() {
   const readerRef = useRef<ReadableStreamDefaultReader | null>(null);
   const [scrapedPhones, setScrapedPhones] = useState<ScrapedPhone[]>([]);
   const [loadingScraped, setLoadingScraped] = useState(false);
-  const [scrapeTagFilter, setScrapeTagFilter] = useState("all");
-  const [hideDuplicates, setHideDuplicates] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
 
+  // CRM state
+  const [domainFilter, setDomainFilter] = useState("all");
+  const [smsFilter, setSmsFilter] = useState("all");
+  const [phoneSearch, setPhoneSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showSmsModal, setShowSmsModal] = useState(false);
+  const [smsTemplate, setSmsTemplate] = useState(DEFAULT_SMS_TEMPLATE);
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsProgress, setSmsProgress] = useState<string | null>(null);
+  const [smsResult, setSmsResult] = useState<{ sent: number; failed: number } | null>(null);
+  const [scrapeHistory, setScrapeHistory] = useState<ScrapeHistory[]>([]);
+  const [showTokenModal, setShowTokenModal] = useState<string | null>(null);
+
   // Refs for stale-closure-safe access inside SSE handler
-  const loadScrapedRef = useRef<(tag?: string) => Promise<void>>(async () => {});
+  const loadScrapedRef = useRef<() => Promise<void>>(async () => {});
   const scrapeTagFilterRef = useRef("all");
 
   const load = useCallback(async () => {
@@ -109,12 +148,35 @@ function AdminPhonebookPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const loadScraped = useCallback(async (tag = "all") => {
+  const loadScraped = useCallback(async () => {
     setLoadingScraped(true);
-    const res = await fetch(`/api/admin/scrape-phones?tag=${tag}`);
+    const res = await fetch(`/api/admin/scrape-phones?tag=all`);
     const data = await res.json();
     setScrapedPhones(Array.isArray(data) ? data : []);
     setLoadingScraped(false);
+  }, []);
+
+  const loadHistory = useCallback(async () => {
+    const res = await fetch(`/api/admin/scrape-phones?tag=all`);
+    const data = await res.json();
+    if (!Array.isArray(data)) return;
+    // Group by source_domain
+    const map = new Map<string, { count: number; last: string }>();
+    for (const p of data) {
+      const domain = p.source_domain || "(ukendt)";
+      const existing = map.get(domain);
+      if (!existing) {
+        map.set(domain, { count: 1, last: p.created_at });
+      } else {
+        existing.count++;
+        if (p.created_at > existing.last) existing.last = p.created_at;
+      }
+    }
+    const hist = [...map.entries()]
+      .map(([domain, v]) => ({ source_domain: domain, count: v.count, last_scraped: v.last }))
+      .sort((a, b) => b.last_scraped.localeCompare(a.last_scraped))
+      .slice(0, 5);
+    setScrapeHistory(hist);
   }, []);
 
   useEffect(() => {
@@ -122,17 +184,69 @@ function AdminPhonebookPage() {
   }, [loadScraped]);
 
   useEffect(() => {
-    scrapeTagFilterRef.current = scrapeTagFilter;
-  }, [scrapeTagFilter]);
+    if (activeTab === "scraper") {
+      loadScraped();
+      loadHistory();
+    }
+  }, [activeTab, loadScraped, loadHistory]);
 
-  useEffect(() => {
-    if (activeTab === "scraper") loadScraped(scrapeTagFilter);
-  }, [activeTab, scrapeTagFilter, loadScraped]);
+  // Derived data
+  const uniqueDomains = Array.from(new Set(scrapedPhones.map(p => p.source_domain || "").filter(Boolean)));
 
-  const totalScraped = scrapedPhones.length;
-  const duplicateCount = scrapedPhones.filter(p => p.is_duplicate).length;
-  const uniqueCount = totalScraped - duplicateCount;
-  const filteredScraped = hideDuplicates ? scrapedPhones.filter(p => !p.is_duplicate) : scrapedPhones;
+  const filteredScraped = scrapedPhones.filter(p => {
+    if (domainFilter !== "all" && (p.source_domain || "") !== domainFilter) return false;
+    if (smsFilter !== "all" && (p.sms_status || "pending") !== smsFilter) return false;
+    if (phoneSearch && !p.phone.includes(phoneSearch)) return false;
+    return true;
+  });
+
+  const totalCount = scrapedPhones.length;
+  const pendingCount = scrapedPhones.filter(p => (p.sms_status || "pending") === "pending").length;
+  const sentCount = scrapedPhones.filter(p => p.sms_status === "sent").length;
+  const convertedCount = scrapedPhones.filter(p => p.sms_status === "converted").length;
+
+  const allFilteredSelected = filteredScraped.length > 0 && filteredScraped.every(p => selectedIds.has(p.id));
+
+  function toggleSelectAll() {
+    if (allFilteredSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredScraped.map(p => p.id)));
+    }
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function sendBulkSms() {
+    setSmsSending(true);
+    setSmsProgress("Sender...");
+    setSmsResult(null);
+
+    try {
+      const res = await fetch("/api/admin/send-sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone_ids: [...selectedIds], template: smsTemplate }),
+      });
+      const data = await res.json();
+      setSmsResult({ sent: data.sent ?? 0, failed: data.failed ?? 0 });
+      setSmsProgress(null);
+      setSelectedIds(new Set());
+      await loadScraped();
+    } catch (err: any) {
+      setSmsProgress(null);
+      setSmsResult({ sent: 0, failed: selectedIds.size });
+    } finally {
+      setSmsSending(false);
+    }
+  }
 
   async function startScrape() {
     setIsRunning(true);
@@ -172,7 +286,8 @@ function AdminPhonebookPage() {
               });
               setProgress(null);
               setIsRunning(false);
-              await loadScrapedRef.current(scrapeTagFilterRef.current);
+              await loadScrapedRef.current();
+              await loadHistory();
             } else if (data.type === "error") {
               setScrapeError(data.message);
             }
@@ -201,7 +316,7 @@ function AdminPhonebookPage() {
 
     const res = await fetch("/api/admin/scrape-phones", { method: "DELETE" });
     if (res.ok) {
-      await loadScrapedRef.current(scrapeTagFilterRef.current);
+      await loadScrapedRef.current();
     }
   }
 
@@ -217,8 +332,8 @@ function AdminPhonebookPage() {
 
   const exportScrapedCSV = () => {
     const rows = [
-      ["Phone", "Source URL", "Tag", "Duplicate", "First Seen", "Added"],
-      ...scrapedPhones.map(p => [p.phone, p.source_url, p.tag, p.is_duplicate ? "yes" : "no", p.first_seen ?? "", new Date(p.created_at).toISOString()]),
+      ["Phone", "Source Domain", "Source URL", "SMS Status", "SMS Sent At", "Tag", "Duplicate", "First Seen", "Added"],
+      ...scrapedPhones.map(p => [p.phone, p.source_domain ?? "", p.source_url, p.sms_status ?? "pending", p.sms_sent_at ?? "", p.tag, p.is_duplicate ? "yes" : "no", p.first_seen ?? "", new Date(p.created_at).toISOString()]),
     ];
     const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -226,8 +341,6 @@ function AdminPhonebookPage() {
     const a = document.createElement("a"); a.href = u; a.download = "scraped-phones.csv"; a.click();
     URL.revokeObjectURL(u);
   };
-
-  const scrapedTags = ["all", ...Array.from(new Set(scrapedPhones.map(p => p.tag)))];
 
   const openNew = () => { setEditing(null); setForm(EMPTY); setShowForm(true); };
   const openEdit = (c: Contact) => {
@@ -303,11 +416,75 @@ function AdminPhonebookPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" style={{ border: "1px solid #E5E5E5" }}>
             <h3 className="text-[16px] font-bold text-gray-900 mb-2">Slet alle numre?</h3>
-            <p className="text-[13px] text-gray-500 mb-5">Er du sikker? Dette sletter alle {totalScraped} numre permanent.</p>
+            <p className="text-[13px] text-gray-500 mb-5">Er du sikker? Dette sletter alle {totalCount} numre permanent.</p>
             <div className="flex gap-2">
               <button onClick={deleteAllScraped} className="flex-1 py-2.5 text-[13px] font-semibold text-white rounded-lg" style={{ background: "#DC2626" }}>Slet alt</button>
               <button onClick={() => setShowDeleteAllModal(false)} className="px-4 py-2.5 text-[13px] font-medium rounded-lg" style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}>Annuller</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SMS Modal */}
+      {showSmsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl" style={{ border: "1px solid #E5E5E5" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[16px] font-bold text-gray-900">Send SMS</h3>
+              <button onClick={() => { setShowSmsModal(false); setSmsResult(null); }} className="p-1.5 rounded-lg hover:bg-gray-100">
+                <X size={16} color="#6B7280" />
+              </button>
+            </div>
+            <p className="text-[13px] text-gray-500 mb-4">Sender til <strong>{selectedIds.size}</strong> numre</p>
+            <textarea
+              value={smsTemplate}
+              onChange={e => setSmsTemplate(e.target.value)}
+              rows={5}
+              className="w-full text-[13px] px-3 py-2.5 rounded-lg outline-none resize-none mb-1"
+              style={{ border: "1px solid #E5E5E5" }}
+            />
+            <p className="text-[11px] text-gray-400 mb-4">[TOKEN] erstattes med unikt invite link</p>
+
+            {smsProgress && (
+              <div className="text-[13px] text-blue-600 flex items-center gap-2 mb-3">
+                <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
+                {smsProgress}
+              </div>
+            )}
+
+            {smsResult && (
+              <div className="text-[13px] mb-3 px-3 py-2 rounded-lg" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+                <strong>{smsResult.sent}</strong> sendt &middot; <strong>{smsResult.failed}</strong> fejlede
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={sendBulkSms}
+                disabled={smsSending || selectedIds.size === 0}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-semibold text-white rounded-lg disabled:opacity-40 transition-colors"
+                style={{ background: "#000" }}
+                onMouseEnter={e => { if (!smsSending) e.currentTarget.style.background = "#CC0000"; }}
+                onMouseLeave={e => e.currentTarget.style.background = "#000"}
+              >
+                <Send size={14} />
+                {smsSending ? "Sender..." : "Send"}
+              </button>
+              <button onClick={() => { setShowSmsModal(false); setSmsResult(null); }} className="px-4 py-2.5 text-[13px] font-medium rounded-lg" style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}>Luk</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Token/Link modal */}
+      {showTokenModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" style={{ border: "1px solid #E5E5E5" }}>
+            <h3 className="text-[16px] font-bold text-gray-900 mb-2">Invite link</h3>
+            <p className="text-[13px] text-gray-500 break-all mb-4 font-mono bg-gray-50 p-3 rounded-lg">
+              {typeof window !== "undefined" ? `${window.location.origin}/join/${showTokenModal}` : `/join/${showTokenModal}`}
+            </p>
+            <button onClick={() => setShowTokenModal(null)} className="w-full py-2.5 text-[13px] font-medium rounded-lg" style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}>Luk</button>
           </div>
         </div>
       )}
@@ -480,34 +657,147 @@ function AdminPhonebookPage() {
         </div>
       )}
       </>) : (
-        /* URL SCRAPER TAB */
+        /* URL SCRAPER / CRM TAB */
         <div className="space-y-5">
           {/* Stats bar */}
           <div className="flex items-center gap-4 px-4 py-3 bg-white rounded-xl" style={{ border: "1px solid #E5E5E5" }}>
-            <span className="text-[13px] font-semibold text-gray-900">{totalScraped} scraped</span>
+            <span className="text-[13px] font-semibold text-gray-900">{totalCount} total</span>
             <span className="text-[13px] text-gray-400">&middot;</span>
-            <span className="text-[13px] text-gray-500">{duplicateCount} duplikater</span>
+            <span className="text-[13px] font-semibold" style={{ color: "#92400E" }}>{pendingCount} pending</span>
             <span className="text-[13px] text-gray-400">&middot;</span>
-            <span className="text-[13px] font-semibold" style={{ color: "#16A34A" }}>{uniqueCount} unikke</span>
-            <div className="ml-auto">
-              <button onClick={() => setHideDuplicates(!hideDuplicates)}
-                className="px-3 py-1.5 text-[12px] font-semibold rounded-lg transition-colors"
-                style={{ border: "1px solid #E5E5E5", background: hideDuplicates ? "#F3F4F6" : "transparent", color: hideDuplicates ? "#111" : "#6B7280" }}>
-                {hideDuplicates ? "Vis duplikater" : "Skjul duplikater"}
-              </button>
-            </div>
+            <span className="text-[13px] font-semibold" style={{ color: "#1E40AF" }}>{sentCount} sendt</span>
+            <span className="text-[13px] text-gray-400">&middot;</span>
+            <span className="text-[13px] font-semibold" style={{ color: "#14532D" }}>{convertedCount} oprettet</span>
           </div>
 
-          {/* Scan card */}
+          {/* Filter bar */}
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={domainFilter}
+              onChange={e => setDomainFilter(e.target.value)}
+              className="text-[13px] px-3 py-2 rounded-lg bg-white"
+              style={{ border: "1px solid #E5E5E5" }}
+            >
+              <option value="all">Alle kilder</option>
+              {uniqueDomains.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            <select
+              value={smsFilter}
+              onChange={e => setSmsFilter(e.target.value)}
+              className="text-[13px] px-3 py-2 rounded-lg bg-white"
+              style={{ border: "1px solid #E5E5E5" }}
+            >
+              <option value="all">Alle statusser</option>
+              <option value="pending">Pending</option>
+              <option value="sent">Sendt</option>
+              <option value="clicked">Klikket</option>
+              <option value="converted">Oprettet</option>
+            </select>
+            <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 flex-1 min-w-[140px] max-w-[220px]" style={{ border: "1px solid #E5E5E5" }}>
+              <Search size={13} color="#9CA3AF" />
+              <input value={phoneSearch} onChange={e => setPhoneSearch(e.target.value)} placeholder="Søg telefon..."
+                className="flex-1 text-[13px] bg-transparent outline-none text-gray-900 placeholder-gray-400" />
+            </div>
+            <label className="flex items-center gap-2 text-[13px] text-gray-600 cursor-pointer select-none">
+              <input type="checkbox" checked={allFilteredSelected && filteredScraped.length > 0} onChange={toggleSelectAll} className="rounded" />
+              Vælg alle
+            </label>
+            <button
+              onClick={() => setShowSmsModal(true)}
+              disabled={selectedIds.size === 0}
+              className="flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-white rounded-lg disabled:opacity-40 transition-colors ml-auto"
+              style={{ background: "#000" }}
+              onMouseEnter={e => { if (selectedIds.size > 0) e.currentTarget.style.background = "#CC0000"; }}
+              onMouseLeave={e => e.currentTarget.style.background = "#000"}
+            >
+              <Send size={13} />
+              Send SMS til valgte ({selectedIds.size})
+            </button>
+          </div>
+
+          {/* CRM Table */}
+          <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
+            {loadingScraped ? (
+              <div className="flex justify-center py-12"><div className="w-5 h-5 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" /></div>
+            ) : filteredScraped.length === 0 ? (
+              <div className="py-14 text-center">
+                <Globe size={28} color="#E5E5E5" className="mx-auto mb-3" />
+                <p className="text-[13px] text-gray-400">Ingen numre matcher filteret</p>
+              </div>
+            ) : (
+              <div className="overflow-y-auto" style={{ maxHeight: "460px" }}>
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
+                      <th className="px-4 py-2.5 text-left w-10"></th>
+                      {["Phone", "Kilde", "SMS Status", "SMS Dato", "Tilføjet", "Actions"].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredScraped.map(p => {
+                      const status = p.sms_status || "pending";
+                      return (
+                        <tr key={p.id} className="hover:bg-gray-50 transition-colors" style={{ borderBottom: "1px solid #F9FAFB" }}>
+                          <td className="px-4 py-2.5">
+                            <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded" />
+                          </td>
+                          <td className="px-4 py-2.5 text-[13px] font-mono font-semibold text-gray-900">{p.phone}</td>
+                          <td className="px-4 py-2.5 text-[12px]" style={{ color: p.source_domain ? "#6B7280" : "#D1D5DB" }}>
+                            {p.source_domain || "\u2014"}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <SmsBadge status={status} />
+                          </td>
+                          <td className="px-4 py-2.5 text-[11px] text-gray-400 whitespace-nowrap">
+                            {p.sms_sent_at ? new Date(p.sms_sent_at).toLocaleDateString("da-DK", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "\u2014"}
+                          </td>
+                          <td className="px-4 py-2.5 text-[11px] text-gray-400 whitespace-nowrap">
+                            {new Date(p.created_at).toLocaleDateString("da-DK", { day: "2-digit", month: "short" })}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-1">
+                              {status === "pending" && (
+                                <button
+                                  onClick={() => { setSelectedIds(new Set([p.id])); setShowSmsModal(true); }}
+                                  className="px-2 py-1 text-[11px] font-semibold rounded-md transition-colors"
+                                  style={{ border: "1px solid #E5E5E5", color: "#374151" }}
+                                  onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"}
+                                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                                >
+                                  Send SMS
+                                </button>
+                              )}
+                              {(status === "sent" || status === "clicked") && p.invite_token && (
+                                <button
+                                  onClick={() => setShowTokenModal(p.invite_token!)}
+                                  className="px-2 py-1 text-[11px] font-semibold rounded-md transition-colors"
+                                  style={{ border: "1px solid #E5E5E5", color: "#374151" }}
+                                  onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"}
+                                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                                >
+                                  <Link2 size={11} className="inline mr-1" />Vis link
+                                </button>
+                              )}
+                              <button onClick={() => deleteScraped(p.id)} className="p-1 rounded transition-colors text-gray-300 hover:text-red-500 hover:bg-red-50"><X size={13} /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Scraper section */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[15px] font-semibold text-gray-900">Scrape telefonnumre</h2>
-              <button
-                onClick={deleteAll}
-                className="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
-              >
-                Slet alle
-              </button>
             </div>
 
             <div className="flex flex-wrap gap-3 mb-4">
@@ -570,69 +860,23 @@ function AdminPhonebookPage() {
             )}
           </div>
 
-          {/* Scraped numbers list */}
-          <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
-            <div className="px-5 py-3 flex flex-wrap items-center justify-between gap-3" style={{ borderBottom: "1px solid #F3F4F6" }}>
-              <div className="flex items-center gap-2">
-                <Phone size={14} color="#6B7280" />
-                <span className="text-[14px] font-semibold text-gray-900">{filteredScraped.length} numre</span>
-              </div>
-              <div className="flex gap-0.5 p-0.5 rounded-lg" style={{ background: "#F3F4F6" }}>
-                {scrapedTags.map(t => (
-                  <button key={t} onClick={() => setScrapeTagFilter(t)}
-                    className="px-3 py-1 text-[12px] font-semibold rounded-md transition-colors capitalize"
-                    style={{ background: scrapeTagFilter === t ? "#fff" : "transparent", color: scrapeTagFilter === t ? "#111" : "#6B7280" }}>{t}</button>
+          {/* Scrape historik */}
+          {scrapeHistory.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h3 className="text-[13px] font-semibold text-gray-900 mb-3">Scrape historik</h3>
+              <div className="space-y-2">
+                {scrapeHistory.map(h => (
+                  <div key={h.source_domain} className="flex items-center justify-between text-[12px] py-1.5" style={{ borderBottom: "1px solid #F9FAFB" }}>
+                    <span className="font-medium text-gray-700">{h.source_domain}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-gray-500">{h.count} numre</span>
+                      <span className="text-gray-400">{new Date(h.last_scraped).toLocaleDateString("da-DK", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
-
-            {loadingScraped ? (
-              <div className="flex justify-center py-12"><div className="w-5 h-5 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" /></div>
-            ) : filteredScraped.length === 0 ? (
-              <div className="py-14 text-center">
-                <Globe size={28} color="#E5E5E5" className="mx-auto mb-3" />
-                <p className="text-[13px] text-gray-400">
-                  {hideDuplicates && scrapedPhones.length > 0 ? "Alle numre er duplikater — skift filter for at se dem" : "No scraped numbers yet — scan a URL above"}
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-y-auto" style={{ maxHeight: "460px" }}>
-                <table className="w-full">
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
-                      {["Phone", "Source URL", "Tag", "Status", "Date", ""].map(h => (
-                        <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredScraped.map(p => (
-                      <tr key={p.id} className="hover:bg-gray-50 transition-colors" style={{ borderBottom: "1px solid #F9FAFB", opacity: p.is_duplicate ? 0.55 : 1 }}>
-                        <td className="px-4 py-2.5 text-[13px] font-mono font-semibold" style={{ color: p.is_duplicate ? "#9CA3AF" : "#111" }}>{p.phone}</td>
-                        <td className="px-4 py-2.5 text-[12px] max-w-[200px] truncate" style={{ color: p.is_duplicate ? "#9CA3AF" : "#6B7280" }}>
-                          <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors truncate block">{p.source_url}</a>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize" style={{ background: "#F3F4F6", color: "#6B7280" }}>{p.tag}</span>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          {p.is_duplicate && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide" style={{ background: "#F3F4F6", color: "#9CA3AF" }}>DUPLICATE</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5 text-[11px] whitespace-nowrap" style={{ color: p.is_duplicate ? "#D1D5DB" : "#9CA3AF" }}>
-                          {new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          <button onClick={() => deleteScraped(p.id)} className="p-1 rounded transition-colors text-gray-300 hover:text-red-500 hover:bg-red-50"><X size={13} /></button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
     </AdminLayout>
