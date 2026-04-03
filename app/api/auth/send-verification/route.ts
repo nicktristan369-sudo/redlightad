@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendSMS } from "@/lib/sms";
 
 const getClient = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,14 +13,6 @@ export async function POST(req: NextRequest) {
 
   if (!phone || phone.length < 6) {
     return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
-  }
-
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken  = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-
-  if (!accountSid || !authToken || !fromNumber) {
-    return NextResponse.json({ error: "SMS service not configured" }, { status: 503 });
   }
 
   // Generate 6-digit code
@@ -42,37 +35,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
 
-  // Send SMS via Twilio
-  const twilioRes = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        To: phone,
-        From: "REDLIGHTAD",
-        Body: `Your RedLightAD verification code is: ${code}\n\nThis code expires in 10 minutes. Do not share it with anyone.`,
-      }),
-    }
-  );
-
-  const twilioData = await twilioRes.json();
+  // Send SMS via GatewayAPI
+  const smsMessage = `Your RedLightAD verification code is: ${code}\n\nThis code expires in 10 minutes. Do not share it with anyone.`;
+  const result = await sendSMS({ to: phone, message: smsMessage, sender: 'REDLIGHTAD' });
 
   // Log in sms_log
   await getClient().from("sms_log").insert({
     phone_number: phone,
     message: `Verification code: [hidden]`,
-    status: twilioData.error_code ? "failed" : "sent",
+    status: result.success ? "sent" : "failed",
     direction: "outbound",
     recipients: 1,
-    error_msg: twilioData.error_code ? twilioData.message : null,
+    error_msg: result.success ? null : result.error,
   });
 
-  if (twilioData.error_code) {
-    return NextResponse.json({ error: twilioData.message ?? "Failed to send SMS" }, { status: 500 });
+  if (!result.success) {
+    return NextResponse.json({ error: result.error ?? "Failed to send SMS" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, phone });

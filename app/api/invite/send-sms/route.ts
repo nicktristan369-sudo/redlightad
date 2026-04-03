@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendSMS } from "@/lib/sms";
 
 const db = () =>
   createClient(
@@ -9,17 +10,6 @@ const db = () =>
   );
 
 export async function POST(req: NextRequest) {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-
-  if (!accountSid || !authToken || !fromNumber) {
-    return NextResponse.json(
-      { error: "Twilio not configured" },
-      { status: 503 }
-    );
-  }
-
   try {
     const { tokens, message_template } = await req.json();
     if (!tokens?.length || !message_template) {
@@ -52,47 +42,20 @@ export async function POST(req: NextRequest) {
         .replace(/\[navn\]/gi, invite.name || "")
         .replace(/\[token\]/gi, invite.token);
 
-      try {
-        const res = await fetch(
-          `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-          {
-            method: "POST",
-            headers: {
-              Authorization:
-                "Basic " +
-                Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({
-              From: fromNumber,
-              To: invite.phone,
-              Body: message,
-            }),
-          }
-        );
+      const result = await sendSMS({ to: invite.phone, message, sender: 'REDLIGHTAD' });
 
-        if (res.ok) {
-          sent++;
-          // Log to sms_log
-          await supabase.from("sms_log").insert({
-            phone_number: invite.phone,
-            message,
-            status: "sent",
-            direction: "outbound",
-            recipients: 1,
-          });
-        } else {
-          const errData = await res.json();
-          failed++;
-          errors.push(
-            `${invite.phone}: ${errData.message || res.statusText}`
-          );
-        }
-      } catch (e: unknown) {
+      if (result.success) {
+        sent++;
+        await supabase.from("sms_log").insert({
+          phone_number: invite.phone,
+          message,
+          status: "sent",
+          direction: "outbound",
+          recipients: 1,
+        });
+      } else {
         failed++;
-        errors.push(
-          `${invite.phone}: ${e instanceof Error ? e.message : "Unknown error"}`
-        );
+        errors.push(`${invite.phone}: ${result.error}`);
       }
     }
 

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendSMS } from "@/lib/sms";
 
 const getClient = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,32 +11,12 @@ const getClient = () => createClient(
 export async function POST(req: NextRequest) {
   const { to_phone, message, to_user_id, is_broadcast, recipient_count } = await req.json();
 
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken  = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-
-  if (!accountSid || !authToken || !fromNumber) {
-    return NextResponse.json({ error: "Twilio not configured. Add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER to environment variables." }, { status: 503 });
-  }
-
   const phones: string[] = Array.isArray(to_phone) ? to_phone : [to_phone];
-  const results: { phone: string; ok: boolean; sid?: string; error?: string }[] = [];
+  const results: { phone: string; ok: boolean; messageId?: string; error?: string }[] = [];
 
   for (const phone of phones) {
-    try {
-      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
-        method: "POST",
-        headers: {
-          "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({ To: phone, From: "REDLIGHTAD", Body: message }),
-      });
-      const data = await res.json();
-      results.push({ phone, ok: !data.error_code, sid: data.sid, error: data.message });
-    } catch (e) {
-      results.push({ phone, ok: false, error: String(e) });
-    }
+    const result = await sendSMS({ to: phone, message, sender: 'REDLIGHTAD' });
+    results.push({ phone, ok: result.success, messageId: result.messageId, error: result.error });
   }
 
   const allOk = results.every(r => r.ok);

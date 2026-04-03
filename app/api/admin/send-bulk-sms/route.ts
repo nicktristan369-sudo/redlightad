@@ -8,49 +8,69 @@ const getSupabase = () =>
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-function generateToken(): string {
-  return Math.random().toString(36).substring(2, 10).toUpperCase() +
-         Math.random().toString(36).substring(2, 6).toUpperCase()
-}
-
 export async function POST(req: NextRequest) {
   const { phoneIds, template } = await req.json()
   const supabase = getSupabase()
-  let sent = 0, failed = 0
+  const encoder = new TextEncoder()
 
-  for (const id of phoneIds) {
-    const { data: contact } = await supabase
-      .from('scraped_phones')
-      .select('*')
-      .eq('id', id)
-      .single()
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data: object) => {
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+        } catch {}
+      }
 
-    if (!contact) continue
+      let sent = 0
+      let failed = 0
 
-    let token = contact.invite_token
-    if (!token) {
-      token = generateToken()
-      await supabase.from('scraped_phones').update({ invite_token: token }).eq('id', id)
-    }
+      send({ type: 'start', total: phoneIds.length })
 
-    const inviteUrl = `https://redlightad.com/join/${token}`
-    const smsText = template
-      .replace('[TOKEN]', token)
-      .replace('[URL]', inviteUrl)
+      for (const id of phoneIds) {
+        const { data: contact } = await supabase
+          .from('scraped_phones')
+          .select('*')
+          .eq('id', id)
+          .single()
 
-    const result = await sendSMS({ to: contact.phone, message: smsText })
+        if (!contact) continue
 
-    if (result.success) {
-      await supabase.from('scraped_phones').update({
-        sms_status: 'sent',
-        sms_sent_at: new Date().toISOString(),
-      }).eq('id', id)
-      sent++
-    } else {
-      console.error('SMS failed for', contact.phone, result.error)
-      failed++
-    }
-  }
+        let token = contact.invite_token
+        if (!token) {
+          token = Math.random().toString(36).substring(2, 10).toUpperCase()
+          await supabase.from('scraped_phones').update({ invite_token: token }).eq('id', id)
+        }
 
-  return Response.json({ success: true, sent, failed })
+        const inviteUrl = `https://redlightad.com/join/${token}`
+        const message = template
+          .replace('[URL]', inviteUrl)
+          .replace('[TOKEN]', token)
+
+        const result = await sendSMS({ to: contact.phone, message, sender: 'REDLIGHTAD' })
+
+        if (result.success) {
+          sent++
+          await supabase.from('scraped_phones').update({
+            sms_status: 'sent',
+            sms_sent_at: new Date().toISOString(),
+          }).eq('id', id)
+        } else {
+          failed++
+        }
+
+        send({ type: 'progress', sent, failed, total: phoneIds.length, current: contact.phone })
+        await new Promise(r => setTimeout(r, 150))
+      }
+
+      send({ type: 'done', sent, failed })
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+    },
+  })
 }

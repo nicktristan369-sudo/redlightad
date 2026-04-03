@@ -24,7 +24,7 @@ interface Profile {
 const MAX_SMS = 160;
 
 export default function AdminSmsPage() {
-  const [twilioOk, setTwilioOk] = useState<boolean | null>(null);
+  const [gatewayOk, setGatewayOk] = useState<boolean | null>(null);
   const [mode, setMode] = useState<"single" | "broadcast">("single");
   const [phone, setPhone] = useState("");
   const [searchUser, setSearchUser] = useState("");
@@ -40,10 +40,10 @@ export default function AdminSmsPage() {
   const [loadingLogs, setLoadingLogs] = useState(true);
 
   useEffect(() => {
-    // Server-side check — Twilio vars are not exposed to client (no NEXT_PUBLIC_ prefix)
-    fetch("/api/admin/twilio-status")
+    // Server-side check — GatewayAPI token is not exposed to client
+    fetch("/api/admin/gateway-status")
       .then(r => r.json())
-      .then(d => setTwilioOk(!!d.configured));
+      .then(d => setGatewayOk(!!d.configured));
 
     fetch("/api/admin/sms")
       .then(r => r.ok ? r.json() : [])
@@ -119,21 +119,21 @@ export default function AdminSmsPage() {
     <AdminLayout>
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900">SMS Center</h1>
-        <p className="text-[13px] text-gray-400 mt-0.5">Send SMS via Twilio — sender: REDLIGHTAD</p>
+        <p className="text-[13px] text-gray-400 mt-0.5">Send SMS via GatewayAPI — sender: REDLIGHTAD</p>
       </div>
 
-      {/* Twilio not configured banner */}
-      {twilioOk === false && (
+      {/* GatewayAPI not configured banner */}
+      {gatewayOk === false && (
         <div className="mb-6 flex items-start gap-3 px-4 py-4 rounded-xl"
           style={{ background: "#FEF3C7", border: "1px solid #FCD34D" }}>
           <AlertCircle size={16} color="#92400E" className="flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-[13px] font-semibold text-amber-900">Twilio not configured</p>
+            <p className="text-[13px] font-semibold text-amber-900">GatewayAPI not configured</p>
             <p className="text-[12px] text-amber-700 mt-0.5">
-              Add these environment variables to Vercel to enable SMS:
+              Add this environment variable to Vercel to enable SMS:
             </p>
             <ul className="mt-2 space-y-0.5">
-              {["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"].map(v => (
+              {["GATEWAYAPI_TOKEN"].map(v => (
                 <li key={v} className="text-[11px] font-mono font-semibold px-2 py-0.5 bg-amber-100 rounded inline-block mr-1" style={{ color: "#92400E" }}>{v}</li>
               ))}
             </ul>
@@ -244,7 +244,7 @@ export default function AdminSmsPage() {
             </div>
           )}
 
-          <button onClick={sendSms} disabled={sending || !message.trim() || twilioOk === false}
+          <button onClick={sendSms} disabled={sending || !message.trim() || gatewayOk === false}
             className="mt-4 w-full flex items-center justify-center gap-2 py-3 text-[13px] font-semibold text-white rounded-lg disabled:opacity-40 transition-colors"
             style={{ background: "#000" }}
             onMouseEnter={e => { if (!sending) e.currentTarget.style.background = "#CC0000"; }}
@@ -274,8 +274,8 @@ function SmsHistoryPanel({ logs, loadingLogs }: { logs: SmsLog[]; loadingLogs: b
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   });
   const monthlySent = thisMonth.length;
-  // Twilio pricing: ~$0.0079/SMS outbound
-  const estimatedCost = (monthlySent * 0.0079).toFixed(2);
+  // GatewayAPI pricing: ~DKK 0.19/SMS
+  const estimatedCost = (monthlySent * 0.19).toFixed(2);
 
   return (
     <div className="bg-white rounded-xl overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
@@ -291,7 +291,7 @@ function SmsHistoryPanel({ logs, loadingLogs }: { logs: SmsLog[]; loadingLogs: b
           ))}
         </div>
         <div className="text-[11px] text-gray-400 hidden sm:block">
-          {monthlySent} SMS this month · ~${estimatedCost}
+          {monthlySent} SMS this month · ~{estimatedCost} DKK
         </div>
       </div>
 
