@@ -1,6 +1,26 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendSMS } from '@/lib/sms'
+import { v2 as cloudinary } from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
+async function uploadImageFromUrl(imageUrl: string): Promise<string> {
+  try {
+    const result = await cloudinary.uploader.upload(imageUrl, {
+      folder: 'listings',
+      transformation: [{ width: 800, crop: 'scale' }],
+    })
+    return result.secure_url
+  } catch (e) {
+    console.error('Image upload failed:', imageUrl, e)
+    return ''
+  }
+}
 
 const getSupabase = () =>
   createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -53,6 +73,15 @@ export async function POST(req: NextRequest) {
     created_by_admin: true,
   })
 
+  // Upload billeder til Cloudinary
+  const uploadedImages: string[] = []
+  if (profile.images && profile.images.length > 0) {
+    const results = await Promise.all(
+      profile.images.slice(0, 5).map((url: string) => uploadImageFromUrl(url))
+    )
+    uploadedImages.push(...results.filter(Boolean))
+  }
+
   // Opret listing — gem credentials så admin altid kan finde dem
   const { data: listingData, error: listingError } = await supabase
     .from('listings')
@@ -70,6 +99,8 @@ export async function POST(req: NextRequest) {
       source_url: profile.source_url,
       category: profile.category || 'escort',
       status: 'active',
+      images: uploadedImages,
+      profile_image: uploadedImages[0] || null,
       created_by_admin: true,
       needs_completion: true,
       admin_email: email,
