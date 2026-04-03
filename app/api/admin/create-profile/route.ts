@@ -43,7 +43,7 @@ async function removeWatermark(imageBuffer: Buffer): Promise<Buffer> {
             'Authorization': `Bearer ${hfKey}`,
             'Content-Type': 'application/octet-stream',
           },
-          body: imageBuffer,
+          body: imageBuffer as unknown as BodyInit,
           signal: AbortSignal.timeout(30000),
         }
       )
