@@ -1,8 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import * as cheerio from 'cheerio'
-import chromium from '@sparticuz/chromium'
-import puppeteer from 'puppeteer-core'
 
 export const maxDuration = 300
 
@@ -22,60 +20,36 @@ function normalizePhone(phone: string): string {
 function extractPhones(html: string): string[] {
   const results = new Set<string>()
 
-  // Fra tel: links — mest pålidelig
-  PHONE_REGEX_TEL.lastIndex = 0
-  let match: RegExpExecArray | null
-  while ((match = PHONE_REGEX_TEL.exec(html)) !== null) {
-    const n = normalizePhone(match[1])
+  // Tel links — mest pålidelig
+  for (const m of html.matchAll(/href=["']tel:([+\d\s\-().]+)["']/gi)) {
+    const n = m[1].replace(/\D/g, '')
     if (n.length >= 8) results.add(n)
   }
 
-  // Fra synlig tekst
-  PHONE_REGEX_DK.lastIndex = 0
-  while ((match = PHONE_REGEX_DK.exec(html)) !== null) {
-    const n = normalizePhone(match[1] || match[0])
-    if (n.length === 8 || n.length === 10 || n.length === 11) {
-      results.add(n)
-    }
+  // Alle 8-cifrede tal (danske numre starter på 2-9)
+  for (const m of html.matchAll(/\b([2-9]\d{7})\b/g)) {
+    results.add(m[1])
   }
 
+  // +45 numre
+  for (const m of html.matchAll(/\+45[\s\-]?(\d{2}[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2})/g)) {
+    results.add(m[1].replace(/\D/g, ''))
+  }
+
+  console.log('Phones found on page:', results.size)
   return [...results]
 }
 
 async function fetchPage(url: string): Promise<string> {
-  console.log('Launching browser for:', url)
-
-  try {
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: { width: 1920, height: 1080 },
-      executablePath: await chromium.executablePath(),
-      headless: true,
-    })
-    console.log('Browser launched OK')
-
-    const page = await browser.newPage()
-
-    await page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-    )
-
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: 20000,
-    })
-
-    const html = await page.content()
-    console.log('Page content length:', html.length)
-    console.log('Tel links found:', (html.match(/tel:/g) || []).length)
-
-    await browser.close()
-    return html
-
-  } catch (err: any) {
-    console.error('Browser error:', err.message)
-    return ''
-  }
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Language': 'da-DK,da;q=0.9',
+    },
+    signal: AbortSignal.timeout(10000),
+  })
+  return res.text()
 }
 
 function extractLinks(html: string, baseUrl: string): string[] {
