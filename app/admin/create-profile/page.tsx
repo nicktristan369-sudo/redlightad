@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { SUPPORTED_COUNTRIES } from "@/lib/countries";
 
 type ProfileData = {
   display_name: string;
@@ -295,11 +296,11 @@ export default function CreateProfilePage() {
                     onChange={(e) => setProfile({ ...profile, country: e.target.value })}
                     style={inputStyle}
                   >
-                    <option value="Denmark">Danmark 🇩🇰</option>
-                    <option value="Sweden">Sverige 🇸🇪</option>
-                    <option value="Norway">Norge 🇳🇴</option>
-                    <option value="Germany">Tyskland 🇩🇪</option>
-                    <option value="Netherlands">Holland 🇳🇱</option>
+                    {SUPPORTED_COUNTRIES.map(c => (
+                      <option key={c.code} value={c.name}>
+                        {c.flag} {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
