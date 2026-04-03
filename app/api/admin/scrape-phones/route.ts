@@ -3,34 +3,40 @@ import { createClient } from '@supabase/supabase-js'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 
+export const maxDuration = 300
+
 const getSupabase = () =>
   createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-const PHONE_REGEX = /(?:\+?45[\s\-.]?)?(?:\d[\s\-.]?){7}\d/g
+const PHONE_REGEX_DK = /(?:\+45|0045)?[\s.\-]?\b(\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2})\b/g
+const PHONE_REGEX_TEL = /href=["']tel:([\d\s\+\-]+)["']/g
 
 function normalizePhone(phone: string): string {
   return phone.replace(/[\s\-\.]/g, '').trim()
 }
 
 function extractPhones(html: string): string[] {
-  const $ = cheerio.load(html)
   const results = new Set<string>()
 
-  const text = $('body').text()
-  const matches = text.match(PHONE_REGEX) || []
-  matches.forEach(m => {
-    const n = normalizePhone(m)
+  // Fra tel: links — mest pålidelig
+  PHONE_REGEX_TEL.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = PHONE_REGEX_TEL.exec(html)) !== null) {
+    const n = normalizePhone(match[1])
     if (n.length >= 8) results.add(n)
-  })
+  }
 
-  $('a[href^="tel:"]').each((_, el) => {
-    const href = $(el).attr('href') || ''
-    const n = normalizePhone(href.replace('tel:', ''))
-    if (n.length >= 8) results.add(n)
-  })
+  // Fra synlig tekst
+  PHONE_REGEX_DK.lastIndex = 0
+  while ((match = PHONE_REGEX_DK.exec(html)) !== null) {
+    const n = normalizePhone(match[1] || match[0])
+    if (n.length === 8 || n.length === 10 || n.length === 11) {
+      results.add(n)
+    }
+  }
 
   return [...results]
 }
@@ -83,7 +89,8 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const { data: existing } = await getSupabase()
+        const supabase = getSupabase()
+        const { data: existing } = await supabase
           .from('phonebook')
           .select('phone')
 
@@ -97,6 +104,8 @@ export async function POST(req: NextRequest) {
 
         let pageCount = 0
         let errorCount = 0
+        let newCount = 0
+        let dupCount = 0
 
         send({ type: 'start', message: 'Starter scrape...' })
 
@@ -139,6 +148,27 @@ export async function POST(req: NextRequest) {
               }
             })
 
+            // Gem til DB løbende — ikke vent til sidst
+            if (phones.length > 0) {
+              const toInsert = phones
+                .filter(phone => !existingPhones.has(phone))
+                .map(phone => ({
+                  phone,
+                  source_url: current.url,
+                  tag,
+                  status: 'new',
+                  is_duplicate: false,
+                  first_seen: new Date().toISOString(),
+                }))
+
+              if (toInsert.length > 0) {
+                await supabase.from('phonebook').insert(toInsert)
+                // Tilføj til existingPhones så næste side ikke genduplikerer
+                toInsert.forEach(r => existingPhones.add(r.phone))
+                newCount += toInsert.length
+              }
+            }
+
             if (current.depth < depth) {
               const links = extractLinks(html, current.url)
               links.forEach(link => {
@@ -155,30 +185,7 @@ export async function POST(req: NextRequest) {
           await new Promise(r => setTimeout(r, 150))
         }
 
-        const toInsert: any[] = []
-        let newCount = 0
-        let dupCount = 0
-
-        for (const [phone, sourceUrl] of found) {
-          if (existingPhones.has(phone)) {
-            dupCount++
-          } else {
-            newCount++
-            toInsert.push({
-              phone,
-              source_url: sourceUrl,
-              tag,
-              status: 'new',
-              is_duplicate: false,
-              first_seen: new Date().toISOString(),
-            })
-          }
-        }
-
-        if (toInsert.length > 0) {
-          const { error } = await getSupabase().from('phonebook').insert(toInsert)
-          if (error) throw new Error(`DB fejl: ${error.message}`)
-        }
+        dupCount = found.size - newCount
 
         send({
           type: 'done',
