@@ -11,13 +11,29 @@ cloudinary.config({
 
 async function uploadImageFromUrl(imageUrl: string): Promise<string> {
   try {
-    const result = await cloudinary.uploader.upload(imageUrl, {
-      folder: 'listings',
-      transformation: [{ width: 800, crop: 'scale' }],
+    // Download billedet som buffer med referer header
+    const response = await fetch(imageUrl, {
+      headers: {
+        'Referer': new URL(imageUrl).origin,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+      },
+      signal: AbortSignal.timeout(10000),
     })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const buffer = Buffer.from(await response.arrayBuffer())
+
+    // Upload buffer til Cloudinary
+    const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: 'listings', transformation: [{ width: 800, crop: 'scale' }] },
+        (error, result) => error ? reject(error) : resolve(result as { secure_url: string })
+      ).end(buffer)
+    })
+
     return result.secure_url
-  } catch (e) {
-    console.error('Image upload failed:', imageUrl, e)
+  } catch (e: unknown) {
+    console.error('Image upload failed:', imageUrl, e instanceof Error ? e.message : e)
     return ''
   }
 }
