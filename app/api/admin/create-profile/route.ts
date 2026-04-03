@@ -54,8 +54,8 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
     }]).png().toBuffer()
 
     const form = new FormData()
-    form.append('image_file', new Blob([imageBuffer], { type: 'image/jpeg' }), 'image.jpg')
-    form.append('mask_file', new Blob([maskBuffer], { type: 'image/png' }), 'mask.png')
+    form.append('image_file', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
+    form.append('mask_file', new Blob([maskBuffer.buffer as ArrayBuffer], { type: 'image/png' }), 'mask.png')
     form.append('mode', 'quality')
 
     const res = await fetch('https://clipdrop-api.co/cleanup/v1', {

@@ -42,8 +42,8 @@ async function cropAndUpload(imageUrl: string): Promise<string> {
           .composite([{ input: await sharp({ create: { width: wmW, height: wmH, channels: 3, background: { r:255,g:255,b:255 } } }).png().toBuffer(), left: wmX, top: wmY }])
           .png().toBuffer()
         const form = new FormData()
-        form.append('image_file', new Blob([processed], { type: 'image/jpeg' }), 'image.jpg')
-        form.append('mask_file', new Blob([maskBuf], { type: 'image/png' }), 'mask.png')
+        form.append('image_file', new Blob([processed.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
+        form.append('mask_file', new Blob([maskBuf.buffer as ArrayBuffer], { type: 'image/png' }), 'mask.png')
         form.append('mode', 'quality')
         const res = await fetch('https://clipdrop-api.co/cleanup/v1', {
           method: 'POST', headers: { 'x-api-key': clipdropKey }, body: form, signal: AbortSignal.timeout(60000),
