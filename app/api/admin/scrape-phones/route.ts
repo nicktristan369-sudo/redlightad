@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import axios from 'axios'
 import * as cheerio from 'cheerio'
+import chromium from '@sparticuz/chromium'
+import puppeteer from 'puppeteer-core'
 
 export const maxDuration = 300
 
@@ -42,34 +43,28 @@ function extractPhones(html: string): string[] {
 }
 
 async function fetchPage(url: string): Promise<string> {
-  const apiKey = process.env.SCRAPINGBEE_API_KEY
-  if (apiKey) {
-    const params = new URLSearchParams({
-      api_key: apiKey,
-      url: url,
-      render_js: 'true',
-      block_ads: 'true',
-      premium_proxy: 'true',
-    })
-    const response = await axios.get(
-      `https://app.scrapingbee.com/api/v1/?${params}`,
-      { timeout: 30000 }
-    )
-    return response.data as string
-  }
-  // Fallback til direkte axios hvis ingen API key
-  const response = await axios.get(url, {
-    timeout: 12000,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'da-DK,da;q=0.9,en;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Cache-Control': 'no-cache',
-    },
-    maxRedirects: 5,
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: { width: 1920, height: 1080 },
+    executablePath: await chromium.executablePath(),
+    headless: true,
   })
-  return response.data as string
+
+  const page = await browser.newPage()
+
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+  )
+
+  await page.goto(url, {
+    waitUntil: 'networkidle2',
+    timeout: 20000,
+  })
+
+  const html = await page.content()
+  await browser.close()
+
+  return html
 }
 
 function extractLinks(html: string, baseUrl: string): string[] {
@@ -108,9 +103,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const { url, depth = 3, tag = 'untagged' } = await req.json()
-
-  console.log('ScrapingBee key present:', !!process.env.SCRAPINGBEE_API_KEY)
-  console.log('Using ScrapingBee:', process.env.SCRAPINGBEE_API_KEY ? 'YES' : 'NO - falling back to axios')
 
   const encoder = new TextEncoder()
 
