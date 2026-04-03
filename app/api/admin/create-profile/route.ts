@@ -6,8 +6,16 @@ const getSupabase = () =>
   createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 function generatePassword(): string {
-  return Math.random().toString(36).substring(2, 8).toUpperCase() +
-         Math.random().toString(36).substring(2, 6)
+  const words = ['Rose', 'Luna', 'Star', 'Nova', 'Ruby', 'Jade', 'Aria']
+  const word = words[Math.floor(Math.random() * words.length)]
+  const num = Math.floor(1000 + Math.random() * 9000)
+  return `${word}#${num}`
+}
+
+function generateEmail(name: string, phone: string): string {
+  const clean = name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) || 'user'
+  const suffix = phone.replace(/\D/g, '').slice(-4)
+  return `${clean}${suffix}@redlightad.com`
 }
 
 function generateUsername(displayName: string): string {
@@ -25,7 +33,7 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabase()
   const password = generatePassword()
   const username = generateUsername(profile.display_name || 'user')
-  const email = profile.email || `${username}@redlightad.com`
+  const email = profile.email || generateEmail(profile.display_name || 'user', profile.phone || '')
 
   // Opret bruger i Supabase Auth
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({

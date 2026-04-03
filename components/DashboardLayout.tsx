@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
+const OnboardingPopup = dynamic(() => import("@/components/OnboardingPopup"), { ssr: false })
 
 const NAV_ITEMS = [
   { href: "/dashboard",                label: "Oversigt",            icon: LayoutDashboard },
@@ -197,6 +198,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 ml-0 md:ml-60 p-4 md:p-8 pb-24 md:pb-8">
         {children}
       </main>
+
+      <OnboardingPopup />
     </div>
   )
 }
