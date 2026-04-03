@@ -1,0 +1,90 @@
+Du skal implementere forbedringer til Phonebook-scraperen i redlightad. Læs de eksisterende filer først:
+- app/admin/phonebook/page.tsx
+- app/api/admin/scrape-phones/route.ts
+- supabase/migrations/20260315040000_scraped_phones.sql
+
+Derefter implementér følgende:
+
+---
+
+## 1. DB Migration
+
+Opret: supabase/migrations/20260403_phonebook_improvements.sql
+
+Indhold:
+  ALTER TABLE phonebook ADD COLUMN IF NOT EXISTS is_duplicate BOOLEAN DEFAULT false;
+  ALTER TABLE phonebook ADD COLUMN IF NOT EXISTS first_seen TIMESTAMPTZ DEFAULT NOW();
+
+---
+
+## 2. Python scraper — scripts/scraper.py
+
+Opret filen scripts/scraper.py med en scraper der:
+- Tager start_url og max_depth som argumenter (sys.argv)
+- Forsøger at importere Scrapling (AsyncPlaywright) — fallback til requests+regex hvis ikke installeret
+- Crawler hele sitet op til max_depth niveauer
+- Finder telefonnumre med regex: r'(\+?[\d\s\-\(\)]{8,15})'
+- Renser numre: fjern mellemrum/bindestreger, behold kun hvis 8-15 cifre
+- Printer progress som JSON lines: {"progress": visited_count, "phones": phones_count, "url": current_url}
+- Afslutter med: {"done": True, "phones": [...], "total": count}
+- Test-URL: https://annoncelight.dk
+
+---
+
+## 3. API Route — app/api/admin/scrape-phones/route.ts
+
+Opdater til at:
+- Acceptere POST body: { url: string, maxDepth: number }
+- Kalde: python3 scripts/scraper.py <url> <maxDepth> via child_process
+- Hente eksisterende numre fra phonebook-tabellen
+- Klassificere fundne numre som nye vs duplikater
+- Kun indsætte NYE numre i phonebook (is_duplicate=false, first_seen=now)
+- Returnere JSON: { total, new_numbers, duplicates, numbers }
+
+Duplikat-logik:
+  1. Hent alle eksisterende phone_number fra phonebook
+  2. Filter scraped: nye = ikke i eksisterende, duplikater = allerede der
+  3. Insert kun nye med is_duplicate=false
+
+---
+
+## 4. Admin Phonebook UI — app/admin/phonebook/page.tsx
+
+Tilføj til den eksisterende side:
+
+A) Header buttons (øverst til højre):
+   - Behold "Export CSV"
+   - Tilføj "Slet alt" knap i rød — åbner confirm dialog med tekst:
+     "Er du sikker? Dette sletter alle X numre permanent."
+   - Ved bekræftelse: DELETE FROM phonebook (via Supabase)
+
+B) Stats bar under header:
+   "305 scraped · 47 duplikater · 258 unikke"
+
+C) Filter toggle knap:
+   "Skjul duplikater" / "Vis duplikater"
+
+D) I listen — for rækker hvor is_duplicate=true:
+   - Grå tekst
+   - "DUPLICATE" badge i grå
+
+E) Scraper sektion:
+   - URL input (behold)
+   - Max depth dropdown: 1 / 2 / 3 / Ubegrænset
+   - "Start scrape" knap
+   - Progress indikator mens kører: "Scanner side 12/45..."
+   - Stop-knap
+   - Resultat efter endt scrape: "Fandt 89 numre · 34 nye · 55 allerede i phonebook"
+
+---
+
+## 5. Git commit og push
+
+Når alt er implementeret og bygger uden fejl:
+
+  git add -A
+  git commit -m "feat: phonebook — Scrapling scraper, duplicate detection, delete all, progress UI, max depth"
+  git push origin main
+
+Kør derefter:
+  openclaw system event --text "Done: Phonebook scraper forbedringer pushet til main" --mode now
