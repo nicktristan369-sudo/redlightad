@@ -312,7 +312,7 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
 
     // Forbedr billedkvalitet
     imageBuffer = await processImage(imageBuffer)
-    imageBuffer = await removeWatermarkClipDrop(imageBuffer)
+    // Vandmærke-fjernelse midlertidigt deaktiveret — koordinater skal finjusteres
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
