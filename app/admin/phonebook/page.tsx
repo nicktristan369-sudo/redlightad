@@ -34,6 +34,9 @@ interface Contact {
   telegram: string | null;
   category: string;
   notes: string | null;
+  country: string | null;
+  source_domain: string | null;
+  source: string | null;
   created_at: string;
 }
 
@@ -131,6 +134,10 @@ function AdminPhonebookPage() {
   const [smsResult, setSmsResult] = useState<{ sent: number; failed: number } | null>(null);
   const [scrapeHistory, setScrapeHistory] = useState<ScrapeHistory[]>([]);
   const [showTokenModal, setShowTokenModal] = useState<string | null>(null);
+
+  // Contacts CRM filters
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
 
   // Refs for stale-closure-safe access inside SSE handler
   const loadScrapedRef = useRef<() => Promise<void>>(async () => {});
@@ -330,6 +337,17 @@ function AdminPhonebookPage() {
     setShowDeleteAllModal(false);
   };
 
+  async function copyToContacts() {
+    const res = await fetch('/api/admin/copy-to-contacts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ country: 'Denmark' }),
+    });
+    const data = await res.json();
+    alert(`${data.added} tilføjet til Contacts · ${data.skipped} duplikater sprunget over`);
+    await load();
+  }
+
   const exportScrapedCSV = () => {
     const rows = [
       ["Phone", "Source Domain", "Source URL", "SMS Status", "SMS Sent At", "Tag", "Duplicate", "First Seen", "Added"],
@@ -384,8 +402,15 @@ function AdminPhonebookPage() {
   };
 
   const q = search.toLowerCase();
+  const uniqueCountries = Array.from(new Set(contacts.map(c => c.country || 'Denmark').filter(Boolean)));
+  const uniqueSources = Array.from(new Set(contacts.map(c => c.source_domain || '').filter(Boolean)));
   const base = catFilter === "all" ? contacts : contacts.filter(c => c.category === catFilter);
-  const filtered = base.filter(c => !q || c.name.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.phone?.includes(q));
+  const filtered = base.filter(c => {
+    if (countryFilter !== "all" && (c.country || 'Denmark') !== countryFilter) return false;
+    if (sourceFilter !== "all" && (c.source_domain || '') !== sourceFilter) return false;
+    if (q && !c.name.toLowerCase().includes(q) && !c.email?.toLowerCase().includes(q) && !c.phone?.includes(q)) return false;
+    return true;
+  });
 
   const Field = ({ label, value, onChange, placeholder, type = "text" }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) => (
     <div>
@@ -573,6 +598,14 @@ function AdminPhonebookPage() {
                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                 <Download size={13} /> Export CSV
               </button>
+              <button
+                onClick={copyToContacts}
+                disabled={scrapedPhones.length === 0}
+                className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-lg disabled:opacity-40 transition-colors"
+                style={{ border: "1px solid #D1FAE5", color: "#059669", background: "#ECFDF5" }}
+              >
+                Tilføj til Contacts ({scrapedPhones.filter(p => p.sms_status === 'pending').length})
+              </button>
               <button onClick={() => setShowDeleteAllModal(true)} disabled={scrapedPhones.length === 0}
                 className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-lg disabled:opacity-40 transition-colors"
                 style={{ border: "1px solid #FECACA", color: "#DC2626", background: "#FEF2F2" }}
@@ -614,48 +647,87 @@ function AdminPhonebookPage() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, phone…"
             className="flex-1 text-[13px] bg-transparent outline-none text-gray-900 placeholder-gray-400" />
         </div>
+        <select value={countryFilter} onChange={e => setCountryFilter(e.target.value)}
+          className="text-[13px] px-3 py-2 rounded-lg bg-white" style={{ border: "1px solid #E5E5E5" }}>
+          <option value="all">Alle lande</option>
+          {uniqueCountries.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
+          className="text-[13px] px-3 py-2 rounded-lg bg-white" style={{ border: "1px solid #E5E5E5" }}>
+          <option value="all">Alle kilder</option>
+          {uniqueSources.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
       </div>
 
-      {/* Contact cards */}
-      {loading ? (
-        <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" /></div>
-      ) : filtered.length === 0 ? (
-        <div className="py-16 text-center bg-white rounded-xl" style={{ border: "1px solid #E5E5E5" }}>
-          <p className="text-[14px] text-gray-400">{contacts.length === 0 ? "No contacts yet — add your first contact" : "No contacts match your search"}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(c => (
-            <div key={c.id} className="bg-white rounded-xl p-5 group" style={{ border: "1px solid #E5E5E5" }}>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-[14px] font-bold flex-shrink-0" style={{ background: "#F3F4F6", color: "#374151" }}>{c.name[0]?.toUpperCase()}</div>
-                  <p className="text-[14px] font-bold text-gray-900 truncate">{c.name}</p>
-                </div>
-                <Badge cat={c.category} />
-              </div>
-              <div className="space-y-1.5 mb-3">
-                {c.email && <a href={`mailto:${c.email}`} className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors truncate"><Mail size={12} color="#9CA3AF" className="flex-shrink-0" />{c.email}</a>}
-                {c.phone && <a href={`tel:${c.phone}`} className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors"><Phone size={12} color="#9CA3AF" className="flex-shrink-0" />{c.phone}</a>}
-                {c.signal_username && <a href={`https://signal.me/#p/${c.signal_username}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors"><MessageCircle size={12} color="#9CA3AF" className="flex-shrink-0" />Signal: {c.signal_username}</a>}
-                {c.telegram && <a href={`https://t.me/${c.telegram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors"><MessageCircle size={12} color="#9CA3AF" className="flex-shrink-0" />Telegram: {c.telegram}</a>}
-              </div>
-              {c.notes && <p className="text-[12px] text-gray-400 italic line-clamp-2 mb-3">{c.notes}</p>}
-              <div className="flex items-center justify-between pt-3" style={{ borderTop: "1px solid #F3F4F6" }}>
-                <p className="text-[11px]" style={{ color: "#9CA3AF" }}>{new Date(c.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}</p>
-                <div className="flex gap-1">
-                  <button onClick={() => openEdit(c)} className="p-1.5 rounded-md transition-colors" style={{ color: "#9CA3AF" }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "#111"; e.currentTarget.style.background = "#F3F4F6"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}><Edit2 size={13} /></button>
-                  <button onClick={() => setDeleteId(c.id)} className="p-1.5 rounded-md transition-colors" style={{ color: "#9CA3AF" }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "#DC2626"; e.currentTarget.style.background = "#FEE2E2"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}><Trash2 size={13} /></button>
-                </div>
-              </div>
+      {/* Contact cards with sidebar */}
+      <div className="flex gap-5">
+        {/* Sidebar gruppering */}
+        <div className="hidden lg:block w-48 flex-shrink-0">
+          {Object.entries(
+            contacts.reduce((acc, c) => {
+              const country = c.country || 'Denmark';
+              const domain = c.source_domain || 'Manuel';
+              if (!acc[country]) acc[country] = {};
+              acc[country][domain] = (acc[country][domain] || 0) + 1;
+              return acc;
+            }, {} as Record<string, Record<string, number>>)
+          ).map(([country, domains]) => (
+            <div key={country} className="mb-4">
+              <p className="text-[12px] font-bold text-gray-700 mb-1">{country} ({Object.values(domains).reduce((a, b) => a + b, 0)})</p>
+              {Object.entries(domains).map(([domain, count]) => (
+                <button key={domain} onClick={() => { setCountryFilter(country); setSourceFilter(domain === 'Manuel' ? 'all' : domain); }}
+                  className="block w-full text-left text-[11px] text-gray-500 hover:text-gray-900 py-0.5 pl-2">
+                  └ {domain} ({count})
+                </button>
+              ))}
             </div>
           ))}
         </div>
-      )}
+
+        {/* Contact cards */}
+        <div className="flex-1 min-w-0">
+        {loading ? (
+          <div className="flex justify-center py-20"><div className="w-6 h-6 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" /></div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center bg-white rounded-xl" style={{ border: "1px solid #E5E5E5" }}>
+            <p className="text-[14px] text-gray-400">{contacts.length === 0 ? "No contacts yet — add your first contact" : "No contacts match your search"}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filtered.map(c => (
+              <div key={c.id} className="bg-white rounded-xl p-5 group" style={{ border: "1px solid #E5E5E5" }}>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-[14px] font-bold flex-shrink-0" style={{ background: "#F3F4F6", color: "#374151" }}>{c.name[0]?.toUpperCase()}</div>
+                    <p className="text-[14px] font-bold text-gray-900 truncate">{c.name}</p>
+                  </div>
+                  <Badge cat={c.category} />
+                </div>
+                <div className="space-y-1.5 mb-3">
+                  {c.email && <a href={`mailto:${c.email}`} className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors truncate"><Mail size={12} color="#9CA3AF" className="flex-shrink-0" />{c.email}</a>}
+                  {c.phone && <a href={`tel:${c.phone}`} className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors"><Phone size={12} color="#9CA3AF" className="flex-shrink-0" />{c.phone}</a>}
+                  {c.signal_username && <a href={`https://signal.me/#p/${c.signal_username}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors"><MessageCircle size={12} color="#9CA3AF" className="flex-shrink-0" />Signal: {c.signal_username}</a>}
+                  {c.telegram && <a href={`https://t.me/${c.telegram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors"><MessageCircle size={12} color="#9CA3AF" className="flex-shrink-0" />Telegram: {c.telegram}</a>}
+                </div>
+                {c.source_domain && <p className="text-[11px] text-gray-400 mb-1">Kilde: {c.source_domain}</p>}
+                {c.notes && <p className="text-[12px] text-gray-400 italic line-clamp-2 mb-3">{c.notes}</p>}
+                <div className="flex items-center justify-between pt-3" style={{ borderTop: "1px solid #F3F4F6" }}>
+                  <p className="text-[11px]" style={{ color: "#9CA3AF" }}>{new Date(c.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}</p>
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(c)} className="p-1.5 rounded-md transition-colors" style={{ color: "#9CA3AF" }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "#111"; e.currentTarget.style.background = "#F3F4F6"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}><Edit2 size={13} /></button>
+                    <button onClick={() => setDeleteId(c.id)} className="p-1.5 rounded-md transition-colors" style={{ color: "#9CA3AF" }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "#DC2626"; e.currentTarget.style.background = "#FEE2E2"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}><Trash2 size={13} /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        </div>
+      </div>
       </>) : (
         /* URL SCRAPER / CRM TAB */
         <div className="space-y-5">
