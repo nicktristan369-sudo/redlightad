@@ -96,7 +96,7 @@ function extractLinks(html: string, baseUrl: string): string[] {
 export async function GET(req: NextRequest) {
   const tag = req.nextUrl.searchParams.get('tag')
   let q = getSupabase()
-    .from('phonebook')
+    .from('scraped_phones')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(500)
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
       try {
         const supabase = getSupabase()
         const { data: existing } = await supabase
-          .from('phonebook')
+          .from('scraped_phones')
           .select('phone')
 
         const existingPhones = new Set(
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
                 }))
 
               if (toInsert.length > 0) {
-                await supabase.from('phonebook').insert(toInsert)
+                await supabase.from('scraped_phones').insert(toInsert)
                 // Tilføj til existingPhones så næste side ikke genduplikerer
                 toInsert.forEach(r => existingPhones.add(r.phone))
                 newCount += toInsert.length
@@ -241,13 +241,13 @@ export async function DELETE(req: NextRequest) {
   }
 
   if (body.id) {
-    const { error } = await getSupabase().from('phonebook').delete().eq('id', body.id)
+    const { error } = await getSupabase().from('scraped_phones').delete().eq('id', body.id)
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json({ success: true })
   }
 
   const { error, count } = await getSupabase()
-    .from('phonebook')
+    .from('scraped_phones')
     .delete()
     .neq('id', '00000000-0000-0000-0000-000000000000')
 
