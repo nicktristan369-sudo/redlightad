@@ -155,7 +155,7 @@ export default function AdminPhonebookPage() {
                 pagesScanned: data.pagesScanned,
               });
               setProgress(null);
-              window.location.reload();
+              await loadScraped(scrapeTagFilter);
             } else if (data.type === "error") {
               setScrapeError(data.message);
             }
@@ -184,7 +184,7 @@ export default function AdminPhonebookPage() {
 
     const res = await fetch("/api/admin/scrape-phones", { method: "DELETE" });
     if (res.ok) {
-      window.location.reload();
+      await loadScraped(scrapeTagFilter);
     }
   }
 
