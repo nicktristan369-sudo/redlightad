@@ -43,28 +43,39 @@ function extractPhones(html: string): string[] {
 }
 
 async function fetchPage(url: string): Promise<string> {
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: { width: 1920, height: 1080 },
-    executablePath: await chromium.executablePath(),
-    headless: true,
-  })
+  console.log('Launching browser for:', url)
 
-  const page = await browser.newPage()
+  try {
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: { width: 1920, height: 1080 },
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    })
+    console.log('Browser launched OK')
 
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-  )
+    const page = await browser.newPage()
 
-  await page.goto(url, {
-    waitUntil: 'networkidle2',
-    timeout: 20000,
-  })
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+    )
 
-  const html = await page.content()
-  await browser.close()
+    await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout: 20000,
+    })
 
-  return html
+    const html = await page.content()
+    console.log('Page content length:', html.length)
+    console.log('Tel links found:', (html.match(/tel:/g) || []).length)
+
+    await browser.close()
+    return html
+
+  } catch (err: any) {
+    console.error('Browser error:', err.message)
+    return ''
+  }
 }
 
 function extractLinks(html: string, baseUrl: string): string[] {
