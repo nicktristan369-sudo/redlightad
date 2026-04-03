@@ -70,7 +70,6 @@ export async function POST(req: NextRequest) {
       needs_completion: true,
       status: 'active',
       is_active: true,
-      approved: true,
       category: profile.category || 'escort',
       admin_email: email,
       admin_password: password,
