@@ -33,6 +33,12 @@ interface Activity {
   status?: string;
 }
 
+interface ChartDay {
+  date: string;
+  visitors: number;
+  registrations: number;
+}
+
 const ACTIVITY_ICONS = {
   listing:     <FileText size={14} color="#6B7280" />,
   user:        <UserPlus size={14} color="#6B7280" />,
@@ -59,23 +65,18 @@ function MetricCard({ label, value, sub, icon: Icon, accent }: {
   );
 }
 
-// Mock 30-day chart data
-function generateChartData() {
-  const data = [];
+/** Build a map of last 30 dates (YYYY-MM-DD) → { visitors: 0, registrations: 0 } */
+function emptyDayMap(): Map<string, { visitors: number; registrations: number }> {
+  const m = new Map();
   const now = new Date();
   for (let i = 29; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    data.push({
-      date: d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
-      visitors: Math.floor(Math.random() * 400 + 100),
-      registrations: Math.floor(Math.random() * 20 + 2),
-    });
+    const key = d.toISOString().split("T")[0];
+    m.set(key, { visitors: 0, registrations: 0 });
   }
-  return data;
+  return m;
 }
-
-const CHART_DATA = generateChartData();
 
 export default function AdminOverviewPage() {
   const [metrics, setMetrics] = useState<Metrics>({
@@ -84,6 +85,7 @@ export default function AdminOverviewPage() {
     coinsSoldTotal: 0, pendingPayouts: 0,
   });
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [chartData, setChartData] = useState<ChartDay[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -91,6 +93,7 @@ export default function AdminOverviewPage() {
       const supabase = createClient();
       const today = new Date().toISOString().split("T")[0];
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
 
       const [
         { count: totalUsers },
@@ -103,6 +106,9 @@ export default function AdminOverviewPage() {
         { data: recentListings },
         { data: recentUsers },
         { data: recentMarketplace },
+        { data: pageViewRows },
+        { data: regRows },
+        { data: recentKyc },
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", today),
@@ -114,8 +120,52 @@ export default function AdminOverviewPage() {
         supabase.from("listings").select("title, city, created_at, status").order("created_at", { ascending: false }).limit(5),
         supabase.from("profiles").select("full_name, created_at").order("created_at", { ascending: false }).limit(5),
         supabase.from("marketplace_items").select("title, category, created_at, status, profiles(full_name)").order("created_at", { ascending: false }).limit(5),
+        // Traffic: distinct sessions per day from page_views
+        supabase.from("page_views").select("created_at, session_id").gte("created_at", thirtyDaysAgo),
+        // Registrations per day from profiles
+        supabase.from("profiles").select("created_at").gte("created_at", thirtyDaysAgo),
+        // KYC submissions for activity feed
+        supabase.from("kyc_submissions").select("full_name, status, submitted_at").order("submitted_at", { ascending: false }).limit(5),
       ]);
 
+      // --- Build chart data ---
+      const dayMap = emptyDayMap();
+
+      // Count distinct sessions per day
+      if (pageViewRows) {
+        const sessionsByDay = new Map<string, Set<string>>();
+        for (const row of pageViewRows) {
+          const day = row.created_at.split("T")[0];
+          if (!sessionsByDay.has(day)) sessionsByDay.set(day, new Set());
+          if (row.session_id) sessionsByDay.get(day)!.add(row.session_id);
+        }
+        for (const [day, sessions] of sessionsByDay) {
+          const entry = dayMap.get(day);
+          if (entry) entry.visitors = sessions.size;
+        }
+      }
+
+      // Count registrations per day
+      if (regRows) {
+        for (const row of regRows) {
+          const day = row.created_at.split("T")[0];
+          const entry = dayMap.get(day);
+          if (entry) entry.registrations++;
+        }
+      }
+
+      const chart: ChartDay[] = [];
+      for (const [key, val] of dayMap) {
+        const d = new Date(key + "T00:00:00");
+        chart.push({
+          date: d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
+          visitors: val.visitors,
+          registrations: val.registrations,
+        });
+      }
+      setChartData(chart);
+
+      // --- Metrics ---
       const coinsSoldTotal = (coinData ?? []).reduce((sum: number, t: { amount: number }) => sum + Math.abs(t.amount), 0);
 
       setMetrics({
@@ -130,7 +180,7 @@ export default function AdminOverviewPage() {
         pendingPayouts: pendingPayouts ?? 0,
       });
 
-      // Build activity feed
+      // --- Build activity feed ---
       const acts: Activity[] = [];
       (recentListings ?? []).forEach((l: { title: string; city: string; created_at: string; status: string }) => {
         acts.push({
@@ -159,6 +209,16 @@ export default function AdminOverviewPage() {
           text: `${m.status === "pending" ? "Pending review" : m.status === "approved" ? "Approved" : "Rejected"} — Marketplace: ${m.title}${m.profiles?.full_name ? ` by ${m.profiles.full_name}` : ""}`,
           time: new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
           href: "/admin/marketplace",
+        });
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (recentKyc ?? []).forEach((k: any) => {
+        acts.push({
+          id: (k.submitted_at || k.created_at) + "k",
+          type: "user",
+          text: `KYC ${k.status === "pending" ? "submitted" : k.status} — ${k.full_name ?? "Unknown"}`,
+          time: new Date(k.submitted_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
+          href: "/admin/kyc",
         });
       });
       acts.sort((a, b) => new Date(b.id).getTime() - new Date(a.id).getTime());
@@ -204,7 +264,7 @@ export default function AdminOverviewPage() {
             <TrendingUp size={16} color="#9CA3AF" />
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={CHART_DATA} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="gVisitors" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#000" stopOpacity={0.12} />
