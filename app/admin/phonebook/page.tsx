@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import AdminLayout from "@/components/AdminLayout";
 import { createClient } from "@/lib/supabase";
 import {
@@ -58,7 +59,8 @@ const EMPTY: ContactForm = {
   name: "", email: "", phone: "", signal_username: "", telegram: "", category: "other", notes: "",
 };
 
-export default function AdminPhonebookPage() {
+function AdminPhonebookPage() {
+  const searchParams = useSearchParams();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -69,7 +71,9 @@ export default function AdminPhonebookPage() {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"contacts" | "scraper">("contacts");
+  const [activeTab, setActiveTab] = useState<"contacts" | "scraper">(
+    searchParams.get("tab") === "scraper" ? "scraper" : "contacts"
+  );
   const [scrapeUrl, setScrapeUrl] = useState("https://annoncelight.dk");
   const [scrapeTag, setScrapeTag] = useState("untagged");
   const [depth, setDepth] = useState(3);
@@ -155,7 +159,8 @@ export default function AdminPhonebookPage() {
                 pagesScanned: data.pagesScanned,
               });
               setProgress(null);
-              await loadScraped(scrapeTagFilter);
+              setIsRunning(false);
+              window.location.href = window.location.pathname + "?tab=scraper";
             } else if (data.type === "error") {
               setScrapeError(data.message);
             }
@@ -184,7 +189,7 @@ export default function AdminPhonebookPage() {
 
     const res = await fetch("/api/admin/scrape-phones", { method: "DELETE" });
     if (res.ok) {
-      await loadScraped(scrapeTagFilter);
+      window.location.href = window.location.pathname + "?tab=scraper";
     }
   }
 
@@ -619,5 +624,13 @@ export default function AdminPhonebookPage() {
         </div>
       )}
     </AdminLayout>
+  );
+}
+
+export default function PhonebookPageWrapper() {
+  return (
+    <Suspense>
+      <AdminPhonebookPage />
+    </Suspense>
   );
 }
