@@ -21,7 +21,7 @@ export async function sendSMS({ to, message, sender = process.env.GATEWAYAPI_SEN
   if (phone.length === 8) phone = '45' + phone
 
   try {
-    const response = await fetch('https://gatewayapi.com/rest/mtsms', {
+    const response = await fetch('https://messaging.gatewayapi.com/mobile/single', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${token}`,
@@ -30,7 +30,7 @@ export async function sendSMS({ to, message, sender = process.env.GATEWAYAPI_SEN
       body: JSON.stringify({
         sender,
         message,
-        recipients: [{ msisdn: parseInt(phone) }],
+        recipient: parseInt(phone),
       }),
     })
 
@@ -43,7 +43,7 @@ export async function sendSMS({ to, message, sender = process.env.GATEWAYAPI_SEN
 
     return {
       success: true,
-      messageId: data.ids?.[0]?.toString(),
+      messageId: data.id?.toString() || data.ids?.[0]?.toString(),
     }
   } catch (err: any) {
     return { success: false, error: err.message }
