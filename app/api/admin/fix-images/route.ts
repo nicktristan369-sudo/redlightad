@@ -36,8 +36,8 @@ async function cropAndUpload(imageUrl: string): Promise<string> {
     const clipdropKey = process.env.CLIPDROP_API_KEY
     if (clipdropKey) {
       try {
-        const wmX = Math.round(w * 0.02), wmY = Math.round(h * 0.46)
-        const wmW = Math.round(w * 0.70), wmH = Math.round(h * 0.08)
+        const wmX = 0, wmY = Math.round(h * 0.43)
+        const wmW = w, wmH = Math.round(h * 0.12)
         const maskBuf = await sharp({ create: { width: w, height: h, channels: 3, background: { r:0,g:0,b:0 } } })
           .composite([{ input: await sharp({ create: { width: wmW, height: wmH, channels: 3, background: { r:255,g:255,b:255 } } }).png().toBuffer(), left: wmX, top: wmY }])
           .png().toBuffer()

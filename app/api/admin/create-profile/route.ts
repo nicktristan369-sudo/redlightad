@@ -37,12 +37,11 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
     const w = meta.width || 800
     const h = meta.height || 600
 
-    // AnnonceLight.dk vandmærke — præcise koordinater via billedanalyse:
-    // Vandmærket starter ved venstre kant (~2%), 48% fra top, 70% bred, 6% høj
-    const wmX = Math.round(w * 0.02)
-    const wmY = Math.round(h * 0.46)
-    const wmW = Math.round(w * 0.70)
-    const wmH = Math.round(h * 0.08) // lidt ekstra margin
+    // AnnonceLight.dk vandmærke — fuld bredde, 43-55% fra top
+    const wmX = 0
+    const wmY = Math.round(h * 0.43)
+    const wmW = w
+    const wmH = Math.round(h * 0.12)
 
     const maskBuffer = await sharp({
       create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
