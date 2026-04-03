@@ -5,35 +5,22 @@ import { sendSMS } from '@/lib/sms'
 const getSupabase = () =>
   createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-function generatePassword(): string {
-  const words = ['Rose', 'Luna', 'Star', 'Nova', 'Ruby', 'Jade', 'Aria']
-  const word = words[Math.floor(Math.random() * words.length)]
-  const num = Math.floor(1000 + Math.random() * 9000)
-  return `${word}#${num}`
-}
-
-function generateEmail(name: string, phone: string): string {
-  const clean = name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) || 'user'
-  const suffix = phone.replace(/\D/g, '').slice(-4)
-  return `${clean}${suffix}@redlightad.com`
-}
-
-function generateUsername(displayName: string): string {
-  const base = displayName
-    .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/[^a-z0-9]/g, '')
-    .substring(0, 12)
-  return base + Math.floor(Math.random() * 999)
+function generateCredentials() {
+  const loginId = 'user_' + Math.random().toString(36).substring(2, 8)
+  const email = `${loginId}@redlightad.com`
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
+  const password = Array.from(
+    { length: 12 },
+    () => chars[Math.floor(Math.random() * chars.length)]
+  ).join('')
+  return { loginId, email, password }
 }
 
 export async function POST(req: NextRequest) {
   const { profile, sendSMSNotification } = await req.json()
 
   const supabase = getSupabase()
-  const password = generatePassword()
-  const username = generateUsername(profile.display_name || 'user')
-  const email = profile.email || generateEmail(profile.display_name || 'user', profile.phone || '')
+  const { loginId, email, password } = generateCredentials()
 
   // Opret bruger i Supabase Auth
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -42,7 +29,7 @@ export async function POST(req: NextRequest) {
     email_confirm: true,
     user_metadata: {
       display_name: profile.display_name,
-      username,
+      login_id: loginId,
       created_by_admin: true,
     },
   })
@@ -56,7 +43,7 @@ export async function POST(req: NextRequest) {
   // Opret profil record
   await supabase.from('profiles').upsert({
     id: userId,
-    username,
+    username: loginId,
     display_name: profile.display_name,
     phone: profile.phone,
     city: profile.city,
@@ -66,7 +53,7 @@ export async function POST(req: NextRequest) {
     created_by_admin: true,
   })
 
-  // Opret listing så profilen vises på forsiden
+  // Opret listing — gem credentials så admin altid kan finde dem
   const { data: listingData, error: listingError } = await supabase
     .from('listings')
     .insert({
@@ -85,6 +72,9 @@ export async function POST(req: NextRequest) {
       is_active: true,
       approved: true,
       category: profile.category || 'escort',
+      admin_email: email,
+      admin_password: password,
+      admin_login_id: loginId,
     })
     .select()
 
@@ -104,26 +94,21 @@ export async function POST(req: NextRequest) {
 
   if (promoCode) {
     await supabase.from('promo_code_uses').insert({ code_id: promoCode.id, user_id: userId })
-    await supabase.from('promo_codes').update({ used_count: supabase.rpc('increment', { x: 1 }) }).eq('id', promoCode.id)
   }
 
   // Send SMS med login info
   if (sendSMSNotification && profile.phone) {
-    const smsMessage = `Hej! Din profil på RedLightAD er klar. Log ind med:\nEmail: ${email}\nKode: ${password}\nredlightad.com/login\n\nDu har 30 dages gratis adgang med kode: GRATIS30`
-
-    await sendSMS({
-      to: profile.phone,
-      message: smsMessage,
-      sender: 'REDLIGHTAD',
-    })
+    const smsMessage = `Hej! Din profil på RedLightAD er klar.\n\nLog ind på: redlightad.com/login\nBrugernavn: ${email}\nKode: ${password}\n\n30 dages gratis adgang med kode: GRATIS30`
+    await sendSMS({ to: profile.phone, message: smsMessage, sender: 'REDLIGHTAD' })
   }
 
   return Response.json({
     success: true,
     userId,
-    username,
+    loginId,
     email,
     password,
+    phone: profile.phone,
     smsStatus: sendSMSNotification ? 'sent' : 'skipped',
   })
 }

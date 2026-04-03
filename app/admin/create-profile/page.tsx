@@ -19,9 +19,11 @@ type ProfileData = {
 type CreateResult = {
   success: boolean;
   userId: string;
-  username: string;
+  username?: string;
+  loginId?: string;
   email: string;
   password: string;
+  phone?: string;
   smsStatus: string;
 };
 
@@ -474,38 +476,44 @@ export default function CreateProfilePage() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2 mb-5">
               {[
-                { label: "Username", value: result.username },
+                { label: "Login ID", value: result.loginId || result.email },
                 { label: "Email", value: result.email },
                 { label: "Adgangskode", value: result.password },
-                {
-                  label: "SMS",
-                  value: result.smsStatus === "sent" ? "Sendt" : "Ikke sendt",
-                },
-                {
-                  label: "Profil link",
-                  value: `redlightad.com/profil/${result.username}`,
-                },
+                { label: "SMS", value: result.smsStatus === "sent" ? "Sendt" : "Ikke sendt" },
               ].map((row) => (
                 <div
                   key={row.label}
                   className="flex items-center justify-between py-2 px-3 rounded-lg"
                   style={{ background: "#F9FAFB" }}
                 >
-                  <span className="text-[12px] font-semibold text-gray-500">
-                    {row.label}
-                  </span>
-                  <span className="text-[13px] font-mono text-gray-900">
-                    {row.value}
-                  </span>
+                  <span className="text-[12px] font-semibold text-gray-500 w-28">{row.label}</span>
+                  <span className="text-[13px] font-mono text-gray-900 flex-1 text-right pr-2 truncate">{row.value}</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(row.value)}
+                    className="text-[11px] px-2 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 flex-shrink-0"
+                  >
+                    Kopi
+                  </button>
                 </div>
               ))}
             </div>
 
             <button
+              onClick={() => {
+                const text = `Login info:\nEmail: ${result.email}\nKode: ${result.password}`
+                navigator.clipboard.writeText(text)
+              }}
+              className="w-full mb-3 px-4 py-2.5 rounded-lg text-[13px] font-semibold border border-gray-200"
+              style={{ background: "#F9FAFB", color: "#111" }}
+            >
+              Kopiér alle login info
+            </button>
+
+            <button
               onClick={reset}
-              className="w-full mt-6 px-4 py-2.5 rounded-lg text-[13px] font-semibold"
+              className="w-full px-4 py-2.5 rounded-lg text-[13px] font-semibold"
               style={{ background: "#000", color: "#fff" }}
             >
               Opret ny profil
