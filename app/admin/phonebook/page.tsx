@@ -88,7 +88,7 @@ const EMPTY: ContactForm = {
   name: "", email: "", phone: "", signal_username: "", telegram: "", category: "other", notes: "",
 };
 
-const DEFAULT_SMS_TEMPLATE = `Hej! Vi har set din annonce og vil gerne invitere dig til RedLightAD — Danmarks nye platform. Opret dig gratis i 30 dage her: [TOKEN] Mvh RedLightAD teamet`;
+const DEFAULT_SMS_TEMPLATE = `Hej! Vi har set din annonce og inviterer dig til RedLightAD. Opret dig GRATIS i 30 dage med kode: GRATIS30 på redlightad.com`;
 
 function AdminPhonebookPage() {
   const searchParams = useSearchParams();
