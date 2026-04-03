@@ -9,6 +9,7 @@ type ProfileData = {
   email: string;
   description: string;
   city: string;
+  country: string;
   age: number | null;
   images: string[];
   source_url: string;
@@ -36,6 +37,7 @@ export default function CreateProfilePage() {
     email: "",
     description: "",
     city: "",
+    country: "Denmark",
     age: null,
     images: [],
     source_url: "",
@@ -105,6 +107,7 @@ export default function CreateProfilePage() {
       email: "",
       description: "",
       city: "",
+      country: "Denmark",
       age: null,
       images: [],
       source_url: "",
@@ -284,6 +287,20 @@ export default function CreateProfilePage() {
                     style={inputStyle}
                     placeholder="København"
                   />
+                </div>
+                <div>
+                  <label style={labelStyle}>Land</label>
+                  <select
+                    value={profile.country}
+                    onChange={(e) => setProfile({ ...profile, country: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="Denmark">Danmark 🇩🇰</option>
+                    <option value="Sweden">Sverige 🇸🇪</option>
+                    <option value="Norway">Norge 🇳🇴</option>
+                    <option value="Germany">Tyskland 🇩🇪</option>
+                    <option value="Netherlands">Holland 🇳🇱</option>
+                  </select>
                 </div>
               </div>
 

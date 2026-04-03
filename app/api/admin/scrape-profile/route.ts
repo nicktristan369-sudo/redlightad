@@ -28,9 +28,18 @@ export async function POST(req: NextRequest) {
     phone = match ? match[0].replace(/\s/g, '') : ''
   }
 
-  const description = $('[class*="description"]').first().text().trim() ||
-    $('[class*="about"]').first().text().trim() ||
-    $('p').eq(1).text().trim() || ''
+  const description = (() => {
+    const candidates = [
+      $('[class*="desc"]').text().trim(),
+      $('[class*="about"]').text().trim(),
+      $('[class*="bio"]').text().trim(),
+      $('p').filter((_, el) => {
+        const text = $(el).text()
+        return text.length > 50 && !text.match(/I dag|kl\s+\d{2}:\d{2}|^\d{2}\/\d{2}/)
+      }).first().text().trim(),
+    ]
+    return candidates.find(c => c && c.length > 30) || ''
+  })()
 
   const city = $('[class*="city"]').first().text().trim() ||
     $('[class*="location"]').first().text().trim() || ''

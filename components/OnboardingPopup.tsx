@@ -23,6 +23,8 @@ export default function OnboardingPopup() {
       .single()
 
     if (!listing?.needs_completion) return
+    // Skip popup for admin-oprettede brugere der er admin selv
+    if (listing?.created_by_admin && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) return
 
     const missingFields: string[] = []
     if (!listing.email || listing.email?.includes('@redlightad.com'))
