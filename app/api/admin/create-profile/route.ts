@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendSMS } from '@/lib/sms'
 import { v2 as cloudinary } from 'cloudinary'
+import sharp from 'sharp'
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -14,6 +15,18 @@ console.log('Cloudinary config:', {
   api_key: process.env.CLOUDINARY_API_KEY ? 'SET' : 'MISSING',
   api_secret: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'MISSING',
 })
+
+async function processImage(imageBuffer: Buffer): Promise<Buffer> {
+  try {
+    return await sharp(imageBuffer)
+      .modulate({ saturation: 1.3, brightness: 1.05 })
+      .sharpen()
+      .jpeg({ quality: 90 })
+      .toBuffer()
+  } catch {
+    return imageBuffer
+  }
+}
 
 async function removeWatermark(imageBuffer: Buffer): Promise<Buffer> {
   const apiKey = process.env.WATERMARK_REMOVER_API_KEY
@@ -58,6 +71,9 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
     })
 
     let imageBuffer = Buffer.from(response.data)
+
+    // Forbedr billedkvalitet
+    imageBuffer = await processImage(imageBuffer)
 
     // Fjern vandmærke hvis API key er sat
     imageBuffer = await removeWatermark(imageBuffer)
