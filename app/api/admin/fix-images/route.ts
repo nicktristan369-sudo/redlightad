@@ -25,23 +25,33 @@ async function cropAndUpload(imageUrl: string): Promise<string> {
     const w = meta.width || 800
     const h = meta.height || 600
 
-    // Blur vandmærke-region (AnnonceLight.dk — midt i billedet, ca. 33-55% fra top)
-    const wmX = Math.round(w * 0.05)
-    const wmY = Math.round(h * 0.33)
-    const wmW = Math.round(w * 0.75)
-    const wmH = Math.round(h * 0.22)
-
-    const blurredRegion = await sharp(buffer)
-      .extract({ left: wmX, top: wmY, width: wmW, height: wmH })
-      .blur(12)
-      .toBuffer()
-
-    const processed = await sharp(buffer)
-      .composite([{ input: blurredRegion, left: wmX, top: wmY }])
+    // Forbedr kvalitet
+    let processed = await sharp(buffer)
       .modulate({ saturation: 1.2, brightness: 1.03 })
       .sharpen()
       .jpeg({ quality: 90 })
       .toBuffer()
+
+    // ClipDrop Cleanup — fjern AnnonceLight vandmærke
+    const clipdropKey = process.env.CLIPDROP_API_KEY
+    if (clipdropKey) {
+      try {
+        const wmX = Math.round(w * 0.05), wmY = Math.round(h * 0.33)
+        const wmW = Math.round(w * 0.75), wmH = Math.round(h * 0.22)
+        const maskBuf = await sharp({ create: { width: w, height: h, channels: 3, background: { r:0,g:0,b:0 } } })
+          .composite([{ input: await sharp({ create: { width: wmW, height: wmH, channels: 3, background: { r:255,g:255,b:255 } } }).png().toBuffer(), left: wmX, top: wmY }])
+          .png().toBuffer()
+        const form = new FormData()
+        form.append('image_file', new Blob([processed], { type: 'image/jpeg' }), 'image.jpg')
+        form.append('mask_file', new Blob([maskBuf], { type: 'image/png' }), 'mask.png')
+        form.append('mode', 'quality')
+        const res = await fetch('https://clipdrop-api.co/cleanup/v1', {
+          method: 'POST', headers: { 'x-api-key': clipdropKey }, body: form, signal: AbortSignal.timeout(60000),
+        })
+        if (res.ok) { processed = Buffer.from(await res.arrayBuffer()); console.log('✅ ClipDrop:', imageUrl) }
+        else console.error('❌ ClipDrop:', res.status)
+      } catch (ce) { console.error('ClipDrop error:', ce instanceof Error ? ce.message : ce) }
+    }
 
     // Upload til Cloudinary
     const url = await new Promise<string>((resolve, reject) => {

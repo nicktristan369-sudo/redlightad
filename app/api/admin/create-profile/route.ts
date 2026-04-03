@@ -18,29 +18,62 @@ console.log('Cloudinary config:', {
 
 async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   try {
-    const meta = await sharp(imageBuffer).metadata()
-    const w = meta.width || 800
-    const h = meta.height || 600
-
-    // Blur vandmærke-regionen (AnnonceLight.dk — midt i billedet)
-    const wmX = Math.round(w * 0.05)
-    const wmY = Math.round(h * 0.33)
-    const wmW = Math.round(w * 0.75)
-    const wmH = Math.round(h * 0.22)
-
-    // Udsnit af vandmærke-region — blur det og composite tilbage
-    const blurredRegion = await sharp(imageBuffer)
-      .extract({ left: wmX, top: wmY, width: wmW, height: wmH })
-      .blur(12)
-      .toBuffer()
-
     return await sharp(imageBuffer)
-      .composite([{ input: blurredRegion, left: wmX, top: wmY }])
       .modulate({ saturation: 1.2, brightness: 1.03 })
       .sharpen()
       .jpeg({ quality: 90 })
       .toBuffer()
   } catch {
+    return imageBuffer
+  }
+}
+
+async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
+  const apiKey = process.env.CLIPDROP_API_KEY
+  if (!apiKey) return imageBuffer
+
+  try {
+    const meta = await sharp(imageBuffer).metadata()
+    const w = meta.width || 800
+    const h = meta.height || 600
+
+    // Mask: hvid = fjern, sort = behold
+    // AnnonceLight.dk vandmærke sidder midt i billedet
+    const wmX = Math.round(w * 0.05)
+    const wmY = Math.round(h * 0.33)
+    const wmW = Math.round(w * 0.75)
+    const wmH = Math.round(h * 0.22)
+
+    const maskBuffer = await sharp({
+      create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
+    }).composite([{
+      input: await sharp({
+        create: { width: wmW, height: wmH, channels: 3, background: { r: 255, g: 255, b: 255 } }
+      }).png().toBuffer(),
+      left: wmX, top: wmY,
+    }]).png().toBuffer()
+
+    const form = new FormData()
+    form.append('image_file', new Blob([imageBuffer], { type: 'image/jpeg' }), 'image.jpg')
+    form.append('mask_file', new Blob([maskBuffer], { type: 'image/png' }), 'mask.png')
+    form.append('mode', 'quality')
+
+    const res = await fetch('https://clipdrop-api.co/cleanup/v1', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey },
+      body: form,
+      signal: AbortSignal.timeout(60000),
+    })
+
+    if (!res.ok) {
+      console.error('❌ ClipDrop error:', res.status, await res.text())
+      return imageBuffer
+    }
+
+    console.log('✅ Watermark removed via ClipDrop')
+    return Buffer.from(await res.arrayBuffer())
+  } catch (e) {
+    console.error('❌ ClipDrop failed:', e instanceof Error ? e.message : e)
     return imageBuffer
   }
 }
@@ -279,7 +312,7 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
 
     // Forbedr billedkvalitet
     imageBuffer = await processImage(imageBuffer)
-    // Replicate deaktiveret — blur via sharp i processImage
+    imageBuffer = await removeWatermarkClipDrop(imageBuffer)
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
