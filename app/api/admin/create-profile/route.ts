@@ -28,32 +28,40 @@ async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   }
 }
 
-async function removeWatermark(imageBuffer: Buffer): Promise<Buffer> {
-  const apiKey = process.env.WATERMARK_REMOVER_API_KEY
-  if (!apiKey) return imageBuffer // spring over hvis ingen key
+async function removeWatermarkPixelbin(imageBuffer: Buffer): Promise<Buffer> {
+  const apiToken = process.env.PIXELBIN_API_TOKEN
+  if (!apiToken) return imageBuffer
 
   try {
-    const formData = new FormData()
-    formData.append('image', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
+    const axios = (await import('axios')).default
 
-    const response = await fetch('https://api.watermarkremover.io/v3/remove', {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey },
-      body: formData,
-      signal: AbortSignal.timeout(20000),
+    // Upload til PixelBin
+    const formData = new FormData()
+    formData.append('file', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), `listing_${Date.now()}.jpg`)
+    formData.append('path', 'listings')
+    formData.append('overwrite', 'true')
+
+    const uploadRes = await axios.post('https://api.pixelbin.io/service/public/assets/v1.0/upload', formData, {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 30000,
     })
 
-    if (!response.ok) {
-      console.error('❌ Watermark removal failed:', response.status)
-      return imageBuffer
-    }
+    const uploadedUrl: string = uploadRes.data?.url
+    if (!uploadedUrl) throw new Error('No URL returned from PixelBin')
 
-    const result = await response.arrayBuffer()
-    console.log('✅ Watermark removed')
-    return Buffer.from(result)
+    // Tilføj watermark removal transformation til URL
+    const cleanUrl = uploadedUrl.replace('/v2/', '/v2/wm.remove()/')
+
+    // Download rent billede
+    const cleanRes = await axios.get(cleanUrl, { responseType: 'arraybuffer', timeout: 20000 })
+    console.log('✅ Watermark removed via PixelBin')
+    return Buffer.from(cleanRes.data)
   } catch (e) {
-    console.error('❌ Watermark removal error:', e instanceof Error ? e.message : e)
-    return imageBuffer // fallback til originalt billede
+    console.error('❌ PixelBin watermark removal failed:', e instanceof Error ? e.message : e)
+    return imageBuffer
   }
 }
 
@@ -75,8 +83,8 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
     // Forbedr billedkvalitet
     imageBuffer = await processImage(imageBuffer)
 
-    // Fjern vandmærke hvis API key er sat
-    imageBuffer = await removeWatermark(imageBuffer)
+    // Fjern vandmærke via PixelBin
+    imageBuffer = await removeWatermarkPixelbin(imageBuffer)
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
