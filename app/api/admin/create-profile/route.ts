@@ -18,8 +18,22 @@ console.log('Cloudinary config:', {
 
 async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   try {
-    return await sharp(imageBuffer)
-      .modulate({ saturation: 1.3, brightness: 1.05 })
+    const img = sharp(imageBuffer)
+    const meta = await img.metadata()
+    const w = meta.width || 800
+    const h = meta.height || 600
+
+    // Dæk vandmærket (AnnonceLight.dk sidder altid nederst til venstre)
+    // Overlay et sort rektangel over vandmærkeområdet
+    const wmW = Math.round(w * 0.35)
+    const wmH = Math.round(h * 0.08)
+    const overlay = await sharp({
+      create: { width: wmW, height: wmH, channels: 3, background: { r: 0, g: 0, b: 0 } }
+    }).jpeg().toBuffer()
+
+    return await img
+      .composite([{ input: overlay, left: 0, top: h - wmH }])
+      .modulate({ saturation: 1.2, brightness: 1.03 })
       .sharpen()
       .jpeg({ quality: 90 })
       .toBuffer()
