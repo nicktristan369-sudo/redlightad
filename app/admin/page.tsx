@@ -24,6 +24,14 @@ interface Metrics {
   pendingPayouts: number;
 }
 
+interface OutreachStats {
+  total: number;
+  pending: number;
+  smsSent: number;
+  clicked: number;
+  converted: number;
+}
+
 interface Activity {
   href?: string;
   id: string;
@@ -86,6 +94,7 @@ export default function AdminOverviewPage() {
   });
   const [activity, setActivity] = useState<Activity[]>([]);
   const [chartData, setChartData] = useState<ChartDay[]>([]);
+  const [outreach, setOutreach] = useState<OutreachStats>({ total: 0, pending: 0, smsSent: 0, clicked: 0, converted: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -109,6 +118,7 @@ export default function AdminOverviewPage() {
         { data: pageViewRows },
         { data: regRows },
         { data: recentKyc },
+        { data: outreachStats },
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", today),
@@ -126,6 +136,8 @@ export default function AdminOverviewPage() {
         supabase.from("profiles").select("created_at").gte("created_at", thirtyDaysAgo),
         // KYC submissions for activity feed
         supabase.from("kyc_submissions").select("full_name, status, submitted_at").order("submitted_at", { ascending: false }).limit(5),
+        // Outreach stats
+        supabase.from("scraped_phones").select("sms_status"),
       ]);
 
       // --- Build chart data ---
@@ -223,6 +235,15 @@ export default function AdminOverviewPage() {
       });
       acts.sort((a, b) => new Date(b.id).getTime() - new Date(a.id).getTime());
       setActivity(acts.slice(0, 12));
+
+      // --- Outreach stats ---
+      const oTotal = outreachStats?.length || 0;
+      const oPending = outreachStats?.filter((r: { sms_status: string }) => r.sms_status === 'pending').length || 0;
+      const oSent = outreachStats?.filter((r: { sms_status: string }) => r.sms_status === 'sent').length || 0;
+      const oClicked = outreachStats?.filter((r: { sms_status: string }) => r.sms_status === 'clicked').length || 0;
+      const oConverted = outreachStats?.filter((r: { sms_status: string }) => r.sms_status === 'converted').length || 0;
+      setOutreach({ total: oTotal, pending: oPending, smsSent: oSent, clicked: oClicked, converted: oConverted });
+
       setLoading(false);
     };
     load();
@@ -326,6 +347,22 @@ export default function AdminOverviewPage() {
               })}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Outreach widget */}
+      <div className="mb-8">
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[14px] font-semibold text-gray-900">Outreach</h3>
+            <a href="/admin/phonebook?tab=scraper" className="text-[12px] text-gray-400 hover:text-gray-700">Se alle &rarr;</a>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><p className="text-[22px] font-bold text-gray-900">{outreach.total}</p><p className="text-[11px] text-gray-400">Scraped</p></div>
+            <div><p className="text-[22px] font-bold text-blue-600">{outreach.smsSent}</p><p className="text-[11px] text-gray-400">SMS sendt</p></div>
+            <div><p className="text-[22px] font-bold text-purple-600">{outreach.clicked}</p><p className="text-[11px] text-gray-400">Klikket</p></div>
+            <div><p className="text-[22px] font-bold text-green-600">{outreach.converted}</p><p className="text-[11px] text-gray-400">Oprettet</p></div>
+          </div>
         </div>
       </div>
 

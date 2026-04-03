@@ -41,6 +41,13 @@ export default function JoinPage() {
       .then((data) => {
         setInvite(data);
         setLoading(false);
+        // Track invite link click
+        const supabase = createClient();
+        supabase
+          .from('scraped_phones')
+          .update({ sms_status: 'clicked' })
+          .eq('invite_token', token)
+          .then(() => {});
       })
       .catch(() => {
         setNotFound(true);
@@ -106,6 +113,12 @@ export default function JoinPage() {
           listing_id: listing?.id || null,
         }),
       });
+
+      // 4. Track conversion in scraped_phones
+      await supabase
+        .from('scraped_phones')
+        .update({ sms_status: 'converted' })
+        .eq('invite_token', token);
 
       setStep("success");
       setTimeout(() => router.push("/dashboard"), 1500);
