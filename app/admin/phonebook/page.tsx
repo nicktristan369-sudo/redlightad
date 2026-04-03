@@ -93,6 +93,10 @@ function AdminPhonebookPage() {
   const [hideDuplicates, setHideDuplicates] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
 
+  // Refs for stale-closure-safe access inside SSE handler
+  const loadScrapedRef = useRef<(tag?: string) => Promise<void>>(async () => {});
+  const scrapeTagFilterRef = useRef("all");
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data } = await createClient()
@@ -112,6 +116,14 @@ function AdminPhonebookPage() {
     setScrapedPhones(Array.isArray(data) ? data : []);
     setLoadingScraped(false);
   }, []);
+
+  useEffect(() => {
+    loadScrapedRef.current = loadScraped;
+  }, [loadScraped]);
+
+  useEffect(() => {
+    scrapeTagFilterRef.current = scrapeTagFilter;
+  }, [scrapeTagFilter]);
 
   useEffect(() => {
     if (activeTab === "scraper") loadScraped(scrapeTagFilter);
@@ -160,7 +172,7 @@ function AdminPhonebookPage() {
               });
               setProgress(null);
               setIsRunning(false);
-              window.location.href = window.location.pathname + "?tab=scraper";
+              await loadScrapedRef.current(scrapeTagFilterRef.current);
             } else if (data.type === "error") {
               setScrapeError(data.message);
             }
@@ -189,7 +201,7 @@ function AdminPhonebookPage() {
 
     const res = await fetch("/api/admin/scrape-phones", { method: "DELETE" });
     if (res.ok) {
-      window.location.href = window.location.pathname + "?tab=scraper";
+      await loadScrapedRef.current(scrapeTagFilterRef.current);
     }
   }
 
