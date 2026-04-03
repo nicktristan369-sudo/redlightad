@@ -66,6 +66,24 @@ export async function POST(req: NextRequest) {
     created_by_admin: true,
   })
 
+  // Opret listing så profilen vises på forsiden
+  await supabase.from('listings').insert({
+    user_id: userId,
+    display_name: profile.display_name,
+    phone: profile.phone,
+    city: profile.city,
+    country: profile.country || 'Denmark',
+    age: profile.age,
+    description: profile.description,
+    source_url: profile.source_url,
+    created_by_admin: true,
+    needs_completion: true,
+    status: 'active',
+    is_active: true,
+    approved: true,
+    category: profile.category || 'escort',
+  })
+
   // Anvend GRATIS30 promo kode
   const { data: promoCode } = await supabase
     .from('promo_codes')
