@@ -67,22 +67,33 @@ export async function POST(req: NextRequest) {
   })
 
   // Opret listing så profilen vises på forsiden
-  await supabase.from('listings').insert({
-    user_id: userId,
-    display_name: profile.display_name,
-    phone: profile.phone,
-    city: profile.city,
-    country: profile.country || 'Denmark',
-    age: profile.age,
-    description: profile.description,
-    source_url: profile.source_url,
-    created_by_admin: true,
-    needs_completion: true,
-    status: 'active',
-    is_active: true,
-    approved: true,
-    category: profile.category || 'escort',
-  })
+  const { data: listingData, error: listingError } = await supabase
+    .from('listings')
+    .insert({
+      user_id: userId,
+      title: profile.display_name || 'Ny profil',
+      display_name: profile.display_name,
+      phone: profile.phone,
+      city: profile.city,
+      country: profile.country || 'Denmark',
+      age: profile.age,
+      description: profile.description,
+      source_url: profile.source_url,
+      created_by_admin: true,
+      needs_completion: true,
+      status: 'active',
+      is_active: true,
+      approved: true,
+      category: profile.category || 'escort',
+    })
+    .select()
+
+  console.log('Listing insert result:', listingData, listingError)
+
+  if (listingError) {
+    console.error('LISTING INSERT ERROR:', JSON.stringify(listingError))
+    return Response.json({ error: 'Bruger oprettet men listing fejlede: ' + listingError.message }, { status: 500 })
+  }
 
   // Anvend GRATIS30 promo kode
   const { data: promoCode } = await supabase
