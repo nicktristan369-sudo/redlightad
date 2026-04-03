@@ -21,7 +21,7 @@ async function removeWatermark(imageBuffer: Buffer): Promise<Buffer> {
 
   try {
     const formData = new FormData()
-    formData.append('image', new Blob([imageBuffer], { type: 'image/jpeg' }), 'image.jpg')
+    formData.append('image', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
 
     const response = await fetch('https://api.watermarkremover.io/v3/remove', {
       method: 'POST',
