@@ -15,6 +15,35 @@ console.log('Cloudinary config:', {
   api_secret: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'MISSING',
 })
 
+async function removeWatermark(imageBuffer: Buffer): Promise<Buffer> {
+  const apiKey = process.env.WATERMARK_REMOVER_API_KEY
+  if (!apiKey) return imageBuffer // spring over hvis ingen key
+
+  try {
+    const formData = new FormData()
+    formData.append('image', new Blob([imageBuffer], { type: 'image/jpeg' }), 'image.jpg')
+
+    const response = await fetch('https://api.watermarkremover.io/v3/remove', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey },
+      body: formData,
+      signal: AbortSignal.timeout(20000),
+    })
+
+    if (!response.ok) {
+      console.error('❌ Watermark removal failed:', response.status)
+      return imageBuffer
+    }
+
+    const result = await response.arrayBuffer()
+    console.log('✅ Watermark removed')
+    return Buffer.from(result)
+  } catch (e) {
+    console.error('❌ Watermark removal error:', e instanceof Error ? e.message : e)
+    return imageBuffer // fallback til originalt billede
+  }
+}
+
 async function uploadImageFromUrl(imageUrl: string): Promise<string> {
   try {
     const axios = (await import('axios')).default
@@ -28,6 +57,11 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
       timeout: 15000,
     })
 
+    let imageBuffer = Buffer.from(response.data)
+
+    // Fjern vandmærke hvis API key er sat
+    imageBuffer = await removeWatermark(imageBuffer)
+
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         { folder: 'listings', resource_type: 'image', quality: 'auto:best', fetch_format: 'auto' },
@@ -35,7 +69,7 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
           if (error) reject(error)
           else resolve(result!.secure_url)
         }
-      ).end(Buffer.from(response.data))
+      ).end(imageBuffer)
     })
 
     console.log('✅ Image uploaded:', url)
