@@ -18,8 +18,15 @@ console.log('Cloudinary config:', {
 
 async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   try {
-    // Kun forbedring af kvalitet — ingen overlay (Replicate fjerner vandmærket)
+    const meta = await sharp(imageBuffer).metadata()
+    const w = meta.width || 800
+    const h = meta.height || 600
+
+    // Crop bunden væk — AnnonceLight vandmærket sidder i en banner i bunden (~15% af højden)
+    const cropH = Math.round(h * 0.85)
+
     return await sharp(imageBuffer)
+      .extract({ left: 0, top: 0, width: w, height: cropH })
       .modulate({ saturation: 1.2, brightness: 1.03 })
       .sharpen()
       .jpeg({ quality: 90 })
@@ -194,10 +201,8 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
     let imageBuffer = Buffer.from(response.data)
 
     // Forbedr billedkvalitet
+    // processImage cropper bunden og fjerner AnnonceLight vandmærket
     imageBuffer = await processImage(imageBuffer)
-
-    // Fjern vandmærke
-    imageBuffer = await removeWatermark(imageBuffer)
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
