@@ -43,57 +43,85 @@ async function processImage(imageBuffer: Buffer): Promise<Buffer> {
 }
 
 async function removeWatermark(imageBuffer: Buffer): Promise<Buffer> {
-  // Prøv HuggingFace først, derefter watermarkremover.io som fallback
-  const hfKey = process.env.HUGGINGFACE_API_KEY
-  const wmrKey = process.env.WATERMARK_REMOVER_API_KEY
+  const replicateToken = process.env.REPLICATE_API_TOKEN
+  if (!replicateToken) return imageBuffer
 
-  if (hfKey) {
-    try {
-      const response = await fetch(
-        'https://api-inference.huggingface.co/models/DamarJati/Remove-watermark',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${hfKey}`,
-            'Content-Type': 'application/octet-stream',
-          },
-          body: imageBuffer as unknown as BodyInit,
-          signal: AbortSignal.timeout(30000),
-        }
-      )
-      if (response.ok) {
-        const contentType = response.headers.get('content-type') || ''
-        if (contentType.includes('image')) {
-          console.log('✅ Watermark removed via HuggingFace')
-          return Buffer.from(await response.arrayBuffer())
-        }
-      }
-      console.error('❌ HuggingFace failed:', response.status)
-    } catch (e) {
-      console.error('❌ HuggingFace error:', e instanceof Error ? e.message : e)
-    }
-  }
+  try {
+    const base64 = imageBuffer.toString('base64')
+    const dataUri = `data:image/jpeg;base64,${base64}`
 
-  if (wmrKey) {
-    try {
-      const formData = new FormData()
-      formData.append('image', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
-      const response = await fetch('https://api.watermarkremover.io/v3/remove', {
-        method: 'POST',
-        headers: { 'x-api-key': wmrKey },
-        body: formData,
-        signal: AbortSignal.timeout(30000),
+    // Opret mask — dækker midten af billedet (AnnonceLight vandmærke)
+    const meta = await sharp(imageBuffer).metadata()
+    const w = meta.width || 800
+    const h = meta.height || 600
+    const maskX = Math.round(w * 0.1)
+    const maskY = Math.round(h * 0.35)
+    const maskW = Math.round(w * 0.8)
+    const maskH = Math.round(h * 0.3)
+
+    // Sort billede med hvid firkant over vandmærkeområdet
+    const maskBuffer = await sharp({
+      create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
+    })
+      .composite([{
+        input: await sharp({
+          create: { width: maskW, height: maskH, channels: 3, background: { r: 255, g: 255, b: 255 } }
+        }).png().toBuffer(),
+        left: maskX,
+        top: maskY,
+      }])
+      .png()
+      .toBuffer()
+
+    const maskDataUri = `data:image/png;base64,${maskBuffer.toString('base64')}`
+
+    // Start Replicate prediction med LaMa inpainting
+    const startRes = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${replicateToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: '95b7223104132402a9ae91cc677285bc5eb997834bd2349fa486f53910fd68b3',
+        input: {
+          image: dataUri,
+          mask: maskDataUri,
+          prompt: 'clean background, no text, no watermark',
+          num_inference_steps: 20,
+        },
+      }),
+    })
+
+    if (!startRes.ok) throw new Error(`Replicate start failed: ${startRes.status}`)
+    const prediction = await startRes.json()
+
+    // Poll for resultat (max 30 sek)
+    const pollUrl = prediction.urls?.get || `https://api.replicate.com/v1/predictions/${prediction.id}`
+    for (let i = 0; i < 15; i++) {
+      await new Promise(r => setTimeout(r, 2000))
+      const pollRes = await fetch(pollUrl, {
+        headers: { 'Authorization': `Token ${replicateToken}` },
       })
-      if (response.ok) {
-        console.log('✅ Watermark removed via watermarkremover.io')
-        return Buffer.from(await response.arrayBuffer())
-      }
-    } catch (e) {
-      console.error('❌ WMR error:', e instanceof Error ? e.message : e)
-    }
-  }
+      const result = await pollRes.json()
 
-  return imageBuffer // ingen key sat — returner original
+      if (result.status === 'succeeded' && result.output) {
+        const imgRes = await fetch(result.output)
+        if (imgRes.ok) {
+          console.log('✅ Watermark removed via Replicate')
+          return Buffer.from(await imgRes.arrayBuffer())
+        }
+      }
+      if (result.status === 'failed') {
+        throw new Error('Replicate prediction failed')
+      }
+    }
+
+    throw new Error('Replicate timeout')
+  } catch (e) {
+    console.error('❌ Replicate watermark removal failed:', e instanceof Error ? e.message : e)
+    return imageBuffer
+  }
 }
 
 async function removeWatermarkWMR(imageBuffer: Buffer): Promise<Buffer> {
