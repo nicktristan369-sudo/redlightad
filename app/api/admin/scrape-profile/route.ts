@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
 
   function getFullSizeUrl(src: string): string {
     return src
+      .replace('.superad.jpg', '.jpg')
+      .replace('.superad.png', '.png')
       .replace('.thumb.jpg', '.jpg')
       .replace('.thumb.png', '.png')
       .replace('/thumbs/', '/images/')
