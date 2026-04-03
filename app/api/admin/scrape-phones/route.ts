@@ -41,6 +41,37 @@ function extractPhones(html: string): string[] {
   return [...results]
 }
 
+async function fetchPage(url: string): Promise<string> {
+  const apiKey = process.env.SCRAPINGBEE_API_KEY
+  if (apiKey) {
+    const params = new URLSearchParams({
+      api_key: apiKey,
+      url: url,
+      render_js: 'true',
+      block_ads: 'true',
+      premium_proxy: 'true',
+    })
+    const response = await axios.get(
+      `https://app.scrapingbee.com/api/v1/?${params}`,
+      { timeout: 30000 }
+    )
+    return response.data as string
+  }
+  // Fallback til direkte axios hvis ingen API key
+  const response = await axios.get(url, {
+    timeout: 12000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'da-DK,da;q=0.9,en;q=0.8',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Cache-Control': 'no-cache',
+    },
+    maxRedirects: 5,
+  })
+  return response.data as string
+}
+
 function extractLinks(html: string, baseUrl: string): string[] {
   const $ = cheerio.load(html)
   const base = new URL(baseUrl)
@@ -127,19 +158,7 @@ export async function POST(req: NextRequest) {
           })
 
           try {
-            const response = await axios.get(current.url, {
-              timeout: 12000,
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'da-DK,da;q=0.9,en;q=0.8',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Cache-Control': 'no-cache',
-              },
-              maxRedirects: 5,
-            })
-
-            const html = response.data as string
+            const html = await fetchPage(current.url)
 
             const phones = extractPhones(html)
             phones.forEach(phone => {
