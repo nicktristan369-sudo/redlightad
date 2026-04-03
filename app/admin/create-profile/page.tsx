@@ -11,6 +11,8 @@ type ProfileData = {
   description: string;
   city: string;
   country: string;
+  gender: string;
+  category: string;
   age: number | null;
   images: string[];
   source_url: string;
@@ -41,6 +43,8 @@ export default function CreateProfilePage() {
     description: "",
     city: "",
     country: "Denmark",
+    gender: "female",
+    category: "escort",
     age: null,
     images: [],
     source_url: "",
@@ -111,6 +115,8 @@ export default function CreateProfilePage() {
       description: "",
       city: "",
       country: "Denmark",
+      gender: "female",
+      category: "escort",
       age: null,
       images: [],
       source_url: "",
@@ -303,6 +309,33 @@ export default function CreateProfilePage() {
                         {c.flag} {c.name}
                       </option>
                     ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={labelStyle}>Køn</label>
+                  <select
+                    value={profile.gender}
+                    onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                    <option value="trans">Trans</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Kategori</label>
+                  <select
+                    value={profile.category}
+                    onChange={(e) => setProfile({ ...profile, category: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="escort">Escort</option>
+                    <option value="massage">Massage</option>
+                    <option value="strip">Strip</option>
                   </select>
                 </div>
               </div>
