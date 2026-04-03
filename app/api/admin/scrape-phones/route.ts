@@ -109,6 +109,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { url, depth = 3, tag = 'untagged' } = await req.json()
 
+  console.log('ScrapingBee key present:', !!process.env.SCRAPINGBEE_API_KEY)
+  console.log('Using ScrapingBee:', process.env.SCRAPINGBEE_API_KEY ? 'YES' : 'NO - falling back to axios')
+
   const encoder = new TextEncoder()
 
   const stream = new ReadableStream({
