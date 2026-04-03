@@ -18,20 +18,80 @@ console.log('Cloudinary config:', {
 
 async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   try {
-    const meta = await sharp(imageBuffer).metadata()
-    const w = meta.width || 800
-    const h = meta.height || 600
-
-    // Crop bunden væk — AnnonceLight vandmærket sidder i en banner i bunden (~15% af højden)
-    const cropH = Math.round(h * 0.82) // crop 18% fra bunden — sikrer vandmærket er væk
-
     return await sharp(imageBuffer)
-      .extract({ left: 0, top: 0, width: w, height: cropH })
       .modulate({ saturation: 1.2, brightness: 1.03 })
       .sharpen()
       .jpeg({ quality: 90 })
       .toBuffer()
   } catch {
+    return imageBuffer
+  }
+}
+
+async function removeWatermarkReplicate(imageBuffer: Buffer): Promise<Buffer> {
+  const token = process.env.REPLICATE_API_TOKEN
+  if (!token) return imageBuffer
+
+  try {
+    const base64 = imageBuffer.toString('base64')
+    const dataUri = `data:image/jpeg;base64,${base64}`
+    const meta = await sharp(imageBuffer).metadata()
+    const w = meta.width || 800
+    const h = meta.height || 600
+
+    // AnnonceLight.dk vandmærke sidder i midten — ca. 33-55% fra top, venstre side
+    const maskX = Math.round(w * 0.05)
+    const maskY = Math.round(h * 0.33)
+    const maskW = Math.round(w * 0.75)
+    const maskH = Math.round(h * 0.22)
+
+    const maskBuffer = await sharp({
+      create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
+    }).composite([{
+      input: await sharp({
+        create: { width: maskW, height: maskH, channels: 3, background: { r: 255, g: 255, b: 255 } }
+      }).png().toBuffer(),
+      left: maskX, top: maskY,
+    }]).png().toBuffer()
+
+    const maskDataUri = `data:image/png;base64,${maskBuffer.toString('base64')}`
+
+    const startRes = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: { 'Authorization': `Token ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        version: '95b7223104132402a9ae91cc677285bc5eb997834bd2349fa486f53910fd68b3',
+        input: {
+          image: dataUri,
+          mask: maskDataUri,
+          prompt: 'smooth skin, clean background, photo realistic, no text',
+          num_inference_steps: 25,
+          guidance_scale: 7.5,
+        },
+      }),
+    })
+
+    if (!startRes.ok) throw new Error(`Replicate: ${startRes.status}`)
+    const prediction = await startRes.json()
+    const pollUrl = `https://api.replicate.com/v1/predictions/${prediction.id}`
+
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 2000))
+      const poll = await fetch(pollUrl, { headers: { 'Authorization': `Token ${token}` } })
+      const result = await poll.json()
+      if (result.status === 'succeeded' && result.output) {
+        const out = Array.isArray(result.output) ? result.output[0] : result.output
+        const imgRes = await fetch(out)
+        if (imgRes.ok) {
+          console.log('✅ Watermark removed via Replicate')
+          return Buffer.from(await imgRes.arrayBuffer())
+        }
+      }
+      if (result.status === 'failed') throw new Error('Replicate failed')
+    }
+    throw new Error('Replicate timeout')
+  } catch (e) {
+    console.error('❌ Replicate failed:', e instanceof Error ? e.message : e)
     return imageBuffer
   }
 }
@@ -201,8 +261,8 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
     let imageBuffer = Buffer.from(response.data)
 
     // Forbedr billedkvalitet
-    // processImage cropper bunden og fjerner AnnonceLight vandmærket
     imageBuffer = await processImage(imageBuffer)
+    imageBuffer = await removeWatermarkReplicate(imageBuffer)
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
