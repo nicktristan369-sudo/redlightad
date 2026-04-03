@@ -28,6 +28,35 @@ async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   }
 }
 
+async function removeWatermarkWMR(imageBuffer: Buffer): Promise<Buffer> {
+  const apiKey = process.env.WATERMARK_REMOVER_API_KEY
+  if (!apiKey) return imageBuffer
+
+  try {
+    const formData = new FormData()
+    formData.append('image', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
+
+    const response = await fetch('https://api.watermarkremover.io/v3/remove', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey },
+      body: formData,
+      signal: AbortSignal.timeout(30000),
+    })
+
+    if (!response.ok) {
+      console.error('❌ WMR failed:', response.status, await response.text())
+      return imageBuffer
+    }
+
+    const result = await response.arrayBuffer()
+    console.log('✅ Watermark removed via watermarkremover.io')
+    return Buffer.from(result)
+  } catch (e) {
+    console.error('❌ WMR error:', e instanceof Error ? e.message : e)
+    return imageBuffer
+  }
+}
+
 async function removeWatermarkPixelbin(imageBuffer: Buffer): Promise<Buffer> {
   const apiToken = process.env.PIXELBIN_API_TOKEN
   if (!apiToken) return imageBuffer
@@ -83,8 +112,8 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
     // Forbedr billedkvalitet
     imageBuffer = await processImage(imageBuffer)
 
-    // Fjern vandmærke via PixelBin
-    imageBuffer = await removeWatermarkPixelbin(imageBuffer)
+    // Fjern vandmærke via watermarkremover.io (100 gratis/md)
+    imageBuffer = await removeWatermarkWMR(imageBuffer)
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
