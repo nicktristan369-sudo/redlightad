@@ -1,201 +1,233 @@
-export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+import { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import axios from 'axios'
+import * as cheerio from 'cheerio'
 
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { spawn } from "child_process";
-import path from "path";
-
-const getClient = () =>
+const getSupabase = () =>
   createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  )
 
-// ── GET ─────────────────────────────────────────────────────────────────────
-export async function GET(req: NextRequest) {
-  try {
-    const tag = req.nextUrl.searchParams.get("tag");
-    let q = getClient()
-      .from("scraped_phones")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(500);
-    if (tag && tag !== "all") q = q.eq("tag", tag);
-    const { data, error } = await q;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data ?? []);
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
+const PHONE_REGEX = /(?:\+?45[\s\-.]?)?(?:\d[\s\-.]?){7}\d/g
+
+function normalizePhone(phone: string): string {
+  return phone.replace(/[\s\-\.]/g, '').trim()
 }
 
-// ── POST — spawn Python scraper, stream progress, then classify & insert ──
+function extractPhones(html: string): string[] {
+  const $ = cheerio.load(html)
+  const results = new Set<string>()
+
+  const text = $('body').text()
+  const matches = text.match(PHONE_REGEX) || []
+  matches.forEach(m => {
+    const n = normalizePhone(m)
+    if (n.length >= 8) results.add(n)
+  })
+
+  $('a[href^="tel:"]').each((_, el) => {
+    const href = $(el).attr('href') || ''
+    const n = normalizePhone(href.replace('tel:', ''))
+    if (n.length >= 8) results.add(n)
+  })
+
+  return [...results]
+}
+
+function extractLinks(html: string, baseUrl: string): string[] {
+  const $ = cheerio.load(html)
+  const base = new URL(baseUrl)
+  const links = new Set<string>()
+
+  $('a[href]').each((_, el) => {
+    const href = $(el).attr('href') || ''
+    try {
+      const url = new URL(href, baseUrl)
+      if (
+        url.hostname === base.hostname &&
+        !url.pathname.match(/\.(jpg|jpeg|png|gif|webp|pdf|zip|css|js|svg|ico)$/i)
+      ) {
+        links.add(url.origin + url.pathname)
+      }
+    } catch {}
+  })
+
+  return [...links]
+}
+
+export async function GET(req: NextRequest) {
+  const tag = req.nextUrl.searchParams.get('tag')
+  let q = getSupabase()
+    .from('phonebook')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(500)
+  if (tag && tag !== 'all') q = q.eq('tag', tag)
+  const { data, error } = await q
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(data ?? [])
+}
+
 export async function POST(req: NextRequest) {
-  let body: { url?: string; tag?: string; maxDepth?: number };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
+  const { url, depth = 3, tag = 'untagged' } = await req.json()
 
-  const { url, tag = "untagged", maxDepth = 2 } = body;
-  if (!url?.trim()) {
-    return NextResponse.json({ error: "url is required" }, { status: 400 });
-  }
-
-  const encoder = new TextEncoder();
-  const scraperPath = path.join(process.cwd(), "scripts", "scraper.py");
+  const encoder = new TextEncoder()
 
   const stream = new ReadableStream({
     async start(controller) {
       const send = (data: object) => {
         try {
-          controller.enqueue(encoder.encode(JSON.stringify(data) + "\n"));
-        } catch { /* stream closed */ }
-      };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+        } catch {}
+      }
 
       try {
-        // Spawn Python scraper
-        const scrapedPhones = await new Promise<string[]>((resolve, reject) => {
-          const proc = spawn("python3", [scraperPath, url!.trim(), String(maxDepth)], {
-            stdio: ["ignore", "pipe", "pipe"],
-          });
+        const { data: existing } = await getSupabase()
+          .from('phonebook')
+          .select('phone')
 
-          let allPhones: string[] = [];
-          let buffer = "";
+        const existingPhones = new Set(
+          ((existing || []) as any[]).map((r: any) => normalizePhone(r.phone))
+        )
 
-          proc.stdout.on("data", (chunk: Buffer) => {
-            buffer += chunk.toString();
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
+        const visited = new Set<string>()
+        const queue: Array<{ url: string; depth: number }> = [{ url, depth: 0 }]
+        const found = new Map<string, string>()
 
-            for (const line of lines) {
-              if (!line.trim()) continue;
-              try {
-                const parsed = JSON.parse(line);
-                if (parsed.done) {
-                  allPhones = parsed.phones || [];
-                } else if (parsed.progress !== undefined) {
-                  send({ type: "progress", current: parsed.progress, phones_found: parsed.phones, url: parsed.url });
+        let pageCount = 0
+        let errorCount = 0
+
+        send({ type: 'start', message: 'Starter scrape...' })
+
+        while (queue.length > 0) {
+          const current = queue.shift()!
+
+          if (visited.has(current.url)) continue
+          if (current.depth > depth) continue
+          visited.add(current.url)
+          pageCount++
+
+          send({
+            type: 'progress',
+            message: `Scanner side ${pageCount} (${queue.length} i ko)...`,
+            url: current.url,
+            pageCount,
+            queueSize: queue.length,
+            phonesFound: found.size,
+          })
+
+          try {
+            const response = await axios.get(current.url, {
+              timeout: 12000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'da-DK,da;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Cache-Control': 'no-cache',
+              },
+              maxRedirects: 5,
+            })
+
+            const html = response.data as string
+
+            const phones = extractPhones(html)
+            phones.forEach(phone => {
+              if (!found.has(phone)) {
+                found.set(phone, current.url)
+              }
+            })
+
+            if (current.depth < depth) {
+              const links = extractLinks(html, current.url)
+              links.forEach(link => {
+                if (!visited.has(link)) {
+                  queue.push({ url: link, depth: current.depth + 1 })
                 }
-              } catch { /* skip malformed lines */ }
+              })
             }
-          });
+          } catch (err: any) {
+            errorCount++
+            send({ type: 'warning', message: `Sprang over: ${current.url}` })
+          }
 
-          let stderr = "";
-          proc.stderr.on("data", (chunk: Buffer) => {
-            stderr += chunk.toString();
-          });
+          await new Promise(r => setTimeout(r, 150))
+        }
 
-          proc.on("close", (code) => {
-            // Process remaining buffer
-            if (buffer.trim()) {
-              try {
-                const parsed = JSON.parse(buffer);
-                if (parsed.done) allPhones = parsed.phones || [];
-              } catch { /* skip */ }
-            }
+        const toInsert: any[] = []
+        let newCount = 0
+        let dupCount = 0
 
-            if (code !== 0 && allPhones.length === 0) {
-              reject(new Error(`Scraper exited with code ${code}: ${stderr.slice(0, 200)}`));
-            } else {
-              resolve(allPhones);
-            }
-          });
-
-          proc.on("error", (err) => reject(err));
-        });
-
-        // ── Duplicate detection ──────────────────────────────────────────
-        send({ type: "classifying", total: scrapedPhones.length });
-
-        // Get existing phone numbers from DB
-        const { data: existingRows } = await getClient()
-          .from("scraped_phones")
-          .select("phone");
-        const existingSet = new Set((existingRows ?? []).map((r: { phone: string }) => r.phone));
-
-        const newNumbers: string[] = [];
-        const duplicates: string[] = [];
-
-        for (const phone of scrapedPhones) {
-          if (existingSet.has(phone)) {
-            duplicates.push(phone);
+        for (const [phone, sourceUrl] of found) {
+          if (existingPhones.has(phone)) {
+            dupCount++
           } else {
-            newNumbers.push(phone);
+            newCount++
+            toInsert.push({
+              phone,
+              source_url: sourceUrl,
+              tag,
+              status: 'new',
+              is_duplicate: false,
+              first_seen: new Date().toISOString(),
+            })
           }
         }
 
-        // Insert only new numbers
-        let savedCount = 0;
-        if (newNumbers.length > 0) {
-          send({ type: "saving", count: newNumbers.length });
-          const rows = newNumbers.map(phone => ({
-            phone,
-            source_url: url!.trim(),
-            tag,
-            is_duplicate: false,
-            first_seen: new Date().toISOString(),
-          }));
-          const BATCH = 50;
-          for (let i = 0; i < rows.length; i += BATCH) {
-            const { data } = await getClient()
-              .from("scraped_phones")
-              .insert(rows.slice(i, i + BATCH))
-              .select("id");
-            savedCount += data?.length ?? 0;
-          }
+        if (toInsert.length > 0) {
+          const { error } = await getSupabase().from('phonebook').insert(toInsert)
+          if (error) throw new Error(`DB fejl: ${error.message}`)
         }
 
         send({
-          type: "done",
-          total: scrapedPhones.length,
-          new_numbers: newNumbers.length,
-          duplicates: duplicates.length,
-          saved: savedCount,
-          phones: scrapedPhones.slice(0, 20),
-          message: `Fandt ${scrapedPhones.length} numre \u00b7 ${newNumbers.length} nye \u00b7 ${duplicates.length} allerede i phonebook`,
-        });
-      } catch (e) {
-        send({ type: "error", error: String(e) });
+          type: 'done',
+          message: `Faerdig! ${found.size} numre fundet \u00b7 ${newCount} nye \u00b7 ${dupCount} allerede i phonebook`,
+          total: found.size,
+          newCount,
+          dupCount,
+          pagesScanned: pageCount,
+          errors: errorCount,
+        })
+      } catch (err: any) {
+        send({ type: 'error', message: err.message })
       } finally {
-        controller.close();
+        controller.close()
       }
     },
-  });
+  })
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "X-Accel-Buffering": "no",
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
     },
-  });
+  })
 }
 
-// ── DELETE ──────────────────────────────────────────────────────────────────
 export async function DELETE(req: NextRequest) {
+  let body: { id?: string } = {}
   try {
-    let body: { id?: string; all?: boolean };
-    try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-    }
-
-    // Delete all scraped phones
-    if (body.all) {
-      const { error } = await getClient().from("scraped_phones").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true });
-    }
-
-    if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
-    const { error } = await getClient().from("scraped_phones").delete().eq("id", body.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    body = await req.json()
+  } catch {
+    // No body = delete all
   }
+
+  if (body.id) {
+    const { error } = await getSupabase().from('phonebook').delete().eq('id', body.id)
+    if (error) return Response.json({ error: error.message }, { status: 500 })
+    return Response.json({ success: true })
+  }
+
+  const { error, count } = await getSupabase()
+    .from('phonebook')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000')
+
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 })
+  }
+
+  return Response.json({ success: true, deleted: count })
 }

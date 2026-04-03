@@ -70,18 +70,24 @@ export default function AdminPhonebookPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<"contacts" | "scraper">("contacts");
-  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [scrapeUrl, setScrapeUrl] = useState("https://annoncelight.dk");
   const [scrapeTag, setScrapeTag] = useState("untagged");
-  const [scraping, setScraping] = useState(false);
-  const [scrapeProgress, setScrapeProgress] = useState<{ current: number; phones_found: number; url: string } | null>(null);
-  const [scrapeResult, setScrapeResult] = useState<{ ok: boolean; msg: string; phones?: string[]; newCount?: number; dupCount?: number } | null>(null);
+  const [depth, setDepth] = useState(3);
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [scrapeResult, setScrapeResult] = useState<{
+    total: number;
+    newCount: number;
+    dupCount: number;
+    pagesScanned: number;
+  } | null>(null);
+  const [scrapeError, setScrapeError] = useState<string | null>(null);
+  const readerRef = useRef<ReadableStreamDefaultReader | null>(null);
   const [scrapedPhones, setScrapedPhones] = useState<ScrapedPhone[]>([]);
   const [loadingScraped, setLoadingScraped] = useState(false);
   const [scrapeTagFilter, setScrapeTagFilter] = useState("all");
-  const [maxDepth, setMaxDepth] = useState(2);
   const [hideDuplicates, setHideDuplicates] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,60 +118,75 @@ export default function AdminPhonebookPage() {
   const uniqueCount = totalScraped - duplicateCount;
   const filteredScraped = hideDuplicates ? scrapedPhones.filter(p => !p.is_duplicate) : scrapedPhones;
 
-  const runScrape = async () => {
-    if (!scrapeUrl.trim()) return;
-    setScraping(true);
+  async function startScrape() {
+    setIsRunning(true);
+    setScrapeError(null);
     setScrapeResult(null);
-    setScrapeProgress(null);
-    const controller = new AbortController();
-    abortRef.current = controller;
+    setProgress("Forbinder...");
+
     try {
-      const res = await fetch("/api/admin/scrape-phones", {
+      const response = await fetch("/api/admin/scrape-phones", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: scrapeUrl.trim(), tag: scrapeTag || "untagged", maxDepth }),
-        signal: controller.signal,
+        body: JSON.stringify({ url: scrapeUrl, depth, tag: scrapeTag }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        setScrapeResult({ ok: false, msg: data.error ?? "Scrape failed" });
-        setScraping(false);
-        return;
-      }
-      const reader = res.body?.getReader();
-      if (!reader) { setScrapeResult({ ok: false, msg: "No response stream" }); setScraping(false); return; }
+
+      const reader = response.body!.getReader();
+      readerRef.current = reader;
       const decoder = new TextDecoder();
-      let buffer = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+
+        const text = decoder.decode(value);
+        const lines = text.split("\n").filter(l => l.startsWith("data: "));
+
         for (const line of lines) {
-          if (!line.trim()) continue;
           try {
-            const parsed = JSON.parse(line);
-            if (parsed.type === "progress") {
-              setScrapeProgress({ current: parsed.current, phones_found: parsed.phones_found ?? 0, url: parsed.url });
-            } else if (parsed.type === "done") {
-              setScrapeResult({ ok: true, msg: parsed.message, phones: parsed.phones, newCount: parsed.new_numbers, dupCount: parsed.duplicates });
-            } else if (parsed.type === "error") {
-              setScrapeResult({ ok: false, msg: parsed.error });
+            const data = JSON.parse(line.slice(6));
+            if (data.type === "progress") {
+              setProgress(data.message);
+            } else if (data.type === "done") {
+              setScrapeResult({
+                total: data.total,
+                newCount: data.newCount,
+                dupCount: data.dupCount,
+                pagesScanned: data.pagesScanned,
+              });
+              setProgress(null);
+              window.location.reload();
+            } else if (data.type === "error") {
+              setScrapeError(data.message);
             }
-          } catch { /* skip */ }
+          } catch {}
         }
       }
-      loadScraped(scrapeTagFilter);
-    } catch (e) {
-      if ((e as Error).name !== "AbortError") setScrapeResult({ ok: false, msg: String(e) });
+    } catch (err: any) {
+      setScrapeError(err.message);
+    } finally {
+      setIsRunning(false);
+      setProgress(null);
     }
-    setScraping(false);
-    setScrapeProgress(null);
-    abortRef.current = null;
-  };
+  }
 
-  const stopScrape = () => { abortRef.current?.abort(); setScraping(false); setScrapeProgress(null); };
+  function stopScrape() {
+    readerRef.current?.cancel();
+    setIsRunning(false);
+    setProgress(null);
+  }
+
+  async function deleteAll() {
+    const confirmed = window.confirm(
+      "Er du sikker? Dette sletter ALLE numre i phonebook. Denne handling kan ikke fortrydes."
+    );
+    if (!confirmed) return;
+
+    const res = await fetch("/api/admin/scrape-phones", { method: "DELETE" });
+    if (res.ok) {
+      window.location.reload();
+    }
+  }
 
   const deleteScraped = async (id: string) => {
     await fetch("/api/admin/scrape-phones", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
@@ -173,8 +194,7 @@ export default function AdminPhonebookPage() {
   };
 
   const deleteAllScraped = async () => {
-    await fetch("/api/admin/scrape-phones", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ all: true }) });
-    setScrapedPhones([]);
+    await deleteAll();
     setShowDeleteAllModal(false);
   };
 
@@ -462,66 +482,74 @@ export default function AdminPhonebookPage() {
           </div>
 
           {/* Scan card */}
-          <div className="bg-white rounded-xl p-5" style={{ border: "1px solid #E5E5E5" }}>
-            <div className="flex items-center gap-2 mb-4">
-              <Globe size={15} color="#6B7280" />
-              <h2 className="text-[15px] font-semibold text-gray-900">Scan URL for phone numbers</h2>
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[15px] font-semibold text-gray-900">Scrape telefonnumre</h2>
+              <button
+                onClick={deleteAll}
+                className="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
+              >
+                Slet alle
+              </button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 mb-3">
-              <input value={scrapeUrl} onChange={e => setScrapeUrl(e.target.value)} placeholder="https://example.com/contacts"
-                className="flex-1 text-[13px] px-3 py-2.5 rounded-lg outline-none font-mono" style={{ border: "1px solid #E5E5E5" }}
-                onKeyDown={e => e.key === "Enter" && !scraping && runScrape()} />
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg flex-shrink-0" style={{ border: "1px solid #E5E5E5", minWidth: "140px" }}>
-                <Tag size={12} color="#9CA3AF" />
-                <input value={scrapeTag} onChange={e => setScrapeTag(e.target.value)} placeholder="Tag (e.g. escorts)" maxLength={32}
-                  className="flex-1 text-[13px] outline-none bg-transparent text-gray-700 placeholder-gray-400" />
-              </div>
-              <select value={maxDepth} onChange={e => setMaxDepth(Number(e.target.value))}
-                className="text-[13px] px-3 py-2.5 rounded-lg outline-none flex-shrink-0"
-                style={{ border: "1px solid #E5E5E5", color: "#374151", minWidth: "130px" }}>
-                <option value={1}>Dybde: 1</option>
-                <option value={2}>Dybde: 2</option>
-                <option value={3}>Dybde: 3</option>
-                <option value={0}>Ubegrænset</option>
+
+            <div className="flex flex-wrap gap-3 mb-4">
+              <input
+                type="text"
+                value={scrapeUrl}
+                onChange={e => setScrapeUrl(e.target.value)}
+                placeholder="https://annoncelight.dk"
+                className="flex-1 min-w-[200px] border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              />
+              <input
+                type="text"
+                value={scrapeTag}
+                onChange={e => setScrapeTag(e.target.value)}
+                placeholder="Tag (f.eks. annoncelight)"
+                className="w-40 border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              />
+              <select
+                value={depth}
+                onChange={e => setDepth(Number(e.target.value))}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              >
+                <option value={1}>Depth: 1</option>
+                <option value={2}>Depth: 2</option>
+                <option value={3}>Depth: 3</option>
+                <option value={99}>Unlimited</option>
               </select>
-              {scraping ? (
-                <button onClick={stopScrape}
-                  className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white rounded-lg transition-colors flex-shrink-0"
-                  style={{ background: "#DC2626" }}>
-                  <StopCircle size={14} /> Stop
+              {!isRunning ? (
+                <button
+                  onClick={startScrape}
+                  className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition"
+                >
+                  Start scrape
                 </button>
               ) : (
-                <button onClick={runScrape} disabled={!scrapeUrl.trim()}
-                  className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white rounded-lg disabled:opacity-40 transition-colors flex-shrink-0"
-                  style={{ background: "#000" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#CC0000"}
-                  onMouseLeave={e => e.currentTarget.style.background = "#000"}>
-                  <Scan size={14} /> Start scrape
+                <button
+                  onClick={stopScrape}
+                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition"
+                >
+                  Stop
                 </button>
               )}
             </div>
 
-            {scraping && scrapeProgress && (
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-3" style={{ background: "#F0F9FF", border: "1px solid #BAE6FD" }}>
-                <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin flex-shrink-0" />
-                <span className="text-[13px] text-blue-800">Scanner side {scrapeProgress.current}… {scrapeProgress.phones_found} numre fundet</span>
-                <span className="text-[11px] text-blue-500 font-mono truncate max-w-[300px]">{scrapeProgress.url}</span>
+            {progress && (
+              <div className="text-sm text-gray-600 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
+                {progress}
               </div>
             )}
 
+            {scrapeError && (
+              <p className="text-sm text-red-500 mt-2">Fejl: {scrapeError}</p>
+            )}
+
             {scrapeResult && (
-              <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg text-[13px]"
-                style={{ background: scrapeResult.ok ? "#F0FDF4" : "#FEF2F2", border: `1px solid ${scrapeResult.ok ? "#BBF7D0" : "#FECACA"}` }}>
-                {scrapeResult.ok ? <CheckCircle size={14} color="#16A34A" className="flex-shrink-0 mt-0.5" /> : <AlertCircle size={14} color="#DC2626" className="flex-shrink-0 mt-0.5" />}
-                <div>
-                  <p style={{ color: scrapeResult.ok ? "#14532D" : "#7F1D1D" }}>{scrapeResult.msg}</p>
-                  {scrapeResult.phones && scrapeResult.phones.length > 0 && (
-                    <p className="text-[11px] mt-1 font-mono" style={{ color: "#6B7280" }}>
-                      {scrapeResult.phones.slice(0, 8).join(" · ")}{scrapeResult.phones.length > 8 ? ` +${scrapeResult.phones.length - 8} more` : ""}
-                    </p>
-                  )}
-                </div>
-              </div>
+              <p className="text-sm text-gray-700 mt-2">
+                Fandt <strong>{scrapeResult.total}</strong> numre &middot; <strong>{scrapeResult.newCount}</strong> nye &middot; <strong>{scrapeResult.dupCount}</strong> duplikater &middot; {scrapeResult.pagesScanned} sider scannet
+              </p>
             )}
           </div>
 
