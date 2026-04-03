@@ -30,7 +30,7 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
-        { folder: 'listings', resource_type: 'image' },
+        { folder: 'listings', resource_type: 'image', quality: 'auto:best', fetch_format: 'auto' },
         (error, result) => {
           if (error) reject(error)
           else resolve(result!.secure_url)

@@ -47,10 +47,20 @@ export async function POST(req: NextRequest) {
   const ageMatch = html.match(/(\d{2})\s*(år|years|yo)/i)
   const age = ageMatch ? parseInt(ageMatch[1]) : null
 
-  const images = $('img[src*="upload"], img[src*="photo"], img[src*="image"]')
-    .map((_, el) => $(el).attr('src'))
+  function getFullSizeUrl(src: string): string {
+    return src
+      .replace('.thumb.jpg', '.jpg')
+      .replace('.thumb.png', '.png')
+      .replace('/thumbs/', '/images/')
+      .replace('/storage/images/thumbs/', '/storage/images/')
+  }
+
+  const images = $('img[src*="storage"], img[src*="upload"], img[src*="photo"], img[src*="image"]')
+    .map((_, el) => $(el).attr('src') || '')
     .get()
     .filter((src): src is string => !!src && !src.includes('logo') && !src.includes('icon'))
+    .map(getFullSizeUrl)
+    .filter((src, i, arr) => arr.indexOf(src) === i) // deduplicate
     .slice(0, 5)
 
   return Response.json({
