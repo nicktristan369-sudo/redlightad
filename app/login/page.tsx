@@ -22,7 +22,13 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) { setError(authError.message); setLoading(false); return; }
-    router.push("/dashboard");
+    // Sæt admin cookie hvis det er admin-emailen
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "tristan369@protonmail.com"
+    if (email === adminEmail) {
+      document.cookie = `admin_verified=${email}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
+    }
+    const params = new URLSearchParams(window.location.search)
+    router.push(params.get("redirect") || "/dashboard");
   };
 
   const inputClass = "w-full px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors";

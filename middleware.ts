@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server"
 // Paths that are always public (no password required)
 const PUBLIC_PATHS = ["/unlock", "/api/", "/_next", "/favicon"]
 
+// Admin email — kun denne bruger må tilgå /admin
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "tristan369@protonmail.com"
+
 // Paths to skip tracking
 const SKIP_TRACKING = ["/api/", "/_next/", "/admin/", "/favicon.ico", "/opengraph-image"]
 
@@ -20,6 +23,17 @@ export function middleware(req: NextRequest) {
     const url = req.nextUrl.clone()
     url.pathname = "/unlock"
     return NextResponse.redirect(url)
+  }
+
+  // Beskyt /admin — tjek admin cookie sat ved login
+  if (pathname.startsWith("/admin")) {
+    const adminSession = req.cookies.get("admin_verified")?.value
+    if (adminSession !== ADMIN_EMAIL) {
+      const url = req.nextUrl.clone()
+      url.pathname = "/login"
+      url.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(url)
+    }
   }
 
   // --- Traffic tracking ---
