@@ -18,21 +18,8 @@ console.log('Cloudinary config:', {
 
 async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   try {
-    const img = sharp(imageBuffer)
-    const meta = await img.metadata()
-    const w = meta.width || 800
-    const h = meta.height || 600
-
-    // Dæk vandmærket (AnnonceLight.dk sidder altid nederst til venstre)
-    // Overlay et sort rektangel over vandmærkeområdet
-    const wmW = Math.round(w * 0.35)
-    const wmH = Math.round(h * 0.08)
-    const overlay = await sharp({
-      create: { width: wmW, height: wmH, channels: 3, background: { r: 0, g: 0, b: 0 } }
-    }).jpeg().toBuffer()
-
-    return await img
-      .composite([{ input: overlay, left: 0, top: h - wmH }])
+    // Kun forbedring af kvalitet — ingen overlay (Replicate fjerner vandmærket)
+    return await sharp(imageBuffer)
       .modulate({ saturation: 1.2, brightness: 1.03 })
       .sharpen()
       .jpeg({ quality: 90 })
@@ -50,14 +37,15 @@ async function removeWatermark(imageBuffer: Buffer): Promise<Buffer> {
     const base64 = imageBuffer.toString('base64')
     const dataUri = `data:image/jpeg;base64,${base64}`
 
-    // Opret mask — dækker midten af billedet (AnnonceLight vandmærke)
+    // Opret mask — AnnonceLight vandmærket dækker hele billedet som overlay
+    // Brug bred mask der dækker center 80% af billedet
     const meta = await sharp(imageBuffer).metadata()
     const w = meta.width || 800
     const h = meta.height || 600
-    const maskX = Math.round(w * 0.1)
-    const maskY = Math.round(h * 0.35)
-    const maskW = Math.round(w * 0.8)
-    const maskH = Math.round(h * 0.3)
+    const maskX = Math.round(w * 0.05)
+    const maskY = Math.round(h * 0.25)
+    const maskW = Math.round(w * 0.9)
+    const maskH = Math.round(h * 0.5)
 
     // Sort billede med hvid firkant over vandmærkeområdet
     const maskBuffer = await sharp({
