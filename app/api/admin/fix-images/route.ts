@@ -25,7 +25,7 @@ async function cropAndUpload(imageUrl: string): Promise<string> {
     const meta = await sharp(buffer).metadata()
     const w = meta.width || 800
     const h = meta.height || 600
-    const cropH = Math.round(h * 0.85)
+    const cropH = Math.round(h * 0.82) // crop 18% fra bunden
 
     const processed = await sharp(buffer)
       .extract({ left: 0, top: 0, width: w, height: cropH })
@@ -81,11 +81,7 @@ export async function GET(req: NextRequest) {
 
           const newImages: string[] = []
           for (const imgUrl of listing.images) {
-            // Spring over hvis allerede på Cloudinary (allerede behandlet)
-            if (imgUrl.includes('res.cloudinary.com')) {
-              newImages.push(imgUrl)
-              continue
-            }
+            // Behandl ALLE billeder — også Cloudinary (kan have vandmærke fra før fix)
             const newUrl = await cropAndUpload(imgUrl)
             newImages.push(newUrl)
           }

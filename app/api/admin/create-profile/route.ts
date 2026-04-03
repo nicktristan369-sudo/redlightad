@@ -23,7 +23,7 @@ async function processImage(imageBuffer: Buffer): Promise<Buffer> {
     const h = meta.height || 600
 
     // Crop bunden væk — AnnonceLight vandmærket sidder i en banner i bunden (~15% af højden)
-    const cropH = Math.round(h * 0.85)
+    const cropH = Math.round(h * 0.82) // crop 18% fra bunden — sikrer vandmærket er væk
 
     return await sharp(imageBuffer)
       .extract({ left: 0, top: 0, width: w, height: cropH })
