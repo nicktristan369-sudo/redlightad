@@ -17,29 +17,31 @@ console.log('Cloudinary config:', {
 
 async function uploadImageFromUrl(imageUrl: string): Promise<string> {
   try {
-    // Download billedet som buffer med referer header
-    const response = await fetch(imageUrl, {
+    const axios = (await import('axios')).default
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
       headers: {
-        'Referer': new URL(imageUrl).origin,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://annoncelight.dk/',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
         'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
       },
-      signal: AbortSignal.timeout(10000),
+      timeout: 15000,
     })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const buffer = Buffer.from(await response.arrayBuffer())
 
-    // Upload buffer til Cloudinary
-    const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
-        { folder: 'listings', transformation: [{ width: 800, crop: 'scale' }] },
-        (error, result) => error ? reject(error) : resolve(result as { secure_url: string })
-      ).end(buffer)
+        { folder: 'listings', resource_type: 'image' },
+        (error, result) => {
+          if (error) reject(error)
+          else resolve(result!.secure_url)
+        }
+      ).end(Buffer.from(response.data))
     })
 
-    return result.secure_url
-  } catch (e: unknown) {
-    console.error('Image upload failed:', imageUrl, e instanceof Error ? e.message : e)
+    console.log('✅ Image uploaded:', url)
+    return url
+  } catch (err: unknown) {
+    console.error('❌ Image upload failed:', imageUrl, err instanceof Error ? err.message : err)
     return ''
   }
 }
