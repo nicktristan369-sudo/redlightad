@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     .from('listings')
     .insert({
       user_id: userId,
+      title: profile.display_name || 'Ny profil',
       display_name: profile.display_name,
       phone: profile.phone,
       city: profile.city,
