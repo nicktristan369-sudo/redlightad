@@ -37,12 +37,12 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
     const w = meta.width || 800
     const h = meta.height || 600
 
-    // Mask: hvid = fjern, sort = behold
-    // AnnonceLight.dk vandmærke sidder midt i billedet
-    const wmX = Math.round(w * 0.05)
-    const wmY = Math.round(h * 0.33)
-    const wmW = Math.round(w * 0.75)
-    const wmH = Math.round(h * 0.22)
+    // AnnonceLight.dk vandmærke — præcise koordinater via billedanalyse:
+    // Vandmærket starter ved venstre kant (~2%), 48% fra top, 70% bred, 6% høj
+    const wmX = Math.round(w * 0.02)
+    const wmY = Math.round(h * 0.46)
+    const wmW = Math.round(w * 0.70)
+    const wmH = Math.round(h * 0.08) // lidt ekstra margin
 
     const maskBuffer = await sharp({
       create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
@@ -312,7 +312,7 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
 
     // Forbedr billedkvalitet
     imageBuffer = await processImage(imageBuffer)
-    // Vandmærke-fjernelse midlertidigt deaktiveret — koordinater skal finjusteres
+    imageBuffer = await removeWatermarkClipDrop(imageBuffer)
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
