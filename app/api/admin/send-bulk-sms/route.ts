@@ -1,10 +1,17 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendSMS } from '@/lib/sms'
 
-const getSupabase = () => createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const getSupabase = () =>
+  createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+function generateToken(): string {
+  return Math.random().toString(36).substring(2, 10).toUpperCase() +
+         Math.random().toString(36).substring(2, 6).toUpperCase()
+}
 
 export async function POST(req: NextRequest) {
   const { phoneIds, template } = await req.json()
@@ -22,49 +29,27 @@ export async function POST(req: NextRequest) {
 
     let token = contact.invite_token
     if (!token) {
-      token = Math.random().toString(36).substring(2, 10).toUpperCase()
+      token = generateToken()
       await supabase.from('scraped_phones').update({ invite_token: token }).eq('id', id)
     }
 
     const inviteUrl = `https://redlightad.com/join/${token}`
-    const smsText = template.replace('[TOKEN]', token).replace('[URL]', inviteUrl)
+    const smsText = template
+      .replace('[TOKEN]', token)
+      .replace('[URL]', inviteUrl)
 
-    const phone = contact.phone.replace(/\D/g, '')
-    const toNumber = phone.length === 8 ? `+45${phone}` : `+${phone}`
+    const result = await sendSMS({ to: contact.phone, message: smsText })
 
-    try {
-      const res = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: 'Basic ' + Buffer.from(
-              `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`
-            ).toString('base64'),
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            From: process.env.TWILIO_PHONE_NUMBER!,
-            To: toNumber,
-            Body: smsText,
-          }),
-        }
-      )
-
-      if (res.ok) {
-        await supabase.from('scraped_phones').update({
-          sms_status: 'sent',
-          sms_sent_at: new Date().toISOString(),
-        }).eq('id', id)
-        sent++
-      } else {
-        failed++
-      }
-    } catch {
+    if (result.success) {
+      await supabase.from('scraped_phones').update({
+        sms_status: 'sent',
+        sms_sent_at: new Date().toISOString(),
+      }).eq('id', id)
+      sent++
+    } else {
+      console.error('SMS failed for', contact.phone, result.error)
       failed++
     }
-
-    await new Promise(r => setTimeout(r, 200))
   }
 
   return Response.json({ success: true, sent, failed })

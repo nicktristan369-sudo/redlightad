@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import twilio from 'twilio'
+import { sendSMS } from '@/lib/sms'
 
 const getSupabase = () =>
   createClient(
@@ -15,12 +15,8 @@ function generateToken(): string {
 // POST — send SMS til ét eller flere numre
 export async function POST(req: NextRequest) {
   const { phone_ids, template } = await req.json()
-  // phone_ids: string[] — array af scraped_phones.id
-  // template: string — SMS tekst med [TOKEN] placeholder
 
   const supabase = getSupabase()
-  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER!
 
   const { data: phones, error } = await supabase
     .from('scraped_phones')
@@ -40,14 +36,9 @@ export async function POST(req: NextRequest) {
     const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/join/${token}`
     const body = template.replace('[TOKEN]', inviteUrl)
 
-    // Format DK nummer
-    let toNumber = row.phone.replace(/\D/g, '')
-    if (toNumber.length === 8) toNumber = '+45' + toNumber
-    else if (!toNumber.startsWith('+')) toNumber = '+' + toNumber
+    const result = await sendSMS({ to: row.phone, message: body })
 
-    try {
-      await client.messages.create({ body, from: fromNumber, to: toNumber })
-
+    if (result.success) {
       await supabase
         .from('scraped_phones')
         .update({
@@ -59,12 +50,11 @@ export async function POST(req: NextRequest) {
 
       results.push({ id: row.id, phone: row.phone, status: 'sent' })
       sent++
-    } catch (err: any) {
-      results.push({ id: row.id, phone: row.phone, status: 'failed', error: err.message })
+    } else {
+      results.push({ id: row.id, phone: row.phone, status: 'failed', error: result.error })
       failed++
     }
 
-    // Lille pause mellem sends
     await new Promise(r => setTimeout(r, 200))
   }
 
