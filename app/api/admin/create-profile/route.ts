@@ -28,6 +28,60 @@ async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   }
 }
 
+async function removeWatermark(imageBuffer: Buffer): Promise<Buffer> {
+  // Prøv HuggingFace først, derefter watermarkremover.io som fallback
+  const hfKey = process.env.HUGGINGFACE_API_KEY
+  const wmrKey = process.env.WATERMARK_REMOVER_API_KEY
+
+  if (hfKey) {
+    try {
+      const response = await fetch(
+        'https://api-inference.huggingface.co/models/DamarJati/Remove-watermark',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${hfKey}`,
+            'Content-Type': 'application/octet-stream',
+          },
+          body: imageBuffer,
+          signal: AbortSignal.timeout(30000),
+        }
+      )
+      if (response.ok) {
+        const contentType = response.headers.get('content-type') || ''
+        if (contentType.includes('image')) {
+          console.log('✅ Watermark removed via HuggingFace')
+          return Buffer.from(await response.arrayBuffer())
+        }
+      }
+      console.error('❌ HuggingFace failed:', response.status)
+    } catch (e) {
+      console.error('❌ HuggingFace error:', e instanceof Error ? e.message : e)
+    }
+  }
+
+  if (wmrKey) {
+    try {
+      const formData = new FormData()
+      formData.append('image', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
+      const response = await fetch('https://api.watermarkremover.io/v3/remove', {
+        method: 'POST',
+        headers: { 'x-api-key': wmrKey },
+        body: formData,
+        signal: AbortSignal.timeout(30000),
+      })
+      if (response.ok) {
+        console.log('✅ Watermark removed via watermarkremover.io')
+        return Buffer.from(await response.arrayBuffer())
+      }
+    } catch (e) {
+      console.error('❌ WMR error:', e instanceof Error ? e.message : e)
+    }
+  }
+
+  return imageBuffer // ingen key sat — returner original
+}
+
 async function removeWatermarkWMR(imageBuffer: Buffer): Promise<Buffer> {
   const apiKey = process.env.WATERMARK_REMOVER_API_KEY
   if (!apiKey) return imageBuffer
@@ -112,8 +166,8 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
     // Forbedr billedkvalitet
     imageBuffer = await processImage(imageBuffer)
 
-    // Fjern vandmærke via watermarkremover.io (100 gratis/md)
-    imageBuffer = await removeWatermarkWMR(imageBuffer)
+    // Fjern vandmærke
+    imageBuffer = await removeWatermark(imageBuffer)
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
