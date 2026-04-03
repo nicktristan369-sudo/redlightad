@@ -25,40 +25,23 @@ async function cropAndUpload(imageUrl: string): Promise<string> {
     const w = meta.width || 800
     const h = meta.height || 600
 
-    // Forbedr kvalitet
-    let processed = await sharp(buffer)
+    // Blur vandmærke-region (AnnonceLight.dk — midt i billedet, ca. 33-55% fra top)
+    const wmX = Math.round(w * 0.05)
+    const wmY = Math.round(h * 0.33)
+    const wmW = Math.round(w * 0.75)
+    const wmH = Math.round(h * 0.22)
+
+    const blurredRegion = await sharp(buffer)
+      .extract({ left: wmX, top: wmY, width: wmW, height: wmH })
+      .blur(12)
+      .toBuffer()
+
+    const processed = await sharp(buffer)
+      .composite([{ input: blurredRegion, left: wmX, top: wmY }])
       .modulate({ saturation: 1.2, brightness: 1.03 })
       .sharpen()
       .jpeg({ quality: 90 })
       .toBuffer()
-
-    // Replicate inpainting — fjern AnnonceLight vandmærke (midt i billedet)
-    const token = process.env.REPLICATE_API_TOKEN
-    if (token) {
-      try {
-        const maskBuf = await sharp({ create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } } })
-          .composite([{ input: await sharp({ create: { width: Math.round(w*0.75), height: Math.round(h*0.22), channels: 3, background: { r:255,g:255,b:255 } } }).png().toBuffer(), left: Math.round(w*0.05), top: Math.round(h*0.33) }])
-          .png().toBuffer()
-        const sr = await fetch('https://api.replicate.com/v1/predictions', {
-          method: 'POST',
-          headers: { 'Authorization': `Token ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ version: '95b7223104132402a9ae91cc677285bc5eb997834bd2349fa486f53910fd68b3', input: { image: `data:image/jpeg;base64,${processed.toString('base64')}`, mask: `data:image/png;base64,${maskBuf.toString('base64')}`, prompt: 'smooth skin, clean background, no text', num_inference_steps: 25 } }),
-        })
-        if (sr.ok) {
-          const pred = await sr.json()
-          for (let i = 0; i < 20; i++) {
-            await new Promise(r => setTimeout(r, 2000))
-            const pr = await (await fetch(`https://api.replicate.com/v1/predictions/${pred.id}`, { headers: { 'Authorization': `Token ${token}` } })).json()
-            if (pr.status === 'succeeded' && pr.output) {
-              const out = Array.isArray(pr.output) ? pr.output[0] : pr.output
-              const ir = await fetch(out)
-              if (ir.ok) { processed = Buffer.from(await ir.arrayBuffer()); console.log('✅ WM removed:', imageUrl); break }
-            }
-            if (pr.status === 'failed') break
-          }
-        }
-      } catch (re) { console.error('Replicate error:', re instanceof Error ? re.message : re) }
-    }
 
     // Upload til Cloudinary
     const url = await new Promise<string>((resolve, reject) => {

@@ -18,7 +18,24 @@ console.log('Cloudinary config:', {
 
 async function processImage(imageBuffer: Buffer): Promise<Buffer> {
   try {
+    const meta = await sharp(imageBuffer).metadata()
+    const w = meta.width || 800
+    const h = meta.height || 600
+
+    // Blur vandmærke-regionen (AnnonceLight.dk — midt i billedet)
+    const wmX = Math.round(w * 0.05)
+    const wmY = Math.round(h * 0.33)
+    const wmW = Math.round(w * 0.75)
+    const wmH = Math.round(h * 0.22)
+
+    // Udsnit af vandmærke-region — blur det og composite tilbage
+    const blurredRegion = await sharp(imageBuffer)
+      .extract({ left: wmX, top: wmY, width: wmW, height: wmH })
+      .blur(12)
+      .toBuffer()
+
     return await sharp(imageBuffer)
+      .composite([{ input: blurredRegion, left: wmX, top: wmY }])
       .modulate({ saturation: 1.2, brightness: 1.03 })
       .sharpen()
       .jpeg({ quality: 90 })
@@ -262,7 +279,7 @@ async function uploadImageFromUrl(imageUrl: string): Promise<string> {
 
     // Forbedr billedkvalitet
     imageBuffer = await processImage(imageBuffer)
-    imageBuffer = await removeWatermarkReplicate(imageBuffer)
+    // Replicate deaktiveret — blur via sharp i processImage
 
     const url = await new Promise<string>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
