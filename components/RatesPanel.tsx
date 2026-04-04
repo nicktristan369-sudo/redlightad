@@ -10,16 +10,29 @@ interface Rate {
 
 // ── Valutaer der tilbydes i vælgeren ──────────────────────────
 const CURRENCIES = [
-  { code: "DKK", symbol: "kr",  flag: "🇩🇰", rate: 1.000 },
-  { code: "EUR", symbol: "€",   flag: "🇪🇺", rate: 0.134 },
-  { code: "USD", symbol: "$",   flag: "🇺🇸", rate: 0.145 },
-  { code: "GBP", symbol: "£",   flag: "🇬🇧", rate: 0.115 },
-  { code: "SEK", symbol: "kr",  flag: "🇸🇪", rate: 1.512 },
-  { code: "NOK", symbol: "kr",  flag: "🇳🇴", rate: 1.555 },
-  { code: "CHF", symbol: "Fr",  flag: "🇨🇭", rate: 0.131 },
-  { code: "THB", symbol: "฿",   flag: "🇹🇭", rate: 5.111 },
-  { code: "AED", symbol: "د.إ", flag: "🇦🇪", rate: 0.532 },
+  { code: "DKK", symbol: "kr",  iso: "dk", rate: 1.000 },
+  { code: "EUR", symbol: "€",   iso: "eu", rate: 0.134 },
+  { code: "USD", symbol: "$",   iso: "us", rate: 0.145 },
+  { code: "GBP", symbol: "£",   iso: "gb", rate: 0.115 },
+  { code: "SEK", symbol: "kr",  iso: "se", rate: 1.512 },
+  { code: "NOK", symbol: "kr",  iso: "no", rate: 1.555 },
+  { code: "CHF", symbol: "Fr",  iso: "ch", rate: 0.131 },
+  { code: "THB", symbol: "฿",   iso: "th", rate: 5.111 },
+  { code: "AED", symbol: "د.إ", iso: "ae", rate: 0.532 },
 ]
+
+function Flag({ iso, size = 20 }: { iso: string; size?: number }) {
+  const h = Math.round(size * 0.75)
+  return (
+    <img
+      src={`https://flagcdn.com/${size * 2}x${h * 2}/${iso}.png`}
+      width={size}
+      height={h}
+      alt={iso}
+      style={{ display: "inline-block", borderRadius: 2, objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
+    />
+  )
+}
 
 const RC_RATE = 10 // 1 DKK = 10 RC
 
@@ -46,32 +59,41 @@ function CurrencyPicker({
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors"
-        style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", color: "#111" }}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all"
+        style={{ background: "#fff", border: "1.5px solid #E5E7EB", color: "#111", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
       >
-        <span>{selected.flag}</span>
+        <Flag iso={selected.iso} size={18} />
         <span>{selected.code}</span>
-        <ChevronDown size={13} />
+        <ChevronDown size={12} color="#9CA3AF" />
       </button>
+
       {open && (
-        <div
-          className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
-          style={{ minWidth: 140 }}
-          onMouseLeave={() => setOpen(false)}
-        >
-          {CURRENCIES.map(c => (
-            <button
-              key={c.code}
-              onClick={() => { onChange(c); setOpen(false) }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium hover:bg-gray-50 transition-colors text-left"
-              style={{ color: c.code === selected.code ? "#DC2626" : "#111", background: c.code === selected.code ? "#FFF5F5" : "transparent" }}
-            >
-              <span>{c.flag}</span>
-              <span className="font-semibold">{c.code}</span>
-              <span className="text-gray-400 text-[11px] ml-auto">{c.symbol}</span>
-            </button>
-          ))}
-        </div>
+        <>
+          {/* Overlay */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute right-0 top-full mt-1.5 z-50 bg-white rounded-xl overflow-hidden"
+            style={{ minWidth: 160, boxShadow: "0 8px 30px rgba(0,0,0,0.12)", border: "1px solid #F0F0F0" }}
+          >
+            {CURRENCIES.map(c => {
+              const active = c.code === selected.code
+              return (
+                <button
+                  key={c.code}
+                  onClick={() => { onChange(c); setOpen(false) }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                  style={{ background: active ? "#FFF5F5" : "transparent" }}
+                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "#F9FAFB" }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = active ? "#FFF5F5" : "transparent" }}
+                >
+                  <Flag iso={c.iso} size={18} />
+                  <span className="text-[13px] font-semibold" style={{ color: active ? "#DC2626" : "#111" }}>{c.code}</span>
+                  <span className="text-[12px] text-gray-400 ml-auto">{c.symbol}</span>
+                </button>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )
