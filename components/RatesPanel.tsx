@@ -21,14 +21,12 @@ const CURRENCIES = [
   { code: "AED", symbol: "د.إ", iso: "ae", rate: 0.532 },
 ]
 
-function Flag({ iso, size = 20 }: { iso: string; size?: number }) {
+function Flag({ iso, size = 18 }: { iso: string; size?: number }) {
+  const h = Math.round(size * 0.75)
   return (
-    <img
-      src={`https://flagcdn.com/w${size * 2}/${iso}.png`}
-      width={size}
-      height={Math.round(size * 0.75)}
-      alt={iso}
-      style={{ display: "inline-block", borderRadius: 2, objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
+    <span
+      className={`fi fi-${iso}`}
+      style={{ width: size, height: h, display: "inline-block", flexShrink: 0, borderRadius: 2 }}
     />
   )
 }
