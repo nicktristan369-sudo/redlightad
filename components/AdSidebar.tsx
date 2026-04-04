@@ -1,5 +1,5 @@
 import { Cake, User, Folder, MapPin, Languages, Ruler, Globe, Heart, Eye, Cigarette, Zap, Flag } from "lucide-react";
-import RatesWithRC from "./RatesWithRC";
+import RatesPanel from "./RatesPanel";
 
 interface AdSidebarProps {
   age: number;
@@ -98,12 +98,9 @@ export default function AdSidebar({
       </div>
 
       {rates && rates.length > 0 && (
-        <>
-          <div className="px-5 py-4 border-t border-gray-100">
-            <h3 className="text-[15px] font-bold text-gray-900 mb-3">Rates</h3>
-            <RatesWithRC rates={rates} listingId={listingId} />
-          </div>
-        </>
+        <div className="p-0 border-t border-gray-100">
+          <RatesPanel rates={rates} listingId={listingId} />
+        </div>
       )}
     </div>
   );
