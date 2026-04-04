@@ -203,8 +203,8 @@ export default function VideoGrid({ videos }: Props) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{
-              width: "100%", background: "#222", border: "1px solid #333",
-              color: "#fff", padding: "10px 12px 10px 36px", fontSize: 14,
+              width: "100%", background: "#fff", border: "1px solid #E5E7EB",
+              color: "#111", padding: "10px 12px 10px 36px", fontSize: 14,
               outline: "none",
             }}
           />
@@ -213,7 +213,7 @@ export default function VideoGrid({ videos }: Props) {
           value={sort}
           onChange={e => setSort(e.target.value as any)}
           style={{
-            background: "#222", border: "1px solid #333", color: "#fff",
+            background: "#fff", border: "1px solid #E5E7EB", color: "#374151",
             padding: "10px 16px", fontSize: 14, outline: "none", cursor: "pointer",
           }}
         >

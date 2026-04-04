@@ -35,12 +35,12 @@ export default async function VideosPage() {
   return (
     <>
       <Navbar />
-      <main style={{ background: "#111", minHeight: "100vh" }}>
+      <main style={{ background: "#F5F5F7", minHeight: "100vh" }}>
         <section className="py-8">
           <div className="mx-auto max-w-7xl px-4">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-white tracking-tight">Videos</h1>
-              <p className="text-gray-400 text-sm mt-1">Profiles with videos from around the world</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Videos</h1>
+              <p className="text-gray-500 text-sm mt-1">Profiles with videos from around the world</p>
             </div>
             <VideoGrid videos={deduped as any} />
           </div>
