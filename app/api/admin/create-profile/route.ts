@@ -29,52 +29,74 @@ async function processImage(imageBuffer: Buffer): Promise<Buffer> {
 }
 
 async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
-  const apiKey = process.env.CLIPDROP_API_KEY
-  if (!apiKey) return imageBuffer
+  // UnWatermark AI — automatisk detektion, ingen mask nødvendig
+  const uwKey = process.env.UNWATERMARK_API_KEY
+  if (uwKey) {
+    try {
+      const form = new FormData()
+      form.append('original_image_file', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
+      form.append('is_remove_text', 'true')
+      form.append('is_remove_logo', 'false')
+      form.append('output_format', 'jpg')
+
+      const res = await fetch('https://unwatermark.ai/api/web/v1/sync/auto-unwatermark-upgrade-api/creat-job', {
+        method: 'POST',
+        headers: { 'ZF-API-KEY': uwKey },
+        body: form,
+        signal: AbortSignal.timeout(60000),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        const resultUrl = data?.data?.result_image_url || data?.result_url || data?.url
+        if (resultUrl) {
+          const imgRes = await fetch(resultUrl)
+          if (imgRes.ok) {
+            console.log('✅ Watermark removed via UnWatermark AI')
+            return Buffer.from(await imgRes.arrayBuffer())
+          }
+        }
+        // Tjek om resultatet er direkte i response
+        const ct = res.headers.get('content-type') || ''
+        if (ct.includes('image')) {
+          console.log('✅ Watermark removed via UnWatermark AI (direct)')
+          return Buffer.from(await res.arrayBuffer())
+        }
+        console.error('❌ UnWatermark unexpected response:', JSON.stringify(data).substring(0, 200))
+      } else {
+        console.error('❌ UnWatermark error:', res.status, await res.text())
+      }
+    } catch (e) {
+      console.error('❌ UnWatermark failed:', e instanceof Error ? e.message : e)
+    }
+  }
+
+  // Fallback: ClipDrop
+  const clipKey = process.env.CLIPDROP_API_KEY
+  if (!clipKey) return imageBuffer
 
   try {
     const meta = await sharp(imageBuffer).metadata()
     const w = meta.width || 800
     const h = meta.height || 600
-
-    // Mask der dækkede vandmærket korrekt (bekræftet virker)
-    const wmX = 0
-    const wmY = Math.round(h * 0.43)
-    const wmW = w
-    const wmH = Math.round(h * 0.12)
-
-    const maskBuffer = await sharp({
-      create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
-    }).composite([{
-      input: await sharp({
-        create: { width: wmW, height: wmH, channels: 3, background: { r: 255, g: 255, b: 255 } }
-      }).png().toBuffer(),
-      left: wmX, top: wmY,
-    }]).png().toBuffer()
-
+    const wmX = 0, wmY = Math.round(h * 0.43), wmW = w, wmH = Math.round(h * 0.12)
+    const maskBuffer = await sharp({ create: { width: w, height: h, channels: 3, background: { r:0,g:0,b:0 } } })
+      .composite([{ input: await sharp({ create: { width: wmW, height: wmH, channels: 3, background: { r:255,g:255,b:255 } } }).png().toBuffer(), left: wmX, top: wmY }])
+      .png().toBuffer()
     const form = new FormData()
     form.append('image_file', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
     form.append('mask_file', new Blob([maskBuffer.buffer as ArrayBuffer], { type: 'image/png' }), 'mask.png')
     form.append('mode', 'quality')
-
     const res = await fetch('https://clipdrop-api.co/cleanup/v1', {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey },
-      body: form,
-      signal: AbortSignal.timeout(60000),
+      method: 'POST', headers: { 'x-api-key': clipKey }, body: form, signal: AbortSignal.timeout(60000),
     })
-
-    if (!res.ok) {
-      console.error('❌ ClipDrop error:', res.status, await res.text())
-      return imageBuffer
-    }
-
-    console.log('✅ Watermark removed via ClipDrop')
-    return Buffer.from(await res.arrayBuffer())
+    if (res.ok) { console.log('✅ Watermark removed via ClipDrop'); return Buffer.from(await res.arrayBuffer()) }
+    console.error('❌ ClipDrop error:', res.status)
   } catch (e) {
     console.error('❌ ClipDrop failed:', e instanceof Error ? e.message : e)
-    return imageBuffer
   }
+
+  return imageBuffer
 }
 
 async function removeWatermarkReplicate(imageBuffer: Buffer): Promise<Buffer> {
