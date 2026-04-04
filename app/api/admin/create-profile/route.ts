@@ -46,11 +46,11 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
 
     // Byg præcis mask med bløde kanter (feathering via blur)
     const textMask = await sharp({
-      create: { width: wmW, height: wmH, channels: 1, background: { r: 255, g: 255, b: 255 } }
+      create: { width: wmW, height: wmH, channels: 3, background: { r: 255, g: 255, b: 255 } }
     }).png().toBuffer()
 
     const maskBuffer = await sharp({
-      create: { width: w, height: h, channels: 1, background: { r: 0, g: 0, b: 0 } }
+      create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
     })
       .composite([{ input: textMask, left: wmX, top: wmY }])
       .blur(4) // bløde kanter for bedre blending
