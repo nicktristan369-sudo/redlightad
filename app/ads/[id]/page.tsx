@@ -357,6 +357,8 @@ export default function AdDetailPage() {
                   telegram: ad.telegram,
                   snapchat: ad.snapchat,
                   email: ad.email,
+                  profileImage: ad.profile_image,
+                  name: ad.title,
                 }} />
               </div>
             </div>
