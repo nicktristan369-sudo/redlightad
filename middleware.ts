@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from "next/server"
 
-// ── MAINTENANCE MODE ─────────────────────────────────────────────────────────
-// Sæt til false for at åbne siden igen
-const MAINTENANCE_MODE = false
+// ── Site lock cache (60 sek TTL) ─────────────────────────────────────────────
+let lockCache: { enabled: boolean; ts: number } | null = null
+const LOCK_CACHE_TTL = 60_000
+
+async function isSiteLocked(): Promise<boolean> {
+  const now = Date.now()
+  if (lockCache && now - lockCache.ts < LOCK_CACHE_TTL) return lockCache.enabled
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const res = await fetch(
+      `${url}/rest/v1/site_settings?key=eq.site_lock_enabled&select=value&limit=1`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` }, next: { revalidate: 0 } }
+    )
+    const data = await res.json()
+    const enabled = data?.[0]?.value === "true"
+    lockCache = { enabled, ts: now }
+    return enabled
+  } catch {
+    return lockCache?.enabled ?? false
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Paths that are always public (no password required)
-const PUBLIC_PATHS = ["/unlock", "/api/", "/_next", "/favicon"]
+const PUBLIC_PATHS = ["/unlock", "/api/", "/_next", "/favicon", "/maintenance"]
 
 // Admin email — kun denne bruger må tilgå /admin
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "tristan369@protonmail.com"
@@ -14,32 +33,25 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "tristan369@protonmail.com"
 // Paths to skip tracking
 const SKIP_TRACKING = ["/api/", "/_next/", "/admin/", "/favicon.ico", "/opengraph-image"]
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
-
-  // ── Maintenance mode — lås hele siden ───────────────────────────────────
-  if (MAINTENANCE_MODE && pathname !== "/maintenance") {
-    // Tillad kun statiske assets og API
-    if (!pathname.startsWith("/_next") && !pathname.startsWith("/api/") && !pathname.startsWith("/favicon")) {
-      const url = req.nextUrl.clone()
-      url.pathname = "/maintenance"
-      return NextResponse.redirect(url)
-    }
-  }
-  // ─────────────────────────────────────────────────────────────────────────
 
   // Allow public paths and static assets
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
   }
 
-  // Check for access cookie
-  const unlocked = req.cookies.get("site_unlocked")?.value
-  if (unlocked !== "1") {
-    const url = req.nextUrl.clone()
-    url.pathname = "/unlock"
-    return NextResponse.redirect(url)
+  // ── Site lock — styret fra admin panel ──────────────────────────────────
+  const locked = await isSiteLocked()
+  if (locked) {
+    const unlocked = req.cookies.get("site_unlocked")?.value
+    if (unlocked !== "1") {
+      const url = req.nextUrl.clone()
+      url.pathname = "/unlock"
+      return NextResponse.redirect(url)
+    }
   }
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Beskyt /admin — tjek admin cookie sat ved login
   if (pathname.startsWith("/admin")) {

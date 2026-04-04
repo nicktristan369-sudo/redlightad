@@ -15,6 +15,8 @@ export default function AdminIndstillingerPage() {
   const [grantLoading, setGrantLoading] = useState(false)
   const [revokeLoading, setRevokeLoading] = useState(false)
   const [hasEmailColumn, setHasEmailColumn] = useState(true)
+  const [siteLocked, setSiteLocked] = useState(false)
+  const [lockLoading, setLockLoading] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -30,7 +32,27 @@ export default function AdminIndstillingerPage() {
       .then(({ error }) => {
         if (error) setHasEmailColumn(false)
       })
+
+    // Fetch current site lock status
+    fetch("/api/admin/site-lock")
+      .then(r => r.json())
+      .then(d => setSiteLocked(d.enabled ?? false))
+      .catch(() => {})
   }, [])
+
+  const toggleSiteLock = async () => {
+    setLockLoading(true)
+    try {
+      const res = await fetch("/api/admin/site-lock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !siteLocked }),
+      })
+      const d = await res.json()
+      if (d.ok) setSiteLocked(d.enabled)
+    } catch {}
+    setLockLoading(false)
+  }
 
   const handleGrant = async () => {
     setGrantError("")
@@ -113,6 +135,38 @@ export default function AdminIndstillingerPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Indstillinger</h1>
 
       <div className="space-y-6 max-w-xl">
+
+        {/* ── Site lock toggle ── */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Adgangskode-lås</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {siteLocked
+                  ? "Siden er låst — kun med adgangskode"
+                  : "Siden er åben for alle"}
+              </p>
+            </div>
+            <button
+              onClick={toggleSiteLock}
+              disabled={lockLoading}
+              style={{
+                width: 52, height: 28, borderRadius: 14, border: "none", cursor: lockLoading ? "wait" : "pointer",
+                background: siteLocked ? "#DC2626" : "#D1D5DB",
+                position: "relative", transition: "background 0.2s",
+                flexShrink: 0,
+              }}
+            >
+              <span style={{
+                position: "absolute", top: 3, left: siteLocked ? 26 : 3,
+                width: 22, height: 22, borderRadius: "50%", background: "#fff",
+                transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                display: "block",
+              }} />
+            </button>
+          </div>
+        </div>
+
         {/* Current status */}
         <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
           <h2 className="text-lg font-bold text-gray-900 mb-3">Din status</h2>
