@@ -68,12 +68,18 @@ export default function BeskederPage() {
       ).filter(Boolean)
       const uniqueIds = [...new Set(otherIds)]
 
-      // Hent customer_profiles — select(*) så det virker uanset kolonner
-      const { data: customerProfiles, error: cpErr } = await supabase
-        .from("customer_profiles")
-        .select("*")
-        .in("user_id", uniqueIds)
-      if (cpErr) console.error("customer_profiles fetch:", cpErr.message)
+      // Hent customer_profiles via API (omgår RLS)
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const customerProfiles: CustomerProfile[] = []
+      if (token) {
+        await Promise.all(uniqueIds.map(async (uid) => {
+          const res = await fetch(`/api/customer-profile/${uid}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          })
+          if (res.ok) customerProfiles.push(await res.json())
+        }))
+      }
 
       // Hent listings profilbilleder (for providers)
       const { data: providerListings } = await supabase

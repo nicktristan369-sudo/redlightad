@@ -73,14 +73,21 @@ export default function ChatPage() {
       }
       setConv(c)
 
-      // Hent kundeprofil
+      // Hent kundeprofil via API (omgår RLS)
       const customerId = c.provider_id === user.id ? c.customer_id : c.provider_id
-      const { data: cp } = await supabase
-        .from("customer_profiles")
-        .select("*")
-        .eq("user_id", customerId)
-        .single()
-      setCustomer(cp || { user_id: customerId, username: null, avatar_url: null })
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (token) {
+        const cpRes = await fetch(`/api/customer-profile/${customerId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        })
+        if (cpRes.ok) {
+          const cp = await cpRes.json()
+          setCustomer(cp)
+        } else {
+          setCustomer({ user_id: customerId, username: null, avatar_url: null })
+        }
+      }
 
       // Hent beskeder
       const { data: msgs } = await supabase
