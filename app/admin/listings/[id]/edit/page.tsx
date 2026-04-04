@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import AdminLayout from "@/components/AdminLayout";
 import SocialLinksEditor from "@/components/SocialLinksEditor";
@@ -96,6 +97,50 @@ function SaveBtn({ onClick, saving, label = "Gem ændringer" }: { onClick: () =>
       {saving ? "Gemmer…" : label}
     </button>
   );
+}
+
+// ── VideoAdminSection ─────────────────────────────────────────────────────────
+function VideoAdminSection({ listingId }: { listingId: string }) {
+  const [videos, setVideos] = useState<{ id: string; url: string; title: string | null }[]>([])
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    supabase.from('listing_videos').select('id, url, title').eq('listing_id', listingId).then(({ data }) => {
+      if (data) setVideos(data)
+    })
+  }, [listingId])
+
+  const deleteVideo = async (videoId: string) => {
+    setDeleting(videoId)
+    await supabase.from('listing_videos').delete().eq('id', videoId)
+    setVideos(v => v.filter(x => x.id !== videoId))
+    setDeleting(null)
+  }
+
+  if (videos.length === 0) return null
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+        <span className="text-[13px] font-semibold text-gray-900">Videoer ({videos.length})</span>
+      </div>
+      <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {videos.map(v => (
+          <div key={v.id} className="relative rounded-xl overflow-hidden border border-gray-200 bg-black group">
+            <video src={v.url} className="w-full h-32 object-cover opacity-80" />
+            <button
+              onClick={() => deleteVideo(v.id)}
+              disabled={deleting === v.id}
+              className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <XCircle size={13} color="white" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // ── Main page ────────────────────────────────────────────────────────────────
@@ -471,6 +516,11 @@ export default function AdminListingEditPage({ params }: { params: Promise<{ id:
             </div>
           )}
         </Section>
+
+        {/* ══════════════════════════════════════════════════════════════
+            SEKTION 3b — Videoer
+        ══════════════════════════════════════════════════════════════ */}
+        <VideoAdminSection listingId={id} />
 
         {/* ══════════════════════════════════════════════════════════════
             SEKTION 4 — Kontakt
