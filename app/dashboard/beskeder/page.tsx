@@ -15,7 +15,13 @@ interface Conversation {
   last_message_at: string
   provider_unread: number
   customer_unread: number
-  listings?: { title: string } | null
+  listings?: { id: string; title: string; profile_image: string | null } | null
+  // enriched client-side:
+  other_avatar?: string | null
+  other_initials?: string
+  other_name?: string
+  other_id?: string
+  other_is_customer?: boolean
 }
 
 export default function BeskederPage() {
@@ -31,13 +37,51 @@ export default function BeskederPage() {
       if (!user) { router.replace("/login"); return }
       setUserId(user.id)
 
-      const { data } = await supabase
+      const { data: convs } = await supabase
         .from("conversations")
-        .select("*, listings(title)")
+        .select("*, listings(id, title, profile_image)")
         .or(`provider_id.eq.${user.id},customer_id.eq.${user.id}`)
         .order("last_message_at", { ascending: false })
 
-      setConversations(data || [])
+      if (!convs) { setLoading(false); return }
+
+      // Saml alle "den anden part" user IDs
+      const otherIds = convs.map(c =>
+        user.id === c.provider_id ? c.customer_id : c.provider_id
+      ).filter(Boolean)
+      const uniqueIds = [...new Set(otherIds)]
+
+      // Hent customer_profiles for alle
+      const { data: customerProfiles } = await supabase
+        .from("customer_profiles")
+        .select("user_id, username, avatar_url")
+        .in("user_id", uniqueIds)
+
+      // Hent listings profilbilleder (for providers)
+      const { data: providerListings } = await supabase
+        .from("listings")
+        .select("user_id, profile_image, title")
+        .in("user_id", uniqueIds)
+
+      const cpMap = new Map(customerProfiles?.map(p => [p.user_id, p]) ?? [])
+      const plMap = new Map(providerListings?.map(l => [l.user_id, l]) ?? [])
+
+      const enriched = convs.map(c => {
+        const otherId = user.id === c.provider_id ? c.customer_id : c.provider_id
+        const isOtherCustomer = user.id === c.provider_id // vi er provider, de er customer
+        const cp = cpMap.get(otherId)
+        const pl = plMap.get(otherId)
+
+        const avatar = cp?.avatar_url ?? pl?.profile_image ?? null
+        const name = isOtherCustomer
+          ? (cp?.username || "Anonym kunde")
+          : (c.listings?.title || pl?.title || "Profil")
+        const initials = name.slice(0, 2).toUpperCase()
+
+        return { ...c, other_avatar: avatar, other_initials: initials, other_name: name, other_id: otherId, other_is_customer: isOtherCustomer }
+      })
+
+      setConversations(enriched)
       setLoading(false)
     }
     load()
@@ -50,9 +94,9 @@ export default function BeskederPage() {
 
   const formatTime = (ts: string) => {
     const d = new Date(ts)
-    const now = new Date()
-    const diffH = (now.getTime() - d.getTime()) / 3600000
+    const diffH = (Date.now() - d.getTime()) / 3600000
     if (diffH < 24) return d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+    if (diffH < 168) return d.toLocaleDateString("da-DK", { weekday: "short" })
     return d.toLocaleDateString("da-DK", { day: "numeric", month: "short" })
   }
 
@@ -76,38 +120,69 @@ export default function BeskederPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-100">
             {conversations.map((conv) => {
               const unread = getUnread(conv)
+              // Link til profilen der er den "anden part"
+              const profileHref = conv.other_is_customer
+                ? null // kunder har ingen offentlig profil-URL endnu
+                : conv.listing_id ? `/ads/${conv.listing_id}` : null
+
               return (
-                <Link
-                  key={conv.id}
-                  href={`/dashboard/beskeder/${conv.id}`}
-                  className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold flex-shrink-0">
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <p className="font-semibold text-gray-900 text-sm truncate">
-                        {conv.listings?.title || "Annonce slettet"}
-                      </p>
-                      <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                        {formatTime(conv.last_message_at)}
-                      </span>
+                <div key={conv.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
+                  {/* Avatar — klikbar til profil */}
+                  {profileHref ? (
+                    <Link href={profileHref} className="flex-shrink-0" title="Se profil">
+                      <Avatar avatar={conv.other_avatar} initials={conv.other_initials ?? "??"} />
+                    </Link>
+                  ) : (
+                    <div className="flex-shrink-0">
+                      <Avatar avatar={conv.other_avatar} initials={conv.other_initials ?? "??"} />
                     </div>
-                    <p className="text-sm text-gray-500 truncate">
+                  )}
+
+                  {/* Besked-link */}
+                  <Link href={`/dashboard/beskeder/${conv.id}`} className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className={`text-sm truncate ${unread > 0 ? "font-bold text-gray-900" : "font-semibold text-gray-800"}`}>
+                          {conv.other_name}
+                        </p>
+                        {profileHref && (
+                          <span className="text-[10px] text-gray-400 font-medium hidden sm:inline">· Se profil →</span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{formatTime(conv.last_message_at)}</span>
+                    </div>
+                    <p className={`text-sm truncate ${unread > 0 ? "text-gray-700 font-medium" : "text-gray-400"}`}>
                       {conv.last_message || "Ingen beskeder endnu"}
                     </p>
-                  </div>
+                  </Link>
+
                   {unread > 0 && (
-                    <span className="bg-red-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">
-                      {unread}
+                    <span className="bg-red-600 text-white text-xs font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center flex-shrink-0 px-1">
+                      {unread > 9 ? "9+" : unread}
                     </span>
                   )}
-                </Link>
+                </div>
               )
             })}
           </div>
         )}
       </div>
     </DashboardLayout>
+  )
+}
+
+function Avatar({ avatar, initials }: { avatar: string | null | undefined; initials: string }) {
+  return (
+    <div style={{
+      width: 44, height: 44, borderRadius: "50%",
+      background: avatar ? "transparent" : "#DC2626",
+      overflow: "hidden", flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      border: "2px solid #F3F4F6",
+    }}>
+      {avatar
+        ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{initials}</span>}
+    </div>
   )
 }
