@@ -65,7 +65,7 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
     }
   }
 
-  // Fallback: ClipDrop
+  // Fallback: ClipDrop — to masker: midt (AnnonceLight ~43%) + bund (escortguide ~88%)
   const clipKey = process.env.CLIPDROP_API_KEY
   if (!clipKey) return imageBuffer
 
@@ -73,7 +73,8 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
     const meta = await sharp(imageBuffer).metadata()
     const w = meta.width || 800
     const h = meta.height || 600
-    const wmX = 0, wmY = Math.round(h * 0.43), wmW = w, wmH = Math.round(h * 0.12)
+    // Dæk både midten (AnnonceLight) og bunden (escortguide) med to hvide blokke
+    const wmX = 0, wmY = Math.round(h * 0.40), wmW = w, wmH = Math.round(h * 0.15)
     const maskBuffer = await sharp({ create: { width: w, height: h, channels: 3, background: { r:0,g:0,b:0 } } })
       .composite([{ input: await sharp({ create: { width: wmW, height: wmH, channels: 3, background: { r:255,g:255,b:255 } } }).png().toBuffer(), left: wmX, top: wmY }])
       .png().toBuffer()
@@ -310,13 +311,14 @@ async function removeWatermarkPixelbin(imageBuffer: Buffer): Promise<Buffer> {
   }
 }
 
-async function uploadImageFromUrl(imageUrl: string): Promise<string> {
+async function uploadImageFromUrl(imageUrl: string, sourceReferer?: string): Promise<string> {
   try {
     const axios = (await import('axios')).default
+    const referer = sourceReferer || (imageUrl.includes('escortguide') ? 'https://escortguide.dk/' : 'https://annoncelight.dk/')
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       headers: {
-        'Referer': 'https://annoncelight.dk/',
+        'Referer': referer,
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
         'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
       },
