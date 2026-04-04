@@ -22,12 +22,11 @@ const CURRENCIES = [
 ]
 
 function Flag({ iso, size = 20 }: { iso: string; size?: number }) {
-  const h = Math.round(size * 0.75)
   return (
     <img
-      src={`https://flagcdn.com/${size * 2}x${h * 2}/${iso}.png`}
+      src={`https://flagcdn.com/w${size * 2}/${iso}.png`}
       width={size}
-      height={h}
+      height={Math.round(size * 0.75)}
       alt={iso}
       style={{ display: "inline-block", borderRadius: 2, objectFit: "cover", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}
     />
