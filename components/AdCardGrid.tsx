@@ -1,6 +1,7 @@
 "use client"
 import Link from "next/link"
 import { CheckCircle } from "lucide-react"
+import { useState, useEffect } from "react"
 
 function isAvailableNow(
   hours: Record<string, { open: string; close: string; closed: boolean }> | null | undefined,
@@ -34,6 +35,7 @@ interface AdCardGridProps {
   title: string
   display_name?: string | null
   image: string
+  images?: string[] | null
   verified: boolean
   age?: number | null
   city?: string | null
@@ -46,12 +48,13 @@ interface AdCardGridProps {
   premium_tier?: string | null
   hasStory?: boolean
   onStoryClick?: () => void
+  staggerDelay?: number
 }
 
 export default function AdCardGrid({
-  id, title, display_name, image, verified, age, city, country, location,
+  id, title, display_name, image, images, verified, age, city, country, location,
   category, created_at, opening_hours, timezone, premium_tier,
-  hasStory = false, onStoryClick,
+  hasStory = false, onStoryClick, staggerDelay = 0,
 }: AdCardGridProps) {
   const displayTitle = display_name
     ? `${display_name}${age ? `, ${age}` : ""}`
@@ -59,6 +62,34 @@ export default function AdCardGrid({
   const locationDisplay = [city, country].filter(Boolean).join(", ") || location || ""
   const available = isAvailableNow(opening_hours, timezone)
   const ago = created_at ? timeAgo(created_at) : ""
+
+  // ── Cycling images ────────────────────────────────────────────────────────
+  const pool = [image, ...(images ?? [])].filter((v, i, a) => v && a.indexOf(v) === i)
+  const [currentImg, setCurrentImg] = useState(image)
+  const [fading, setFading] = useState(false)
+
+  useEffect(() => {
+    if (pool.length <= 1) return
+    // Stagger: wait staggerDelay before starting the cycle
+    const startTimer = setTimeout(() => {
+      const interval = setInterval(() => {
+        setFading(true)
+        setTimeout(() => {
+          setCurrentImg(prev => {
+            const idx = pool.indexOf(prev)
+            let next: number
+            do { next = Math.floor(Math.random() * pool.length) } while (next === idx)
+            return pool[next]
+          })
+          setFading(false)
+        }, 500)
+      }, 6000)
+      return () => clearInterval(interval)
+    }, staggerDelay)
+    return () => clearTimeout(startTimer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pool.length, staggerDelay])
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <Link href={`/ads/${id}`} style={{ display: "block", textDecoration: "none" }}>
@@ -88,9 +119,13 @@ export default function AdCardGrid({
         <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden", background: "#D1D5DB" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={image}
+            src={currentImg}
             alt={title}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.3s ease" }}
+            style={{
+              width: "100%", height: "100%", objectFit: "cover", display: "block",
+              transition: "opacity 0.5s ease, transform 0.3s ease",
+              opacity: fading ? 0 : 1,
+            }}
             className="group-hover:scale-105"
           />
 

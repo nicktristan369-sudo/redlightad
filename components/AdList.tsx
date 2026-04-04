@@ -338,12 +338,13 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
       {view === "grid" ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8">
-          {listings.map((ad) => (
+          {listings.map((ad, idx) => (
             <AdCardGrid
               key={ad.id}
               id={ad.id}
               title={ad.title}
               image={ad.profile_image || "/placeholder.jpg"}
+              images={ad.images}
               verified={(ad as any).verified ?? false}
               age={ad.age}
               city={ad.city}
@@ -356,6 +357,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
               display_name={(ad as any).display_name ?? null}
               category={ad.category}
               created_at={ad.created_at}
+              staggerDelay={idx * 700}
             />
           ))}
         </div>
