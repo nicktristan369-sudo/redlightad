@@ -47,23 +47,36 @@ export async function POST(req: NextRequest) {
   const ageMatch = html.match(/(\d{2})\s*(år|years|yo)/i)
   const age = ageMatch ? parseInt(ageMatch[1]) : null
 
+  const baseUrl = new URL(url).origin
+
   function getFullSizeUrl(src: string): string {
+    // Gør relative URLs absolutte
+    if (src.startsWith('/')) src = baseUrl + src
     return src
       .replace('.superad.jpg', '.jpg')
       .replace('.superad.png', '.png')
       .replace('.thumb.jpg', '.jpg')
       .replace('.thumb.png', '.png')
+      .replace('_small.', '_large.')
+      .replace('_medium.', '_large.')
       .replace('/thumbs/', '/images/')
       .replace('/storage/images/thumbs/', '/storage/images/')
   }
 
-  const images = $('img[src*="storage"], img[src*="upload"], img[src*="photo"], img[src*="image"]')
-    .map((_, el) => $(el).attr('src') || '')
+  // Bred billed-selektor der dækker escortguide.dk, annoncelight.dk og andre sites
+  const images = $('img')
+    .map((_, el) => $(el).attr('src') || $(el).attr('data-src') || '')
     .get()
-    .filter((src): src is string => !!src && !src.includes('logo') && !src.includes('icon'))
+    .filter((src): src is string =>
+      !!src &&
+      (src.includes('Pictures') || src.includes('storage') || src.includes('upload') ||
+       src.includes('photo') || src.includes('image') || src.includes('foto')) &&
+      !src.includes('logo') && !src.includes('icon') && !src.includes('flag') &&
+      !src.includes('avatar') && !src.includes('banner')
+    )
     .map(getFullSizeUrl)
-    .filter((src, i, arr) => arr.indexOf(src) === i) // deduplicate
-    .slice(0, 5)
+    .filter((src, i, arr) => arr.indexOf(src) === i)
+    .slice(0, 8)
 
   return Response.json({
     profile: { display_name, phone, description, city, age, images, source_url: url }
