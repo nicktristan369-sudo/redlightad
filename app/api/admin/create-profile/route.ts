@@ -39,30 +39,24 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
       form.append('is_remove_logo', 'false')
       form.append('output_format', 'jpg')
 
-      const res = await fetch('https://unwatermark.ai/api/web/v1/sync/auto-unwatermark-upgrade-api/creat-job', {
+      const res = await fetch('https://api.unwatermark.ai/api/web/v1/sync/auto-unwatermark-upgrade-api/creat-job', {
         method: 'POST',
         headers: { 'ZF-API-KEY': uwKey },
         body: form,
-        signal: AbortSignal.timeout(60000),
+        signal: AbortSignal.timeout(90000),
       })
 
       if (res.ok) {
         const data = await res.json()
-        const resultUrl = data?.data?.result_image_url || data?.result_url || data?.url
-        if (resultUrl) {
-          const imgRes = await fetch(resultUrl)
+        const outputUrl = data?.result?.output_url
+        if (outputUrl) {
+          const imgRes = await fetch(outputUrl)
           if (imgRes.ok) {
             console.log('✅ Watermark removed via UnWatermark AI')
             return Buffer.from(await imgRes.arrayBuffer())
           }
         }
-        // Tjek om resultatet er direkte i response
-        const ct = res.headers.get('content-type') || ''
-        if (ct.includes('image')) {
-          console.log('✅ Watermark removed via UnWatermark AI (direct)')
-          return Buffer.from(await res.arrayBuffer())
-        }
-        console.error('❌ UnWatermark unexpected response:', JSON.stringify(data).substring(0, 200))
+        console.error('❌ UnWatermark unexpected response:', JSON.stringify(data).substring(0, 300))
       } else {
         console.error('❌ UnWatermark error:', res.status, await res.text())
       }
