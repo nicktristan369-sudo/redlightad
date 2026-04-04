@@ -99,7 +99,6 @@ export async function POST(req: NextRequest) {
       conversation_id: conversationId,
       sender_id: customerId,
       content: content.trim(),
-      read: false,
       created_at: new Date().toISOString(),
     })
 
