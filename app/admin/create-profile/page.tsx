@@ -4,9 +4,73 @@ import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { SUPPORTED_COUNTRIES } from "@/lib/countries";
 
+// ── Landekoder til telefon ───────────────────────────────────────────────────
+const DIAL_CODES: Record<string, string> = {
+  dk: "+45", se: "+46", no: "+47", fi: "+358", de: "+49", nl: "+31",
+  gb: "+44", fr: "+33", es: "+34", it: "+39", ch: "+41", at: "+43",
+  be: "+32", pl: "+48", cz: "+420", hu: "+36", th: "+66", ae: "+971",
+  sg: "+65", jp: "+81", hk: "+852", my: "+60", ph: "+63", vn: "+84",
+  id: "+62", in: "+91", us: "+1", ca: "+1", mx: "+52", br: "+55",
+  ar: "+54", au: "+61", nz: "+64", za: "+27",
+}
+
+// ── Byer per land ────────────────────────────────────────────────────────────
+const CITIES_BY_COUNTRY: Record<string, string[]> = {
+  Denmark: ["København","Aarhus","Odense","Aalborg","Esbjerg","Randers","Kolding","Horsens","Vejle","Roskilde","Helsingør","Herning","Silkeborg","Næstved","Fredericia","Viborg","Køge","Holstebro","Taastrup","Slagelse","Hillerød","Svendborg","Frederiksberg","Gentofte"],
+  Sweden: ["Stockholm","Göteborg","Malmö","Uppsala","Västerås","Örebro","Linköping","Helsingborg","Jönköping","Norrköping","Lund","Umeå","Gävle","Borås","Sundsvall","Södertälje","Karlstad","Eskilstuna","Halmstad","Växjö"],
+  Norway: ["Oslo","Bergen","Trondheim","Stavanger","Drammen","Fredrikstad","Kristiansand","Sandnes","Tromsø","Sarpsborg","Skien","Ålesund","Sandefjord","Haugesund","Tønsberg","Moss","Porsgrunn","Bodø","Arendal","Hamar"],
+  Finland: ["Helsinki","Espoo","Tampere","Vantaa","Oulu","Turku","Jyväskylä","Lahti","Kuopio","Kouvola","Pori","Joensuu","Lappeenranta","Hämeenlinna","Vaasa","Rovaniemi","Seinäjoki","Mikkeli","Kotka","Salo"],
+  Germany: ["Berlin","Hamburg","München","Köln","Frankfurt","Stuttgart","Düsseldorf","Leipzig","Dortmund","Essen","Bremen","Dresden","Hannover","Nürnberg","Duisburg","Bochum","Wuppertal","Bielefeld","Bonn","Münster"],
+  Netherlands: ["Amsterdam","Rotterdam","Den Haag","Utrecht","Eindhoven","Tilburg","Groningen","Almere","Breda","Nijmegen","Enschede","Apeldoorn","Haarlem","Arnhem","Zaanstad","Amersfoort","Haarlemmermeer","'s-Hertogenbosch","Zwolle","Zoetermeer"],
+  "United Kingdom": ["London","Birmingham","Leeds","Glasgow","Sheffield","Bradford","Manchester","Edinburgh","Liverpool","Bristol","Cardiff","Leicester","Coventry","Nottingham","Newcastle","Belfast","Brighton","Hull","Plymouth","Derby"],
+  France: ["Paris","Marseille","Lyon","Toulouse","Nice","Nantes","Strasbourg","Montpellier","Bordeaux","Lille","Rennes","Reims","Le Havre","Saint-Étienne","Toulon","Grenoble","Dijon","Angers","Nîmes","Villeurbanne"],
+  Spain: ["Madrid","Barcelona","Valencia","Seville","Zaragoza","Málaga","Murcia","Palma","Las Palmas","Bilbao","Alicante","Córdoba","Valladolid","Vigo","Gijón","Granada","Hospitalet","La Coruña","Vitoria","Elche"],
+  Italy: ["Roma","Milano","Napoli","Torino","Palermo","Genova","Bologna","Firenze","Bari","Catania","Venezia","Verona","Messina","Padova","Trieste","Taranto","Brescia","Reggio Calabria","Prato","Modena"],
+  Switzerland: ["Zürich","Genf","Basel","Bern","Lausanne","Winterthur","Luzern","St. Gallen","Lugano","Biel","Thun","Köniz","La Chaux-de-Fonds","Fribourg","Schaffhausen","Chur","Vernier","Uster","Sion","Emmen"],
+  Austria: ["Wien","Graz","Linz","Salzburg","Innsbruck","Klagenfurt","Villach","Wels","Sankt Pölten","Dornbirn","Steyr","Wiener Neustadt","Feldkirch","Bregenz","Leonding","Klosterneuburg","Leoben","Krems","Traun","Amstetten"],
+  Belgium: ["Bruxelles","Antwerpen","Gent","Charleroi","Liège","Brugge","Namur","Leuven","Mons","Aalst","Mechelen","La Louvière","Kortrijk","Hasselt","Oostende","Sint-Niklaas","Tournai","Genk","Seraing","Roeselare"],
+  Poland: ["Warszawa","Kraków","Łódź","Wrocław","Poznań","Gdańsk","Szczecin","Bydgoszcz","Lublin","Katowice","Białystok","Gdynia","Częstochowa","Radom","Sosnowiec","Toruń","Kielce","Rzeszów","Gliwice","Zabrze"],
+  "Czech Republic": ["Praha","Brno","Ostrava","Plzeň","Liberec","Olomouc","Ústí nad Labem","České Budějovice","Hradec Králové","Pardubice","Zlín","Havířov","Kladno","Most","Opava","Frýdek-Místek","Karviná","Jihlava","Teplice","Děčín"],
+  Hungary: ["Budapest","Debrecen","Miskolc","Szeged","Pécs","Győr","Nyíregyháza","Kecskemét","Székesfehérvár","Szombathely","Érd","Tatabánya","Kaposvár","Veszprém","Eger","Sopron","Zalaegerszeg","Szolnok","Dunaújváros","Ózd"],
+  Thailand: ["Bangkok","Chiang Mai","Pattaya","Phuket","Hua Hin","Koh Samui","Udon Thani","Nakhon Ratchasima","Chon Buri","Hat Yai","Lampang","Nakhon Si Thammarat","Ubon Ratchathani","Rayong","Khon Kaen","Nonthaburi","Pak Kret","Samut Prakan","Mueang Nakhon Sawan","Pak Chong"],
+  UAE: ["Dubai","Abu Dhabi","Sharjah","Al Ain","Ajman","Ras Al Khaimah","Fujairah","Umm Al Quwain","Khor Fakkan","Kalba"],
+  Singapore: ["Singapore"],
+  Japan: ["Tokyo","Osaka","Yokohama","Nagoya","Sapporo","Fukuoka","Kobe","Kyoto","Kawasaki","Saitama","Hiroshima","Sendai","Kitakyushu","Chiba","Sakai","Kumamoto","Okayama","Shizuoka","Hamamatsu","Niigata"],
+  "Hong Kong": ["Hong Kong","Kowloon","New Territories","Lantau Island"],
+  Malaysia: ["Kuala Lumpur","George Town","Ipoh","Shah Alam","Petaling Jaya","Kota Kinabalu","Kuching","Johor Bahru","Malacca","Miri"],
+  Philippines: ["Manila","Quezon City","Davao","Cebu","Makati","Mandaluyong","Pasig","Taguig","Cagayan de Oro","Zamboanga"],
+  USA: ["New York","Los Angeles","Chicago","Houston","Phoenix","Philadelphia","San Antonio","San Diego","Dallas","San Jose","Austin","Jacksonville","Fort Worth","Columbus","Charlotte","Indianapolis","San Francisco","Seattle","Denver","Nashville"],
+  Canada: ["Toronto","Montreal","Vancouver","Calgary","Edmonton","Ottawa","Mississauga","Winnipeg","Quebec City","Hamilton"],
+  Australia: ["Sydney","Melbourne","Brisbane","Perth","Adelaide","Gold Coast","Newcastle","Canberra","Sunshine Coast","Wollongong"],
+}
+
+// ── Kategorier — matcher navbar ──────────────────────────────────────────────
+const CATEGORIES = [
+  { value: "escort", label: "Escort" },
+  { value: "massage", label: "Massage" },
+  { value: "webcam", label: "Webcam" },
+  { value: "fetish", label: "Fetish" },
+  { value: "trans", label: "Trans" },
+  { value: "male_escort", label: "Male escort" },
+]
+
+// ── Rens telefonnummer fra scraper ────────────────────────────────────────────
+function cleanPhoneNumber(raw: string, dialCode: string): string {
+  if (!raw) return ""
+  // Fjern // prefix, mellemrum og bindestreger
+  let n = raw.replace(/^\/\//, "").replace(/\s|-/g, "").trim()
+  // Fjern international kode prefix (+45, 0045, 45) fra starten
+  const intl = dialCode.replace("+", "")
+  if (n.startsWith(dialCode)) n = n.slice(dialCode.length)
+  else if (n.startsWith("00" + intl)) n = n.slice(2 + intl.length)
+  else if (n.startsWith(intl) && n.length > 8) n = n.slice(intl.length)
+  return n
+}
+
 type ProfileData = {
   display_name: string;
   phone: string;
+  phoneDialCode: string;
   email: string;
   description: string;
   city: string;
@@ -85,6 +149,7 @@ export default function CreateProfilePage() {
   const [profile, setProfile] = useState<ProfileData>({
     display_name: "",
     phone: "",
+    phoneDialCode: "+45",
     email: "",
     description: "",
     city: "",
@@ -113,7 +178,12 @@ export default function CreateProfilePage() {
       });
       const data = await res.json();
       if (data.profile) {
-        setProfile({ ...data.profile, email: "" });
+        // Find dialcode fra landet, rens telefonnummeret
+        const scraped = data.profile;
+        const countryCode = SUPPORTED_COUNTRIES.find(c => c.name === scraped.country)?.code ?? "dk";
+        const dialCode = DIAL_CODES[countryCode] ?? "+45";
+        const cleanedPhone = cleanPhoneNumber(scraped.phone ?? "", dialCode);
+        setProfile({ ...scraped, email: "", phoneDialCode: dialCode, phone: cleanedPhone });
         setStep(2);
       } else {
         setError("Kunne ikke hente profil data");
@@ -205,7 +275,7 @@ export default function CreateProfilePage() {
     setStep(1);
     setUrl("");
     setProfile({
-      display_name: "", phone: "", email: "", description: "",
+      display_name: "", phone: "", phoneDialCode: "+45", email: "", description: "",
       city: "", country: "Denmark", gender: "female", category: "escort",
       age: null, images: [], videos: [], stories: [], source_url: "",
       height_cm: null, weight_kg: null,
@@ -290,39 +360,59 @@ export default function CreateProfilePage() {
                 <input type="text" value={profile.display_name} onChange={e => p("display_name", e.target.value)} style={inputStyle} placeholder="Display name" />
               </div>
 
+                            {/* Arbejdsland — styrer by-liste + landekode */}
+              <div>
+                <label style={labelStyle}>Arbejdsland <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(land escorten arbejder i)</span></label>
+                <select
+                  value={profile.country}
+                  onChange={e => {
+                    const countryName = e.target.value;
+                    const code = SUPPORTED_COUNTRIES.find(c => c.name === countryName)?.code ?? "dk";
+                    const dial = DIAL_CODES[code] ?? "+45";
+                    setProfile(prev => ({ ...prev, country: countryName, city: "", phoneDialCode: dial }));
+                  }}
+                  style={selectStyle}
+                >
+                  {SUPPORTED_COUNTRIES.map(c => (
+                    <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Telefon + By */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>Telefon</label>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <select value={profile.country} onChange={e => p("country", e.target.value)}
-                      style={{ ...inputStyle, width: "auto", paddingRight: 28, flexShrink: 0 }}>
-                      {SUPPORTED_COUNTRIES.map(c => (
-                        <option key={c.code} value={c.name}>
-                          {c.code === "DK" ? "+45" : c.code === "SE" ? "+46" : c.code === "NO" ? "+47" : c.code === "DE" ? "+49" : c.code === "GB" ? "+44" : c.code === "US" ? "+1" : c.code === "TH" ? "+66" : c.flag} {c.name}
-                        </option>
-                      ))}
+                  <div style={{ display: "flex", gap: 0, border: "1px solid #E5E5E5", borderRadius: 8, overflow: "hidden", background: "#fff" }}>
+                    <select
+                      value={profile.phoneDialCode}
+                      onChange={e => p("phoneDialCode", e.target.value)}
+                      style={{ padding: "10px 6px", fontSize: 13, border: "none", borderRight: "1px solid #E5E5E5", background: "#F9FAFB", outline: "none", flexShrink: 0, minWidth: 80 }}
+                    >
+                      {SUPPORTED_COUNTRIES.map(c => {
+                        const dial = DIAL_CODES[c.code]
+                        if (!dial) return null
+                        return <option key={c.code} value={dial}>{c.flag} {dial}</option>
+                      })}
                     </select>
-                    <input type="tel" value={profile.phone} onChange={e => p("phone", e.target.value)} style={{ ...inputStyle, flex: 1 }} placeholder="12 34 56 78" />
+                    <input
+                      type="tel"
+                      value={profile.phone}
+                      onChange={e => p("phone", e.target.value)}
+                      style={{ flex: 1, padding: "10px 12px", fontSize: 13, border: "none", outline: "none", background: "transparent" }}
+                      placeholder="50 33 68 92"
+                    />
                   </div>
                 </div>
                 <div>
                   <label style={labelStyle}>By</label>
                   <select value={profile.city} onChange={e => p("city", e.target.value)} style={selectStyle}>
                     <option value="">Vælg by...</option>
-                    {["København","Aarhus","Odense","Aalborg","Esbjerg","Randers","Kolding","Horsens","Vejle","Roskilde","Helsingør","Herning","Silkeborg","Næstved","Fredericia","Viborg","Køge","Holstebro","Taastrup","Slagelse","Hillerød","Svendborg","Frederiksberg","Gentofte"].map(by => (
+                    {(CITIES_BY_COUNTRY[profile.country] ?? []).map(by => (
                       <option key={by} value={by}>{by}</option>
                     ))}
                   </select>
                 </div>
-              </div>
-
-              {/* Arbejdsland */}
-              <div>
-                <label style={labelStyle}>Arbejdsland <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(land escorten arbejder i)</span></label>
-                <select value={profile.country} onChange={e => p("country", e.target.value)} style={selectStyle}>
-                  {SUPPORTED_COUNTRIES.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
-                </select>
               </div>
 
               {/* Køn + Kategori */}
@@ -338,9 +428,9 @@ export default function CreateProfilePage() {
                 <div>
                   <label style={labelStyle}>Kategori</label>
                   <select value={profile.category} onChange={e => p("category", e.target.value)} style={selectStyle}>
-                    <option value="escort">Escort</option>
-                    <option value="massage">Massage</option>
-                    <option value="strip">Strip</option>
+                    {CATEGORIES.map(c => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
