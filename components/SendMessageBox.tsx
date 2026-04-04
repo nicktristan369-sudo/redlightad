@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Send, MessageSquare, Lock } from "lucide-react"
+import { createClient } from "@/lib/supabase"
 
 interface Props {
   listingId: string
@@ -22,16 +23,26 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
     setSending(true)
     setError("")
     try {
+      // Hent session token
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error("Ingen session")
+
       const res = await fetch("/api/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({ listing_id: listingId, content: msg.trim() }),
       })
-      if (!res.ok) throw new Error()
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Fejl")
       setSent(true)
       setMsg("")
-    } catch {
-      setError("Kunne ikke sende beskeden. Prøv igen.")
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Kunne ikke sende beskeden. Prøv igen.")
     }
     setSending(false)
   }

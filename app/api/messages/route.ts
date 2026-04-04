@@ -1,28 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient as createServerClient } from "@supabase/supabase-js"
-import { createClient } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
 
-const serviceClient = () => createServerClient(
+export const dynamic = "force-dynamic"
+
+const admin = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// POST — send besked til en profil (opretter/genbruger conversation)
+// POST — send besked til en profil
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // Hent auth token fra Authorization header
+  const authHeader = req.headers.get("authorization") ?? ""
+  const token = authHeader.replace("Bearer ", "").trim()
+
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  // Verificer token via Supabase
+  const { data: { user }, error: authErr } = await admin().auth.getUser(token)
+  if (authErr || !user) {
+    return NextResponse.json({ error: "Ugyldig session — log ind igen" }, { status: 401 })
+  }
 
   const body = await req.json()
   const { listing_id, content } = body
+
   if (!listing_id || !content?.trim()) {
     return NextResponse.json({ error: "listing_id og content er påkrævet" }, { status: 400 })
   }
 
-  const admin = serviceClient()
+  const db = admin()
 
-  // Find profil-ejeren (provider_id) fra listings
-  const { data: listing, error: listingErr } = await admin
+  // Find profilens ejer
+  const { data: listing, error: listingErr } = await db
     .from("listings")
     .select("user_id, title")
     .eq("id", listing_id)
@@ -35,25 +47,31 @@ export async function POST(req: NextRequest) {
   const providerId = listing.user_id
   const customerId = user.id
 
-  // Ingen selvbesked
   if (providerId === customerId) {
     return NextResponse.json({ error: "Du kan ikke sende besked til dig selv" }, { status: 400 })
   }
 
   // Find eller opret conversation
   let conversationId: string
-  const { data: existing } = await admin
+
+  const { data: existing } = await db
     .from("conversations")
-    .select("id")
+    .select("id, provider_unread")
     .eq("listing_id", listing_id)
     .eq("provider_id", providerId)
     .eq("customer_id", customerId)
-    .single()
+    .maybeSingle()
 
   if (existing) {
     conversationId = existing.id
+    // Opdater last_message + unread
+    await db.from("conversations").update({
+      last_message: content.trim(),
+      last_message_at: new Date().toISOString(),
+      provider_unread: (existing.provider_unread ?? 0) + 1,
+    }).eq("id", conversationId)
   } else {
-    const { data: newConv, error: convErr } = await admin
+    const { data: newConv, error: convErr } = await db
       .from("conversations")
       .insert({
         listing_id,
@@ -66,14 +84,16 @@ export async function POST(req: NextRequest) {
       })
       .select("id")
       .single()
+
     if (convErr || !newConv) {
-      return NextResponse.json({ error: "Kunne ikke oprette samtale" }, { status: 500 })
+      console.error("conversation insert error:", convErr)
+      return NextResponse.json({ error: "Kunne ikke oprette samtale: " + convErr?.message }, { status: 500 })
     }
     conversationId = newConv.id
   }
 
   // Indsæt besked
-  const { error: msgErr } = await admin
+  const { error: msgErr } = await db
     .from("messages")
     .insert({
       conversation_id: conversationId,
@@ -84,23 +104,8 @@ export async function POST(req: NextRequest) {
     })
 
   if (msgErr) {
-    return NextResponse.json({ error: "Kunne ikke sende beskeden" }, { status: 500 })
-  }
-
-  // Opdater conversation: last_message + provider_unread ++
-  await admin
-    .from("conversations")
-    .update({
-      last_message: content.trim(),
-      last_message_at: new Date().toISOString(),
-      provider_unread: (existing ? undefined : 1),
-    })
-    .eq("id", conversationId)
-
-  // Increment provider_unread med rpc hvis existing
-  if (existing) {
-    await admin.rpc("increment_provider_unread", { conv_id: conversationId })
-      .then(() => {}) // best effort — fejler stille hvis rpc ikke eksisterer
+    console.error("message insert error:", msgErr)
+    return NextResponse.json({ error: "Kunne ikke gemme beskeden: " + msgErr.message }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true, conversation_id: conversationId })
