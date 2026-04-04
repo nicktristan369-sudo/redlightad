@@ -191,10 +191,10 @@ export default function PhotoGallery({
               {count > 1 && (
                 <div
                   className="relative flex-shrink-0 cursor-pointer overflow-hidden"
-                  style={{ width: "15%", opacity: 0.45, filter: "brightness(0.7)" }}
+                  style={{ width: "15%", opacity: 0.45, filter: "brightness(0.7)", background: "#0a0a0a" }}
                   onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
                 >
-                  <img src={images[prevIdx]} alt="" className="w-full h-full object-cover" draggable={false} />
+                  <img src={images[prevIdx]} alt="" className="w-full h-full object-contain" draggable={false} />
                   {isLocked(prevIdx) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
@@ -207,12 +207,13 @@ export default function PhotoGallery({
               {/* Center — fills remaining space */}
               <div
                 className="relative flex-1 cursor-pointer group overflow-hidden"
+                style={{ background: "#0a0a0a" }}
                 onClick={() => openLightbox(activeIndex)}
               >
                 <img
                   src={images[activeIndex]}
                   alt={`${name} photo ${activeIndex + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
                   draggable={false}
                 />
                 {/* Counter */}
@@ -237,10 +238,10 @@ export default function PhotoGallery({
               {count > 1 && (
                 <div
                   className="relative flex-shrink-0 cursor-pointer overflow-hidden"
-                  style={{ width: "15%", opacity: 0.45, filter: "brightness(0.7)" }}
+                  style={{ width: "15%", opacity: 0.45, filter: "brightness(0.7)", background: "#0a0a0a" }}
                   onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
                 >
-                  <img src={images[nextIdx]} alt="" className="w-full h-full object-cover" draggable={false} />
+                  <img src={images[nextIdx]} alt="" className="w-full h-full object-contain" draggable={false} />
                   {isLocked(nextIdx) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
@@ -331,7 +332,7 @@ export default function PhotoGallery({
             <img
               src={images[activeIndex]}
               alt={`${name} photo ${activeIndex + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               draggable={false}
             />
             <div className="absolute top-3 right-3 rounded px-2.5 py-1 text-[12px] font-semibold text-white select-none"
