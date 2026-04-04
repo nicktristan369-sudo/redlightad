@@ -80,6 +80,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   const [newVideoTitles, setNewVideoTitles] = useState<string[]>([]);
   const [newVideoPrices, setNewVideoPrices] = useState<number[]>([]);
   const [videoUploading, setVideoUploading] = useState(false);
+  const [profileVideoUrl, setProfileVideoUrl] = useState<string | null>(null);
 
   // voice + social
   const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
@@ -223,6 +224,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
       });
 
       if (listing.images?.length) setExistingImages(listing.images);
+      if (listing.profile_video_url) setProfileVideoUrl(listing.profile_video_url);
       if (listing.voice_message_url) setVoiceMessageUrl(listing.voice_message_url);
       if (listing.social_links) setSocialLinks(listing.social_links);
       if (listing.timezone) setTimezone(listing.timezone);
@@ -303,6 +305,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         email:           form.email,
         images:          finalImages,
         profile_image:   finalImages[0] ?? null,
+        profile_video_url: profileVideoUrl ?? null,
         height:          form.height ? parseInt(form.height) : null,
         weight:          form.weight ? parseInt(form.weight) : null,
         body_build:      form.body_build || null,
@@ -966,9 +969,17 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 <div>
                   <p className="text-[13px] font-semibold text-gray-900 mb-3">Mine Videoer</p>
 
+                  {/* Levende profilbillede — info */}
+                  {existingVideos.length > 0 && (
+                    <div className="mb-3 p-3 rounded-lg text-[12px]" style={{ background: "#FFF7ED", border: "1px solid #FED7AA", color: "#92400E" }}>
+                      🎬 <strong>Levende profilbillede:</strong> Vælg en video nedenfor som dit profilbillede. Det vises levende i kortvisning, premium-carousel og liste.
+                    </div>
+                  )}
+
                   {/* Eksisterende videoer */}
                   {existingVideos.map(v => (
-                    <div key={v.id} className="flex flex-col gap-2 p-3 border border-gray-200 rounded-xl mb-2">
+                    <div key={v.id} className="flex flex-col gap-2 p-3 border border-gray-200 rounded-xl mb-2"
+                      style={{ borderColor: profileVideoUrl === v.url ? "#DC2626" : "#E5E7EB" }}>
                       <div className="flex items-center gap-3">
                         {v.thumbnail_url && (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -985,10 +996,19 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         </div>
                         <button
                           type="button"
+                          onClick={() => setProfileVideoUrl(profileVideoUrl === v.url ? null : v.url)}
+                          className="text-[11px] font-semibold px-2 py-1 rounded flex-shrink-0"
+                          style={{ background: profileVideoUrl === v.url ? "#DC2626" : "#F3F4F6", color: profileVideoUrl === v.url ? "#fff" : "#374151" }}
+                        >
+                          {profileVideoUrl === v.url ? "✓ Profilbillede" : "🎬 Sæt som profil"}
+                        </button>
+                        <button
+                          type="button"
                           onClick={async () => {
                             const supabase = createClient();
                             await supabase.from("listing_videos").delete().eq("id", v.id);
                             setExistingVideos(prev => prev.filter(x => x.id !== v.id));
+                            if (profileVideoUrl === v.url) setProfileVideoUrl(null);
                           }}
                           className="text-red-500 hover:text-red-700 text-sm font-medium"
                         >

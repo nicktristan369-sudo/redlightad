@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, video_url, age, gender, category, location, city, country, about, languages, premium_tier, created_at, voice_message_url, images, opening_hours, timezone")
+      .select("id, title, profile_image, profile_video_url, video_url, age, gender, category, location, city, country, about, languages, premium_tier, created_at, voice_message_url, images, opening_hours, timezone")
       .eq("status", "active")
       .limit(limit);
 

@@ -41,6 +41,8 @@ type ProfileData = {
   rate_2hours?: number | null;
   rate_overnight?: number | null;
   rate_weekend?: number | null;
+  // Levende profilbillede
+  profile_video_url?: string | null;
 };
 
 type CreateResult = {
@@ -315,9 +317,9 @@ export default function CreateProfilePage() {
                 </div>
               </div>
 
-              {/* Land */}
+              {/* Arbejdsland */}
               <div>
-                <label style={labelStyle}>Land</label>
+                <label style={labelStyle}>Arbejdsland <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(land escorten arbejder i)</span></label>
                 <select value={profile.country} onChange={e => p("country", e.target.value)} style={selectStyle}>
                   {SUPPORTED_COUNTRIES.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
                 </select>
@@ -586,15 +588,31 @@ export default function CreateProfilePage() {
                     <span>Disse videoer kan have vandmærke. Vandmærker fjernes automatisk via unwatermark.ai efter oprettelse.</span>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {profile.videos.map((src, i) => (
-                      <div key={i} style={{ position: "relative" }}>
-                        <video src={`${src}#t=1`} style={{ width: 160, height: 120, borderRadius: 8, border: "1px solid #E5E5E5", background: "#000" }} />
-                        <button onClick={() => p("videos", profile.videos.filter((_, idx) => idx !== i))}
-                          style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "#DC2626", color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+                    {profile.videos.map((src, i) => {
+                      const isProfileVid = profile.profile_video_url === src;
+                      return (
+                        <div key={i} style={{ position: "relative" }}>
+                          <video src={`${src}#t=1`} style={{ width: 160, height: 120, borderRadius: 8, border: isProfileVid ? "3px solid #DC2626" : "1px solid #E5E5E5", background: "#000" }} />
+                          {/* Fjern */}
+                          <button onClick={() => { p("videos", profile.videos.filter((_, idx) => idx !== i)); if (isProfileVid) p("profile_video_url", null); }}
+                            style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "#DC2626", color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            ✕
+                          </button>
+                          {/* Vælg som profilbillede */}
+                          <button
+                            onClick={() => p("profile_video_url", isProfileVid ? null : src)}
+                            style={{
+                              position: "absolute", bottom: 4, left: 4, right: 4,
+                              padding: "3px 6px", fontSize: 10, fontWeight: 700,
+                              border: "none", cursor: "pointer", borderRadius: 4,
+                              background: isProfileVid ? "#DC2626" : "rgba(0,0,0,0.6)",
+                              color: "#fff", textAlign: "center" as const,
+                            }}>
+                            {isProfileVid ? "✓ Profilbillede" : "🎬 Vælg som profil"}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

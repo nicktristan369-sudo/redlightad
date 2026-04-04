@@ -10,6 +10,7 @@ interface Listing {
   id: string
   title: string
   profile_image: string | null
+  profile_video_url?: string | null
   video_url: string | null
   age: number
   gender: string
@@ -87,7 +88,25 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         </h3>
       </div>
 
-      {/* ── 3-panel equal-width images ── */}
+      {/* ── Levende profilbillede ELLER 3-panel ── */}
+      {ad.profile_video_url ? (
+        <div className="h-[190px] overflow-hidden bg-black relative">
+          <video
+            src={ad.profile_video_url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-1.5 right-1.5">
+            <span className="inline-flex items-center gap-[3px] text-[8.5px] font-semibold px-1.5 py-[3px] rounded"
+              style={{ background: "rgba(0,0,0,0.45)", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(3px)" }}>
+              🎬 LIVE
+            </span>
+          </div>
+        </div>
+      ) : (
       <div className="flex h-[190px]" style={{ gap: 1 }}>
         {panels.map((src, idx) => (
           <div key={idx} className="relative overflow-hidden bg-gray-200 flex-1">
@@ -116,6 +135,7 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
           </div>
         ))}
       </div>
+      )}
 
       {/* ── Stats bar ── */}
       <div className="flex items-center gap-2.5 px-3 py-2 border-t border-gray-100">
@@ -183,6 +203,20 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
 
 // ── Desktop thumbnail cycling ─────────────────────────────────────────────
 function DesktopThumb({ ad, staggerDelay = 0 }: { ad: Listing; staggerDelay?: number }) {
+  // Levende profilbillede — vis video direkte
+  if (ad.profile_video_url) {
+    return (
+      <video
+        src={ad.profile_video_url}
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="w-full h-full object-cover"
+      />
+    )
+  }
+
   const pool = [ad.profile_image, ...(ad.images ?? [])].filter((v): v is string => !!v).filter((v, i, a) => a.indexOf(v) === i)
   const [current, setCurrent] = useState(0)
   const [fading, setFading] = useState(false)
@@ -396,6 +430,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
               title={ad.title}
               image={ad.profile_image || "/placeholder.jpg"}
               images={ad.images}
+              profileVideoUrl={ad.profile_video_url}
               verified={(ad as any).verified ?? false}
               age={ad.age}
               city={ad.city}

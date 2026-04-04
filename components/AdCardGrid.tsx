@@ -36,6 +36,7 @@ interface AdCardGridProps {
   display_name?: string | null
   image: string
   images?: string[] | null
+  profileVideoUrl?: string | null
   verified: boolean
   age?: number | null
   city?: string | null
@@ -52,7 +53,7 @@ interface AdCardGridProps {
 }
 
 export default function AdCardGrid({
-  id, title, display_name, image, images, verified, age, city, country, location,
+  id, title, display_name, image, images, profileVideoUrl, verified, age, city, country, location,
   category, created_at, opening_hours, timezone, premium_tier,
   hasStory = false, onStoryClick, staggerDelay = 0,
 }: AdCardGridProps) {
@@ -117,7 +118,17 @@ export default function AdCardGrid({
       >
         {/* BILLEDE — overflow: hidden */}
         <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden", background: "#D1D5DB" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {profileVideoUrl ? (
+            <video
+              src={profileVideoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={currentImg}
             alt={title}
@@ -128,6 +139,7 @@ export default function AdCardGrid({
             }}
             className="group-hover:scale-105"
           />
+          )}
 
           {/* Available dot — top left */}
           {available && (

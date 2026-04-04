@@ -10,14 +10,32 @@ function CyclingImage({
   images,
   alt,
   hasVideo,
+  profileVideoUrl,
   staggerDelay = 0,
 }: {
   profileImage: string | null
   images: string[] | null
   alt: string
   hasVideo: boolean
+  profileVideoUrl?: string | null
   staggerDelay?: number
 }) {
+  // ── Levende profilbillede (video) ─────────────────────────────────────────
+  if (profileVideoUrl) {
+    return (
+      <div className="absolute inset-0">
+        <video
+          src={profileVideoUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+        />
+      </div>
+    )
+  }
+
   const pool = [
     ...(profileImage ? [profileImage] : []),
     ...(images ?? []),
@@ -106,6 +124,7 @@ interface PremiumListing {
   id: string
   title: string
   profile_image: string | null
+  profile_video_url: string | null
   video_url: string | null
   age: number | null
   city: string | null
@@ -205,7 +224,7 @@ export default function PremiumCarousel({
 
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel")
+      .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel")
       .eq("status", "active")
       .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
       .limit(40)
@@ -218,7 +237,7 @@ export default function PremiumCarousel({
         // Column doesn't exist yet (migration pending) → fall back without in_carousel filter
         const fallbackQuery = supabase
           .from("listings")
-          .select("id, title, profile_image, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at")
+          .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at")
           .eq("status", "active")
           .in("premium_tier", ["vip", "featured", "basic"])
           .limit(40)
@@ -349,6 +368,7 @@ export default function PremiumCarousel({
                     images={l.images}
                     alt={l.title}
                     hasVideo={!!l.video_url}
+                    profileVideoUrl={l.profile_video_url}
                     staggerDelay={cardIdx * 800}
                   />
 

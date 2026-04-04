@@ -457,6 +457,8 @@ export async function POST(req: NextRequest) {
       ...(profile.rate_2hours ? { rate_2hours: profile.rate_2hours } : {}),
       ...(profile.rate_overnight ? { rate_overnight: profile.rate_overnight } : {}),
       ...(profile.rate_weekend ? { rate_weekend: profile.rate_weekend } : {}),
+      // Levende profilbillede
+      ...(profile.profile_video_url ? { profile_video_url: profile.profile_video_url } : {}),
     })
     .select()
 
