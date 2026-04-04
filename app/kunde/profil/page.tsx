@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase"
 import KundeLayout from "@/components/KundeLayout"
-import { Camera, Upload, X, Plus } from "lucide-react"
+import { Camera, Upload, X, Plus, Eye } from "lucide-react"
 
 const LANGUAGES = ["Dansk","Engelsk","Norsk","Svensk","Tysk","Fransk","Spansk","Italiensk","Russisk","Arabisk","Thai","Polsk","Hollandsk","Portugisisk","Japansk","Kinesisk"]
 const KINK_OPTIONS = ["Oral","Anal","BDSM","Rollespil","Fetish","Massage","Dominans","Underkastelse","GFE","Squirting","Cosplay","Voyeurisme","Exhibitionisme","Gruppeleg","Legetøj","Lingeri","Outdoor","Crossdressing"]
@@ -13,6 +13,7 @@ export default function KundeProfil() {
   const [userId, setUserId] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const mediaInputRef = useRef<HTMLInputElement>(null)
 
@@ -133,8 +134,18 @@ export default function KundeProfil() {
   return (
     <KundeLayout>
       <div style={{ maxWidth: 560 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>Min profil</h1>
-        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 24 }}>Kun synlig for profiler du har kontaktet</p>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>Min profil</h1>
+            <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>Kun synlig for profiler du har kontaktet</p>
+          </div>
+          <button onClick={() => setShowPreview(true)}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", fontSize: 13, fontWeight: 700, border: "1.5px solid #E5E7EB", borderRadius: 9, background: "#fff", cursor: "pointer", color: "#374151", flexShrink: 0 }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#F9FAFB"; e.currentTarget.style.borderColor = "#D1D5DB"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E5E7EB"; }}>
+            <Eye size={15} /> Vis din profil
+          </button>
+        </div>
 
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB", padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
 
@@ -348,6 +359,128 @@ export default function KundeProfil() {
         </div>
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* ── Preview Modal ── */}
+      {showPreview && (
+        <div onClick={() => setShowPreview(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 460, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.25)", position: "relative" }}>
+            {/* Header */}
+            <div style={{ background: "#111", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" }}>Forhåndsvisning — sådan ser andre din profil</span>
+              <button onClick={() => setShowPreview(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✕</button>
+            </div>
+
+            {/* Profile card */}
+            <div style={{ padding: "24px 24px 20px" }}>
+              {/* Avatar + navn */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+                <div style={{ width: 72, height: 72, borderRadius: "50%", overflow: "hidden", background: "#E5E7EB", flexShrink: 0, border: "3px solid #F3F4F6" }}>
+                  {form.avatar_url
+                    ? <img src={form.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <div style={{ width: "100%", height: "100%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 26, fontWeight: 800, color: "#fff" }}>{form.username.slice(0,2).toUpperCase() || "?"}</span>
+                      </div>
+                  }
+                </div>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#111", lineHeight: 1.2 }}>{form.username || "Anonym"}</div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                    {form.gender && (
+                      <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>
+                        {form.gender === "male" ? "Mand" : form.gender === "female" ? "Dame" : form.gender === "trans" ? "Trans" : "Andet"}
+                      </span>
+                    )}
+                    {form.age && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{form.age} år</span>}
+                    {form.nationality && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{form.nationality}</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats row */}
+              {(form.height_cm || form.weight_kg || form.smoker || form.tattoo) && (
+                <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+                  {form.height_cm && <div style={{ flex: 1, minWidth: 70, background: "#F9FAFB", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{form.height_cm}</div>
+                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>cm høj</div>
+                  </div>}
+                  {form.weight_kg && <div style={{ flex: 1, minWidth: 70, background: "#F9FAFB", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{form.weight_kg}</div>
+                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>kg</div>
+                  </div>}
+                  {form.smoker && <div style={{ flex: 1, minWidth: 70, background: "#F9FAFB", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{form.smoker === "no" ? "🚭" : form.smoker === "yes" ? "🚬" : "💨"}</div>
+                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>{form.smoker === "no" ? "Ryger ikke" : form.smoker === "yes" ? "Ryger" : "Lejlighedsvis"}</div>
+                  </div>}
+                  {form.tattoo && form.tattoo !== "none" && <div style={{ flex: 1, minWidth: 70, background: "#F9FAFB", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>🖋️</div>
+                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>{form.tattoo === "few" ? "Et par" : "Mange"} tatoveringer</div>
+                  </div>}
+                </div>
+              )}
+
+              {/* Sprog */}
+              {form.languages.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Taler</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {form.languages.map(l => <span key={l} style={{ fontSize: 12, fontWeight: 600, background: "#EFF6FF", color: "#1D4ED8", padding: "3px 9px", borderRadius: 12 }}>{l}</span>)}
+                  </div>
+                </div>
+              )}
+
+              {/* Kinks */}
+              {form.kinks.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Interesser</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {form.kinks.map(k => <span key={k} style={{ fontSize: 12, fontWeight: 600, background: "#FFF1F2", color: "#DC2626", padding: "3px 9px", borderRadius: 12 }}>{k}</span>)}
+                  </div>
+                </div>
+              )}
+
+              {/* Kink bio */}
+              {form.kink_bio && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Om mig</div>
+                  <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, margin: 0, background: "#F9FAFB", borderRadius: 8, padding: "10px 12px" }}>{form.kink_bio}</p>
+                </div>
+              )}
+
+              {/* Media */}
+              {form.media.length > 0 && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Billeder & videoer</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {form.media.slice(0, 6).map((m, i) => (
+                      <div key={i} style={{ width: 72, height: 72, borderRadius: 8, overflow: "hidden", background: "#111", position: "relative" }}>
+                        {m.type === "video"
+                          ? <video src={`${m.url}#t=1`} style={{ width: "100%", height: "100%", objectFit: "cover" }} preload="metadata" />
+                          : <img src={m.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                        {m.type === "video" && <div style={{ position: "absolute", bottom: 3, left: 3, background: "rgba(0,0,0,0.65)", borderRadius: 3, padding: "1px 4px", fontSize: 8, color: "#fff", fontWeight: 700 }}>VIDEO</div>}
+                        {i === 5 && form.media.length > 6 && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>+{form.media.length - 6}</span>
+                        </div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{ borderTop: "1px solid #F3F4F6", padding: "14px 24px", background: "#FAFAFA", display: "flex", gap: 8 }}>
+              <button onClick={() => setShowPreview(false)}
+                style={{ flex: 1, padding: "10px", fontSize: 13, fontWeight: 700, border: "1px solid #E5E7EB", borderRadius: 8, background: "#fff", cursor: "pointer" }}>
+                Luk
+              </button>
+              <button onClick={() => { setShowPreview(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                style={{ flex: 1, padding: "10px", fontSize: 13, fontWeight: 700, border: "none", borderRadius: 8, background: "#000", color: "#fff", cursor: "pointer" }}>
+                Rediger profil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </KundeLayout>
   )
 }
