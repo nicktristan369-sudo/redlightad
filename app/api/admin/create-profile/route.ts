@@ -33,10 +33,12 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
   const uwKey = process.env.UNWATERMARK_API_KEY
   if (uwKey) {
     try {
+      // Korrekt ArrayBuffer slice (Node.js Buffer pooling fix)
+      const ab = imageBuffer.buffer.slice(imageBuffer.byteOffset, imageBuffer.byteOffset + imageBuffer.byteLength)
       const form = new FormData()
-      form.append('original_image_file', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
+      form.append('original_image_file', new Blob([ab], { type: 'image/jpeg' }), 'image.jpg')
       form.append('is_remove_text', 'true')
-      form.append('is_remove_logo', 'false')
+      form.append('is_remove_logo', 'true')
       form.append('output_format', 'jpg')
 
       const res = await fetch('https://api.unwatermark.ai/api/web/v1/sync/auto-unwatermark-upgrade-api/creat-job', {
@@ -79,8 +81,10 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
       .composite([{ input: await sharp({ create: { width: wmW, height: wmH, channels: 3, background: { r:255,g:255,b:255 } } }).png().toBuffer(), left: wmX, top: wmY }])
       .png().toBuffer()
     const form = new FormData()
-    form.append('image_file', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
-    form.append('mask_file', new Blob([maskBuffer.buffer as ArrayBuffer], { type: 'image/png' }), 'mask.png')
+    const imgAb = imageBuffer.buffer.slice(imageBuffer.byteOffset, imageBuffer.byteOffset + imageBuffer.byteLength)
+    const maskAb = maskBuffer.buffer.slice(maskBuffer.byteOffset, maskBuffer.byteOffset + maskBuffer.byteLength)
+    form.append('image_file', new Blob([imgAb], { type: 'image/jpeg' }), 'image.jpg')
+    form.append('mask_file', new Blob([maskAb], { type: 'image/png' }), 'mask.png')
     form.append('mode', 'quality')
     const res = await fetch('https://clipdrop-api.co/cleanup/v1', {
       method: 'POST', headers: { 'x-api-key': clipKey }, body: form, signal: AbortSignal.timeout(60000),
