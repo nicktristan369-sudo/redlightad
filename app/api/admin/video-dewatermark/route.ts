@@ -38,15 +38,15 @@ async function getVideoDimensions(videoUrl: string): Promise<{ w: number; h: num
 // Returns black image with white rectangle where watermark is
 function getWatermarkRegion(domain: string, w: number, h: number): { x: number; y: number; bw: number; bh: number } {
   if (domain.includes('escortguide')) {
-    // Escortguide: centered text watermark in middle band
-    return { x: 0, y: Math.round(h * 0.38), bw: w, bh: Math.round(h * 0.25) }
+    // Escortguide: "ESCORTGUIDE" text i bund-centrum (~65–82% fra top)
+    return { x: 0, y: Math.round(h * 0.62), bw: w, bh: Math.round(h * 0.22) }
   }
   if (domain.includes('nympho')) {
-    // Nympho.dk: center watermark
-    return { x: 0, y: Math.round(h * 0.35), bw: w, bh: Math.round(h * 0.30) }
+    // Nympho.dk: vandmærke typisk i nedre centrum
+    return { x: 0, y: Math.round(h * 0.60), bw: w, bh: Math.round(h * 0.25) }
   }
-  // Default: center band
-  return { x: 0, y: Math.round(h * 0.35), bw: w, bh: Math.round(h * 0.30) }
+  // Default: nedre tredjedel
+  return { x: 0, y: Math.round(h * 0.60), bw: w, bh: Math.round(h * 0.25) }
 }
 
 async function generateMask(w: number, h: number, region: { x: number; y: number; bw: number; bh: number }): Promise<Buffer> {
