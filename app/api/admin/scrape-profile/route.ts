@@ -48,10 +48,19 @@ export async function POST(req: NextRequest) {
   const age = ageMatch ? parseInt(ageMatch[1]) : null
 
   const baseUrl = new URL(url).origin
+  const isNympho = url.includes('nympho.dk')
+  const isEscortguide = url.includes('escortguide.dk')
+
+  function toAbsolute(src: string): string {
+    if (!src) return ''
+    if (src.startsWith('http')) return src
+    if (src.startsWith('//')) return 'https:' + src
+    if (src.startsWith('/')) return baseUrl + src
+    return baseUrl + '/' + src
+  }
 
   function getFullSizeUrl(src: string): string {
-    // Gør relative URLs absolutte
-    if (src.startsWith('/')) src = baseUrl + src
+    src = toAbsolute(src)
     return src
       .replace('.superad.jpg', '.jpg')
       .replace('.superad.png', '.png')
@@ -63,37 +72,84 @@ export async function POST(req: NextRequest) {
       .replace('/storage/images/thumbs/', '/storage/images/')
   }
 
-  // escortguide.dk: billeder er i <a data-media-type="1" href="/Content/Pictures/...">
-  const escortguideImages = $('a[data-media-type="1"]')
-    .map((_, el) => $(el).attr('href') || '')
-    .get()
-    .filter(src => !!src)
-    .map(src => src.startsWith('/') ? baseUrl + src : src)
+  let images: string[] = []
+  let videos: string[] = []
 
-  // Generisk selector for andre sites
-  const genericImages = $('img')
-    .map((_, el) => $(el).attr('src') || $(el).attr('data-src') || '')
-    .get()
-    .filter((src): src is string =>
-      !!src &&
-      (src.includes('Pictures') || src.includes('storage') || src.includes('upload') ||
-       src.includes('photo') || src.includes('image') || src.includes('foto')) &&
-      !src.includes('logo') && !src.includes('icon') && !src.includes('flag') &&
-      !src.includes('avatar') && !src.includes('banner') && !src.includes('thumb')
-    )
-    .map(getFullSizeUrl)
+  if (isNympho) {
+    // ── NYMPHO.DK ──────────────────────────────────────────────
+    // Profile image: <img src="/_pictures/ads/m/ID.webp">
+    const profileImg = $('img[src*="/_pictures/ads/m/"]').first().attr('src')
+    if (profileImg) images.push(toAbsolute(profileImg))
 
-  const images = [...new Set([...escortguideImages, ...genericImages])].slice(0, 8)
+    // Gallery images: data-src="_pictures/ads/s/ID.webp" → upgrade /s/ to /m/
+    $('[data-src*="_pictures/ads/s/"], [data-src*="/_pictures/ads/s/"]').each((_, el) => {
+      const src = $(el).attr('data-src') || ''
+      if (src) {
+        const full = toAbsolute(src).replace('/_pictures/ads/s/', '/_pictures/ads/m/').replace('_pictures/ads/s/', '/_pictures/ads/m/')
+        images.push(full)
+      }
+    })
 
-  // Find video-URLs — escortguide.dk bruger data-media-type="2" for videoer
-  const videos = $('a[data-media-type="2"], a[href*=".mp4"], source[src*=".mp4"]')
-    .map((_, el) => $(el).attr('href') || $(el).attr('src') || '')
-    .get()
-    .filter((src): src is string => !!src)
-    .map(src => src.startsWith('/') ? baseUrl + src : src)
-    .filter(src => src.includes('.mp4') || src.includes('Videos'))
-    .filter((src, i, arr) => arr.indexOf(src) === i)
-    .slice(0, 5)
+    // Feed images: data-src with /_pictures/feed/
+    $('[data-src*="_pictures/feed/"]').each((_, el) => {
+      const src = $(el).attr('data-src') || ''
+      if (src) {
+        const full = toAbsolute(src).replace('/_pictures/feed/md/', '/_pictures/feed/l/').replace('_pictures/feed/md/', '/_pictures/feed/l/')
+        images.push(full)
+      }
+    })
+
+    // Videos: data-src="/_pictures/ads/video/ID.mp4"
+    $('[data-src*="_pictures/ads/video/"]').each((_, el) => {
+      const src = $(el).attr('data-src') || ''
+      if (src) videos.push(toAbsolute(src))
+    })
+    // Also check href
+    $('a[href*="_pictures/ads/video/"], a[href*="/video/"]').each((_, el) => {
+      const href = $(el).attr('href') || ''
+      if (href.includes('.mp4')) videos.push(toAbsolute(href))
+    })
+
+    images = [...new Set(images)].slice(0, 12)
+    videos = [...new Set(videos)].slice(0, 6)
+
+  } else if (isEscortguide) {
+    // ── ESCORTGUIDE.DK ─────────────────────────────────────────
+    images = $('a[data-media-type="1"]')
+      .map((_, el) => toAbsolute($(el).attr('href') || ''))
+      .get()
+      .filter(Boolean)
+      .slice(0, 8)
+
+    videos = $('a[data-media-type="2"], a[href*=".mp4"], source[src*=".mp4"]')
+      .map((_, el) => toAbsolute($(el).attr('href') || $(el).attr('src') || ''))
+      .get()
+      .filter(src => src.includes('.mp4'))
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .slice(0, 5)
+
+  } else {
+    // ── GENERISK ───────────────────────────────────────────────
+    const genericImages = $('img')
+      .map((_, el) => $(el).attr('src') || $(el).attr('data-src') || '')
+      .get()
+      .filter((src): src is string =>
+        !!src &&
+        (src.includes('Pictures') || src.includes('storage') || src.includes('upload') ||
+         src.includes('photo') || src.includes('image') || src.includes('foto')) &&
+        !src.includes('logo') && !src.includes('icon') && !src.includes('flag') &&
+        !src.includes('avatar') && !src.includes('banner')
+      )
+      .map(getFullSizeUrl)
+
+    images = [...new Set(genericImages)].slice(0, 8)
+    videos = $('a[href*=".mp4"], source[src*=".mp4"], video[src*=".mp4"]')
+      .map((_, el) => toAbsolute($(el).attr('href') || $(el).attr('src') || ''))
+      .get()
+      .filter(src => src.includes('.mp4'))
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .slice(0, 5)
+  }
 
   // Hent stories fra escortguide.dk
   let stories: { media_url: string; media_type: string; thumbnail_url: string; duration: number }[] = []
