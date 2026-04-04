@@ -434,6 +434,29 @@ export async function POST(req: NextRequest) {
       admin_email: email,
       admin_password: password,
       admin_login_id: loginId,
+      // Ekstra profil felter
+      ...(profile.height_cm ? { height_cm: profile.height_cm } : {}),
+      ...(profile.weight_kg ? { weight_kg: profile.weight_kg } : {}),
+      ...(profile.ethnicity ? { ethnicity: profile.ethnicity } : {}),
+      ...(profile.eye_color ? { eye_color: profile.eye_color } : {}),
+      ...(profile.hair_color ? { hair_color: profile.hair_color } : {}),
+      ...(profile.hair_length ? { hair_length: profile.hair_length } : {}),
+      ...(profile.pubic_hair ? { pubic_hair: profile.pubic_hair } : {}),
+      ...(profile.bust_size ? { bust_size: profile.bust_size } : {}),
+      ...(profile.bust_type ? { bust_type: profile.bust_type } : {}),
+      ...(profile.orientation ? { orientation: profile.orientation } : {}),
+      ...(profile.smoker ? { smoker: profile.smoker } : {}),
+      ...(profile.tattoo ? { tattoo: profile.tattoo } : {}),
+      ...(profile.piercing ? { piercing: profile.piercing } : {}),
+      ...(profile.nationality ? { nationality: profile.nationality } : {}),
+      ...(profile.available_for ? { available_for: profile.available_for } : {}),
+      ...(profile.meeting_with ? { meeting_with: profile.meeting_with } : {}),
+      ...(profile.travel ? { travel: profile.travel } : {}),
+      // Priser
+      ...(profile.rate_1hour ? { rate_1hour: profile.rate_1hour } : {}),
+      ...(profile.rate_2hours ? { rate_2hours: profile.rate_2hours } : {}),
+      ...(profile.rate_overnight ? { rate_overnight: profile.rate_overnight } : {}),
+      ...(profile.rate_weekend ? { rate_weekend: profile.rate_weekend } : {}),
     })
     .select()
 
@@ -456,7 +479,8 @@ export async function POST(req: NextRequest) {
     else console.log(`✅ ${profile.stories.length} stories gemt`)
   }
 
-  // Gem videoer i listing_videos tabel
+  // Gem videoer i listing_videos tabel — returnér IDs til dewatermark flow
+  let insertedVideoIds: { id: string; url: string }[] = []
   if (listingId && profile.videos && profile.videos.length > 0) {
     const videoInserts = profile.videos.map((url: string, i: number) => ({
       listing_id: listingId,
@@ -469,9 +493,12 @@ export async function POST(req: NextRequest) {
       likes: 0,
       sort_order: i,
     }))
-    const { error: videoError } = await supabase.from('listing_videos').insert(videoInserts)
+    const { data: videoData, error: videoError } = await supabase.from('listing_videos').insert(videoInserts).select('id, url')
     if (videoError) console.error('Video insert error:', videoError.message)
-    else console.log(`✅ ${profile.videos.length} videoer gemt`)
+    else {
+      console.log(`✅ ${profile.videos.length} videoer gemt`)
+      insertedVideoIds = videoData || []
+    }
   }
 
   if (listingError) {
@@ -499,10 +526,12 @@ export async function POST(req: NextRequest) {
   return Response.json({
     success: true,
     userId,
+    listingId,
     loginId,
     email,
     password,
     phone: profile.phone,
     smsStatus: sendSMSNotification ? 'sent' : 'skipped',
+    videoIds: insertedVideoIds,
   })
 }

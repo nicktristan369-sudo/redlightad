@@ -18,11 +18,36 @@ type ProfileData = {
   videos: string[];
   stories: { media_url: string; media_type: string; thumbnail_url: string; duration: number }[];
   source_url: string;
+  // Ekstra profil felter
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  ethnicity?: string;
+  eye_color?: string;
+  hair_color?: string;
+  hair_length?: string;
+  pubic_hair?: string;
+  bust_size?: string;
+  bust_type?: string;
+  orientation?: string;
+  smoker?: string;
+  tattoo?: string;
+  piercing?: string;
+  nationality?: string;
+  available_for?: string;
+  meeting_with?: string;
+  travel?: string;
+  // Priser
+  rate_1hour?: number | null;
+  rate_2hours?: number | null;
+  rate_overnight?: number | null;
+  rate_weekend?: number | null;
 };
 
 type CreateResult = {
   success: boolean;
   userId: string;
+  listingId?: string;
+  videoIds?: { id: string; url: string }[];
   username?: string;
   loginId?: string;
   email: string;
@@ -31,6 +56,21 @@ type CreateResult = {
   smsStatus: string;
 };
 
+const ETHNICITY_OPTIONS = ["Europæisk", "Latinamerikansk", "Afrikansk", "Asiatisk", "Arabisk", "Blandet", "Andet"];
+const EYE_OPTIONS = ["Blå", "Grønne", "Brune", "Grå", "Hazel", "Sorte"];
+const HAIR_COLOR_OPTIONS = ["Blond", "Brunette", "Sort", "Rød", "Grå", "Hvid", "Farvet"];
+const HAIR_LENGTH_OPTIONS = ["Kort", "Mellemlang", "Lang", "Meget lang", "Skaldet"];
+const PUBIC_OPTIONS = ["Barberet", "Trimmet", "Naturlig", "Delvist barberet"];
+const BUST_SIZE_OPTIONS = ["A", "B", "C", "D", "DD", "DDD", "E", "F"];
+const BUST_TYPE_OPTIONS = ["Naturlige", "Silikonforøgede"];
+const ORIENTATION_OPTIONS = ["Heteroseksuel", "Biseksuel", "Homoseksuel", "Panseksuel"];
+const SMOKER_OPTIONS = ["Ryger ikke", "Ryger", "Ryger lejlighedsvis"];
+const TATTOO_OPTIONS = ["Ingen", "Et par", "Mange"];
+const PIERCING_OPTIONS = ["Ingen", "Et par", "Mange"];
+const AVAILABLE_FOR_OPTIONS = ["GFE", "Massage", "Dinner date", "Ledsager", "Striptease", "Fetish", "BDSM", "Anal", "Oral", "Rollespil"];
+const MEETING_WITH_OPTIONS = ["Mænd", "Kvinder", "Par", "Grupper", "Alle"];
+const TRAVEL_OPTIONS = ["Kan rejse", "Kan ikke rejse"];
+
 export default function CreateProfilePage() {
   const [step, setStep] = useState(1);
   const [url, setUrl] = useState("");
@@ -38,6 +78,8 @@ export default function CreateProfilePage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [sendSMS, setSendSMS] = useState(true);
+  const [showExtra, setShowExtra] = useState(false);
+  const [dewatermarkStatus, setDewatermarkStatus] = useState<Record<string, string>>({});
   const [profile, setProfile] = useState<ProfileData>({
     display_name: "",
     phone: "",
@@ -52,6 +94,8 @@ export default function CreateProfilePage() {
     videos: [],
     stories: [],
     source_url: "",
+    height_cm: null,
+    weight_kg: null,
   });
   const [result, setResult] = useState<CreateResult | null>(null);
 
@@ -79,6 +123,51 @@ export default function CreateProfilePage() {
     }
   };
 
+  // Start dewatermark jobs for alle videoer efter oprettelse
+  const startDewatermark = async (videoIds: { id: string; url: string }[]) => {
+    for (const v of videoIds) {
+      setDewatermarkStatus(prev => ({ ...prev, [v.id]: "starting" }));
+      try {
+        const res = await fetch("/api/admin/video-dewatermark", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ videoUrl: v.url, videoId: v.id }),
+        });
+        const data = await res.json();
+        if (data.jobId) {
+          setDewatermarkStatus(prev => ({ ...prev, [v.id]: `job:${data.jobId}` }));
+          pollDewatermark(v.id, data.jobId);
+        } else {
+          setDewatermarkStatus(prev => ({ ...prev, [v.id]: "error" }));
+        }
+      } catch {
+        setDewatermarkStatus(prev => ({ ...prev, [v.id]: "error" }));
+      }
+    }
+  };
+
+  const pollDewatermark = async (videoId: string, jobId: string) => {
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      try {
+        const res = await fetch(`/api/admin/video-dewatermark?job_id=${jobId}&video_id=${videoId}`);
+        const data = await res.json();
+        if (data.status === "done") {
+          setDewatermarkStatus(prev => ({ ...prev, [videoId]: "done" }));
+          return;
+        }
+        if (data.status === "failed") {
+          setDewatermarkStatus(prev => ({ ...prev, [videoId]: "failed" }));
+          return;
+        }
+        setDewatermarkStatus(prev => ({ ...prev, [videoId]: "processing" }));
+      } catch {
+        // ignore poll errors
+      }
+    }
+    setDewatermarkStatus(prev => ({ ...prev, [videoId]: "timeout" }));
+  };
+
   const handleCreate = async () => {
     if (!profile.display_name.trim()) {
       setError("Navn er påkrævet");
@@ -90,15 +179,16 @@ export default function CreateProfilePage() {
       const res = await fetch("/api/admin/create-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profile,
-          sendSMSNotification: sendSMS,
-        }),
+        body: JSON.stringify({ profile, sendSMSNotification: sendSMS }),
       });
       const data = await res.json();
       if (data.success) {
         setResult(data);
         setStep(3);
+        // Auto-start watermark removal for alle videoer
+        if (data.videoIds && data.videoIds.length > 0) {
+          startDewatermark(data.videoIds);
+        }
       } else {
         setError(data.error || "Fejl ved oprettelse");
       }
@@ -113,205 +203,112 @@ export default function CreateProfilePage() {
     setStep(1);
     setUrl("");
     setProfile({
-      display_name: "",
-      phone: "",
-      email: "",
-      description: "",
-      city: "",
-      country: "Denmark",
-      gender: "female",
-      category: "escort",
-      age: null,
-      images: [],
-      videos: [],
-      stories: [],
-      source_url: "",
+      display_name: "", phone: "", email: "", description: "",
+      city: "", country: "Denmark", gender: "female", category: "escort",
+      age: null, images: [], videos: [], stories: [], source_url: "",
+      height_cm: null, weight_kg: null,
     });
     setResult(null);
     setError("");
     setSendSMS(true);
+    setShowExtra(false);
+    setDewatermarkStatus({});
   };
+
+  const p = (field: keyof ProfileData, val: unknown) => setProfile(prev => ({ ...prev, [field]: val }));
 
   const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "10px 12px",
-    fontSize: 13,
-    border: "1px solid #E5E5E5",
-    borderRadius: 8,
-    outline: "none",
-    background: "#fff",
+    width: "100%", padding: "10px 12px", fontSize: 13,
+    border: "1px solid #E5E5E5", borderRadius: 8, outline: "none", background: "#fff",
   };
-
   const labelStyle: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 600,
-    color: "#374151",
-    marginBottom: 4,
-    display: "block",
+    fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block",
   };
+  const selectStyle = { ...inputStyle };
 
   return (
     <AdminLayout>
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        <h1 className="text-[22px] font-bold text-gray-900 mb-1">
-          Opret profil
-        </h1>
-        <p className="text-[13px] text-gray-500 mb-6">
-          Scrape en annonce og opret bruger automatisk
-        </p>
+        <h1 className="text-[22px] font-bold text-gray-900 mb-1">Opret profil</h1>
+        <p className="text-[13px] text-gray-500 mb-6">Scrape en annonce og opret bruger automatisk</p>
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center gap-2">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold"
-                style={{
-                  background: step >= s ? "#000" : "#E5E5E5",
-                  color: step >= s ? "#fff" : "#9CA3AF",
-                }}
-              >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold"
+                style={{ background: step >= s ? "#000" : "#E5E5E5", color: step >= s ? "#fff" : "#9CA3AF" }}>
                 {s}
               </div>
-              {s < 3 && (
-                <div
-                  style={{
-                    width: 32,
-                    height: 2,
-                    background: step > s ? "#000" : "#E5E5E5",
-                    borderRadius: 1,
-                  }}
-                />
-              )}
+              {s < 3 && <div style={{ width: 32, height: 2, background: step > s ? "#000" : "#E5E5E5", borderRadius: 1 }} />}
             </div>
           ))}
           <span className="text-[12px] text-gray-400 ml-2">
-            {step === 1 && "Hent info"}
-            {step === 2 && "Gennemse"}
-            {step === 3 && "Resultat"}
+            {step === 1 && "Hent info"}{step === 2 && "Gennemse"}{step === 3 && "Resultat"}
           </span>
         </div>
 
         {error && (
-          <div
-            className="text-[13px] px-4 py-3 rounded-lg mb-4"
-            style={{ background: "#FEE2E2", color: "#7F1D1D" }}
-          >
+          <div className="text-[13px] px-4 py-3 rounded-lg mb-4" style={{ background: "#FEE2E2", color: "#7F1D1D" }}>
             {error}
           </div>
         )}
 
-        {/* Step 1 — URL input */}
+        {/* ── Step 1 ── */}
         {step === 1 && (
-          <div
-            className="bg-white rounded-xl p-6"
-            style={{ border: "1px solid #E5E5E5" }}
-          >
+          <div className="bg-white rounded-xl p-6" style={{ border: "1px solid #E5E5E5" }}>
             <label style={labelStyle}>Annonce URL</label>
             <div className="flex gap-2">
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://..."
-                style={inputStyle}
-                onKeyDown={(e) => e.key === "Enter" && handleScrape()}
-              />
-              <button
-                onClick={handleScrape}
-                disabled={loading || !url.trim()}
+              <input type="url" value={url} onChange={e => setUrl(e.target.value)}
+                placeholder="https://..." style={inputStyle}
+                onKeyDown={e => e.key === "Enter" && handleScrape()} />
+              <button onClick={handleScrape} disabled={loading || !url.trim()}
                 className="px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap"
-                style={{
-                  background: loading || !url.trim() ? "#E5E5E5" : "#000",
-                  color: loading || !url.trim() ? "#9CA3AF" : "#fff",
-                  cursor: loading || !url.trim() ? "not-allowed" : "pointer",
-                }}
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-white rounded-full animate-spin" />
-                    Henter...
-                  </span>
-                ) : (
-                  "Hent info"
-                )}
+                style={{ background: loading || !url.trim() ? "#E5E5E5" : "#000", color: loading || !url.trim() ? "#9CA3AF" : "#fff", cursor: loading || !url.trim() ? "not-allowed" : "pointer" }}>
+                {loading ? <span className="flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-white rounded-full animate-spin" />Henter...</span> : "Hent info"}
               </button>
             </div>
-            <p className="text-[11px] text-gray-400 mt-2">
-              Indsæt link til en annonce — vi henter navn, telefon, by og
-              beskrivelse automatisk
-            </p>
-
-            {/* Manual entry option */}
-            <div
-              className="mt-4 pt-4"
-              style={{ borderTop: "1px solid #F3F4F6" }}
-            >
-              <button
-                onClick={() => setStep(2)}
-                className="text-[12px] font-medium"
-                style={{ color: "#6B7280" }}
-              >
+            <p className="text-[11px] text-gray-400 mt-2">Indsæt link til en annonce — vi henter navn, telefon, by og beskrivelse automatisk</p>
+            <div className="mt-4 pt-4" style={{ borderTop: "1px solid #F3F4F6" }}>
+              <button onClick={() => setStep(2)} className="text-[12px] font-medium" style={{ color: "#6B7280" }}>
                 Eller opret manuelt uden URL →
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 2 — Review & edit */}
+        {/* ── Step 2 ── */}
         {step === 2 && (
-          <div
-            className="bg-white rounded-xl p-6"
-            style={{ border: "1px solid #E5E5E5" }}
-          >
+          <div className="bg-white rounded-xl p-6" style={{ border: "1px solid #E5E5E5" }}>
             <div className="space-y-4">
+
+              {/* Navn */}
               <div>
                 <label style={labelStyle}>Navn *</label>
-                <input
-                  type="text"
-                  value={profile.display_name}
-                  onChange={(e) =>
-                    setProfile({ ...profile, display_name: e.target.value })
-                  }
-                  style={inputStyle}
-                  placeholder="Display name"
-                />
+                <input type="text" value={profile.display_name} onChange={e => p("display_name", e.target.value)} style={inputStyle} placeholder="Display name" />
               </div>
 
               {/* Telefon + By */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>Telefon</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <select
-                      value={profile.country}
-                      onChange={(e) => setProfile({ ...profile, country: e.target.value })}
-                      style={{ ...inputStyle, width: 'auto', paddingRight: 28, flexShrink: 0 }}
-                    >
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <select value={profile.country} onChange={e => p("country", e.target.value)}
+                      style={{ ...inputStyle, width: "auto", paddingRight: 28, flexShrink: 0 }}>
                       {SUPPORTED_COUNTRIES.map(c => (
                         <option key={c.code} value={c.name}>
-                          {c.code === 'DK' ? '+45' : c.code === 'SE' ? '+46' : c.code === 'NO' ? '+47' : c.code === 'DE' ? '+49' : c.code === 'GB' ? '+44' : c.code === 'US' ? '+1' : c.code === 'TH' ? '+66' : c.flag} {c.name}
+                          {c.code === "DK" ? "+45" : c.code === "SE" ? "+46" : c.code === "NO" ? "+47" : c.code === "DE" ? "+49" : c.code === "GB" ? "+44" : c.code === "US" ? "+1" : c.code === "TH" ? "+66" : c.flag} {c.name}
                         </option>
                       ))}
                     </select>
-                    <input
-                      type="tel"
-                      value={profile.phone}
-                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                      style={{ ...inputStyle, flex: 1 }}
-                      placeholder="12 34 56 78"
-                    />
+                    <input type="tel" value={profile.phone} onChange={e => p("phone", e.target.value)} style={{ ...inputStyle, flex: 1 }} placeholder="12 34 56 78" />
                   </div>
                 </div>
                 <div>
                   <label style={labelStyle}>By</label>
-                  <select
-                    value={profile.city}
-                    onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-                    style={inputStyle}
-                  >
+                  <select value={profile.city} onChange={e => p("city", e.target.value)} style={selectStyle}>
                     <option value="">Vælg by...</option>
-                    {['København', 'Aarhus', 'Odense', 'Aalborg', 'Esbjerg', 'Randers', 'Kolding', 'Horsens', 'Vejle', 'Roskilde', 'Helsingør', 'Herning', 'Silkeborg', 'Næstved', 'Fredericia', 'Viborg', 'Køge', 'Holstebro', 'Taastrup', 'Slagelse', 'Hillerød', 'Svendborg', 'Frederiksberg', 'Gentofte'].map(by => (
+                    {["København","Aarhus","Odense","Aalborg","Esbjerg","Randers","Kolding","Horsens","Vejle","Roskilde","Helsingør","Herning","Silkeborg","Næstved","Fredericia","Viborg","Køge","Holstebro","Taastrup","Slagelse","Hillerød","Svendborg","Frederiksberg","Gentofte"].map(by => (
                       <option key={by} value={by}>{by}</option>
                     ))}
                   </select>
@@ -321,38 +318,16 @@ export default function CreateProfilePage() {
               {/* Land */}
               <div>
                 <label style={labelStyle}>Land</label>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={profile.country}
-                    onChange={(e) => setProfile({ ...profile, country: e.target.value })}
-                    style={{ ...inputStyle, paddingLeft: 36 }}
-                  >
-                    {SUPPORTED_COUNTRIES.map(c => (
-                      <option key={c.code} value={c.name}>{c.name}</option>
-                    ))}
-                  </select>
-                  {(() => {
-                    const sel = SUPPORTED_COUNTRIES.find(c => c.name === profile.country)
-                    return sel ? (
-                      <img
-                        src={`https://flagcdn.com/w20/${sel.code.toLowerCase()}.png`}
-                        alt={sel.name}
-                        style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 20, height: 14, objectFit: 'cover', borderRadius: 2, pointerEvents: 'none' }}
-                      />
-                    ) : null
-                  })()}
-                </div>
+                <select value={profile.country} onChange={e => p("country", e.target.value)} style={selectStyle}>
+                  {SUPPORTED_COUNTRIES.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                </select>
               </div>
 
               {/* Køn + Kategori */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>Køn</label>
-                  <select
-                    value={profile.gender}
-                    onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
-                    style={inputStyle}
-                  >
+                  <select value={profile.gender} onChange={e => p("gender", e.target.value)} style={selectStyle}>
                     <option value="female">Female</option>
                     <option value="male">Male</option>
                     <option value="trans">Trans</option>
@@ -360,11 +335,7 @@ export default function CreateProfilePage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Kategori</label>
-                  <select
-                    value={profile.category}
-                    onChange={(e) => setProfile({ ...profile, category: e.target.value })}
-                    style={inputStyle}
-                  >
+                  <select value={profile.category} onChange={e => p("category", e.target.value)} style={selectStyle}>
                     <option value="escort">Escort</option>
                     <option value="massage">Massage</option>
                     <option value="strip">Strip</option>
@@ -376,11 +347,7 @@ export default function CreateProfilePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>Alder</label>
-                  <select
-                    value={profile.age ?? 25}
-                    onChange={(e) => setProfile({ ...profile, age: parseInt(e.target.value) })}
-                    style={inputStyle}
-                  >
+                  <select value={profile.age ?? 25} onChange={e => p("age", parseInt(e.target.value))} style={selectStyle}>
                     {Array.from({ length: 63 }, (_, i) => i + 18).map(a => (
                       <option key={a} value={a}>{a} år</option>
                     ))}
@@ -388,139 +355,259 @@ export default function CreateProfilePage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Email (valgfri)</label>
-                  <input
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    style={inputStyle}
-                    placeholder="Genereres automatisk hvis tom"
-                  />
+                  <input type="email" value={profile.email} onChange={e => p("email", e.target.value)} style={inputStyle} placeholder="Genereres automatisk hvis tom" />
                 </div>
               </div>
 
+              {/* Beskrivelse */}
               <div>
                 <label style={labelStyle}>Beskrivelse</label>
-                <textarea
-                  value={profile.description}
-                  onChange={(e) =>
-                    setProfile({ ...profile, description: e.target.value })
-                  }
-                  rows={4}
-                  style={{ ...inputStyle, resize: "vertical" as const }}
-                  placeholder="Profiltekst..."
-                />
+                <textarea value={profile.description} onChange={e => p("description", e.target.value)}
+                  rows={4} style={{ ...inputStyle, resize: "vertical" as const }} placeholder="Profiltekst..." />
               </div>
 
-              <div>
-                <label style={labelStyle}>Kilde URL</label>
-                <input
-                  type="text"
-                  value={profile.source_url}
-                  readOnly
-                  style={{
-                    ...inputStyle,
-                    background: "#F9FAFB",
-                    color: "#6B7280",
-                  }}
-                />
+              {/* ── Ekstra profil info (collapsible) ── */}
+              <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 16 }}>
+                <button onClick={() => setShowExtra(!showExtra)}
+                  className="flex items-center gap-2 text-[13px] font-semibold text-gray-700 w-full text-left">
+                  <span style={{ fontSize: 16, transform: showExtra ? "rotate(90deg)" : "none", display: "inline-block", transition: "transform 0.15s" }}>▶</span>
+                  Ekstra profil oplysninger
+                  <span className="text-[11px] font-normal text-gray-400 ml-1">(valgfrit)</span>
+                </button>
+
+                {showExtra && (
+                  <div className="space-y-4 mt-4">
+                    {/* Nationalitet */}
+                    <div>
+                      <label style={labelStyle}>Nationalitet</label>
+                      <input type="text" value={profile.nationality || ""} onChange={e => p("nationality", e.target.value)} style={inputStyle} placeholder="f.eks. Dansk, Russisk, Brasiliansk..." />
+                    </div>
+
+                    {/* Højde + Vægt */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label style={labelStyle}>Højde (cm)</label>
+                        <input type="number" value={profile.height_cm || ""} onChange={e => p("height_cm", e.target.value ? parseInt(e.target.value) : null)}
+                          style={inputStyle} placeholder="165" min={140} max={210} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Vægt (kg)</label>
+                        <input type="number" value={profile.weight_kg || ""} onChange={e => p("weight_kg", e.target.value ? parseInt(e.target.value) : null)}
+                          style={inputStyle} placeholder="55" min={40} max={150} />
+                      </div>
+                    </div>
+
+                    {/* Etnicitet + Orientering */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label style={labelStyle}>Etnicitet</label>
+                        <select value={profile.ethnicity || ""} onChange={e => p("ethnicity", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {ETHNICITY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Orientering</label>
+                        <select value={profile.orientation || ""} onChange={e => p("orientation", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {ORIENTATION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Øjenfarve + Hårfarve */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label style={labelStyle}>Øjenfarve</label>
+                        <select value={profile.eye_color || ""} onChange={e => p("eye_color", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {EYE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Hårfarve</label>
+                        <select value={profile.hair_color || ""} onChange={e => p("hair_color", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {HAIR_COLOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Hårlængde + Skambehåring */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label style={labelStyle}>Hårlængde</label>
+                        <select value={profile.hair_length || ""} onChange={e => p("hair_length", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {HAIR_LENGTH_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Skambehåring</label>
+                        <select value={profile.pubic_hair || ""} onChange={e => p("pubic_hair", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {PUBIC_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Bryststørrelse + Brysttype */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label style={labelStyle}>Bryststørrelse</label>
+                        <select value={profile.bust_size || ""} onChange={e => p("bust_size", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {BUST_SIZE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Brysttype</label>
+                        <select value={profile.bust_type || ""} onChange={e => p("bust_type", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {BUST_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Ryger + Tatoveringer + Piercinger */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label style={labelStyle}>Ryger</label>
+                        <select value={profile.smoker || ""} onChange={e => p("smoker", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {SMOKER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Tatoveringer</label>
+                        <select value={profile.tattoo || ""} onChange={e => p("tattoo", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {TATTOO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Piercinger</label>
+                        <select value={profile.piercing || ""} onChange={e => p("piercing", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {PIERCING_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Tilgængelig for */}
+                    <div>
+                      <label style={labelStyle}>Tilgængelig for</label>
+                      <select value={profile.available_for || ""} onChange={e => p("available_for", e.target.value)} style={selectStyle}>
+                        <option value="">Vælg...</option>
+                        {AVAILABLE_FOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Mødes med + Rejser */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label style={labelStyle}>Mødes med</label>
+                        <select value={profile.meeting_with || ""} onChange={e => p("meeting_with", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {MEETING_WITH_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Rejser</label>
+                        <select value={profile.travel || ""} onChange={e => p("travel", e.target.value)} style={selectStyle}>
+                          <option value="">Vælg...</option>
+                          {TRAVEL_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* ── Priser ── */}
+                    <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 16 }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 12 }}>💰 Priser (DKK)</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label style={labelStyle}>1 time</label>
+                          <input type="number" value={profile.rate_1hour || ""} onChange={e => p("rate_1hour", e.target.value ? parseInt(e.target.value) : null)}
+                            style={inputStyle} placeholder="f.eks. 1200" min={0} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>2 timer</label>
+                          <input type="number" value={profile.rate_2hours || ""} onChange={e => p("rate_2hours", e.target.value ? parseInt(e.target.value) : null)}
+                            style={inputStyle} placeholder="f.eks. 2000" min={0} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Overnatning</label>
+                          <input type="number" value={profile.rate_overnight || ""} onChange={e => p("rate_overnight", e.target.value ? parseInt(e.target.value) : null)}
+                            style={inputStyle} placeholder="f.eks. 5000" min={0} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Weekend</label>
+                          <input type="number" value={profile.rate_weekend || ""} onChange={e => p("rate_weekend", e.target.value ? parseInt(e.target.value) : null)}
+                            style={inputStyle} placeholder="f.eks. 8000" min={0} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Image previews */}
+              {/* Kilde URL */}
+              {profile.source_url && (
+                <div>
+                  <label style={labelStyle}>Kilde URL</label>
+                  <input type="text" value={profile.source_url} readOnly style={{ ...inputStyle, background: "#F9FAFB", color: "#6B7280" }} />
+                </div>
+              )}
+
+              {/* Billeder */}
               {profile.images.length > 0 && (
                 <div>
-                  <label style={labelStyle}>
-                    Billeder ({profile.images.length})
-                  </label>
+                  <label style={labelStyle}>Billeder ({profile.images.length})</label>
                   <div className="flex gap-2 flex-wrap">
                     {profile.images.map((src, i) => (
-                      <img
-                        key={i}
-                        src={src}
-                        alt=""
-                        className="rounded-lg object-cover"
-                        style={{
-                          width: 80,
-                          height: 80,
-                          border: "1px solid #E5E5E5",
-                        }}
-                      />
+                      <img key={i} src={src} alt="" className="rounded-lg object-cover" style={{ width: 80, height: 80, border: "1px solid #E5E5E5" }} />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Video previews */}
+              {/* Videoer */}
               {profile.videos && profile.videos.length > 0 && (
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                    <label style={{ ...labelStyle, marginBottom: 0 }}>
-                      Videoer ({profile.videos.length})
-                    </label>
-                    <button
-                      onClick={() => setProfile({ ...profile, videos: [] })}
-                      style={{
-                        fontSize: 11, color: "#DC2626", fontWeight: 600,
-                        background: "#FEE2E2", border: "none", cursor: "pointer",
-                        padding: "3px 10px", borderRadius: 4,
-                      }}
-                    >
+                    <label style={{ ...labelStyle, marginBottom: 0 }}>Videoer ({profile.videos.length})</label>
+                    <button onClick={() => p("videos", [])}
+                      style={{ fontSize: 11, color: "#DC2626", fontWeight: 600, background: "#FEE2E2", border: "none", cursor: "pointer", padding: "3px 10px", borderRadius: 4 }}>
                       ✕ Spring videoer over
                     </button>
                   </div>
-                  {/* Watermark advarsel */}
-                  <div style={{
-                    background: "#FFF7ED", border: "1px solid #FED7AA",
-                    borderRadius: 6, padding: "8px 12px", marginBottom: 8,
-                    fontSize: 12, color: "#92400E", display: "flex", gap: 6, alignItems: "flex-start",
-                  }}>
+                  <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 6, padding: "8px 12px", marginBottom: 8, fontSize: 12, color: "#92400E", display: "flex", gap: 6, alignItems: "flex-start" }}>
                     <span>⚠️</span>
-                    <span>Disse videoer er fra {new URL(profile.source_url || "https://escortguide.dk").hostname} og kan have vandmærke. Klik "Spring videoer over" og lad escorten uploade sine egne videoer via dashboard.</span>
+                    <span>Disse videoer kan have vandmærke. Vandmærker fjernes automatisk via unwatermark.ai efter oprettelse.</span>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {profile.videos.map((src, i) => (
                       <div key={i} style={{ position: "relative" }}>
-                        <video
-                          src={src}
-                          controls
-                          className="rounded-lg"
-                          style={{ width: 160, height: 120, border: "1px solid #E5E5E5", background: "#000" }}
-                        />
-                        <button
-                          onClick={() => setProfile({ ...profile, videos: profile.videos.filter((_, idx) => idx !== i) })}
-                          style={{
-                            position: "absolute", top: 4, right: 4,
-                            width: 20, height: 20, borderRadius: "50%",
-                            background: "#DC2626", color: "#fff", border: "none",
-                            cursor: "pointer", fontSize: 11, fontWeight: 700,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}
-                        >✕</button>
+                        <video src={`${src}#t=1`} style={{ width: 160, height: 120, borderRadius: 8, border: "1px solid #E5E5E5", background: "#000" }} />
+                        <button onClick={() => p("videos", profile.videos.filter((_, idx) => idx !== i))}
+                          style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "#DC2626", color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          ✕
+                        </button>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
+              {/* Stories */}
               {profile.stories && profile.stories.length > 0 && (
                 <div>
-                  <label style={labelStyle}>
-                    Stories ({profile.stories.length})
-                  </label>
+                  <label style={labelStyle}>Stories ({profile.stories.length})</label>
                   <div className="flex gap-2 flex-wrap">
                     {profile.stories.map((s, i) => (
-                      <div key={i} style={{ position: 'relative', width: 64, height: 64 }}>
-                        {s.media_type === 'video' ? (
-                          <video
-                            src={s.media_url}
-                            style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: '50%', border: '2px solid #DC2626' }}
-                          />
-                        ) : (
-                          <img
-                            src={s.thumbnail_url || s.media_url}
-                            alt=""
-                            style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: '50%', border: '2px solid #DC2626' }}
-                          />
-                        )}
+                      <div key={i} style={{ width: 64, height: 64 }}>
+                        <img src={s.thumbnail_url || s.media_url} alt=""
+                          style={{ width: 64, height: 64, objectFit: "cover", borderRadius: "50%", border: "2px solid #DC2626" }} />
                       </div>
                     ))}
                   </div>
@@ -528,90 +615,37 @@ export default function CreateProfilePage() {
               )}
 
               {/* SMS toggle */}
-              <div
-                className="flex items-center justify-between pt-4"
-                style={{ borderTop: "1px solid #F3F4F6" }}
-              >
+              <div className="flex items-center justify-between pt-4" style={{ borderTop: "1px solid #F3F4F6" }}>
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-900">
-                    Send SMS med login info
-                  </p>
-                  <p className="text-[11px] text-gray-400">
-                    Sender email, kode og GRATIS30 promo til brugerens telefon
-                  </p>
+                  <p className="text-[13px] font-semibold text-gray-900">Send SMS med login info</p>
+                  <p className="text-[11px] text-gray-400">Sender email, kode og GRATIS30 promo til brugerens telefon</p>
                 </div>
-                <button
-                  onClick={() => setSendSMS(!sendSMS)}
-                  className="relative w-10 h-5 rounded-full transition-colors"
-                  style={{ background: sendSMS ? "#000" : "#D1D5DB" }}
-                >
-                  <span
-                    className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform"
-                    style={{
-                      left: 2,
-                      transform: sendSMS
-                        ? "translateX(20px)"
-                        : "translateX(0)",
-                    }}
-                  />
+                <button onClick={() => setSendSMS(!sendSMS)} className="relative w-10 h-5 rounded-full transition-colors" style={{ background: sendSMS ? "#000" : "#D1D5DB" }}>
+                  <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ left: 2, transform: sendSMS ? "translateX(20px)" : "translateX(0)" }} />
                 </button>
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setStep(1)}
-                className="px-4 py-2.5 rounded-lg text-[13px] font-medium"
-                style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}
-              >
+              <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-lg text-[13px] font-medium" style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}>
                 Tilbage
               </button>
-              <button
-                onClick={handleCreate}
-                disabled={creating}
-                className="flex-1 px-4 py-2.5 rounded-lg text-[13px] font-semibold"
-                style={{
-                  background: creating ? "#E5E5E5" : "#000",
-                  color: creating ? "#9CA3AF" : "#fff",
-                  cursor: creating ? "not-allowed" : "pointer",
-                }}
-              >
-                {creating ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-white rounded-full animate-spin" />
-                    Opretter...
-                  </span>
-                ) : (
-                  "Opret profil"
-                )}
+              <button onClick={handleCreate} disabled={creating} className="flex-1 px-4 py-2.5 rounded-lg text-[13px] font-semibold"
+                style={{ background: creating ? "#E5E5E5" : "#000", color: creating ? "#9CA3AF" : "#fff", cursor: creating ? "not-allowed" : "pointer" }}>
+                {creating ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-white rounded-full animate-spin" />Opretter...</span> : "Opret profil"}
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 3 — Result */}
+        {/* ── Step 3 ── */}
         {step === 3 && result && (
-          <div
-            className="bg-white rounded-xl p-6"
-            style={{ border: "1px solid #E5E5E5" }}
-          >
-            <div
-              className="flex items-center gap-3 mb-5 pb-5"
-              style={{ borderBottom: "1px solid #F3F4F6" }}
-            >
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-[18px]"
-                style={{ background: "#DCFCE7" }}
-              >
-                ✓
-              </div>
+          <div className="bg-white rounded-xl p-6" style={{ border: "1px solid #E5E5E5" }}>
+            <div className="flex items-center gap-3 mb-5 pb-5" style={{ borderBottom: "1px solid #F3F4F6" }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-[18px]" style={{ background: "#DCFCE7" }}>✓</div>
               <div>
-                <p className="text-[15px] font-bold text-gray-900">
-                  Profil oprettet
-                </p>
-                <p className="text-[12px] text-gray-400">
-                  Bruger er klar til at logge ind
-                </p>
+                <p className="text-[15px] font-bold text-gray-900">Profil oprettet</p>
+                <p className="text-[12px] text-gray-400">Bruger er klar til at logge ind</p>
               </div>
             </div>
 
@@ -621,40 +655,38 @@ export default function CreateProfilePage() {
                 { label: "Email", value: result.email },
                 { label: "Adgangskode", value: result.password },
                 { label: "SMS", value: result.smsStatus === "sent" ? "Sendt" : "Ikke sendt" },
-              ].map((row) => (
-                <div
-                  key={row.label}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg"
-                  style={{ background: "#F9FAFB" }}
-                >
+              ].map(row => (
+                <div key={row.label} className="flex items-center justify-between py-2 px-3 rounded-lg" style={{ background: "#F9FAFB" }}>
                   <span className="text-[12px] font-semibold text-gray-500 w-28">{row.label}</span>
                   <span className="text-[13px] font-mono text-gray-900 flex-1 text-right pr-2 truncate">{row.value}</span>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(row.value)}
-                    className="text-[11px] px-2 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 flex-shrink-0"
-                  >
-                    Kopi
-                  </button>
+                  <button onClick={() => navigator.clipboard.writeText(row.value)} className="text-[11px] px-2 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 flex-shrink-0">Kopi</button>
                 </div>
               ))}
             </div>
 
-            <button
-              onClick={() => {
-                const text = `Login info:\nEmail: ${result.email}\nKode: ${result.password}`
-                navigator.clipboard.writeText(text)
-              }}
-              className="w-full mb-3 px-4 py-2.5 rounded-lg text-[13px] font-semibold border border-gray-200"
-              style={{ background: "#F9FAFB", color: "#111" }}
-            >
+            {/* Dewatermark status */}
+            {result.videoIds && result.videoIds.length > 0 && (
+              <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
+                <p className="text-[12px] font-semibold text-gray-700 mb-2">🎬 Vandmærke fjernelse</p>
+                {result.videoIds.map((v, i) => {
+                  const s = dewatermarkStatus[v.id] || "waiting";
+                  const label = s === "waiting" ? "⏳ Afventer..." : s === "starting" ? "🔄 Starter job..." : s === "processing" || s.startsWith("job:") ? "⚙️ Behandler..." : s === "done" ? "✅ Vandmærke fjernet" : s === "failed" ? "❌ Fejlede" : s === "timeout" ? "⏰ Timeout" : s === "error" ? "❌ Fejl" : s;
+                  return (
+                    <div key={v.id} className="flex items-center gap-2 text-[12px] text-gray-600">
+                      <span>Video {i + 1}:</span>
+                      <span style={{ color: s === "done" ? "#16A34A" : s.includes("fail") || s === "error" ? "#DC2626" : "#6B7280" }}>{label}</span>
+                    </div>
+                  );
+                })}
+                <p className="text-[11px] text-gray-400 mt-2">Vandmærker fjernes automatisk — det tager typisk 2–5 minutter per video</p>
+              </div>
+            )}
+
+            <button onClick={() => { const t = `Login info:\nEmail: ${result.email}\nKode: ${result.password}`; navigator.clipboard.writeText(t); }}
+              className="w-full mb-3 px-4 py-2.5 rounded-lg text-[13px] font-semibold border border-gray-200" style={{ background: "#F9FAFB", color: "#111" }}>
               Kopiér alle login info
             </button>
-
-            <button
-              onClick={reset}
-              className="w-full px-4 py-2.5 rounded-lg text-[13px] font-semibold"
-              style={{ background: "#000", color: "#fff" }}
-            >
+            <button onClick={reset} className="w-full px-4 py-2.5 rounded-lg text-[13px] font-semibold" style={{ background: "#000", color: "#fff" }}>
               Opret ny profil
             </button>
           </div>
