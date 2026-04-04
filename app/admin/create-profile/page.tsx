@@ -275,47 +275,73 @@ export default function CreateProfilePage() {
                 />
               </div>
 
+              {/* Telefon + By */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>Telefon</label>
-                  <input
-                    type="tel"
-                    value={profile.phone}
-                    onChange={(e) =>
-                      setProfile({ ...profile, phone: e.target.value })
-                    }
-                    style={inputStyle}
-                    placeholder="+45 12 34 56 78"
-                  />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <select
+                      value={profile.country}
+                      onChange={(e) => setProfile({ ...profile, country: e.target.value })}
+                      style={{ ...inputStyle, width: 'auto', paddingRight: 28, flexShrink: 0 }}
+                    >
+                      {SUPPORTED_COUNTRIES.map(c => (
+                        <option key={c.code} value={c.name}>
+                          {c.code === 'DK' ? '+45' : c.code === 'SE' ? '+46' : c.code === 'NO' ? '+47' : c.code === 'DE' ? '+49' : c.code === 'GB' ? '+44' : c.code === 'US' ? '+1' : c.code === 'TH' ? '+66' : c.flag} {c.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      value={profile.phone}
+                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                      style={{ ...inputStyle, flex: 1 }}
+                      placeholder="12 34 56 78"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label style={labelStyle}>By</label>
-                  <input
-                    type="text"
-                    value={profile.city}
-                    onChange={(e) =>
-                      setProfile({ ...profile, city: e.target.value })
-                    }
-                    style={inputStyle}
-                    placeholder="København"
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Land</label>
                   <select
-                    value={profile.country}
-                    onChange={(e) => setProfile({ ...profile, country: e.target.value })}
+                    value={profile.city}
+                    onChange={(e) => setProfile({ ...profile, city: e.target.value })}
                     style={inputStyle}
                   >
-                    {SUPPORTED_COUNTRIES.map(c => (
-                      <option key={c.code} value={c.name}>
-                        {c.flag} {c.name}
-                      </option>
+                    <option value="">Vælg by...</option>
+                    {['København', 'Aarhus', 'Odense', 'Aalborg', 'Esbjerg', 'Randers', 'Kolding', 'Horsens', 'Vejle', 'Roskilde', 'Helsingør', 'Herning', 'Silkeborg', 'Næstved', 'Fredericia', 'Viborg', 'Køge', 'Holstebro', 'Taastrup', 'Slagelse', 'Hillerød', 'Svendborg', 'Frederiksberg', 'Gentofte'].map(by => (
+                      <option key={by} value={by}>{by}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
+              {/* Land */}
+              <div>
+                <label style={labelStyle}>Land</label>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={profile.country}
+                    onChange={(e) => setProfile({ ...profile, country: e.target.value })}
+                    style={{ ...inputStyle, paddingLeft: 36 }}
+                  >
+                    {SUPPORTED_COUNTRIES.map(c => (
+                      <option key={c.code} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                  {(() => {
+                    const sel = SUPPORTED_COUNTRIES.find(c => c.name === profile.country)
+                    return sel ? (
+                      <img
+                        src={`https://flagcdn.com/w20/${sel.code.toLowerCase()}.png`}
+                        alt={sel.name}
+                        style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 20, height: 14, objectFit: 'cover', borderRadius: 2, pointerEvents: 'none' }}
+                      />
+                    ) : null
+                  })()}
+                </div>
+              </div>
+
+              {/* Køn + Kategori */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>Køn</label>
@@ -343,30 +369,26 @@ export default function CreateProfilePage() {
                 </div>
               </div>
 
+              {/* Alder + Email */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label style={labelStyle}>Alder</label>
-                  <input
-                    type="number"
-                    value={profile.age ?? ""}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        age: e.target.value ? parseInt(e.target.value) : null,
-                      })
-                    }
+                  <select
+                    value={profile.age ?? 25}
+                    onChange={(e) => setProfile({ ...profile, age: parseInt(e.target.value) })}
                     style={inputStyle}
-                    placeholder="25"
-                  />
+                  >
+                    {Array.from({ length: 63 }, (_, i) => i + 18).map(a => (
+                      <option key={a} value={a}>{a} år</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label style={labelStyle}>Email (valgfri)</label>
                   <input
                     type="email"
                     value={profile.email}
-                    onChange={(e) =>
-                      setProfile({ ...profile, email: e.target.value })
-                    }
+                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                     style={inputStyle}
                     placeholder="Genereres automatisk hvis tom"
                   />
