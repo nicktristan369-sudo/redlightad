@@ -18,6 +18,7 @@ import ReportModal from "@/components/ReportModal";
 import PhotoGrid from "@/components/PhotoGrid";
 import PrivateContentPreview from "@/components/PrivateContentPreview";
 import MarketplaceSection from "@/components/MarketplaceSection";
+import StoryCircles from "@/components/StoryCircles";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 
@@ -172,6 +173,9 @@ export default function AdDetailPage() {
             <span className="text-[#e11d48]">/</span>
             <span className="text-gray-900 font-medium truncate">{ad.title}</span>
           </nav>
+
+          {/* Stories */}
+          <StoryCircles listingId={ad.id} />
 
           {/* Title */}
           <div className="mb-6 flex items-center gap-3">

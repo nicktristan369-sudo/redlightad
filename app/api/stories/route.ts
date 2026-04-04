@@ -12,17 +12,22 @@ const getClient = () => createClient(
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const country = searchParams.get("country")
+  const listingId = searchParams.get("listing_id")
   const supabase = getClient()
 
   // Delete expired stories first
   await supabase.from("stories").delete().lt("expires_at", new Date().toISOString())
 
   // Fetch active stories with listing info
-  const query = supabase
+  let query = supabase
     .from("stories")
     .select("id, listing_id, media_url, media_type, caption, views, created_at, expires_at, listings(id, title, profile_image, country, city)")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
+
+  if (listingId) {
+    query = query.eq("listing_id", listingId)
+  }
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

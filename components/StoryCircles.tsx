@@ -20,9 +20,10 @@ interface StoryGroup {
 
 interface StoryCirclesProps {
   country?: string
+  listingId?: string
 }
 
-export default function StoryCircles({ country }: StoryCirclesProps) {
+export default function StoryCircles({ country, listingId }: StoryCirclesProps) {
   const [groups, setGroups] = useState<StoryGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [viewerOpen, setViewerOpen] = useState(false)
@@ -37,13 +38,16 @@ export default function StoryCircles({ country }: StoryCirclesProps) {
   }, [])
 
   useEffect(() => {
-    const url = country ? `/api/stories?country=${encodeURIComponent(country)}` : "/api/stories"
+    const params = new URLSearchParams()
+    if (country) params.set("country", country)
+    if (listingId) params.set("listing_id", listingId)
+    const url = params.toString() ? `/api/stories?${params.toString()}` : "/api/stories"
     fetch(url)
       .then((r) => r.json())
       .then((d) => setGroups(d.groups ?? []))
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [country])
+  }, [country, listingId])
 
   if (!loading && groups.length === 0) return null
 
