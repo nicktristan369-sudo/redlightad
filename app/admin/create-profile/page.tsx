@@ -587,28 +587,40 @@ export default function CreateProfilePage() {
                     <span>⚠️</span>
                     <span>Disse videoer kan have vandmærke. Vandmærker fjernes automatisk via unwatermark.ai efter oprettelse.</span>
                   </div>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-3 flex-wrap">
                     {profile.videos.map((src, i) => {
                       const isProfileVid = profile.profile_video_url === src;
                       return (
-                        <div key={i} style={{ position: "relative" }}>
-                          <video src={`${src}#t=1`} style={{ width: 160, height: 120, borderRadius: 8, border: isProfileVid ? "3px solid #DC2626" : "1px solid #E5E5E5", background: "#000" }} />
-                          {/* Fjern */}
-                          <button onClick={() => { p("videos", profile.videos.filter((_, idx) => idx !== i)); if (isProfileVid) p("profile_video_url", null); }}
-                            style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "#DC2626", color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            ✕
-                          </button>
-                          {/* Vælg som profilbillede */}
+                        <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "stretch", width: 160 }}>
+                          {/* Video preview */}
+                          <div style={{ position: "relative" }}>
+                            <video src={`${src}#t=1`} style={{
+                              width: 160, height: 120, borderRadius: 8, background: "#000", display: "block",
+                              border: isProfileVid ? "3px solid #DC2626" : "1px solid #E5E5E5",
+                            }} />
+                            {/* ✕ fjern */}
+                            <button onClick={() => { p("videos", profile.videos.filter((_, idx) => idx !== i)); if (isProfileVid) p("profile_video_url", null); }}
+                              style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "#DC2626", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+                              ✕
+                            </button>
+                            {/* LIVE badge når valgt */}
+                            {isProfileVid && (
+                              <div style={{ position: "absolute", top: 6, left: 6, background: "#DC2626", color: "#fff", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 3, letterSpacing: "0.5px" }}>
+                                🎬 LIVE
+                              </div>
+                            )}
+                          </div>
+                          {/* Knap UNDER videoen */}
                           <button
                             onClick={() => p("profile_video_url", isProfileVid ? null : src)}
                             style={{
-                              position: "absolute", bottom: 4, left: 4, right: 4,
-                              padding: "3px 6px", fontSize: 10, fontWeight: 700,
-                              border: "none", cursor: "pointer", borderRadius: 4,
-                              background: isProfileVid ? "#DC2626" : "rgba(0,0,0,0.6)",
-                              color: "#fff", textAlign: "center" as const,
+                              width: "100%", padding: "6px 8px", fontSize: 11, fontWeight: 700,
+                              border: isProfileVid ? "none" : "1.5px solid #E5E5E5",
+                              borderRadius: 6, cursor: "pointer",
+                              background: isProfileVid ? "#DC2626" : "#fff",
+                              color: isProfileVid ? "#fff" : "#374151",
                             }}>
-                            {isProfileVid ? "✓ Profilbillede" : "🎬 Vælg som profil"}
+                            {isProfileVid ? "✓ Profilbillede valgt" : "🎬 Vælg som profilbillede"}
                           </button>
                         </div>
                       );
