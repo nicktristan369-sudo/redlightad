@@ -174,30 +174,29 @@ export default function AdDetailPage() {
           {/* Stories */}
           <StoryCircles listingId={ad.id} />
 
-          {/* Title */}
-          <div className="mb-5 flex items-start gap-3">
-            <h1 className="text-lg md:text-xl font-bold text-gray-900 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ad.title}</h1>
-            {isPremium && (
-              <span className="rounded bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
-                {ad.premium_tier}
-              </span>
-            )}
-            {ad.kyc_status === "verified" && (
-              <span style={{
-                display: "inline-flex", alignItems: "center", gap: 4,
-                background: "#1D4ED8", color: "white",
-                fontSize: 10, fontWeight: 700, letterSpacing: "0.8px",
-                padding: "3px 8px", textTransform: "uppercase" as const,
-              }}>
-                ✓ VERIFIED
-              </span>
-            )}
-          </div>
-
           {/* Two-column layout */}
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Left */}
             <div className="lg:col-span-2 space-y-6">
+              {/* Title — kun i venstre kolonne */}
+              <div className="flex items-start gap-3">
+                <h1 className="text-lg md:text-xl font-bold text-gray-900 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ad.title}</h1>
+                {isPremium && (
+                  <span className="flex-shrink-0 rounded bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
+                    {ad.premium_tier}
+                  </span>
+                )}
+                {ad.kyc_status === "verified" && (
+                  <span className="flex-shrink-0" style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    background: "#1D4ED8", color: "white",
+                    fontSize: 10, fontWeight: 700, letterSpacing: "0.8px",
+                    padding: "3px 8px", textTransform: "uppercase" as const,
+                  }}>
+                    ✓ VERIFIED
+                  </span>
+                )}
+              </div>
               {/* Desktop gallery + voice */}
               <div className="hidden md:block">
                 <AdDetailClient
