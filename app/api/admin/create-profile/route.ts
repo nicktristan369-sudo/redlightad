@@ -29,50 +29,41 @@ async function processImage(imageBuffer: Buffer): Promise<Buffer> {
 }
 
 async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
-  const apiKey = process.env.CLIPDROP_API_KEY
-  if (!apiKey) return imageBuffer
-
   try {
     const meta = await sharp(imageBuffer).metadata()
     const w = meta.width || 800
     const h = meta.height || 600
 
-    // AnnonceLight.dk vandmærke — fuld bredde, 43-55% fra top
+    // AnnonceLight.dk er et SEMI-TRANSPARENT hvidt overlay (~35% opacity)
+    // Matematisk genskabelse: original ≈ (pixel - alpha*255) / (1-alpha)
+    // Med alpha=0.35: original = pixel * 1.54 - 134
+    // Vi udtrækker regionen, anvender linear correction, og sætter den tilbage
+
     const wmX = 0
     const wmY = Math.round(h * 0.43)
     const wmW = w
     const wmH = Math.round(h * 0.12)
 
-    const maskBuffer = await sharp({
-      create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
-    }).composite([{
-      input: await sharp({
-        create: { width: wmW, height: wmH, channels: 3, background: { r: 255, g: 255, b: 255 } }
-      }).png().toBuffer(),
-      left: wmX, top: wmY,
-    }]).png().toBuffer()
+    // Udsnit af vandmærke-region
+    const region = await sharp(imageBuffer)
+      .extract({ left: wmX, top: wmY, width: wmW, height: wmH })
+      .toBuffer()
 
-    const form = new FormData()
-    form.append('image_file', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
-    form.append('mask_file', new Blob([maskBuffer.buffer as ArrayBuffer], { type: 'image/png' }), 'mask.png')
-    form.append('mode', 'quality')
+    // Linear correction: fjern hvid overlay matematisk
+    // a=1.54, b=-134 genskaber pixels under ~35% hvid overlay
+    const corrected = await sharp(region)
+      .linear(1.54, -134)
+      .toBuffer()
 
-    const res = await fetch('https://clipdrop-api.co/cleanup/v1', {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey },
-      body: form,
-      signal: AbortSignal.timeout(60000),
-    })
+    // Sæt den korrigerede region tilbage i billedet
+    const result = await sharp(imageBuffer)
+      .composite([{ input: corrected, left: wmX, top: wmY }])
+      .toBuffer()
 
-    if (!res.ok) {
-      console.error('❌ ClipDrop error:', res.status, await res.text())
-      return imageBuffer
-    }
-
-    console.log('✅ Watermark removed via ClipDrop')
-    return Buffer.from(await res.arrayBuffer())
+    console.log('✅ Watermark removed via linear correction')
+    return result
   } catch (e) {
-    console.error('❌ ClipDrop failed:', e instanceof Error ? e.message : e)
+    console.error('❌ Linear correction failed:', e instanceof Error ? e.message : e)
     return imageBuffer
   }
 }
