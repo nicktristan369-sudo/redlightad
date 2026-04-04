@@ -5,16 +5,17 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import Logo from "@/components/Logo"
 import {
-  LayoutDashboard, MessageSquare, Coins, Settings, Shield, LogOut, Heart, User,
+  LayoutDashboard, MessageSquare, Coins, Shield, LogOut, Heart, User, ShoppingBag,
 } from "lucide-react"
 
 const NAV = [
-  { href: "/kunde",          label: "Oversigt",   icon: LayoutDashboard },
-  { href: "/kunde/feed",     label: "Feed",        icon: Heart },
-  { href: "/kunde/beskeder", label: "Beskeder",    icon: MessageSquare },
-  { href: "/kunde/coins",    label: "RedCoins",    icon: Coins },
-  { href: "/kunde/profil",   label: "Min profil",  icon: User },
-  { href: "/kunde/verify",   label: "Verificer",   icon: Shield },
+  { href: "/kunde",           label: "Oversigt",   icon: LayoutDashboard },
+  { href: "/kunde/feed",      label: "Feed",        icon: Heart },
+  { href: "/kunde/beskeder",  label: "Beskeder",    icon: MessageSquare },
+  { href: "/kunde/mine-kob",  label: "Mine køb",    icon: ShoppingBag },
+  { href: "/kunde/coins",     label: "RedCoins",    icon: Coins },
+  { href: "/kunde/profil",    label: "Min profil",  icon: User },
+  { href: "/kunde/verify",    label: "Verificer",   icon: Shield },
 ]
 
 export default function KundeLayout({ children }: { children: React.ReactNode }) {
