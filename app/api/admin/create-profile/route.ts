@@ -437,6 +437,25 @@ export async function POST(req: NextRequest) {
 
   console.log('Listing insert result:', listingData, listingError)
 
+  // Gem videoer i listing_videos tabel
+  const listingId = listingData?.[0]?.id
+  if (listingId && profile.videos && profile.videos.length > 0) {
+    const videoInserts = profile.videos.map((url: string, i: number) => ({
+      listing_id: listingId,
+      url,
+      thumbnail_url: null,
+      title: null,
+      is_locked: false,
+      redcoin_price: 0,
+      views: 0,
+      likes: 0,
+      sort_order: i,
+    }))
+    const { error: videoError } = await supabase.from('listing_videos').insert(videoInserts)
+    if (videoError) console.error('Video insert error:', videoError.message)
+    else console.log(`✅ ${profile.videos.length} videoer gemt`)
+  }
+
   if (listingError) {
     console.error('LISTING INSERT ERROR:', JSON.stringify(listingError))
     return Response.json({ error: 'Bruger oprettet men listing fejlede: ' + listingError.message }, { status: 500 })
