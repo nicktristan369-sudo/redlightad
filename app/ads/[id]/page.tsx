@@ -14,6 +14,7 @@ import TravelBox from "@/components/TravelBox";
 import type { TravelEntry } from "@/components/TravelBox";
 import TravelScheduleSection from "@/components/TravelScheduleSection";
 import StickyActionBar from "@/components/StickyActionBar";
+import SendMessageBox from "@/components/SendMessageBox";
 import ReportModal from "@/components/ReportModal";
 import PhotoGrid from "@/components/PhotoGrid";
 import PrivateContentPreview from "@/components/PrivateContentPreview";
@@ -360,6 +361,12 @@ export default function AdDetailPage() {
                   profileImage: ad.profile_image,
                   name: ad.title,
                 }} />
+                <SendMessageBox
+                  listingId={ad.id}
+                  listingTitle={ad.title}
+                  profileImage={ad.profile_image ?? ad.images?.[0] ?? null}
+                  isLoggedIn={currentUserId !== null}
+                />
               </div>
             </div>
           </div>
