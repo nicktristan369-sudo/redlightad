@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Play, Lock, Eye, Heart, Share2, Search } from "lucide-react"
-import { SUPPORTED_COUNTRIES } from "@/lib/countries"
+import { Search, Play, Share2, Bookmark, User } from "lucide-react"
+import Link from "next/link"
 
 type Video = {
   id: string
@@ -13,35 +13,191 @@ type Video = {
   redcoin_price: number
   views: number
   likes: number
-  duration: number | null
   created_at: string
+  listing_id: string
   listings: {
-    name: string
+    id: string
+    title: string
     city: string | null
     country: string | null
-    slug: string
+    profile_image: string | null
+    premium_tier: string | null
   }
 }
 
 type Props = { videos: Video[] }
 
-function formatDuration(seconds: number) {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${s.toString().padStart(2, "0")}`
-}
-
 function formatCount(n: number) {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
   return n.toString()
 }
 
-function getCountryCode(countryName: string | null): string | null {
-  if (!countryName) return null
-  const c = SUPPORTED_COUNTRIES.find(
-    (c) => c.name.toLowerCase() === countryName.toLowerCase()
+function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => void }) {
+  const listing = video.listings
+  const isVip = listing.premium_tier === "vip"
+  const isFeatured = listing.premium_tier === "featured"
+  const location = [listing.city, listing.country].filter(Boolean).join(", ").toUpperCase()
+
+  const handlePlay = () => {
+    fetch("/api/videos/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ videoId: video.id }),
+    }).catch(() => {})
+    window.location.href = `/ads/${listing.id}#videos`
+  }
+
+  return (
+    <div style={{ background: "#1a1a1a", display: "flex", flexDirection: "column" }}>
+      {/* Thumbnail */}
+      <div
+        className="relative cursor-pointer group"
+        style={{ aspectRatio: "3/4", overflow: "hidden", background: "#0a0a0a" }}
+        onClick={handlePlay}
+      >
+        {/* Image / video frame */}
+        {video.thumbnail_url ? (
+          <img
+            src={video.thumbnail_url}
+            alt={listing.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <video
+            src={`${video.url}#t=1`}
+            preload="metadata"
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+            style={{ pointerEvents: "none" }}
+          />
+        )}
+
+        {/* Dark gradient overlay at bottom */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)",
+        }} />
+
+        {/* VIP badge */}
+        {(isVip || isFeatured) && (
+          <div style={{
+            position: "absolute", top: 10, left: 10,
+            background: isVip ? "#F59E0B" : "#6B7280",
+            color: isVip ? "#000" : "#fff",
+            fontSize: 9, fontWeight: 800, letterSpacing: "0.15em",
+            padding: "3px 8px", textTransform: "uppercase",
+          }}>
+            {isVip ? "VIP" : "FEAT"}
+          </div>
+        )}
+
+        {/* Play button — center */}
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: "50%",
+            border: "2px solid rgba(255,255,255,0.85)",
+            background: "rgba(0,0,0,0.35)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "transform 0.2s, background 0.2s",
+          }}
+            className="group-hover:scale-110 group-hover:bg-red-600/70"
+          >
+            <Play size={20} fill="white" color="white" style={{ marginLeft: 3 }} />
+          </div>
+        </div>
+
+        {/* Name + location bottom-left */}
+        <div style={{ position: "absolute", bottom: 10, left: 12, right: 12 }}>
+          <p style={{
+            fontSize: 13, fontWeight: 800, color: "#fff",
+            letterSpacing: "0.05em", textTransform: "uppercase",
+            textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+            lineHeight: 1.2, marginBottom: 2,
+          }}>
+            {listing.title.toUpperCase()}
+          </p>
+          {location && (
+            <p style={{
+              fontSize: 10, color: "rgba(255,255,255,0.75)",
+              letterSpacing: "0.04em", textTransform: "uppercase",
+              textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+            }}>
+              {location}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Action bar */}
+      <div style={{
+        display: "flex", alignItems: "center",
+        background: "#1a1a1a",
+        borderTop: "1px solid #2a2a2a",
+        padding: "0",
+      }}>
+        {/* Profile */}
+        <Link
+          href={`/ads/${listing.id}`}
+          style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "12px 0", borderRight: "1px solid #2a2a2a",
+            color: "rgba(255,255,255,0.55)", textDecoration: "none",
+            transition: "color 0.15s",
+          }}
+          title="Visit profile"
+        >
+          <User size={16} />
+        </Link>
+
+        {/* Play */}
+        <button
+          onClick={handlePlay}
+          style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "12px 0", borderRight: "1px solid #2a2a2a",
+            color: "rgba(255,255,255,0.55)", background: "none", cursor: "pointer",
+            transition: "color 0.15s",
+          }}
+          title="Play video"
+        >
+          <Play size={16} />
+        </button>
+
+        {/* Share */}
+        <button
+          onClick={() => onShare(video)}
+          style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "12px 0", borderRight: "1px solid #2a2a2a",
+            color: "rgba(255,255,255,0.55)", background: "none", cursor: "pointer",
+            transition: "color 0.15s",
+          }}
+          title="Share"
+        >
+          <Share2 size={16} />
+        </button>
+
+        {/* Bookmark */}
+        <button
+          style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "12px 0",
+            color: "rgba(255,255,255,0.55)", background: "none", border: "none",
+            cursor: "pointer",
+            transition: "color 0.15s",
+          }}
+          title="Save"
+        >
+          <Bookmark size={16} />
+        </button>
+      </div>
+    </div>
   )
-  return c?.code || null
 }
 
 export default function VideoGrid({ videos }: Props) {
@@ -49,25 +205,16 @@ export default function VideoGrid({ videos }: Props) {
   const [sort, setSort] = useState<"newest" | "most_viewed" | "most_liked">("newest")
   const [toast, setToast] = useState<string | null>(null)
 
-  const filteredVideos = videos
-    .filter((v) => !search || v.listings.name.toLowerCase().includes(search.toLowerCase()))
+  const filtered = videos
+    .filter(v => !search || v.listings.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       if (sort === "most_viewed") return b.views - a.views
       if (sort === "most_liked") return b.likes - a.likes
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
-  const handleCardClick = (video: Video) => {
-    fetch("/api/videos/view", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videoId: video.id }),
-    })
-    window.location.href = `/ads/${video.listings.slug}#videos`
-  }
-
   const handleShare = (video: Video) => {
-    navigator.clipboard.writeText(`https://redlightad.com/ads/${video.listings.slug}#videos`)
+    navigator.clipboard.writeText(`https://redlightad.com/ads/${video.listings.id}#videos`)
     setToast("Link copied!")
     setTimeout(() => setToast(null), 2500)
   }
@@ -77,18 +224,25 @@ export default function VideoGrid({ videos }: Props) {
       {/* Filter bar */}
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#555" }} />
           <input
             placeholder="Search profiles..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-300 focus:outline-none transition-all"
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: "100%", background: "#222", border: "1px solid #333",
+              color: "#fff", padding: "10px 12px 10px 36px", fontSize: 14,
+              outline: "none",
+            }}
           />
         </div>
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value as any)}
-          className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-gray-300 focus:outline-none transition-all"
+          onChange={e => setSort(e.target.value as any)}
+          style={{
+            background: "#222", border: "1px solid #333", color: "#fff",
+            padding: "10px 16px", fontSize: 14, outline: "none", cursor: "pointer",
+          }}
         >
           <option value="newest">Newest</option>
           <option value="most_viewed">Most Viewed</option>
@@ -96,103 +250,23 @@ export default function VideoGrid({ videos }: Props) {
         </select>
       </div>
 
-      {/* Grid */}
-      {filteredVideos.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No videos found</h2>
-          <p className="text-gray-500">Check back soon for new content</p>
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "80px 0", color: "#555" }}>
+          <p style={{ fontSize: 16, fontWeight: 600, color: "#777" }}>No videos found</p>
+          <p style={{ fontSize: 13, marginTop: 6 }}>Check back soon for new content</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {filteredVideos.map((video) => {
-            const countryCode = getCountryCode(video.listings.country)
-            return (
-              <div
-                key={video.id}
-                className="group cursor-pointer"
-                onClick={() => handleCardClick(video)}
-              >
-                {/* Thumbnail */}
-                <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden mb-3">
-                  {video.thumbnail_url ? (
-                    <img
-                      src={video.thumbnail_url}
-                      alt={video.title || ""}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                      <Play className="w-10 h-10 text-gray-600" />
-                    </div>
-                  )}
-
-                  {/* Lock overlay */}
-                  {video.is_locked && (
-                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1">
-                      <Lock className="w-6 h-6 text-white" />
-                      <span className="text-white text-xs font-medium">
-                        {video.redcoin_price} RedCoins
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Duration badge */}
-                  {video.duration != null && (
-                    <span className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded font-mono">
-                      {formatDuration(video.duration)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Info row */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {video.listings.name}
-                      {countryCode && (
-                        <span
-                          className={`ml-1.5 fi fi-${countryCode}`}
-                          style={{ width: 16, height: 11, display: "inline-block", verticalAlign: "middle" }}
-                        />
-                      )}
-                    </p>
-                    {(video.listings.city || video.listings.country) && (
-                      <p className="text-xs text-gray-500 truncate">
-                        {[video.listings.city, video.listings.country].filter(Boolean).join(", ")}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                        {formatCount(video.views)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3 h-3" />
-                        {formatCount(video.likes)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Share button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleShare(video)
-                    }}
-                    className="flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <Share2 className="w-4 h-4 text-gray-400" />
-                  </button>
-                </div>
-              </div>
-            )
-          })}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}
+          className="md:grid-cols-3 sm:grid-cols-2">
+          {filtered.map(v => (
+            <VideoCard key={v.id} video={v} onShare={handleShare} />
+          ))}
         </div>
       )}
 
-      {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm px-4 py-2 rounded-xl shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-white text-sm px-4 py-2 shadow-lg"
+          style={{ background: "#DC2626" }}>
           {toast}
         </div>
       )}
