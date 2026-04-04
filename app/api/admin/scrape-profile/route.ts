@@ -6,18 +6,33 @@ export async function POST(req: NextRequest) {
 
   const res = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml',
-      'Accept-Language': 'da-DK,da;q=0.9',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'da-DK,da;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124"',
+      'Sec-Ch-Ua-Mobile': '?0',
+      'Sec-Ch-Ua-Platform': '"Windows"',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+      'Upgrade-Insecure-Requests': '1',
+      'Referer': new URL(url).origin,
     },
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(15000),
   })
 
   const html = await res.text()
+  console.log(`[scrape] ${url} → status=${res.status} size=${html.length} isNympho=${new URL(url).hostname.includes('nympho')}`)
   const $ = cheerio.load(html)
 
-  const display_name = $('h1').first().text().trim() ||
-    $('[class*="name"]').first().text().trim() || ''
+  const display_name = (isNympho
+    ? $('.client_name').first().text().trim() || $('h1').first().text().trim()
+    : $('h1').first().text().trim() || $('[class*="name"]').first().text().trim()
+  ) || ''
 
   const telLink = $('a[href^="tel:"]').first().attr('href')
   let phone = ''
@@ -29,6 +44,19 @@ export async function POST(req: NextRequest) {
   }
 
   const description = (() => {
+    if (isNympho) {
+      // Nympho.dk: beskrivelse er i .description, .profile-text, eller lange <p> tags
+      const nymphoCandidates = [
+        $('.description').text().trim(),
+        $('.profile-text').text().trim(),
+        $('[class*="description"]').not('[class*="meta"]').first().text().trim(),
+        $('p').filter((_, el) => {
+          const text = $(el).text()
+          return text.length > 80
+        }).first().text().trim(),
+      ]
+      return nymphoCandidates.find(c => c && c.length > 30) || ''
+    }
     const candidates = [
       $('[class*="desc"]').text().trim(),
       $('[class*="about"]').text().trim(),
