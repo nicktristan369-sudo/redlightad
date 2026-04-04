@@ -37,35 +37,24 @@ async function removeWatermarkClipDrop(imageBuffer: Buffer): Promise<Buffer> {
     const w = meta.width || 800
     const h = meta.height || 600
 
-    // Præcis, smal mask — kun selve teksten "AnnonceLight.dk"
-    // Teksten er ca. 5% af billedets højde, placeret ved 44-49% fra top
+    // Mask der dækkede vandmærket korrekt (bekræftet virker)
     const wmX = 0
-    const wmY = Math.round(h * 0.44)
-    const wmW = Math.round(w * 0.82)  // teksten fylder ikke hele bredden
-    const wmH = Math.round(h * 0.055) // kun tekst-højden, ikke hele regionen
-
-    // Byg præcis mask med bløde kanter (feathering via blur)
-    const textMask = await sharp({
-      create: { width: wmW, height: wmH, channels: 3, background: { r: 255, g: 255, b: 255 } }
-    }).png().toBuffer()
+    const wmY = Math.round(h * 0.43)
+    const wmW = w
+    const wmH = Math.round(h * 0.12)
 
     const maskBuffer = await sharp({
       create: { width: w, height: h, channels: 3, background: { r: 0, g: 0, b: 0 } }
-    })
-      .composite([{ input: textMask, left: wmX, top: wmY }])
-      .blur(4) // bløde kanter for bedre blending
-      .png()
-      .toBuffer()
-
-    // Konverter blur-mask til rent sort/hvid (ClipDrop krav)
-    const hardMask = await sharp(maskBuffer)
-      .threshold(128)
-      .png()
-      .toBuffer()
+    }).composite([{
+      input: await sharp({
+        create: { width: wmW, height: wmH, channels: 3, background: { r: 255, g: 255, b: 255 } }
+      }).png().toBuffer(),
+      left: wmX, top: wmY,
+    }]).png().toBuffer()
 
     const form = new FormData()
     form.append('image_file', new Blob([imageBuffer.buffer as ArrayBuffer], { type: 'image/jpeg' }), 'image.jpg')
-    form.append('mask_file', new Blob([hardMask.buffer as ArrayBuffer], { type: 'image/png' }), 'mask.png')
+    form.append('mask_file', new Blob([maskBuffer.buffer as ArrayBuffer], { type: 'image/png' }), 'mask.png')
     form.append('mode', 'quality')
 
     const res = await fetch('https://clipdrop-api.co/cleanup/v1', {
