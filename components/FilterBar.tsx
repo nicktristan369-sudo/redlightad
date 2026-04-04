@@ -2,10 +2,164 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal } from "lucide-react"
+import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Check } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
 import { GENDERS } from "@/lib/constants/genders"
 import { SUPPORTED_COUNTRIES, getCountryByName, slugify, COUNTRIES, getCountryEntryByCode, getCountryEntryByName, COUNTRY_CITIES } from "@/lib/countries"
+
+// ── Filter Drawer ─────────────────────────────────────────────────────────────
+function FilterDrawer({
+  onClose,
+  onApply,
+  initial,
+}: {
+  onClose: () => void
+  onApply: (filters: Record<string, string>) => void
+  initial: Record<string, string>
+}) {
+  const [ageMin, setAgeMin] = useState(initial.age_min ?? "")
+  const [ageMax, setAgeMax] = useState(initial.age_max ?? "")
+  const [premiumOnly, setPremiumOnly] = useState(initial.premium_only === "1")
+  const [hasVideo, setHasVideo] = useState(initial.has_video === "1")
+  const [sort, setSort] = useState(initial.sort ?? "premium")
+
+  const SORT_OPTIONS = [
+    { value: "premium", label: "Premium first" },
+    { value: "newest",  label: "Newest first" },
+    { value: "oldest",  label: "Oldest first" },
+  ]
+
+  const apply = () => {
+    const f: Record<string, string> = { sort }
+    if (ageMin)       f.age_min       = ageMin
+    if (ageMax)       f.age_max       = ageMax
+    if (premiumOnly)  f.premium_only  = "1"
+    if (hasVideo)     f.has_video     = "1"
+    onApply(f)
+  }
+
+  const reset = () => {
+    setAgeMin(""); setAgeMax(""); setPremiumOnly(false); setHasVideo(false); setSort("premium")
+  }
+
+  const Toggle = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
+    <div className="flex items-center justify-between py-3 border-b border-gray-100">
+      <span className="text-sm text-gray-800">{label}</span>
+      <button
+        onClick={() => onChange(!value)}
+        style={{
+          width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
+          background: value ? "#DC2626" : "#D1D5DB", position: "relative", transition: "background 0.2s",
+          flexShrink: 0,
+        }}
+      >
+        <span style={{
+          position: "absolute", top: 2, left: value ? 22 : 2,
+          width: 20, height: 20, borderRadius: "50%", background: "#fff",
+          transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", display: "block",
+        }} />
+      </button>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[200] bg-black/40"
+        onClick={onClose}
+      />
+      {/* Drawer */}
+      <div
+        className="fixed right-0 top-0 bottom-0 z-[201] bg-white flex flex-col"
+        style={{ width: "min(380px, 100vw)", boxShadow: "-4px 0 24px rgba(0,0,0,0.12)" }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="text-base font-bold text-gray-900">Filters</h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
+            <X size={18} color="#374151" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-2">
+
+          {/* Sort */}
+          <div className="mb-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 mt-3">Sort by</p>
+            <div className="flex flex-col gap-1">
+              {SORT_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setSort(opt.value)}
+                  className="flex items-center justify-between px-3 py-2.5 text-sm border transition-colors"
+                  style={{
+                    borderRadius: 0,
+                    border: sort === opt.value ? "1px solid #DC2626" : "1px solid #E5E7EB",
+                    background: sort === opt.value ? "#FEF2F2" : "#fff",
+                    color: sort === opt.value ? "#DC2626" : "#374151",
+                    fontWeight: sort === opt.value ? 600 : 400,
+                  }}
+                >
+                  {opt.label}
+                  {sort === opt.value && <Check size={14} />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Age range */}
+          <div className="mb-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Age range</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number" min="18" max="99" placeholder="Min"
+                value={ageMin}
+                onChange={e => setAgeMin(e.target.value)}
+                style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }}
+              />
+              <span className="text-gray-400 text-sm">–</span>
+              <input
+                type="number" min="18" max="99" placeholder="Max"
+                value={ageMax}
+                onChange={e => setAgeMax(e.target.value)}
+                style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }}
+              />
+            </div>
+          </div>
+
+          {/* Toggles */}
+          <div className="mb-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Show only</p>
+            <Toggle label="Premium profiles" value={premiumOnly} onChange={setPremiumOnly} />
+            <Toggle label="Has video" value={hasVideo} onChange={setHasVideo} />
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+          <button
+            onClick={reset}
+            className="flex-1 py-2.5 text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+            style={{ borderRadius: 0 }}
+          >
+            Reset
+          </button>
+          <button
+            onClick={apply}
+            className="flex-1 py-2.5 text-sm font-bold text-white transition-colors"
+            style={{ borderRadius: 0, background: "#111" }}
+          >
+            Apply filters
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function getCountryEmoji(name: string): string {
   const map: Record<string, string> = {
@@ -258,6 +412,7 @@ function FilterBarInner() {
   const searchParams = useSearchParams()
   const ref = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState<string | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [q, setQ] = useState(searchParams.get("q") ?? "")
 
   const category = searchParams.get("category") ?? ""
@@ -312,9 +467,27 @@ function FilterBarInner() {
     ? <span className={`fi fi-${countryCode}`} style={{ width: 16, height: 11, display: "inline-block", flexShrink: 0 }} />
     : <MapPin size={13} />
 
-  const hasFilters = category || countryCode || citySlug || gender || q
+  const ageMin      = searchParams.get("age_min") ?? ""
+  const ageMax      = searchParams.get("age_max") ?? ""
+  const premiumOnly = searchParams.get("premium_only") ?? ""
+  const hasVideo    = searchParams.get("has_video") ?? ""
+  const sort        = searchParams.get("sort") ?? ""
+
+  const hasFilters = category || countryCode || citySlug || gender || q || ageMin || ageMax || premiumOnly || hasVideo || sort
+
+  const applyDrawer = (filters: Record<string, string>) => {
+    const p = new URLSearchParams(searchParams.toString())
+    // Clear old drawer filters
+    ;["age_min","age_max","premium_only","has_video","sort"].forEach(k => p.delete(k))
+    // Set new ones
+    Object.entries(filters).forEach(([k,v]) => v ? p.set(k,v) : p.delete(k))
+    const qs = p.toString()
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    setDrawerOpen(false)
+  }
 
   return (
+    <>
     <div ref={ref} className="bg-white border-b border-gray-200" style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-2">
 
@@ -397,30 +570,56 @@ function FilterBarInner() {
               )}
             </div>
 
-            {/* Filters / Clear */}
+            {/* Filters drawer button */}
             <div className="relative">
-              {hasFilters ? (
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border transition-colors"
+                style={{
+                  borderRadius: 0,
+                  border: (ageMin || ageMax || premiumOnly || hasVideo || sort) ? "1px solid #DC2626" : "1px solid #E5E7EB",
+                  background: (ageMin || ageMax || premiumOnly || hasVideo || sort) ? "#FEF2F2" : "#fff",
+                  color: (ageMin || ageMax || premiumOnly || hasVideo || sort) ? "#DC2626" : "#374151",
+                }}
+              >
+                <SlidersHorizontal size={13} />
+                Filters
+                {(ageMin || ageMax || premiumOnly || hasVideo || sort) && (
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#DC2626", flexShrink: 0 }} />
+                )}
+              </button>
+            </div>
+
+            {/* Clear all — shown when any filter active */}
+            {hasFilters && (
+              <div className="relative">
                 <button
-                  onClick={() => { router.push("/"); update({ category: "", gender: "", q: "" }); setQ("") }}
+                  onClick={() => { router.push("/"); setQ("") }}
                   className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-red-200 text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
                   style={{ borderRadius: 0 }}
                 >
                   <X size={13} /> Clear
                 </button>
-              ) : (
-                <button
-                  className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
-                  style={{ borderRadius: 0 }}
-                >
-                  <SlidersHorizontal size={13} /> Filters
-                </button>
-              )}
-            </div>
+              </div>
+            )}
 
           </div>
         </div>
       </div>
     </div>
+
+    {/* Filter drawer */}
+    {drawerOpen && (
+      <FilterDrawer
+        onClose={() => setDrawerOpen(false)}
+        onApply={applyDrawer}
+        initial={{
+          age_min: ageMin, age_max: ageMax,
+          premium_only: premiumOnly, has_video: hasVideo, sort,
+        }}
+      />
+    )}
+    </>
   )
 }
 
