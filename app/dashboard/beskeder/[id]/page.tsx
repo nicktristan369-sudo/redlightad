@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 import { ArrowLeft, Send } from "lucide-react"
 import CustomerProfileCard from "@/components/CustomerProfileCard"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface Message {
   id: string
@@ -38,6 +39,7 @@ interface CustomerProfile {
 }
 
 export default function ChatPage() {
+  const { t } = useLanguage()
   const params = useParams()
   const convId = params.id as string
   const router = useRouter()
@@ -74,7 +76,6 @@ export default function ChatPage() {
       }
       setConv(c)
 
-      // Hent kundeprofil via API (omgår RLS)
       const customerId = c.provider_id === user.id ? c.customer_id : c.provider_id
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
@@ -90,7 +91,6 @@ export default function ChatPage() {
         }
       }
 
-      // Hent beskeder
       const { data: msgs } = await supabase
         .from("messages")
         .select("*")
@@ -99,11 +99,9 @@ export default function ChatPage() {
       setMessages(msgs || [])
       setLoading(false)
 
-      // Mark læst
       const unreadField = user.id === c.provider_id ? "provider_unread" : "customer_unread"
       await supabase.from("conversations").update({ [unreadField]: 0 }).eq("id", convId)
 
-      // Realtime
       const channel = supabase
         .channel(`chat:${convId}`)
         .on("postgres_changes", {
@@ -125,12 +123,10 @@ export default function ChatPage() {
     setNewMessage("")
     const supabase = createClient()
     await supabase.from("messages").insert({ conversation_id: convId, sender_id: userId, content })
-    const otherField = userId === conv.provider_id ? "customer_unread" : "provider_unread"
     await supabase.from("conversations").update({
       last_message: content,
       last_message_at: new Date().toISOString(),
     }).eq("id", convId)
-    // increment other_unread (best effort)
     await supabase.rpc("increment_provider_unread", { conv_id: convId }).then(() => {})
     setSending(false)
     inputRef.current?.focus()
@@ -146,7 +142,7 @@ export default function ChatPage() {
     else grouped[grouped.length - 1].msgs.push(m)
   }
 
-  const customerName = customer?.username || "Kunde"
+  const customerName = customer?.username || t.preview_anon
   const customerAvatar = customer?.avatar_url || null
   const customerInitials = customerName.slice(0, 2).toUpperCase()
 
@@ -168,16 +164,15 @@ export default function ChatPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexShrink: 0 }}>
           <button onClick={() => router.push("/dashboard/beskeder")}
             style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: 0 }}>
-            <ArrowLeft size={16} /> Tilbage
+            <ArrowLeft size={16} /> {t.chat_back}
           </button>
 
-          {/* Kunde-avatar (klikbar → profil popup) */}
           <button onClick={() => setShowProfile(true)}
             style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 10 }}>
             <AvatarBubble size={38} />
             <div style={{ textAlign: "left" }}>
               <p style={{ fontSize: 14, fontWeight: 800, color: "#111", margin: 0 }}>{customerName}</p>
-              <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>Se kundeprofil →</p>
+              <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>{t.chat_view_profile}</p>
             </div>
           </button>
         </div>
@@ -191,7 +186,7 @@ export default function ChatPage() {
               </div>
             ) : messages.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                <p style={{ fontSize: 13, color: "#9CA3AF" }}>Ingen beskeder endnu</p>
+                <p style={{ fontSize: 13, color: "#9CA3AF" }}>{t.chat_no_messages}</p>
               </div>
             ) : (
               grouped.map(({ date, msgs }) => (
@@ -242,7 +237,7 @@ export default function ChatPage() {
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") sendMessage() }}
-              placeholder="Skriv en besked..."
+              placeholder={t.chat_placeholder}
               style={{ flex: 1, padding: "10px 16px", fontSize: 14, border: "1px solid #E5E7EB", borderRadius: 24, outline: "none", background: "#F9FAFB" }}
             />
             <button onClick={sendMessage} disabled={!newMessage.trim() || sending}

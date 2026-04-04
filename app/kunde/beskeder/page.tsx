@@ -4,6 +4,7 @@ import Link from "next/link"
 import { MessageSquare } from "lucide-react"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface Conv {
   id: string
@@ -17,6 +18,7 @@ interface Conv {
 }
 
 export default function KundeBeskeder() {
+  const { t } = useLanguage()
   const [convos, setConvos] = useState<Conv[]>([])
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,8 +49,8 @@ export default function KundeBeskeder() {
   return (
     <KundeLayout>
       <div style={{ maxWidth: 600 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>Beskeder</h1>
-        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Private samtaler — kun synlige for dig og profilen</p>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{t.msg_title}</h1>
+        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>{t.msg_subtitle}</p>
 
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB", overflow: "hidden" }}>
           {loading ? (
@@ -59,10 +61,10 @@ export default function KundeBeskeder() {
           ) : convos.length === 0 ? (
             <div style={{ padding: "48px 24px", textAlign: "center" }}>
               <MessageSquare size={36} color="#E5E7EB" style={{ margin: "0 auto 12px" }} />
-              <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Ingen samtaler endnu</p>
-              <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Kontakt en profil for at starte en privat samtale</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 6 }}>{t.msg_no_convos}</p>
+              <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>{t.msg_no_convos_sub}</p>
               <Link href="/" style={{ display: "inline-block", padding: "10px 20px", background: "#000", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-                Find en profil
+                {t.msg_find_profile}
               </Link>
             </div>
           ) : (
@@ -73,7 +75,7 @@ export default function KundeBeskeder() {
                   style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", textDecoration: "none", borderBottom: i < convos.length - 1 ? "1px solid #F3F4F6" : "none" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#FAFAFA")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                  {/* Profil avatar */}
+                  {/* Profile avatar */}
                   <div style={{ width: 46, height: 46, borderRadius: "50%", background: "#E5E7EB", overflow: "hidden", flexShrink: 0, border: "2px solid #F3F4F6" }}>
                     {c.listings?.profile_image
                       ? <img src={c.listings.profile_image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -89,7 +91,7 @@ export default function KundeBeskeder() {
                       <span style={{ fontSize: 11, color: "#9CA3AF", flexShrink: 0, marginLeft: 8 }}>{fmt(c.last_message_at)}</span>
                     </div>
                     <p style={{ fontSize: 12, color: unread > 0 ? "#374151" : "#9CA3AF", fontWeight: unread > 0 ? 600 : 400, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.last_message || "Ingen beskeder endnu"}
+                      {c.last_message || t.msg_no_messages}
                     </p>
                   </div>
                   {unread > 0 && (

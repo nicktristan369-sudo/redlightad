@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Send, MessageSquare, Lock } from "lucide-react"
 import { createClient } from "@/lib/supabase"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface Props {
   listingId: string
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function SendMessageBox({ listingId, listingTitle, profileImage, isLoggedIn }: Props) {
+  const { t } = useLanguage()
   const [msg, setMsg] = useState("")
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
@@ -23,7 +25,6 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
     setSending(true)
     setError("")
     try {
-      // Hent session token
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
@@ -42,7 +43,7 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
       setSent(true)
       setMsg("")
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Kunne ikke sende beskeden. Prøv igen.")
+      setError(e instanceof Error ? e.message : t.common_error)
     }
     setSending(false)
   }
@@ -64,7 +65,7 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
         <div style={{ minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <MessageSquare size={14} color="#DC2626" />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>Send besked</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{t.msg_send_title}</span>
           </div>
           <p style={{ fontSize: 11, color: "#9CA3AF", margin: "1px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{listingTitle}</p>
         </div>
@@ -73,37 +74,34 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
       {/* Body */}
       <div style={{ padding: "14px 16px" }}>
         {!isLoggedIn ? (
-          /* Ikke logget ind */
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
               <Lock size={18} color="#DC2626" />
             </div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#111", marginBottom: 4 }}>Log ind for at sende beskeder</p>
-            <p style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 14, lineHeight: 1.5 }}>Platform beskeder er 100% anonyme — kun dit brugernavn vises</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#111", marginBottom: 4 }}>{t.msg_login_required}</p>
+            <p style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 14, lineHeight: 1.5 }}>{t.msg_login_sub}</p>
             <div style={{ display: "flex", gap: 8 }}>
               <Link href="/register" style={{ flex: 1, display: "block", padding: "9px 0", background: "#DC2626", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none", textAlign: "center" }}>
-                Opret gratis konto
+                {t.msg_create_free}
               </Link>
               <Link href="/login" style={{ flex: 1, display: "block", padding: "9px 0", background: "#F3F4F6", color: "#374151", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none", textAlign: "center" }}>
-                Log ind
+                {t.msg_login_link}
               </Link>
             </div>
           </div>
         ) : sent ? (
-          /* Sent */
           <div style={{ textAlign: "center", padding: "12px 0" }}>
             <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
               <Send size={18} color="#16A34A" />
             </div>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#16A34A", marginBottom: 4 }}>Besked sendt!</p>
-            <p style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12 }}>Du får svar i din indbakke</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#16A34A", marginBottom: 4 }}>{t.msg_sent}</p>
+            <p style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12 }}>{t.msg_sent_sub}</p>
             <button onClick={() => setSent(false)}
               style={{ width: "100%", padding: "9px", border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12, fontWeight: 600, color: "#374151", background: "#F9FAFB", cursor: "pointer" }}>
-              Send ny besked
+              {t.msg_send_new}
             </button>
           </div>
         ) : (
-          /* Skriv besked */
           <div>
             <div style={{
               border: "1px solid #E5E7EB", borderRadius: 8, overflow: "hidden",
@@ -114,14 +112,14 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
               <textarea
                 value={msg}
                 onChange={e => setMsg(e.target.value)}
-                placeholder="Skriv din besked…"
+                placeholder={t.msg_placeholder}
                 rows={3}
                 maxLength={500}
                 style={{ width: "100%", padding: "10px 12px", fontSize: 13, border: "none", outline: "none", resize: "none", background: "transparent", boxSizing: "border-box", color: "#111", lineHeight: 1.5 }}
                 onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }}
               />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", borderTop: "1px solid #F3F4F6" }}>
-                <span style={{ fontSize: 10, color: "#9CA3AF" }}>{msg.length}/500 · Cmd+Enter sender</span>
+                <span style={{ fontSize: 10, color: "#9CA3AF" }}>{msg.length}/500 · {t.msg_cmd_enter}</span>
                 <button
                   onClick={send}
                   disabled={!msg.trim() || sending}
@@ -136,13 +134,13 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
                   {sending
                     ? <div style={{ width: 12, height: 12, border: "1.5px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
                     : <Send size={12} />}
-                  Send
+                  {t.common_send}
                 </button>
               </div>
             </div>
             {error && <p style={{ fontSize: 11, color: "#DC2626", marginTop: 6 }}>{error}</p>}
             <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 8, lineHeight: 1.5 }}>
-              🔒 100% anonymt — kun dit brugernavn vises
+              {t.msg_anonymous}
             </p>
           </div>
         )}
