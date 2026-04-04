@@ -176,93 +176,110 @@ export default function PhotoGallery({
           ════════════════════════════════════════════════════════ */}
       <div className="overflow-hidden" style={{ border: "none", outline: "none", boxShadow: "none" }}>
 
-        {/* ── DESKTOP: 3-panel layout ─────────────────────────── */}
+        {/* ── DESKTOP: full-width 3-panel ─────────────────────── */}
         <div className="hidden md:block">
           <div
-            className="relative flex items-center justify-center gap-3 px-10 py-5"
-            style={{ background: "#1C1C1E", minHeight: "320px" }}
+            className="relative w-full overflow-hidden"
+            style={{ background: "#111", height: 500 }}
+            onTouchStart={handleGalTouchStart}
+            onTouchEnd={handleGalTouchEnd}
           >
-            {/* Left arrow */}
+            {/* Side + center layout — absolute positioned */}
+            <div className="absolute inset-0 flex items-stretch">
+
+              {/* Left peek — 15% wide, slightly blurred/dimmed */}
+              {count > 1 && (
+                <div
+                  className="relative flex-shrink-0 cursor-pointer overflow-hidden"
+                  style={{ width: "15%", opacity: 0.45, filter: "brightness(0.7)" }}
+                  onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
+                >
+                  <img src={images[prevIdx]} alt="" className="w-full h-full object-cover" draggable={false} />
+                  {isLocked(prevIdx) && (
+                    <div className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
+                      <Lock size={20} color="#fff" />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Center — fills remaining space */}
+              <div
+                className="relative flex-1 cursor-pointer group overflow-hidden"
+                onClick={() => openLightbox(activeIndex)}
+              >
+                <img
+                  src={images[activeIndex]}
+                  alt={`${name} photo ${activeIndex + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  draggable={false}
+                />
+                {/* Counter */}
+                <div
+                  className="absolute top-4 left-4 text-[13px] font-bold text-white select-none"
+                  style={{ background: "rgba(0,0,0,0.55)", padding: "4px 10px", borderRadius: 2 }}
+                >
+                  {activeIndex + 1} / {count}
+                </div>
+                {/* Expand icon */}
+                <button
+                  className="absolute top-4 right-4 flex items-center justify-center"
+                  style={{ width: 34, height: 34, background: "rgba(0,0,0,0.50)", borderRadius: 2 }}
+                  onClick={(e) => { e.stopPropagation(); openLightbox(activeIndex); }}
+                  aria-label="Fullscreen"
+                >
+                  <Maximize2 size={15} color="#fff" />
+                </button>
+              </div>
+
+              {/* Right peek — 15% wide */}
+              {count > 1 && (
+                <div
+                  className="relative flex-shrink-0 cursor-pointer overflow-hidden"
+                  style={{ width: "15%", opacity: 0.45, filter: "brightness(0.7)" }}
+                  onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
+                >
+                  <img src={images[nextIdx]} alt="" className="w-full h-full object-cover" draggable={false} />
+                  {isLocked(nextIdx) && (
+                    <div className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
+                      <Lock size={20} color="#fff" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Left arrow — large, TS4Rent style */}
             {count > 1 && (
               <button
                 onClick={prevGal}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded transition-all hover:bg-white/25"
-                style={{ width: 36, height: 36, background: "rgba(255,255,255,0.14)" }}
+                className="absolute left-[14%] top-1/2 -translate-y-1/2 z-20 flex items-center justify-center transition-all hover:scale-110"
+                style={{
+                  width: 44, height: 44,
+                  background: "rgba(0,0,0,0.60)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 2,
+                }}
               >
-                <ChevronLeft size={20} color="#fff" />
+                <ChevronLeft size={24} color="#fff" />
               </button>
-            )}
-
-            {/* Left image — dimmed */}
-            {count > 1 && (
-              <div
-                className="relative flex-shrink-0 overflow-hidden rounded cursor-pointer transition-opacity duration-300 hover:opacity-60"
-                style={{ width: "20%", aspectRatio: "3/4", opacity: 0.4 }}
-                onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
-              >
-                <img src={images[prevIdx]} alt="" className="w-full h-full object-cover" draggable={false} />
-                {isLocked(prevIdx) && (
-                  <div className="absolute inset-0 flex items-center justify-center"
-                    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
-                    <Lock size={18} color="#fff" />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Center image — active */}
-            <div
-              className="relative flex-1 overflow-hidden rounded cursor-pointer group"
-              style={{ aspectRatio: "3/4", maxHeight: "380px", maxWidth: "340px" }}
-              onClick={() => openLightbox(activeIndex)}
-            >
-              <img
-                src={images[activeIndex]}
-                alt={`${name} photo ${activeIndex + 1}`}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.015]"
-                draggable={false}
-              />
-              {/* Counter — all images */}
-              <div className="absolute top-2.5 left-3 rounded px-2.5 py-1 text-[12px] font-semibold text-white select-none"
-                style={{ background: "rgba(0,0,0,0.55)" }}>
-                {activeIndex + 1} / {count}
-              </div>
-              {/* Expand */}
-              <button
-                className="absolute top-2.5 right-2.5 flex items-center justify-center rounded transition-colors hover:bg-black/70"
-                style={{ width: 30, height: 30, background: "rgba(0,0,0,0.50)" }}
-                onClick={(e) => { e.stopPropagation(); openLightbox(activeIndex); }}
-                aria-label="Fullscreen"
-              >
-                <Maximize2 size={13} color="#fff" />
-              </button>
-            </div>
-
-            {/* Right image — dimmed */}
-            {count > 1 && (
-              <div
-                className="relative flex-shrink-0 overflow-hidden rounded cursor-pointer transition-opacity duration-300 hover:opacity-60"
-                style={{ width: "20%", aspectRatio: "3/4", opacity: 0.4 }}
-                onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
-              >
-                <img src={images[nextIdx]} alt="" className="w-full h-full object-cover" draggable={false} />
-                {isLocked(nextIdx) && (
-                  <div className="absolute inset-0 flex items-center justify-center"
-                    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
-                    <Lock size={18} color="#fff" />
-                  </div>
-                )}
-              </div>
             )}
 
             {/* Right arrow */}
             {count > 1 && (
               <button
                 onClick={nextGal}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center rounded transition-all hover:bg-white/25"
-                style={{ width: 36, height: 36, background: "rgba(255,255,255,0.14)" }}
+                className="absolute right-[14%] top-1/2 -translate-y-1/2 z-20 flex items-center justify-center transition-all hover:scale-110"
+                style={{
+                  width: 44, height: 44,
+                  background: "rgba(0,0,0,0.60)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 2,
+                }}
               >
-                <ChevronRight size={20} color="#fff" />
+                <ChevronRight size={24} color="#fff" />
               </button>
             )}
           </div>
@@ -272,17 +289,17 @@ export default function PhotoGallery({
             <div
               ref={thumbStripRef}
               className="flex items-center gap-1.5 px-4 py-3 overflow-x-auto [&::-webkit-scrollbar]:hidden"
-              style={{ background: "#111" }}
+              style={{ background: "#0a0a0a" }}
             >
               {images.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => goTo(i)}
-                  className="relative flex-shrink-0 overflow-hidden rounded transition-all duration-200"
+                  className="relative flex-shrink-0 overflow-hidden transition-all duration-200"
                   style={{
-                    width: 52, height: 52,
-                    opacity: i === activeIndex ? 1 : 0.45,
-                    outline: i === activeIndex ? "2px solid #fff" : "2px solid transparent",
+                    width: 60, height: 60,
+                    opacity: i === activeIndex ? 1 : 0.4,
+                    outline: i === activeIndex ? "2px solid #DC2626" : "2px solid transparent",
                     outlineOffset: "1px",
                   }}
                 >
@@ -290,7 +307,7 @@ export default function PhotoGallery({
                   {isLocked(i) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
-                      <Lock size={12} color="rgba(255,255,255,0.9)" />
+                      <Lock size={13} color="rgba(255,255,255,0.9)" />
                     </div>
                   )}
                 </button>
