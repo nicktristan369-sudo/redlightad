@@ -156,30 +156,27 @@ export default function AdDetailPage() {
         </div>
 
         <div className="mx-auto max-w-7xl px-4 pt-3 md:pt-8 pb-8">
-          {/* Desktop Breadcrumb */}
-          <nav className="hidden md:flex mb-4 items-center gap-1 text-sm">
-            <a href="/" className="text-gray-500 hover:text-red-600">Home</a>
-            <span className="text-red-500">/</span>
-            <a href={`/country/${ad.country.toLowerCase()}`} className="text-gray-500 hover:text-red-600">{ad.country}</a>
-            <span className="text-red-500">/</span>
-            <span className="text-gray-900 font-medium">{ad.title}</span>
-          </nav>
-
-          {/* Mobile Breadcrumb card */}
-          <nav className="md:hidden mb-3 flex items-center gap-1 text-sm bg-white rounded shadow px-3 py-2">
-            <a href="/" className="text-[#e11d48] hover:underline font-medium">Home</a>
-            <span className="text-[#e11d48]">/</span>
-            <a href={`/country/${ad.country.toLowerCase()}`} className="text-[#e11d48] hover:underline font-medium">{ad.country}</a>
-            <span className="text-[#e11d48]">/</span>
-            <span className="text-gray-900 font-medium truncate">{ad.title}</span>
-          </nav>
+          {/* Breadcrumb */}
+          {(() => {
+            const shortTitle = ad.title.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim().slice(0, 28).trim();
+            const crumbLabel = shortTitle.length < ad.title.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim().length ? shortTitle + '…' : shortTitle;
+            return (
+              <nav className="mb-3 flex items-center gap-1 text-[12px] text-gray-400">
+                <a href="/" className="hover:text-red-600 transition-colors">Home</a>
+                <span className="text-red-400">/</span>
+                <a href={`/country/${ad.country.toLowerCase()}`} className="hover:text-red-600 transition-colors capitalize">{ad.country}</a>
+                <span className="text-red-400">/</span>
+                <span className="text-gray-600 truncate max-w-[200px] md:max-w-xs">{crumbLabel}</span>
+              </nav>
+            );
+          })()}
 
           {/* Stories */}
           <StoryCircles listingId={ad.id} />
 
           {/* Title */}
-          <div className="mb-6 flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{ad.title}</h1>
+          <div className="mb-5 flex items-start gap-3">
+            <h1 className="text-lg md:text-xl font-bold text-gray-900 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ad.title}</h1>
             {isPremium && (
               <span className="rounded bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
                 {ad.premium_tier}
