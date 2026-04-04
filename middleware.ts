@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 // ── MAINTENANCE MODE ─────────────────────────────────────────────────────────
 // Sæt til false for at åbne siden igen
-const MAINTENANCE_MODE = true
+const MAINTENANCE_MODE = false
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Paths that are always public (no password required)
