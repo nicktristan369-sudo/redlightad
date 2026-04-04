@@ -3,12 +3,20 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, Search, ChevronDown, MapPin, Globe } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+
+interface UserState {
+  email: string;
+  id: string;
+  accountType: "provider" | "customer" | null;
+  avatar: string | null;
+  initials: string;
+}
 
 export default function Navbar() {
   const { t } = useLanguage();
@@ -16,10 +24,13 @@ export default function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [navSearch, setNavSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [user, setUser] = useState<{ email: string; id: string } | null>(null);
+  const [user, setUser] = useState<UserState | null>(null);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
   const [showCountrySelector, setShowCountrySelector] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     try {
@@ -35,26 +46,64 @@ export default function Navbar() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUser({ email: user.email || "", id: user.id });
-        supabase.from("wallets").select("balance").eq("user_id", user.id).single()
-          .then(({ data }) => { if (data) setCoinBalance(data.balance) });
+
+    const loadUser = async (authUser: { email?: string; id: string; user_metadata?: Record<string, unknown> } | null) => {
+      if (!authUser) { setUser(null); setCoinBalance(null); setUnreadMessages(0); return; }
+      const accountType = (authUser.user_metadata?.account_type as "provider" | "customer") ?? null;
+      const email = authUser.email || "";
+      const initials = email.slice(0, 2).toUpperCase();
+
+      // Hent profilbillede
+      let avatar: string | null = null;
+      if (accountType === "customer") {
+        const { data } = await supabase.from("customer_profiles").select("avatar_url").eq("user_id", authUser.id).single();
+        avatar = data?.avatar_url || null;
+      } else {
+        const { data } = await supabase.from("profiles").select("avatar_url").eq("id", authUser.id).single();
+        avatar = data?.avatar_url || null;
+        // Fallback: første listing profile_image
+        if (!avatar) {
+          const { data: listing } = await supabase.from("listings").select("profile_image").eq("user_id", authUser.id).limit(1).single();
+          avatar = listing?.profile_image || null;
+        }
       }
-    });
+
+      setUser({ email, id: authUser.id, accountType, avatar, initials });
+
+      // RedCoins balance
+      supabase.from("wallets").select("balance").eq("user_id", authUser.id).single()
+        .then(({ data }) => { if (data) setCoinBalance(data.balance); });
+
+      // Ulæste beskeder
+      supabase.from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", authUser.id)
+        .eq("read", false)
+        .then(({ count }) => { if (count) setUnreadMessages(count); });
+    };
+
+    supabase.auth.getUser().then(({ data: { user: u } }) => loadUser(u));
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? { email: session.user.email || "", id: session.user.id } : null);
+      loadUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    setCoinBalance(null);
+    setUnreadMessages(0);
+    setDrawerOpen(false);
+    setShowUserMenu(false);
+    router.push("/");
+  };
+
   // Lock body scroll when drawer is open
   useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [drawerOpen]);
 
@@ -66,6 +115,8 @@ export default function Navbar() {
     setSearchOpen(false);
   };
 
+  const dashboardHref = user?.accountType === "customer" ? "/kunde" : "/dashboard";
+
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/premium", label: "Premium" },
@@ -76,6 +127,22 @@ export default function Navbar() {
     { href: "/support", label: t.nav_support },
     { href: "/opret-annonce", label: t.nav_post_ad, isPostAd: true },
   ];
+
+  // Avatar component
+  const Avatar = ({ size = 32 }: { size?: number }) => (
+    <div style={{
+      width: size, height: size, borderRadius: "50%",
+      background: user?.avatar ? "transparent" : "#DC2626",
+      overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
+      flexShrink: 0, border: "2px solid #fff",
+      boxShadow: "0 0 0 1.5px #DC2626",
+    }}>
+      {user?.avatar
+        ? <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : <span style={{ fontSize: size * 0.38, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{user?.initials}</span>
+      }
+    </div>
+  );
 
   return (
     <>
@@ -98,123 +165,160 @@ export default function Navbar() {
       )}
 
       {/* ── Main navbar ── */}
-      <nav
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 40,
-          background: "#fff",
-          borderBottom: "1px solid #F3F3F3",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-          height: "56px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1280px", // max-w-7xl
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: "56px",
-            padding: "0 32px",
-          }}
-        >
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 40, background: "#fff",
+        borderBottom: "1px solid #F3F3F3", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", height: "56px",
+      }}>
+        <div style={{
+          maxWidth: "1280px", margin: "0 auto",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          height: "56px", padding: "0 16px",
+        }}>
           {/* Logo */}
           <Link href="/" style={{ flexShrink: 0 }}>
             <Logo variant="light" height={28} />
           </Link>
 
-          {/* Right icons: Search + Hamburger */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {/* Search icon */}
-            <button
-              onClick={() => setSearchOpen(!searchOpen)}
-              style={{
-                padding: "8px",
-                borderRadius: "8px",
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+          {/* Right icons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+
+            {/* Search */}
+            <button onClick={() => setSearchOpen(!searchOpen)} style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
               onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-            >
-              <Search size={22} color="#374151" />
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+              <Search size={20} color="#374151" />
             </button>
 
-            {/* Hamburger icon */}
-            <button
-              onClick={() => setDrawerOpen(true)}
-              style={{
-                padding: "8px",
-                borderRadius: "8px",
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+            {user ? (
+              <>
+                {/* Notifikationer / beskeder */}
+                <div style={{ position: "relative" }}>
+                  <button onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
+                    style={{ position: "relative", padding: 8, borderRadius: 8, border: "none", background: showNotifications ? "#F5F5F7" : "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+                    onMouseLeave={e => { if (!showNotifications) e.currentTarget.style.background = "transparent"; }}>
+                    <MessageSquare size={20} color="#374151" />
+                    {unreadMessages > 0 && (
+                      <span style={{
+                        position: "absolute", top: 4, right: 4,
+                        minWidth: 16, height: 16, borderRadius: 8,
+                        background: "#DC2626", color: "#fff",
+                        fontSize: 9, fontWeight: 800, lineHeight: "16px", textAlign: "center",
+                        paddingLeft: 3, paddingRight: 3,
+                        border: "1.5px solid #fff",
+                      }}>{unreadMessages > 9 ? "9+" : unreadMessages}</span>
+                    )}
+                  </button>
+
+                  {/* Besked-dropdown */}
+                  {showNotifications && (
+                    <>
+                      <div onClick={() => setShowNotifications(false)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
+                      <div style={{
+                        position: "absolute", top: "calc(100% + 8px)", right: 0,
+                        width: 300, background: "#fff", borderRadius: 14,
+                        border: "1px solid #E5E7EB", boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                        zIndex: 50, overflow: "hidden",
+                      }}>
+                        <div style={{ padding: "12px 16px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Beskeder</span>
+                          {unreadMessages > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: "#DC2626" }}>{unreadMessages} ulæste</span>}
+                        </div>
+                        <div style={{ padding: "24px 16px", textAlign: "center" }}>
+                          <MessageSquare size={28} color="#E5E7EB" style={{ margin: "0 auto 8px" }} />
+                          <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>
+                            {unreadMessages > 0 ? `Du har ${unreadMessages} ulæste beskeder` : "Ingen nye beskeder"}
+                          </p>
+                        </div>
+                        <div style={{ padding: "0 12px 12px" }}>
+                          <Link href={`${dashboardHref}/beskeder`} onClick={() => setShowNotifications(false)}
+                            style={{ display: "block", padding: "10px", background: "#000", color: "#fff", borderRadius: 8, textAlign: "center", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                            Se alle beskeder
+                          </Link>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Avatar → user menu */}
+                <div style={{ position: "relative" }}>
+                  <button onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }}
+                    style={{ padding: 4, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", borderRadius: "50%" }}>
+                    <Avatar size={32} />
+                  </button>
+
+                  {/* User dropdown */}
+                  {showUserMenu && (
+                    <>
+                      <div onClick={() => setShowUserMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
+                      <div style={{
+                        position: "absolute", top: "calc(100% + 8px)", right: 0,
+                        width: 220, background: "#fff", borderRadius: 14,
+                        border: "1px solid #E5E7EB", boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                        zIndex: 50, overflow: "hidden",
+                      }}>
+                        {/* Email */}
+                        <div style={{ padding: "14px 16px", borderBottom: "1px solid #F3F4F6" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <Avatar size={36} />
+                            <div style={{ minWidth: 0 }}>
+                              <p style={{ fontSize: 12, fontWeight: 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
+                              <p style={{ fontSize: 10, color: "#9CA3AF", margin: "1px 0 0" }}>{user.accountType === "customer" ? "Kunde" : "Profil"}</p>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Menu items */}
+                        {[
+                          { href: dashboardHref, label: "Dashboard" },
+                          { href: `${dashboardHref}/profil`, label: "Indstillinger" },
+                          ...(coinBalance !== null ? [{ href: `${dashboardHref}/coins`, label: `🔴 ${coinBalance} coins` }] : []),
+                        ].map(({ href, label }) => (
+                          <Link key={href} href={href} onClick={() => setShowUserMenu(false)}
+                            style={{ display: "block", padding: "11px 16px", fontSize: 13, fontWeight: 500, color: "#374151", textDecoration: "none" }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "#F9FAFB"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                            {label}
+                          </Link>
+                        ))}
+                        <div style={{ height: 1, background: "#F3F4F6", margin: "4px 0" }} />
+                        <button onClick={handleLogout}
+                          style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "11px 16px", fontSize: 13, fontWeight: 600, color: "#DC2626", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "#FEF2F2"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                          <LogOut size={14} />
+                          Log ud
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : null}
+
+            {/* Hamburger */}
+            <button onClick={() => setDrawerOpen(true)}
+              style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
               onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-            >
-              <Menu size={22} color="#374151" />
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+              <Menu size={20} color="#374151" />
             </button>
           </div>
         </div>
 
         {/* Search bar dropdown */}
         {searchOpen && (
-          <div
-            style={{
-              position: "absolute",
-              top: "56px",
-              left: 0,
-              right: 0,
-              background: "#fff",
-              borderBottom: "1px solid #E5E5E5",
-              padding: "12px 16px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-              zIndex: 39,
-            }}
-          >
+          <div style={{
+            position: "absolute", top: "56px", left: 0, right: 0,
+            background: "#fff", borderBottom: "1px solid #E5E5E5",
+            padding: "12px 16px", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", zIndex: 39,
+          }}>
             <div style={{ maxWidth: "600px", margin: "0 auto", position: "relative" }}>
-              <input
-                type="text"
-                value={navSearch}
-                onChange={e => setNavSearch(e.target.value)}
+              <input type="text" value={navSearch} onChange={e => setNavSearch(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
-                placeholder={t.search_placeholder}
-                autoFocus
-                style={{
-                  width: "100%",
-                  borderRadius: "9999px",
-                  border: "1px solid #E5E5E5",
-                  background: "#F9F9F9",
-                  padding: "10px 16px 10px 40px",
-                  fontSize: "14px",
-                  color: "#111",
-                  outline: "none",
-                }}
-              />
-              <button
-                onClick={handleSearch}
-                style={{
-                  position: "absolute",
-                  left: "14px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                  display: "flex",
-                }}
-              >
+                placeholder={t.search_placeholder} autoFocus
+                style={{ width: "100%", borderRadius: "9999px", border: "1px solid #E5E5E5", background: "#F9F9F9", padding: "10px 16px 10px 40px", fontSize: "14px", color: "#111", outline: "none" }} />
+              <button onClick={handleSearch} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
                 <Search size={16} color="#9CA3AF" />
               </button>
             </div>
@@ -223,222 +327,114 @@ export default function Navbar() {
       </nav>
 
       {/* ── Overlay ── */}
-      <div
-        onClick={closeDrawer}
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.4)",
-          zIndex: 9998,
-          opacity: drawerOpen ? 1 : 0,
-          pointerEvents: drawerOpen ? "auto" : "none",
-          transition: "opacity 0.25s ease",
-        }}
-      />
+      <div onClick={closeDrawer} style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9998,
+        opacity: drawerOpen ? 1 : 0, pointerEvents: drawerOpen ? "auto" : "none", transition: "opacity 0.25s ease",
+      }} />
 
       {/* ── Slide-in Drawer ── */}
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: "280px",
-          maxWidth: "100vw",
-          background: "#fff",
-          zIndex: 9999,
-          transform: drawerOpen ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 0.25s ease",
-          display: "flex",
-          flexDirection: "column",
-          overflowY: "auto",
-        }}
-      >
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0, width: "280px", maxWidth: "100vw",
+        background: "#fff", zIndex: 9999,
+        transform: drawerOpen ? "translateX(0)" : "translateX(100%)",
+        transition: "transform 0.25s ease", display: "flex", flexDirection: "column", overflowY: "auto",
+      }}>
         {/* Close button */}
         <div style={{ display: "flex", justifyContent: "flex-end", padding: "14px 16px 8px" }}>
-          <button
-            onClick={closeDrawer}
-            style={{
-              padding: "6px",
-              borderRadius: "8px",
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+          <button onClick={closeDrawer} style={{ padding: 6, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-          >
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
             <X size={22} color="#111" />
           </button>
         </div>
 
+        {/* User card i drawer */}
+        {user && (
+          <div style={{ margin: "0 16px 8px", padding: "12px", background: "#F9FAFB", borderRadius: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Avatar size={40} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
+                <p style={{ fontSize: 11, color: "#9CA3AF", margin: "1px 0 0" }}>{user.accountType === "customer" ? "Kundekonto" : "Profil"}</p>
+              </div>
+            </div>
+            {coinBalance !== null && (
+              <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13 }}>🔴</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#DC2626" }}>{coinBalance} coins</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Nav links */}
         <nav style={{ display: "flex", flexDirection: "column" }}>
           {navLinks.map(({ href, label, isPostAd }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={closeDrawer}
-              style={{
-                padding: "14px 24px",
-                fontSize: "15px",
-                fontWeight: isPostAd ? 700 : 500,
-                color: isPostAd ? "#DC2626" : "#111",
-                textDecoration: "none",
-                transition: "background 0.15s ease",
-              }}
+            <Link key={href} href={href} onClick={closeDrawer}
+              style={{ padding: "14px 24px", fontSize: "15px", fontWeight: isPostAd ? 700 : 500, color: isPostAd ? "#DC2626" : "#111", textDecoration: "none" }}
               onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-            >
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
               {label}
             </Link>
           ))}
         </nav>
 
-        {/* Divider */}
-        <div style={{ height: "1px", background: "#E5E5E5", margin: "8px 16px" }} />
+        <div style={{ height: 1, background: "#E5E5E5", margin: "8px 16px" }} />
 
         {/* Auth section */}
-        <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
           {user ? (
             <>
-              {coinBalance !== null && (
-                <Link
-                  href="/dashboard/wallet"
-                  onClick={closeDrawer}
-                  style={{
-                    padding: "14px 8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: "#DC2626",
-                    textDecoration: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#DC2626" }} />
-                  {coinBalance} coins
-                </Link>
-              )}
-              <Link
-                href="/dashboard"
-                onClick={closeDrawer}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  background: "#111",
-                  color: "#fff",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#000"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "#111"; }}
-              >
+              <Link href={dashboardHref} onClick={closeDrawer}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12, borderRadius: 8, background: "#111", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
                 {t.nav_dashboard}
               </Link>
+              <button onClick={handleLogout}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 12, borderRadius: 8, border: "1px solid #FEE2E2", background: "#FEF2F2", color: "#DC2626", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                <LogOut size={15} />
+                Log ud
+              </button>
             </>
           ) : (
             <>
-              <Link
-                href="/login"
-                onClick={closeDrawer}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "1px solid #D1D5DB",
-                  background: "#fff",
-                  color: "#111",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#F9FAFB"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
-              >
+              <Link href="/login" onClick={closeDrawer}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12, borderRadius: 8, border: "1px solid #D1D5DB", background: "#fff", color: "#111", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
                 {t.nav_login}
               </Link>
-              <Link
-                href="/register"
-                onClick={closeDrawer}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#DC2626",
-                  color: "#fff",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#B91C1C"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "#DC2626"; }}
-              >
+              <Link href="/register" onClick={closeDrawer}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12, borderRadius: 8, border: "none", background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
                 {t.nav_create_account}
               </Link>
             </>
           )}
         </div>
 
-        {/* Divider */}
-        <div style={{ height: "1px", background: "#E5E5E5", margin: "8px 16px" }} />
+        <div style={{ height: 1, background: "#E5E5E5", margin: "8px 16px" }} />
 
-        {/* Language selector */}
+        {/* Language + Location */}
         <div style={{ padding: "8px 24px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
             <Globe size={16} color="#9CA3AF" />
-            <span style={{ fontSize: "13px", fontWeight: 500, color: "#6B7280" }}>Language</span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: "#6B7280" }}>Language</span>
           </div>
           <LanguageSelector />
         </div>
 
-        {/* Location selector */}
         {selectedCountry && (
           <div style={{ padding: "8px 24px" }}>
-            <button
-              onClick={() => { setShowCountrySelector(true); closeDrawer(); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "14px",
-                fontWeight: 500,
-                color: "#111",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: "8px 0",
-              }}
-            >
+            <button onClick={() => { setShowCountrySelector(true); closeDrawer(); }}
+              style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 500, color: "#111", background: "transparent", border: "none", cursor: "pointer", padding: "8px 0" }}>
               <MapPin size={16} color="#9CA3AF" />
-              <span className={`fi fi-${selectedCountry.code}`} style={{ width: "16px", height: "12px", display: "inline-block" }} />
+              <span className={`fi fi-${selectedCountry.code}`} style={{ width: 16, height: 12, display: "inline-block" }} />
               <span>{selectedCountry.name}</span>
               <ChevronDown size={12} color="#9CA3AF" />
             </button>
           </div>
         )}
 
-        {/* Spacer for bottom padding */}
-        <div style={{ height: "24px" }} />
+        <div style={{ height: 24 }} />
       </div>
 
-      {/* Mobile-specific: make drawer full-width on small screens */}
       <style>{`
         @media (max-width: 639px) {
           div[style*="width: 280px"][style*="z-index: 9999"] {
