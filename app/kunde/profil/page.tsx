@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase"
 import KundeLayout from "@/components/KundeLayout"
-import { Camera, Upload, X, Plus, Eye } from "lucide-react"
+import { Camera, Upload, X, Plus, Eye, Ruler, Weight, Cigarette, CigaretteOff, Pen, Minus } from "lucide-react"
 
 const LANGUAGES = ["Dansk","Engelsk","Norsk","Svensk","Tysk","Fransk","Spansk","Italiensk","Russisk","Arabisk","Thai","Polsk","Hollandsk","Portugisisk","Japansk","Kinesisk"]
 const KINK_OPTIONS = ["Oral","Anal","BDSM","Rollespil","Fetish","Massage","Dominans","Underkastelse","GFE","Squirting","Cosplay","Voyeurisme","Exhibitionisme","Gruppeleg","Legetøj","Lingeri","Outdoor","Crossdressing"]
@@ -416,42 +416,36 @@ export default function KundeProfil() {
               </div>
 
               {/* Stats grid */}
-              {(form.height_cm || form.weight_kg || form.smoker || form.tattoo || form.penis_size) && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 8, marginBottom: 16 }}>
-                  {form.height_cm && (
-                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{form.height_cm}</div>
-                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>cm høj</div>
-                    </div>
-                  )}
-                  {form.weight_kg && (
-                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{form.weight_kg}</div>
-                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>kg</div>
-                    </div>
-                  )}
-                  {form.smoker && (
-                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 13 }}>{form.smoker === "no" ? "🚭" : form.smoker === "yes" ? "🚬" : "💨"}</div>
-                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>{form.smoker === "no" ? "Ryger ikke" : form.smoker === "yes" ? "Ryger" : "Lejlighedsvis"}</div>
-                    </div>
-                  )}
-                  {form.tattoo && form.tattoo !== "none" && (
-                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 13 }}>🖋️</div>
-                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>{form.tattoo === "few" ? "Et par" : "Mange"} tatoveringer</div>
-                    </div>
-                  )}
-                  {form.penis_size && (form.gender === "male" || form.gender === "trans") && (
-                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 13 }}>📏</div>
-                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>
-                        {form.penis_size === "small" ? "<14 cm" : form.penis_size === "medium" ? "14–18 cm" : form.penis_size === "large" ? "18–22 cm" : ">22 cm"}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {(form.height_cm || form.weight_kg || form.smoker || form.tattoo || form.penis_size) && (() => {
+                const StatBox = ({ value, label, icon }: { value: React.ReactNode; label: string; icon?: React.ReactNode }) => (
+                  <div style={{ background: "#F9FAFB", border: "1px solid #F3F4F6", borderRadius: 10, padding: "10px 8px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    {icon && <div style={{ color: "#6B7280" }}>{icon}</div>}
+                    <div style={{ fontSize: value && String(value).length <= 3 ? 16 : 12, fontWeight: 800, color: "#111", lineHeight: 1.1 }}>{value}</div>
+                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, lineHeight: 1.2 }}>{label}</div>
+                  </div>
+                )
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(82px, 1fr))", gap: 8, marginBottom: 16 }}>
+                    {form.height_cm && <StatBox value={form.height_cm} label="cm høj" icon={<Ruler size={13} />} />}
+                    {form.weight_kg && <StatBox value={`${form.weight_kg} kg`} label="vægt" icon={<Weight size={13} />} />}
+                    {form.smoker && <StatBox
+                      value={form.smoker === "no" ? "Nej" : form.smoker === "yes" ? "Ja" : "Af og til"}
+                      label="ryger"
+                      icon={form.smoker === "no" ? <CigaretteOff size={13} /> : <Cigarette size={13} />}
+                    />}
+                    {form.tattoo && form.tattoo !== "none" && <StatBox
+                      value={form.tattoo === "few" ? "Et par" : "Mange"}
+                      label="tatoveringer"
+                      icon={<Pen size={13} />}
+                    />}
+                    {form.penis_size && (form.gender === "male" || form.gender === "trans") && <StatBox
+                      value={form.penis_size === "small" ? "<14 cm" : form.penis_size === "medium" ? "14–18" : form.penis_size === "large" ? "18–22" : ">22 cm"}
+                      label="cm"
+                      icon={<Minus size={13} />}
+                    />}
+                  </div>
+                )
+              })()}
 
               {/* Sprog */}
               {form.languages.length > 0 && (
