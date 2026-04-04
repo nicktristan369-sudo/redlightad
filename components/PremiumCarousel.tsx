@@ -4,91 +4,6 @@ import { createClient } from "@/lib/supabase"
 import { getCountryVariants } from "@/lib/countries"
 import Link from "next/link"
 
-// ── Random cycling image with cross-fade ────────────────────────────────────
-function CyclingImage({ images, alt, hasVideo }: { images: string[]; alt: string; hasVideo: boolean }) {
-  const pool = images.length > 0 ? images : []
-  const [current, setCurrent] = useState(() => pool.length > 0 ? Math.floor(Math.random() * pool.length) : 0)
-  const [next, setNext] = useState<number | null>(null)
-  const [fading, setFading] = useState(false)
-
-  useEffect(() => {
-    if (pool.length <= 1) return
-    const t = setInterval(() => {
-      // Pick a random index that's different from current
-      let idx: number
-      do { idx = Math.floor(Math.random() * pool.length) } while (idx === current)
-      setNext(idx)
-      setFading(true)
-      setTimeout(() => {
-        setCurrent(idx)
-        setNext(null)
-        setFading(false)
-      }, 600)
-    }, 6000)
-    return () => clearInterval(t)
-  }, [current, pool.length])
-
-  if (pool.length === 0) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-        <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-        </svg>
-      </div>
-    )
-  }
-
-  return (
-    <div className="w-full h-full relative overflow-hidden">
-      {/* Current image */}
-      <img
-        src={pool[current]}
-        alt={alt}
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ transition: "opacity 0.6s ease", opacity: fading ? 0 : 1 }}
-      />
-      {/* Next image (preloaded underneath) */}
-      {next !== null && (
-        <img
-          src={pool[next]}
-          alt={alt}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ opacity: fading ? 1 : 0, transition: "opacity 0.6s ease" }}
-        />
-      )}
-      {/* Video icon — elegant, centered, semi-transparent */}
-      {hasVideo && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <div style={{
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            background: "rgba(0,0,0,0.35)",
-            backdropFilter: "blur(4px)",
-            border: "1.5px solid rgba(255,255,255,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.90)">
-              <path d="M8 5.14v14l11-7-11-7z"/>
-            </svg>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 interface PremiumListing {
   id: string
   title: string
@@ -330,14 +245,17 @@ export default function PremiumCarousel({
             return (
               <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0" style={{ width: "173px" }}>
                 <div className="relative overflow-hidden cursor-pointer" style={{ width: "173px", height: "260px" }}>
-                  {/* Cycling image + video icon */}
-                  {(() => {
-                    const pool = [
-                      ...(l.profile_image ? [l.profile_image] : []),
-                      ...(l.images ?? []),
-                    ].filter((v, i, a) => a.indexOf(v) === i)
-                    return <CyclingImage images={pool} alt={l.title} hasVideo={!!l.video_url} />
-                  })()}
+                  {/* Image */}
+                  {l.profile_image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.profile_image} alt={l.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                      </svg>
+                    </div>
+                  )}
 
                   {/* Ribbon badge */}
                   {(isVip || isFeatured) && (
