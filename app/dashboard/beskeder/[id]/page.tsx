@@ -3,7 +3,8 @@ import { useEffect, useState, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
-import { ArrowLeft, Send, X } from "lucide-react"
+import { ArrowLeft, Send } from "lucide-react"
+import CustomerProfileCard from "@/components/CustomerProfileCard"
 
 interface Message {
   id: string
@@ -254,72 +255,8 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* ── Kundeprofil popup ── */}
       {showProfile && customer && (
-        <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 400, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.2)" }}>
-            <div style={{ background: "#111", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" }}>Kundeprofil</span>
-              <button onClick={() => setShowProfile(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={14} /></button>
-            </div>
-            <div style={{ padding: "20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <div style={{ width: 64, height: 64, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "3px solid #F3F4F6" }}>
-                  {customerAvatar
-                    ? <img src={customerAvatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : <div style={{ width: "100%", height: "100%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{customerInitials}</span>
-                      </div>}
-                </div>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>{customerName}</span>
-                    {customer.phone_verified && <span style={{ fontSize: 10, fontWeight: 700, color: "#16A34A", background: "#DCFCE7", padding: "2px 7px", borderRadius: 20 }}>✓ Verificeret</span>}
-                  </div>
-                  <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
-                    {customer.gender && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{customer.gender === "male" ? "Mand" : customer.gender === "female" ? "Dame" : customer.gender === "trans" ? "Trans" : customer.gender}</span>}
-                    {customer.age && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{customer.age} år</span>}
-                    {customer.nationality && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{customer.nationality}</span>}
-                  </div>
-                  {customer.created_at && <p style={{ fontSize: 10, color: "#9CA3AF", margin: "4px 0 0" }}>Profil oprettet {new Date(customer.created_at).toLocaleDateString("da-DK", { day: "numeric", month: "long", year: "numeric" })}</p>}
-                </div>
-              </div>
-              {(customer.height_cm || customer.weight_kg) && (
-                <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                  {customer.height_cm && <div style={{ flex: 1, background: "#F9FAFB", borderRadius: 8, padding: 8, textAlign: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{customer.height_cm}</div>
-                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>cm høj</div>
-                  </div>}
-                  {customer.weight_kg && <div style={{ flex: 1, background: "#F9FAFB", borderRadius: 8, padding: 8, textAlign: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{customer.weight_kg} kg</div>
-                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>vægt</div>
-                  </div>}
-                </div>
-              )}
-              {customer.languages && customer.languages.length > 0 && (
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Taler</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                    {customer.languages.map(l => <span key={l} style={{ fontSize: 12, fontWeight: 600, background: "#EFF6FF", color: "#1D4ED8", padding: "3px 9px", borderRadius: 12 }}>{l}</span>)}
-                  </div>
-                </div>
-              )}
-              {customer.kinks && customer.kinks.length > 0 && (
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Interesser</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                    {customer.kinks.map(k => <span key={k} style={{ fontSize: 12, fontWeight: 600, background: "#FFF1F2", color: "#DC2626", padding: "3px 9px", borderRadius: 12 }}>{k}</span>)}
-                  </div>
-                </div>
-              )}
-              {customer.kink_bio && (
-                <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "10px 12px" }}>
-                  <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, margin: 0 }}>{customer.kink_bio}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <CustomerProfileCard profile={customer} onClose={() => setShowProfile(false)} />
       )}
 
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

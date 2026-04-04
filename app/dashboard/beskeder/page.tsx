@@ -3,8 +3,9 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
-import { MessageSquare, X, Ruler, Weight } from "lucide-react"
+import { MessageSquare } from "lucide-react"
 import Link from "next/link"
+import CustomerProfileCard from "@/components/CustomerProfileCard"
 
 interface Conversation {
   id: string
@@ -201,78 +202,8 @@ export default function BeskederPage() {
           </div>
         )}
       </div>
-      {profilePopup && <CustomerProfilePopup profile={profilePopup} onClose={() => setProfilePopup(null)} />}
+      {profilePopup && <CustomerProfileCard profile={profilePopup} onClose={() => setProfilePopup(null)} />}
     </DashboardLayout>
-  )
-}
-
-function CustomerProfilePopup({ profile, onClose }: { profile: CustomerProfile; onClose: () => void }) {
-  const genderLabel = profile.gender === "male" ? "Mand" : profile.gender === "female" ? "Dame" : profile.gender === "trans" ? "Trans" : profile.gender || null
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 400, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.2)" }}>
-        <div style={{ background: "#111", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase" }}>Kundeprofil</span>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={14} /></button>
-        </div>
-        <div style={{ padding: "20px 20px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{ width: 60, height: 60, borderRadius: "50%", overflow: "hidden", background: "#E5E7EB", border: "3px solid #F3F4F6", flexShrink: 0 }}>
-              {profile.avatar_url
-                ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <div style={{ width: "100%", height: "100%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{(profile.username || "K").slice(0,2).toUpperCase()}</span>
-                  </div>}
-            </div>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>{profile.username || "Anonym"}</span>
-                {profile.phone_verified && <span style={{ fontSize: 10, fontWeight: 700, color: "#16A34A", background: "#DCFCE7", padding: "2px 7px", borderRadius: 20 }}>✓ Verificeret</span>}
-              </div>
-              <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
-                {genderLabel && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{genderLabel}</span>}
-                {profile.age && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{profile.age} år</span>}
-                {profile.nationality && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{profile.nationality}</span>}
-              </div>
-              {profile.created_at && <p style={{ fontSize: 10, color: "#9CA3AF", margin: "4px 0 0" }}>Profil oprettet {new Date(profile.created_at).toLocaleDateString("da-DK", { day: "numeric", month: "long", year: "numeric" })}</p>}
-            </div>
-          </div>
-          {(profile.height_cm || profile.weight_kg) && (
-            <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-              {profile.height_cm && <div style={{ flex: 1, background: "#F9FAFB", borderRadius: 8, padding: "8px", textAlign: "center" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#111" }}>{profile.height_cm}</div>
-                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>cm høj</div>
-              </div>}
-              {profile.weight_kg && <div style={{ flex: 1, background: "#F9FAFB", borderRadius: 8, padding: "8px", textAlign: "center" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#111" }}>{profile.weight_kg} kg</div>
-                <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>vægt</div>
-              </div>}
-            </div>
-          )}
-          {profile.languages && profile.languages.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Taler</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                {profile.languages.map(l => <span key={l} style={{ fontSize: 12, fontWeight: 600, background: "#EFF6FF", color: "#1D4ED8", padding: "3px 9px", borderRadius: 12 }}>{l}</span>)}
-              </div>
-            </div>
-          )}
-          {profile.kinks && profile.kinks.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Interesser</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                {profile.kinks.map(k => <span key={k} style={{ fontSize: 12, fontWeight: 600, background: "#FFF1F2", color: "#DC2626", padding: "3px 9px", borderRadius: 12 }}>{k}</span>)}
-              </div>
-            </div>
-          )}
-          {profile.kink_bio && (
-            <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "10px 12px" }}>
-              <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, margin: 0 }}>{profile.kink_bio}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
   )
 }
 
