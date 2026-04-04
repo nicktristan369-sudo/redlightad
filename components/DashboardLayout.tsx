@@ -52,6 +52,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setLoading(false)
         return
       }
+      // Kunder hører ikke til i provider-dashboard — send dem til /kunde
+      if (user.user_metadata?.account_type === "customer") {
+        router.replace("/kunde")
+        return
+      }
       setEmail(user.email ?? null)
 
       const { data: adminStatus } = await supabase.rpc("get_my_admin_status")

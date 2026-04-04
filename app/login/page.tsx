@@ -36,6 +36,14 @@ export default function LoginPage() {
       router.push(redirect)
     } else if (accountType === "customer") {
       router.push("/kunde")
+    } else if (!accountType) {
+      // Ingen metadata — tjek om det er en customer via customer_profiles
+      const { data: cp } = await supabase.from("customer_profiles").select("user_id").eq("user_id", loggedUser?.id ?? "").single()
+      if (cp) {
+        router.push("/kunde")
+      } else {
+        router.push("/dashboard")
+      }
     } else {
       router.push("/dashboard")
     }
