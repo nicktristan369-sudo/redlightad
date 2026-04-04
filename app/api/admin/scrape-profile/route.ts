@@ -63,8 +63,15 @@ export async function POST(req: NextRequest) {
       .replace('/storage/images/thumbs/', '/storage/images/')
   }
 
-  // Bred billed-selektor der dækker escortguide.dk, annoncelight.dk og andre sites
-  const images = $('img')
+  // escortguide.dk: billeder er i <a data-media-type="1" href="/Content/Pictures/...">
+  const escortguideImages = $('a[data-media-type="1"]')
+    .map((_, el) => $(el).attr('href') || '')
+    .get()
+    .filter(src => !!src)
+    .map(src => src.startsWith('/') ? baseUrl + src : src)
+
+  // Generisk selector for andre sites
+  const genericImages = $('img')
     .map((_, el) => $(el).attr('src') || $(el).attr('data-src') || '')
     .get()
     .filter((src): src is string =>
@@ -72,31 +79,19 @@ export async function POST(req: NextRequest) {
       (src.includes('Pictures') || src.includes('storage') || src.includes('upload') ||
        src.includes('photo') || src.includes('image') || src.includes('foto')) &&
       !src.includes('logo') && !src.includes('icon') && !src.includes('flag') &&
-      !src.includes('avatar') && !src.includes('banner')
+      !src.includes('avatar') && !src.includes('banner') && !src.includes('thumb')
     )
     .map(getFullSizeUrl)
-    .filter((src, i, arr) => arr.indexOf(src) === i)
-    .slice(0, 8)
 
-  // Find video-URLs (MP4)
-  const videos = $('a[href*=".mp4"], source[src*=".mp4"]')
+  const images = [...new Set([...escortguideImages, ...genericImages])].slice(0, 8)
+
+  // Find video-URLs — escortguide.dk bruger data-media-type="2" for videoer
+  const videos = $('a[data-media-type="2"], a[href*=".mp4"], source[src*=".mp4"]')
     .map((_, el) => $(el).attr('href') || $(el).attr('src') || '')
     .get()
-    .concat(
-      // escortguide.dk gemmer video URL i data-attributter eller href på thumbnails
-      $('[data-thumb*="Videos"], a[data-src*=".mp4"], a[href*="Videos"]')
-        .map((_, el) => {
-          const href = $(el).attr('href') || ''
-          // Konverter thumbnail URL til MP4: /Content/Videos/ID/VID/VID_thumbnail.jpg → /Content/Videos/ID/VID/VID.mp4
-          if (href.includes('Videos') && !href.includes('.mp4')) {
-            return href.replace(/_thumbnail\.(jpg|png)$/, '.mp4')
-          }
-          return href.includes('.mp4') ? href : ''
-        })
-        .get()
-    )
-    .filter((src): src is string => !!src && src.includes('.mp4'))
+    .filter((src): src is string => !!src)
     .map(src => src.startsWith('/') ? baseUrl + src : src)
+    .filter(src => src.includes('.mp4') || src.includes('Videos'))
     .filter((src, i, arr) => arr.indexOf(src) === i)
     .slice(0, 5)
 
