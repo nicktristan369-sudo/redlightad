@@ -27,8 +27,18 @@ export default function LoginPage() {
     if (email === adminEmail) {
       document.cookie = `admin_verified=${email}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
     }
+    // Rut baseret på account_type
+    const { data: { user: loggedUser } } = await supabase.auth.getUser()
+    const accountType = loggedUser?.user_metadata?.account_type
     const params = new URLSearchParams(window.location.search)
-    router.push(params.get("redirect") || "/dashboard");
+    const redirect = params.get("redirect")
+    if (redirect) {
+      router.push(redirect)
+    } else if (accountType === "customer") {
+      router.push("/kunde")
+    } else {
+      router.push("/dashboard")
+    }
   };
 
   const inputClass = "w-full px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors";
