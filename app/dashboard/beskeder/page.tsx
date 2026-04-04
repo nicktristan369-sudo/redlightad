@@ -68,11 +68,12 @@ export default function BeskederPage() {
       ).filter(Boolean)
       const uniqueIds = [...new Set(otherIds)]
 
-      // Hent customer_profiles for alle
-      const { data: customerProfiles } = await supabase
+      // Hent customer_profiles — select(*) så det virker uanset kolonner
+      const { data: customerProfiles, error: cpErr } = await supabase
         .from("customer_profiles")
-        .select("user_id, username, avatar_url, age, gender, nationality, height_cm, weight_kg, languages, kinks, kink_bio, phone_verified, created_at")
+        .select("*")
         .in("user_id", uniqueIds)
+      if (cpErr) console.error("customer_profiles fetch:", cpErr.message)
 
       // Hent listings profilbilleder (for providers)
       const { data: providerListings } = await supabase
