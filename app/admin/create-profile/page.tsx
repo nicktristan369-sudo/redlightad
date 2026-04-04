@@ -16,6 +16,7 @@ type ProfileData = {
   age: number | null;
   images: string[];
   videos: string[];
+  stories: { media_url: string; media_type: string; thumbnail_url: string; duration: number }[];
   source_url: string;
 };
 
@@ -48,7 +49,8 @@ export default function CreateProfilePage() {
     category: "escort",
     age: null,
     images: [],
-      videos: [],
+    videos: [],
+    stories: [],
     source_url: "",
   });
   const [result, setResult] = useState<CreateResult | null>(null);
@@ -122,6 +124,7 @@ export default function CreateProfilePage() {
       age: null,
       images: [],
       videos: [],
+      stories: [],
       source_url: "",
     });
     setResult(null);
@@ -461,6 +464,32 @@ export default function CreateProfilePage() {
                         className="rounded-lg"
                         style={{ width: 160, height: 120, border: "1px solid #E5E5E5", background: "#000" }}
                       />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {profile.stories && profile.stories.length > 0 && (
+                <div>
+                  <label style={labelStyle}>
+                    Stories ({profile.stories.length})
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {profile.stories.map((s, i) => (
+                      <div key={i} style={{ position: 'relative', width: 64, height: 64 }}>
+                        {s.media_type === 'video' ? (
+                          <video
+                            src={s.media_url}
+                            style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: '50%', border: '2px solid #DC2626' }}
+                          />
+                        ) : (
+                          <img
+                            src={s.thumbnail_url || s.media_url}
+                            alt=""
+                            style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: '50%', border: '2px solid #DC2626' }}
+                          />
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
