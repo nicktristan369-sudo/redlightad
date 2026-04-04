@@ -70,8 +70,8 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
         style={{
           display: "flex",
           overflowX: "auto",
-          gap: 12,
-          padding: "12px 0",
+          gap: 16,
+          padding: "14px 0",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
         }}
@@ -84,12 +84,12 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
         {loading ? (
           <>
             {[0, 1, 2].map((i) => (
-              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0, width: 56 }}>
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, width: 76 }}>
                 <div style={{
-                  width: 52, height: 52, borderRadius: "50%",
+                  width: 70, height: 70, borderRadius: "50%",
                   background: "#E5E7EB", animation: "rlad-pulse 1.5s ease-in-out infinite",
                 }} />
-                <div style={{ width: 40, height: 8, borderRadius: 4, background: "#E5E7EB" }} />
+                <div style={{ width: 52, height: 9, borderRadius: 4, background: "#E5E7EB" }} />
               </div>
             ))}
             <style dangerouslySetInnerHTML={{ __html: `@keyframes rlad-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }` }} />
@@ -105,9 +105,9 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: 4,
+                  gap: 6,
                   flexShrink: 0,
-                  width: 56,
+                  width: 76,
                   background: "none",
                   border: "none",
                   cursor: "pointer",
@@ -115,10 +115,10 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
                 }}
               >
                 <div style={{
-                  width: 52,
-                  height: 52,
+                  width: 70,
+                  height: 70,
                   borderRadius: "50%",
-                  padding: 2,
+                  padding: 3,
                   background: isViewed
                     ? "#D1D5DB"
                     : "linear-gradient(135deg, #DC2626, #F59E0B)",
@@ -141,14 +141,15 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
                   </div>
                 </div>
                 <span style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   color: "#374151",
-                  maxWidth: 52,
+                  maxWidth: 72,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
                   textAlign: "center",
                   display: "block",
+                  fontWeight: 500,
                 }}>
                   {g.listing.title}
                 </span>

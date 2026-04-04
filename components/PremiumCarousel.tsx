@@ -22,7 +22,7 @@ interface PremiumListing {
   in_carousel?: boolean
 }
 
-const VISIBLE_COUNT = 6
+const VISIBLE_COUNT = 7
 
 function timeAgo(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -243,8 +243,8 @@ export default function PremiumCarousel({
             const isFeatured = l.premium_tier === "featured"
 
             return (
-              <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0" style={{ width: "160px" }}>
-                <div className="relative overflow-hidden cursor-pointer" style={{ width: "160px", height: "240px" }}>
+              <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0" style={{ width: "173px" }}>
+                <div className="relative overflow-hidden cursor-pointer" style={{ width: "173px", height: "260px" }}>
                   {/* Image */}
                   {l.profile_image ? (
                     // eslint-disable-next-line @next/next/no-img-element
