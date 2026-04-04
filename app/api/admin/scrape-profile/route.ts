@@ -78,7 +78,29 @@ export async function POST(req: NextRequest) {
     .filter((src, i, arr) => arr.indexOf(src) === i)
     .slice(0, 8)
 
+  // Find video-URLs (MP4)
+  const videos = $('a[href*=".mp4"], source[src*=".mp4"]')
+    .map((_, el) => $(el).attr('href') || $(el).attr('src') || '')
+    .get()
+    .concat(
+      // escortguide.dk gemmer video URL i data-attributter eller href på thumbnails
+      $('[data-thumb*="Videos"], a[data-src*=".mp4"], a[href*="Videos"]')
+        .map((_, el) => {
+          const href = $(el).attr('href') || ''
+          // Konverter thumbnail URL til MP4: /Content/Videos/ID/VID/VID_thumbnail.jpg → /Content/Videos/ID/VID/VID.mp4
+          if (href.includes('Videos') && !href.includes('.mp4')) {
+            return href.replace(/_thumbnail\.(jpg|png)$/, '.mp4')
+          }
+          return href.includes('.mp4') ? href : ''
+        })
+        .get()
+    )
+    .filter((src): src is string => !!src && src.includes('.mp4'))
+    .map(src => src.startsWith('/') ? baseUrl + src : src)
+    .filter((src, i, arr) => arr.indexOf(src) === i)
+    .slice(0, 5)
+
   return Response.json({
-    profile: { display_name, phone, description, city, age, images, source_url: url }
+    profile: { display_name, phone, description, city, age, images, videos, source_url: url }
   })
 }

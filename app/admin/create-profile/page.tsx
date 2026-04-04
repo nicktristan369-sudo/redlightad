@@ -15,6 +15,7 @@ type ProfileData = {
   category: string;
   age: number | null;
   images: string[];
+  videos: string[];
   source_url: string;
 };
 
@@ -47,6 +48,7 @@ export default function CreateProfilePage() {
     category: "escort",
     age: null,
     images: [],
+      videos: [],
     source_url: "",
   });
   const [result, setResult] = useState<CreateResult | null>(null);
@@ -119,6 +121,7 @@ export default function CreateProfilePage() {
       category: "escort",
       age: null,
       images: [],
+      videos: [],
       source_url: "",
     });
     setResult(null);
@@ -415,6 +418,26 @@ export default function CreateProfilePage() {
                           height: 80,
                           border: "1px solid #E5E5E5",
                         }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Video previews */}
+              {profile.videos && profile.videos.length > 0 && (
+                <div>
+                  <label style={labelStyle}>
+                    Videoer ({profile.videos.length})
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {profile.videos.map((src, i) => (
+                      <video
+                        key={i}
+                        src={src}
+                        controls
+                        className="rounded-lg"
+                        style={{ width: 160, height: 120, border: "1px solid #E5E5E5", background: "#000" }}
                       />
                     ))}
                   </div>

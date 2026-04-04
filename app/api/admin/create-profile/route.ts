@@ -426,6 +426,7 @@ export async function POST(req: NextRequest) {
       status: 'active',
       images: uploadedImages,
       profile_image: uploadedImages[0] || null,
+      videos: profile.videos || [],
       created_by_admin: true,
       needs_completion: true,
       admin_email: email,
