@@ -34,6 +34,7 @@ export default function KundeProfil() {
     kinks: [] as string[],
     media: [] as { url: string; type: "image" | "video" }[],
   })
+  const [profileMeta, setProfileMeta] = useState<{ created_at: string; phone_verified: boolean } | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -59,6 +60,7 @@ export default function KundeProfil() {
           kinks: data.kinks || [],
           media: data.media || [],
         })
+        setProfileMeta({ created_at: data.created_at, phone_verified: !!data.phone_verified })
       } else {
         setForm(prev => ({ ...prev, username: user.email?.split("@")[0] || "" }))
       }
@@ -372,19 +374,31 @@ export default function KundeProfil() {
 
             {/* Profile card */}
             <div style={{ padding: "24px 24px 20px" }}>
-              {/* Avatar + navn */}
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
-                <div style={{ width: 72, height: 72, borderRadius: "50%", overflow: "hidden", background: "#E5E7EB", flexShrink: 0, border: "3px solid #F3F4F6" }}>
-                  {form.avatar_url
-                    ? <img src={form.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : <div style={{ width: "100%", height: "100%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 26, fontWeight: 800, color: "#fff" }}>{form.username.slice(0,2).toUpperCase() || "?"}</span>
-                      </div>
-                  }
+              {/* Avatar + navn + verified */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div style={{ width: 72, height: 72, borderRadius: "50%", overflow: "hidden", background: "#E5E7EB", border: "3px solid #F3F4F6" }}>
+                    {form.avatar_url
+                      ? <img src={form.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <div style={{ width: "100%", height: "100%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: 26, fontWeight: 800, color: "#fff" }}>{form.username.slice(0,2).toUpperCase() || "?"}</span>
+                        </div>
+                    }
+                  </div>
+                  {profileMeta?.phone_verified && (
+                    <div title="Verificeret af RedLightAD" style={{ position: "absolute", bottom: 0, right: 0, width: 20, height: 20, background: "#16A34A", borderRadius: "50%", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</div>
+                  )}
                 </div>
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#111", lineHeight: 1.2 }}>{form.username || "Anonym"}</div>
-                  <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: "#111", lineHeight: 1.2 }}>{form.username || "Anonym"}</span>
+                    {profileMeta?.phone_verified && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: "#16A34A", background: "#DCFCE7", padding: "2px 7px", borderRadius: 20, border: "1px solid #BBF7D0" }}>
+                        ✓ Verificeret af RedLightAD
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 5, marginTop: 5, flexWrap: "wrap" }}>
                     {form.gender && (
                       <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>
                         {form.gender === "male" ? "Mand" : form.gender === "female" ? "Dame" : form.gender === "trans" ? "Trans" : "Andet"}
@@ -393,28 +407,49 @@ export default function KundeProfil() {
                     {form.age && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{form.age} år</span>}
                     {form.nationality && <span style={{ fontSize: 11, fontWeight: 600, background: "#F3F4F6", color: "#374151", padding: "2px 8px", borderRadius: 12 }}>{form.nationality}</span>}
                   </div>
+                  {profileMeta?.created_at && (
+                    <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 4 }}>
+                      Profil oprettet {new Date(profileMeta.created_at).toLocaleDateString("da-DK", { day: "numeric", month: "long", year: "numeric" })}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Stats row */}
-              {(form.height_cm || form.weight_kg || form.smoker || form.tattoo) && (
-                <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-                  {form.height_cm && <div style={{ flex: 1, minWidth: 70, background: "#F9FAFB", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{form.height_cm}</div>
-                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>cm høj</div>
-                  </div>}
-                  {form.weight_kg && <div style={{ flex: 1, minWidth: 70, background: "#F9FAFB", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{form.weight_kg}</div>
-                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>kg</div>
-                  </div>}
-                  {form.smoker && <div style={{ flex: 1, minWidth: 70, background: "#F9FAFB", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{form.smoker === "no" ? "🚭" : form.smoker === "yes" ? "🚬" : "💨"}</div>
-                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>{form.smoker === "no" ? "Ryger ikke" : form.smoker === "yes" ? "Ryger" : "Lejlighedsvis"}</div>
-                  </div>}
-                  {form.tattoo && form.tattoo !== "none" && <div style={{ flex: 1, minWidth: 70, background: "#F9FAFB", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>🖋️</div>
-                    <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>{form.tattoo === "few" ? "Et par" : "Mange"} tatoveringer</div>
-                  </div>}
+              {/* Stats grid */}
+              {(form.height_cm || form.weight_kg || form.smoker || form.tattoo || form.penis_size) && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 8, marginBottom: 16 }}>
+                  {form.height_cm && (
+                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{form.height_cm}</div>
+                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>cm høj</div>
+                    </div>
+                  )}
+                  {form.weight_kg && (
+                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#111" }}>{form.weight_kg}</div>
+                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>kg</div>
+                    </div>
+                  )}
+                  {form.smoker && (
+                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 13 }}>{form.smoker === "no" ? "🚭" : form.smoker === "yes" ? "🚬" : "💨"}</div>
+                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>{form.smoker === "no" ? "Ryger ikke" : form.smoker === "yes" ? "Ryger" : "Lejlighedsvis"}</div>
+                    </div>
+                  )}
+                  {form.tattoo && form.tattoo !== "none" && (
+                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 13 }}>🖋️</div>
+                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>{form.tattoo === "few" ? "Et par" : "Mange"} tatoveringer</div>
+                    </div>
+                  )}
+                  {form.penis_size && (form.gender === "male" || form.gender === "trans") && (
+                    <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "9px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 13 }}>📏</div>
+                      <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600 }}>
+                        {form.penis_size === "small" ? "<14 cm" : form.penis_size === "medium" ? "14–18 cm" : form.penis_size === "large" ? "18–22 cm" : ">22 cm"}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
