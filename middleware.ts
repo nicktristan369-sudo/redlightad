@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 
+// ── MAINTENANCE MODE ─────────────────────────────────────────────────────────
+// Sæt til false for at åbne siden igen
+const MAINTENANCE_MODE = true
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Paths that are always public (no password required)
 const PUBLIC_PATHS = ["/unlock", "/api/", "/_next", "/favicon"]
 
@@ -11,6 +16,17 @@ const SKIP_TRACKING = ["/api/", "/_next/", "/admin/", "/favicon.ico", "/opengrap
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+
+  // ── Maintenance mode — lås hele siden ───────────────────────────────────
+  if (MAINTENANCE_MODE && pathname !== "/maintenance") {
+    // Tillad kun statiske assets og API
+    if (!pathname.startsWith("/_next") && !pathname.startsWith("/api/") && !pathname.startsWith("/favicon")) {
+      const url = req.nextUrl.clone()
+      url.pathname = "/maintenance"
+      return NextResponse.redirect(url)
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Allow public paths and static assets
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
