@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
   })
 
   const html = await res.text()
-  console.log(`[scrape] ${url} → status=${res.status} size=${html.length} isNympho=${new URL(url).hostname.includes('nympho')}`)
+  const isNympho = url.includes('nympho.dk')
+  const isEscortguide = url.includes('escortguide.dk')
+  console.log(`[scrape] ${url} → status=${res.status} size=${html.length} isNympho=${isNympho}`)
   const $ = cheerio.load(html)
 
   const display_name = (isNympho
@@ -76,8 +78,6 @@ export async function POST(req: NextRequest) {
   const age = ageMatch ? parseInt(ageMatch[1]) : null
 
   const baseUrl = new URL(url).origin
-  const isNympho = url.includes('nympho.dk')
-  const isEscortguide = url.includes('escortguide.dk')
 
   function toAbsolute(src: string): string {
     if (!src) return ''
