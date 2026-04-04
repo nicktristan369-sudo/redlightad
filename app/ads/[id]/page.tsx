@@ -54,6 +54,24 @@ interface Listing {
   show_travel_schedule: boolean | null;
   status: string;
   kyc_status?: string | null;
+  // Ekstra profilfelter
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  ethnicity?: string | null;
+  eye_color?: string | null;
+  hair_color?: string | null;
+  hair_length?: string | null;
+  pubic_hair?: string | null;
+  bust_size?: string | null;
+  bust_type?: string | null;
+  orientation?: string | null;
+  smoker?: string | null;
+  tattoo?: string | null;
+  piercing?: string | null;
+  nationality?: string | null;
+  available_for?: string | null;
+  meeting_with?: string | null;
+  travel?: string | null;
 }
 
 export default function AdDetailPage() {
@@ -314,6 +332,24 @@ export default function AdDetailPage() {
                   country={ad.country}
                   languages={ad.languages ?? []}
                   rates={rates}
+                  listingId={ad.id}
+                  height_cm={ad.height_cm}
+                  weight_kg={ad.weight_kg}
+                  ethnicity={ad.ethnicity}
+                  eye_color={ad.eye_color}
+                  hair_color={ad.hair_color}
+                  hair_length={ad.hair_length}
+                  pubic_hair={ad.pubic_hair}
+                  bust_size={ad.bust_size}
+                  bust_type={ad.bust_type}
+                  orientation={ad.orientation}
+                  smoker={ad.smoker}
+                  tattoo={ad.tattoo}
+                  piercing={ad.piercing}
+                  nationality={ad.nationality}
+                  available_for={ad.available_for}
+                  meeting_with={ad.meeting_with}
+                  travel={ad.travel}
                 />
                 <ContactSection contact={{
                   phone: ad.phone,
