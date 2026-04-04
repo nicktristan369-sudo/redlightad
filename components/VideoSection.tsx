@@ -192,16 +192,21 @@ function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
       className="relative w-full overflow-hidden rounded group transition-transform duration-200 hover:scale-[1.03]"
       style={{ aspectRatio: "16/9", background: "#111" }}>
 
-      {/* Thumbnail */}
+      {/* Thumbnail — bruger thumbnail_url hvis sat, ellers første frame fra video */}
       {video.thumbnail_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={video.thumbnail_url} alt={video.title ?? "Video"}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           style={{ filter: video.is_locked ? "blur(8px)" : "none" }} />
       ) : (
-        <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-          <Play size={28} color="rgba(255,255,255,0.4)" />
-        </div>
+        <video
+          src={`${video.url}#t=1`}
+          preload="metadata"
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+          style={{ filter: video.is_locked ? "blur(8px)" : "none", pointerEvents: "none" }}
+        />
       )}
 
       {/* Overlay */}
