@@ -452,18 +452,50 @@ export default function CreateProfilePage() {
               {/* Video previews */}
               {profile.videos && profile.videos.length > 0 && (
                 <div>
-                  <label style={labelStyle}>
-                    Videoer ({profile.videos.length})
-                  </label>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <label style={{ ...labelStyle, marginBottom: 0 }}>
+                      Videoer ({profile.videos.length})
+                    </label>
+                    <button
+                      onClick={() => setProfile({ ...profile, videos: [] })}
+                      style={{
+                        fontSize: 11, color: "#DC2626", fontWeight: 600,
+                        background: "#FEE2E2", border: "none", cursor: "pointer",
+                        padding: "3px 10px", borderRadius: 4,
+                      }}
+                    >
+                      ✕ Spring videoer over
+                    </button>
+                  </div>
+                  {/* Watermark advarsel */}
+                  <div style={{
+                    background: "#FFF7ED", border: "1px solid #FED7AA",
+                    borderRadius: 6, padding: "8px 12px", marginBottom: 8,
+                    fontSize: 12, color: "#92400E", display: "flex", gap: 6, alignItems: "flex-start",
+                  }}>
+                    <span>⚠️</span>
+                    <span>Disse videoer er fra {new URL(profile.source_url || "https://escortguide.dk").hostname} og kan have vandmærke. Klik "Spring videoer over" og lad escorten uploade sine egne videoer via dashboard.</span>
+                  </div>
                   <div className="flex gap-2 flex-wrap">
                     {profile.videos.map((src, i) => (
-                      <video
-                        key={i}
-                        src={src}
-                        controls
-                        className="rounded-lg"
-                        style={{ width: 160, height: 120, border: "1px solid #E5E5E5", background: "#000" }}
-                      />
+                      <div key={i} style={{ position: "relative" }}>
+                        <video
+                          src={src}
+                          controls
+                          className="rounded-lg"
+                          style={{ width: 160, height: 120, border: "1px solid #E5E5E5", background: "#000" }}
+                        />
+                        <button
+                          onClick={() => setProfile({ ...profile, videos: profile.videos.filter((_, idx) => idx !== i) })}
+                          style={{
+                            position: "absolute", top: 4, right: 4,
+                            width: 20, height: 20, borderRadius: "50%",
+                            background: "#DC2626", color: "#fff", border: "none",
+                            cursor: "pointer", fontSize: 11, fontWeight: 700,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}
+                        >✕</button>
+                      </div>
                     ))}
                   </div>
                 </div>
