@@ -45,11 +45,12 @@ function isAvailableNow(
 }
 
 // ── Mobile listing card with auto-cycling images ──────────────────────────
-function MobileAdCard({ ad, displayLocation, description, ago }: {
+function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 }: {
   ad: Listing
   displayLocation: string
   description: string
   ago: string
+  staggerDelay?: number
 }) {
   const allImgs: string[] = [
     ...(ad.images ?? []),
@@ -61,9 +62,12 @@ function MobileAdCard({ ad, displayLocation, description, ago }: {
   const [offset, setOffset] = useState(0)
   useEffect(() => {
     if (allImgs.length <= 3) return
-    const t = setInterval(() => setOffset(p => (p + 1) % (allImgs.length - 2)), 3000)
-    return () => clearInterval(t)
-  }, [allImgs.length])
+    const startTimer = setTimeout(() => {
+      const t = setInterval(() => setOffset(p => (p + 1) % (allImgs.length - 2)), 5000)
+      return () => clearInterval(t)
+    }, staggerDelay)
+    return () => clearTimeout(startTimer)
+  }, [allImgs.length, staggerDelay])
 
   const panels = allImgs.length >= 3
     ? [allImgs[offset], allImgs[offset + 1], allImgs[offset + 2]]
@@ -176,6 +180,53 @@ function MobileAdCard({ ad, displayLocation, description, ago }: {
     </div>
   )
 }
+
+// ── Desktop thumbnail cycling ─────────────────────────────────────────────
+function DesktopThumb({ ad, staggerDelay = 0 }: { ad: Listing; staggerDelay?: number }) {
+  const pool = [ad.profile_image, ...(ad.images ?? [])].filter((v): v is string => !!v).filter((v, i, a) => a.indexOf(v) === i)
+  const [current, setCurrent] = useState(0)
+  const [fading, setFading] = useState(false)
+
+  useEffect(() => {
+    if (pool.length <= 1) return
+    const start = setTimeout(() => {
+      const t = setInterval(() => {
+        setFading(true)
+        setTimeout(() => {
+          setCurrent(cur => {
+            let next: number
+            do { next = Math.floor(Math.random() * pool.length) } while (next === cur)
+            return next
+          })
+          setFading(false)
+        }, 500)
+      }, 6000)
+      return () => clearInterval(t)
+    }, staggerDelay)
+    return () => clearTimeout(start)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pool.length, staggerDelay])
+
+  if (pool.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+        <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </div>
+    )
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={pool[current]}
+      alt={ad.title}
+      className="w-full h-full object-cover"
+      style={{ transition: "opacity 0.5s ease", opacity: fading ? 0 : 1 }}
+    />
+  )
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Decorative audio waveform bars
 function Waveform() {
@@ -363,7 +414,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
         </div>
       ) : (
         <div className="space-y-4">
-          {listings.map((ad) => {
+          {listings.map((ad, idx) => {
             const displayLocation = ad.city || ad.location || ""
             const description = ad.about || ""
             return (
@@ -376,6 +427,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     displayLocation={displayLocation}
                     description={description}
                     ago={timeAgo(ad.created_at)}
+                    staggerDelay={idx * 600}
                   />
 
                   {/* ── DESKTOP layout (hidden below md) ── */}
@@ -393,15 +445,8 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                             </div>
                           </div>
                         </>
-                      ) : ad.profile_image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={ad.profile_image} alt={ad.title} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
+                        <DesktopThumb ad={ad} staggerDelay={idx * 600} />
                       )}
                       {tierBadge(ad.premium_tier)}
                     </div>

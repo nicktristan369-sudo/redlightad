@@ -10,11 +10,13 @@ function CyclingImage({
   images,
   alt,
   hasVideo,
+  staggerDelay = 0,
 }: {
   profileImage: string | null
   images: string[] | null
   alt: string
   hasVideo: boolean
+  staggerDelay?: number
 }) {
   const pool = [
     ...(profileImage ? [profileImage] : []),
@@ -35,18 +37,22 @@ function CyclingImage({
 
   useEffect(() => {
     if (pool.length <= 1) return
-    const t = setInterval(() => {
-      setCurrent(cur => {
-        let next: number
-        do { next = Math.floor(Math.random() * pool.length) } while (next === cur)
-        setPrev(cur)
-        setTransitioning(true)
-        setTimeout(() => { setPrev(null); setTransitioning(false) }, 700)
-        return next
-      })
-    }, 6000)
-    return () => clearInterval(t)
-  }, [pool.length])
+    // Stagger: delay start so cards don't all switch simultaneously
+    const startTimer = setTimeout(() => {
+      const t = setInterval(() => {
+        setCurrent(cur => {
+          let next: number
+          do { next = Math.floor(Math.random() * pool.length) } while (next === cur)
+          setPrev(cur)
+          setTransitioning(true)
+          setTimeout(() => { setPrev(null); setTransitioning(false) }, 700)
+          return next
+        })
+      }, 6000)
+      return () => clearInterval(t)
+    }, staggerDelay)
+    return () => clearTimeout(startTimer)
+  }, [pool.length, staggerDelay])
 
   if (pool.length === 0) {
     return (
@@ -327,7 +333,7 @@ export default function PremiumCarousel({
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-          {visible.map((l) => {
+          {visible.map((l, cardIdx) => {
             const available = isAvailableNow(l.opening_hours, l.timezone)
             const hasPhotos = (l.images && l.images.length > 0) || !!l.profile_image
             const ago = timeAgo(l.created_at)
@@ -337,12 +343,13 @@ export default function PremiumCarousel({
             return (
               <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0" style={{ width: "173px" }}>
                 <div className="relative overflow-hidden cursor-pointer" style={{ width: "173px", height: "260px" }}>
-                  {/* Cycling gallery image */}
+                  {/* Cycling gallery image — staggered per card */}
                   <CyclingImage
                     profileImage={l.profile_image}
                     images={l.images}
                     alt={l.title}
                     hasVideo={!!l.video_url}
+                    staggerDelay={cardIdx * 800}
                   />
 
                   {/* Ribbon badge */}
