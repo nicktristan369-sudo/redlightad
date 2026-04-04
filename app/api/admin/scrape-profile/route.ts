@@ -95,7 +95,31 @@ export async function POST(req: NextRequest) {
     .filter((src, i, arr) => arr.indexOf(src) === i)
     .slice(0, 5)
 
+  // Hent stories fra escortguide.dk
+  let stories: { media_url: string; media_type: string; thumbnail_url: string; duration: number }[] = []
+  const profileIdMatch = url.match(/\/annonce\/(\d+)/)
+  if (profileIdMatch && url.includes('escortguide.dk')) {
+    try {
+      const storiesRes = await fetch(`https://escortguide.dk/Global/StoriesGetProfiles.aspx?profileid=${profileIdMatch[1]}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://escortguide.dk/' },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (storiesRes.ok) {
+        const storiesData = await storiesRes.json()
+        const profile = storiesData.find((p: { id: number }) => p.id === parseInt(profileIdMatch[1]))
+        if (profile?.stories) {
+          stories = profile.stories.map((s: { type: string; mediaUrl: string; thumbUrl: string; duration: number }) => ({
+            media_url: s.mediaUrl.startsWith('/') ? baseUrl + s.mediaUrl : s.mediaUrl,
+            media_type: s.type,
+            thumbnail_url: s.thumbUrl ? (s.thumbUrl.startsWith('/') ? baseUrl + s.thumbUrl : s.thumbUrl) : '',
+            duration: s.duration || 5,
+          }))
+        }
+      }
+    } catch (e) { console.error('Stories fetch error:', e instanceof Error ? e.message : e) }
+  }
+
   return Response.json({
-    profile: { display_name, phone, description, city, age, images, videos, source_url: url }
+    profile: { display_name, phone, description, city, age, images, videos, stories, source_url: url }
   })
 }

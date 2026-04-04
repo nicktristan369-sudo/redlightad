@@ -437,8 +437,24 @@ export async function POST(req: NextRequest) {
 
   console.log('Listing insert result:', listingData, listingError)
 
-  // Gem videoer i listing_videos tabel
   const listingId = listingData?.[0]?.id
+
+  // Gem stories i stories tabel
+  if (listingId && profile.stories && profile.stories.length > 0) {
+    const storyInserts = profile.stories.map((s: { media_url: string; media_type: string; thumbnail_url: string; duration: number }) => ({
+      listing_id: listingId,
+      media_url: s.media_url,
+      media_type: s.media_type || 'image',
+      thumbnail_url: s.thumbnail_url || null,
+      duration: s.duration || 5,
+      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+    }))
+    const { error: storyError } = await supabase.from('stories').insert(storyInserts)
+    if (storyError) console.error('Story insert error:', storyError.message)
+    else console.log(`✅ ${profile.stories.length} stories gemt`)
+  }
+
+  // Gem videoer i listing_videos tabel
   if (listingId && profile.videos && profile.videos.length > 0) {
     const videoInserts = profile.videos.map((url: string, i: number) => ({
       listing_id: listingId,
