@@ -15,10 +15,9 @@ export async function GET() {
   if (!imgRes.ok) return NextResponse.json({ error: `Kunne ikke hente testbillede: ${imgRes.status}` })
 
   const imageBuffer = Buffer.from(await imgRes.arrayBuffer())
-  const ab = imageBuffer.buffer.slice(imageBuffer.byteOffset, imageBuffer.byteOffset + imageBuffer.byteLength)
 
   const form = new FormData()
-  form.append('original_image_file', new Blob([ab], { type: 'image/jpeg' }), 'image.jpg')
+  form.append('original_image_file', new Blob([new Uint8Array(imageBuffer)], { type: 'image/jpeg' }), 'image.jpg')
   form.append('is_remove_text', 'true')
   form.append('is_remove_logo', 'true')
   form.append('output_format', 'jpg')
