@@ -33,7 +33,7 @@ function formatCount(n: number) {
   return n.toString()
 }
 
-function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => void }) {
+function VideoCard({ video, onShare, mobile = false }: { video: Video; onShare: (v: Video) => void; mobile?: boolean }) {
   const listing = video.listings
   const isVip = listing.premium_tier === "vip"
   const isFeatured = listing.premium_tier === "featured"
@@ -83,49 +83,48 @@ function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => vo
         {/* VIP badge */}
         {(isVip || isFeatured) && (
           <div style={{
-            position: "absolute", top: 10, left: 10,
+            position: "absolute", top: mobile ? 6 : 10, left: mobile ? 6 : 10,
             background: isVip ? "#F59E0B" : "#6B7280",
             color: isVip ? "#000" : "#fff",
-            fontSize: 9, fontWeight: 800, letterSpacing: "0.15em",
-            padding: "3px 8px", textTransform: "uppercase",
+            fontSize: mobile ? 8 : 9, fontWeight: 800, letterSpacing: "0.15em",
+            padding: mobile ? "2px 6px" : "3px 8px", textTransform: "uppercase",
           }}>
             {isVip ? "VIP" : "FEAT"}
           </div>
         )}
 
         {/* Play button — center */}
-        <div style={{
-          position: "absolute", inset: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{
-            width: 52, height: 52, borderRadius: "50%",
-            border: "2px solid rgba(255,255,255,0.85)",
+            width: mobile ? 36 : 52, height: mobile ? 36 : 52, borderRadius: "50%",
+            border: `${mobile ? 1.5 : 2}px solid rgba(255,255,255,0.85)`,
             background: "rgba(0,0,0,0.35)",
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "transform 0.2s, background 0.2s",
           }}
             className="group-hover:scale-110 group-hover:bg-red-600/70"
           >
-            <Play size={20} fill="white" color="white" style={{ marginLeft: 3 }} />
+            <Play size={mobile ? 13 : 20} fill="white" color="white" style={{ marginLeft: mobile ? 2 : 3 }} />
           </div>
         </div>
 
         {/* Name + location bottom-left */}
-        <div style={{ position: "absolute", bottom: 10, left: 12, right: 12 }}>
+        <div style={{ position: "absolute", bottom: mobile ? 6 : 10, left: mobile ? 8 : 12, right: mobile ? 8 : 12 }}>
           <p style={{
-            fontSize: 13, fontWeight: 800, color: "#fff",
-            letterSpacing: "0.05em", textTransform: "uppercase",
+            fontSize: mobile ? 10 : 13, fontWeight: 800, color: "#fff",
+            letterSpacing: "0.04em", textTransform: "uppercase",
             textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-            lineHeight: 1.2, marginBottom: 2,
+            lineHeight: 1.2, marginBottom: 1,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
-            {listing.title.toUpperCase()}
+            {listing.title}
           </p>
           {location && (
             <p style={{
-              fontSize: 10, color: "rgba(255,255,255,0.75)",
+              fontSize: mobile ? 8 : 10, color: "rgba(255,255,255,0.70)",
               letterSpacing: "0.04em", textTransform: "uppercase",
               textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>
               {location}
             </p>
@@ -136,64 +135,38 @@ function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => vo
       {/* Action bar */}
       <div style={{
         display: "flex", alignItems: "center",
-        background: "#1a1a1a",
-        borderTop: "1px solid #2a2a2a",
-        padding: "0",
+        background: "#1a1a1a", borderTop: "1px solid #2a2a2a",
       }}>
-        {/* Profile */}
         <Link
           href={`/ads/${listing.id}`}
           style={{
             flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "12px 0", borderRight: "1px solid #2a2a2a",
+            padding: mobile ? "9px 0" : "12px 0", borderRight: "1px solid #2a2a2a",
             color: "rgba(255,255,255,0.55)", textDecoration: "none",
-            transition: "color 0.15s",
           }}
-          title="Visit profile"
         >
-          <User size={16} />
+          <User size={mobile ? 13 : 16} />
         </Link>
-
-        {/* Play */}
-        <button
-          onClick={handlePlay}
-          style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "12px 0", borderRight: "1px solid #2a2a2a",
-            color: "rgba(255,255,255,0.55)", background: "none", cursor: "pointer",
-            transition: "color 0.15s",
-          }}
-          title="Play video"
-        >
-          <Play size={16} />
+        <button onClick={handlePlay} style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: mobile ? "9px 0" : "12px 0", borderRight: "1px solid #2a2a2a",
+          color: "rgba(255,255,255,0.55)", background: "none", cursor: "pointer",
+        }}>
+          <Play size={mobile ? 13 : 16} />
         </button>
-
-        {/* Share */}
-        <button
-          onClick={() => onShare(video)}
-          style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "12px 0", borderRight: "1px solid #2a2a2a",
-            color: "rgba(255,255,255,0.55)", background: "none", cursor: "pointer",
-            transition: "color 0.15s",
-          }}
-          title="Share"
-        >
-          <Share2 size={16} />
+        <button onClick={() => onShare(video)} style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: mobile ? "9px 0" : "12px 0", borderRight: "1px solid #2a2a2a",
+          color: "rgba(255,255,255,0.55)", background: "none", cursor: "pointer",
+        }}>
+          <Share2 size={mobile ? 13 : 16} />
         </button>
-
-        {/* Bookmark */}
-        <button
-          style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "12px 0",
-            color: "rgba(255,255,255,0.55)", background: "none", border: "none",
-            cursor: "pointer",
-            transition: "color 0.15s",
-          }}
-          title="Save"
-        >
-          <Bookmark size={16} />
+        <button style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: mobile ? "9px 0" : "12px 0",
+          color: "rgba(255,255,255,0.55)", background: "none", border: "none", cursor: "pointer",
+        }}>
+          <Bookmark size={mobile ? 13 : 16} />
         </button>
       </div>
     </div>
@@ -256,12 +229,20 @@ export default function VideoGrid({ videos }: Props) {
           <p style={{ fontSize: 13, marginTop: 6 }}>Check back soon for new content</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}
-          className="md:grid-cols-3 sm:grid-cols-2">
-          {filtered.map(v => (
-            <VideoCard key={v.id} video={v} onShare={handleShare} />
-          ))}
-        </div>
+        <>
+          {/* Mobile: 2 cols */}
+          <div className="grid md:hidden gap-[2px]" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+            {filtered.map(v => (
+              <VideoCard key={v.id} video={v} onShare={handleShare} mobile />
+            ))}
+          </div>
+          {/* Desktop: 3 cols */}
+          <div className="hidden md:grid gap-[2px]" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+            {filtered.map(v => (
+              <VideoCard key={v.id} video={v} onShare={handleShare} />
+            ))}
+          </div>
+        </>
       )}
 
       {toast && (
