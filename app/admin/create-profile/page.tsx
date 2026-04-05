@@ -183,6 +183,8 @@ export default function CreateProfilePage() {
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState("");
   const [importedImages, setImportedImages] = useState<string[]>([]);
+  const [importingVideo, setImportingVideo] = useState(false);
+  const [videoImportMsg, setVideoImportMsg] = useState("");
 
   // Fuzzy match: find closest option value (case-insensitive, partial)
   const matchOption = (value: string, options: string[]): string => {
@@ -908,8 +910,39 @@ export default function CreateProfilePage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Video URL (mp4)</label>
-                  <input type="url" value={profile.video_url || ""} onChange={e => p("video_url", e.target.value)}
-                    placeholder="https://..." style={inputStyle} />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input type="url" value={profile.video_url || ""} onChange={e => { p("video_url", e.target.value); setVideoImportMsg(""); }}
+                      placeholder="https://..." style={{ ...inputStyle, flex: 1 }} />
+                    {profile.video_url && !profile.video_url.includes("supabase") && (
+                      <button
+                        onClick={async () => {
+                          setImportingVideo(true); setVideoImportMsg("");
+                          try {
+                            const r = await fetch("/api/admin/import-video", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ url: profile.video_url }),
+                            });
+                            const d = await r.json();
+                            if (!r.ok) throw new Error(d.error);
+                            p("video_url", d.url);
+                            p("videos", [...(profile.videos || []), d.url]);
+                            setVideoImportMsg("✓ Video importeret til storage");
+                          } catch (e: unknown) {
+                            setVideoImportMsg(e instanceof Error ? e.message : "Fejl");
+                          } finally { setImportingVideo(false); }
+                        }}
+                        disabled={importingVideo}
+                        style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#111", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: importingVideo ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: importingVideo ? 0.6 : 1 }}
+                      >
+                        {importingVideo ? "Henter..." : "Import til storage"}
+                      </button>
+                    )}
+                  </div>
+                  {videoImportMsg && <p style={{ fontSize: 12, marginTop: 6, color: videoImportMsg.startsWith("✓") ? "#16A34A" : "#DC2626" }}>{videoImportMsg}</p>}
+                  {profile.video_url && profile.video_url.includes("supabase") && (
+                    <video src={profile.video_url} controls style={{ width: "100%", marginTop: 8, borderRadius: 8, maxHeight: 200 }} />
+                  )}
                 </div>
               </div>
             </div>
