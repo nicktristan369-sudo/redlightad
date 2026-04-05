@@ -110,10 +110,25 @@ function parseEuroGirlsEscort($: CheerioDoc, url: string) {
     $("[class*=country]").first().text().trim()
 
   const images: string[] = []
-  $("img[src*='escorts'], img[src*='profile'], img[src*='photo'], img[data-src]").each((_i, el) => {
-    const src = $(el).attr("data-src") || $(el).attr("src") || ""
-    if (src.startsWith("http") && !images.includes(src)) images.push(src)
+  const adDomains = ["escortmodels", "escortmod", "banner", "advert", "sponsor", "affiliate", "promo"]
+
+  // First: gallery/slider containers only
+  $("[class*=gallery] img, [class*=slider] img, [class*=photo] img, [class*=album] img, .swiper-slide img, .owl-item img, [class*=carousel] img").each((_i, el) => {
+    const src = $(el).attr("data-src") || $(el).attr("data-lazy") || $(el).attr("src") || ""
+    if (!src.startsWith("http")) return
+    if (adDomains.some(d => src.toLowerCase().includes(d))) return
+    if (!images.includes(src)) images.push(src)
   })
+
+  // Fallback: broad scan but exclude ad networks
+  if (images.length === 0) {
+    $("img[src*='escorts'], img[src*='profile'], img[src*='photo'], img[data-src]").each((_i, el) => {
+      const src = $(el).attr("data-src") || $(el).attr("src") || ""
+      if (!src.startsWith("http")) return
+      if (adDomains.some(d => src.toLowerCase().includes(d))) return
+      if (!images.includes(src)) images.push(src)
+    })
+  }
 
   return { name, age, city, phone, description, images: images.slice(0, 10), height, weight, nationality, source_url: url }
 }
