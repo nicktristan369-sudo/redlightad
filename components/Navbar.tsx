@@ -334,105 +334,126 @@ export default function Navbar() {
 
       {/* ── Slide-in Drawer ── */}
       <div style={{
-        position: "fixed", top: 0, right: 0, bottom: 0, width: "280px", maxWidth: "100vw",
+        position: "fixed", top: 0, right: 0, bottom: 0, width: "300px", maxWidth: "100vw",
         background: "#fff", zIndex: 9999,
         transform: drawerOpen ? "translateX(0)" : "translateX(100%)",
-        transition: "transform 0.25s ease", display: "flex", flexDirection: "column", overflowY: "auto",
+        transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+        display: "flex", flexDirection: "column",
+        boxShadow: "-12px 0 40px rgba(0,0,0,0.12)",
       }}>
-        {/* Close button */}
-        <div style={{ display: "flex", justifyContent: "flex-end", padding: "14px 16px 8px" }}>
-          <button onClick={closeDrawer} style={{ padding: 6, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-            <X size={22} color="#111" />
+
+        {/* ── Header: Logo + close ── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px" }}>
+          <Link href="/" onClick={closeDrawer}>
+            <Logo variant="light" height={24} />
+          </Link>
+          <button onClick={closeDrawer}
+            style={{ width: 30, height: 30, borderRadius: "50%", border: "none", background: "#F2F2F2", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <X size={15} color="#555" strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* User card i drawer */}
+        {/* ── User card ── */}
         {user && (
-          <div style={{ margin: "0 16px 8px", padding: "12px", background: "#F9FAFB", borderRadius: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Avatar size={40} />
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
-                <p style={{ fontSize: 11, color: "#9CA3AF", margin: "1px 0 0" }}>{user.accountType === "customer" ? "Kundekonto" : "Profil"}</p>
+          <div style={{ margin: "0 16px 6px", padding: "12px 14px", background: "#F7F7F7", borderRadius: 14, display: "flex", alignItems: "center", gap: 10 }}>
+            <Avatar size={38} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                <span style={{ fontSize: 10, color: "#9CA3AF" }}>{user.accountType === "customer" ? "Customer" : "Provider"}</span>
+                {coinBalance !== null && <>
+                  <span style={{ width: 2, height: 2, borderRadius: "50%", background: "#D1D5DB", display: "inline-block" }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#DC2626" }}>{coinBalance} RC</span>
+                </>}
               </div>
             </div>
-            {coinBalance !== null && (
-              <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13 }}>🔴</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#DC2626" }}>{coinBalance} coins</span>
-              </div>
+          </div>
+        )}
+
+        {/* ── Nav links ── */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
+          <nav>
+            {navLinks.map(({ href, label, isPostAd }) => (
+              <Link key={href} href={href} onClick={closeDrawer}
+                style={{
+                  display: "flex", alignItems: "center",
+                  padding: "11px 20px", fontSize: 15,
+                  fontWeight: isPostAd ? 700 : 450,
+                  color: isPostAd ? "#DC2626" : "#1A1A1A",
+                  textDecoration: "none", letterSpacing: "-0.01em",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#F7F7F7"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                {label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* ── Separator ── */}
+          <div style={{ height: 1, background: "#F0F0F0", margin: "8px 20px" }} />
+
+          {/* ── Auth buttons ── */}
+          <div style={{ padding: "6px 16px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
+            {user ? (
+              <>
+                <Link href={dashboardHref} onClick={closeDrawer}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "11px", borderRadius: 10, background: "#111", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none", letterSpacing: "-0.01em" }}>
+                  Dashboard
+                </Link>
+                <button onClick={handleLogout}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px", borderRadius: 10, border: "none", background: "#FEF2F2", color: "#DC2626", fontSize: 14, fontWeight: 600, cursor: "pointer", letterSpacing: "-0.01em" }}>
+                  <LogOut size={14} strokeWidth={2.5} /> Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={closeDrawer}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "11px", borderRadius: 10, border: "1.5px solid #E8E8E8", background: "#fff", color: "#1A1A1A", fontSize: 14, fontWeight: 600, textDecoration: "none", letterSpacing: "-0.01em" }}>
+                  {t.nav_login}
+                </Link>
+                <Link href="/register" onClick={closeDrawer}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "11px", borderRadius: 10, border: "none", background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none", letterSpacing: "-0.01em" }}>
+                  {t.nav_create_account}
+                </Link>
+              </>
             )}
           </div>
-        )}
 
-        {/* Nav links */}
-        <nav style={{ display: "flex", flexDirection: "column" }}>
-          {navLinks.map(({ href, label, isPostAd }) => (
-            <Link key={href} href={href} onClick={closeDrawer}
-              style={{ padding: "14px 24px", fontSize: "15px", fontWeight: isPostAd ? 700 : 500, color: isPostAd ? "#DC2626" : "#111", textDecoration: "none" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+          {/* ── Separator ── */}
+          <div style={{ height: 1, background: "#F0F0F0", margin: "4px 20px 0" }} />
+
+          {/* ── Preferences (Language + Location) ── */}
+          <div style={{ padding: "8px 6px 20px" }}>
+            {/* Language */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 14px", borderRadius: 10 }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#F7F7F7"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              {label}
-            </Link>
-          ))}
-        </nav>
+              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                <Globe size={14} color="#8E8E93" strokeWidth={2} />
+                <span style={{ fontSize: 13, color: "#555", fontWeight: 450 }}>Language</span>
+              </div>
+              <LanguageSelector />
+            </div>
 
-        <div style={{ height: 1, background: "#E5E5E5", margin: "8px 16px" }} />
-
-        {/* Auth section */}
-        <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {user ? (
-            <>
-              <Link href={dashboardHref} onClick={closeDrawer}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12, borderRadius: 8, background: "#111", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-                {t.nav_dashboard}
-              </Link>
-              <button onClick={handleLogout}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 12, borderRadius: 8, border: "1px solid #FEE2E2", background: "#FEF2F2", color: "#DC2626", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-                <LogOut size={15} />
-                Log ud
+            {/* Location */}
+            {selectedCountry && (
+              <button onClick={() => { setShowCountrySelector(true); closeDrawer(); }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "4px 14px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#F7F7F7"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <MapPin size={14} color="#8E8E93" strokeWidth={2} />
+                  <span style={{ fontSize: 13, color: "#555", fontWeight: 450 }}>Location</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span className={`fi fi-${selectedCountry.code}`} style={{ width: 14, height: 11, display: "inline-block", borderRadius: 2 }} />
+                  <span style={{ fontSize: 13, color: "#1A1A1A", fontWeight: 500 }}>{selectedCountry.name}</span>
+                  <ChevronDown size={12} color="#8E8E93" />
+                </div>
               </button>
-            </>
-          ) : (
-            <>
-              <Link href="/login" onClick={closeDrawer}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12, borderRadius: 8, border: "1px solid #D1D5DB", background: "#fff", color: "#111", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-                {t.nav_login}
-              </Link>
-              <Link href="/register" onClick={closeDrawer}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 12, borderRadius: 8, border: "none", background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-                {t.nav_create_account}
-              </Link>
-            </>
-          )}
-        </div>
-
-        <div style={{ height: 1, background: "#E5E5E5", margin: "8px 16px" }} />
-
-        {/* Language + Location */}
-        <div style={{ padding: "8px 24px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-            <Globe size={16} color="#9CA3AF" />
-            <span style={{ fontSize: 13, fontWeight: 500, color: "#6B7280" }}>Language</span>
+            )}
           </div>
-          <LanguageSelector />
         </div>
-
-        {selectedCountry && (
-          <div style={{ padding: "8px 24px" }}>
-            <button onClick={() => { setShowCountrySelector(true); closeDrawer(); }}
-              style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 500, color: "#111", background: "transparent", border: "none", cursor: "pointer", padding: "8px 0" }}>
-              <MapPin size={16} color="#9CA3AF" />
-              <span className={`fi fi-${selectedCountry.code}`} style={{ width: 16, height: 12, display: "inline-block" }} />
-              <span>{selectedCountry.name}</span>
-              <ChevronDown size={12} color="#9CA3AF" />
-            </button>
-          </div>
-        )}
-
-        <div style={{ height: 24 }} />
       </div>
 
       <style>{`
