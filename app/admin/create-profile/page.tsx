@@ -107,6 +107,8 @@ type ProfileData = {
   rate_weekend?: number | null;
   // Levende profilbillede
   profile_video_url?: string | null;
+  // Betalingsmetoder
+  payment_methods?: string[];
 };
 
 type CreateResult = {
@@ -743,6 +745,39 @@ export default function CreateProfilePage() {
                 <button onClick={() => setSendSMS(!sendSMS)} className="relative w-10 h-5 rounded-full transition-colors" style={{ background: sendSMS ? "#000" : "#D1D5DB" }}>
                   <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ left: 2, transform: sendSMS ? "translateX(20px)" : "translateX(0)" }} />
                 </button>
+              </div>
+            </div>
+
+            {/* Payment Methods */}
+            <div className="mt-4 p-4 rounded-xl" style={{ border: "1px solid #E5E5E5" }}>
+              <p className="text-[13px] font-semibold text-gray-900 mb-3">Payment Methods</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: "revolut", label: "Revolut" },
+                  { id: "cash", label: "Cash" },
+                  { id: "redcoins", label: "Red Coins" },
+                  { id: "crypto", label: "Crypto" },
+                ].map(opt => {
+                  const selected = (profile.payment_methods || []).includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        const current = profile.payment_methods || [];
+                        p("payment_methods", selected ? current.filter(x => x !== opt.id) : [...current, opt.id]);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all"
+                      style={{
+                        background: selected ? "#DC2626" : "#F3F4F6",
+                        color: selected ? "#fff" : "#374151",
+                        border: selected ? "1px solid #DC2626" : "1px solid #E5E7EB",
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

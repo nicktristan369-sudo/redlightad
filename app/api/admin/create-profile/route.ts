@@ -459,6 +459,8 @@ export async function POST(req: NextRequest) {
       ...(profile.rate_weekend ? { rate_weekend: profile.rate_weekend } : {}),
       // Levende profilbillede
       ...(profile.profile_video_url ? { profile_video_url: profile.profile_video_url } : {}),
+      // Betalingsmetoder
+      ...(profile.payment_methods && profile.payment_methods.length > 0 ? { payment_methods: profile.payment_methods } : {}),
     })
     .select()
 
