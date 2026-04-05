@@ -54,7 +54,7 @@ export default function BuyCoinsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [balance, setBalance] = useState<number | null>(null)
   const [isFirstPurchase, setIsFirstPurchase] = useState(true)
-  const [tab, setTab] = useState<PaymentTab>("card")
+  const [tab, setTab] = useState<PaymentTab>("crypto")
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const router = useRouter()
 
@@ -136,27 +136,23 @@ export default function BuyCoinsPage() {
 
         {/* Payment tabs */}
         <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setTab("card")}
-            className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${
-              tab === "card"
-                ? "bg-white border-2 border-red-500 text-red-600 shadow-sm"
-                : "bg-gray-100 border-2 border-transparent text-gray-500 hover:bg-gray-200"
-            }`}
+          <div
+            className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gray-100 border-2 border-transparent text-gray-400 text-center cursor-not-allowed relative"
+            title="Kortbetaling kommer snart"
           >
             💳 Kort &amp; Debet
-          </button>
+            <span className="ml-2 text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">Snart</span>
+          </div>
           <button
             onClick={() => setTab("crypto")}
-            className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${
-              tab === "crypto"
-                ? "bg-white border-2 border-red-500 text-red-600 shadow-sm"
-                : "bg-gray-100 border-2 border-transparent text-gray-500 hover:bg-gray-200"
-            }`}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all bg-white border-2 border-red-500 text-red-600 shadow-sm"
           >
             ₿ Crypto
           </button>
         </div>
+        <p className="text-xs text-gray-400 text-center -mt-4 mb-6">
+          Kortbetaling via SegPay kommer snart. Betal nu med crypto — hurtigt og anonymt.
+        </p>
 
         {/* Package grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
