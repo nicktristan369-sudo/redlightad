@@ -143,8 +143,16 @@ function parseEuroGirlsEscort($: CheerioDoc, url: string) {
   // WhatsApp — check if WhatsApp icon exists
   const hasWhatsapp = $(".icon-whatsapp, [class*=whatsapp]").length > 0
 
-  // Video URL — data-video attribute
-  const video = $("[data-video]").first().attr("data-video") || ""
+  // Video URL — data-video attribute OR regex scan for mp4 URLs in raw HTML
+  let video = $("[data-video]").first().attr("data-video") || ""
+  if (!video) {
+    const rawHtml = $.html()
+    const mp4Match = rawHtml.match(/https?:\/\/[^"'\s]+\.mp4/i)
+    if (mp4Match) video = mp4Match[0]
+  }
+  if (!video) {
+    video = $("video source").first().attr("src") || $("video").first().attr("src") || ""
+  }
 
   const images: string[] = []
   const adDomains = ["escortmodels", "escortmod", "banner", "advert", "sponsor", "affiliate", "promo"]
