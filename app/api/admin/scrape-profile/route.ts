@@ -8,16 +8,36 @@ export async function POST(req: NextRequest) {
   if (!url) return NextResponse.json({ error: "No URL" }, { status: 400 })
 
   let html = ""
-  const apiKey = process.env.SCRAPINGBEE_API_KEY
 
-  if (apiKey) {
-    const sbUrl = `https://app.scrapingbee.com/api/v1/?api_key=${apiKey}&url=${encodeURIComponent(url)}&render_js=true&premium_proxy=true`
+  // 1. FlareSolverr (self-hosted, free, Cloudflare bypass)
+  const flareSolverrUrl = process.env.FLARESOLVERR_URL // e.g. http://76.13.154.9:8191
+  if (flareSolverrUrl) {
     try {
-      const res = await fetch(sbUrl)
-      if (res.ok) html = await res.text()
+      const res = await fetch(`${flareSolverrUrl}/v1`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cmd: "request.get", url, maxTimeout: 60000 }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        html = data?.solution?.response ?? ""
+      }
     } catch {}
   }
 
+  // 2. ScrapingBee fallback (paid, if SCRAPINGBEE_API_KEY set)
+  if (!html) {
+    const sbKey = process.env.SCRAPINGBEE_API_KEY
+    if (sbKey) {
+      try {
+        const sbUrl = `https://app.scrapingbee.com/api/v1/?api_key=${sbKey}&url=${encodeURIComponent(url)}&render_js=true&premium_proxy=true`
+        const res = await fetch(sbUrl)
+        if (res.ok) html = await res.text()
+      } catch {}
+    }
+  }
+
+  // 3. Direct fetch (no Cloudflare bypass)
   if (!html) {
     try {
       const res = await fetch(url, {
@@ -33,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   if (!html) {
     return NextResponse.json(
-      { error: "Could not fetch page — Cloudflare protected. Add SCRAPINGBEE_API_KEY to Vercel env vars." },
+      { error: "Could not fetch page. Set FLARESOLVERR_URL=http://76.13.154.9:8191 in Vercel env vars." },
       { status: 422 }
     )
   }
