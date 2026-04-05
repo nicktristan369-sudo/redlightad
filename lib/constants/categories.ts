@@ -3,8 +3,7 @@ export const CATEGORIES = [
   "Massage",
   "Webcam",
   "Fetish",
-  "Trans",
-  "Male escort",
+  "Couples",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];

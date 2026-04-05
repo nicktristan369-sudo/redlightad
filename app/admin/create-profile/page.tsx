@@ -50,8 +50,7 @@ const CATEGORIES = [
   { value: "massage", label: "Massage" },
   { value: "webcam", label: "Webcam" },
   { value: "fetish", label: "Fetish" },
-  { value: "trans", label: "Trans" },
-  { value: "male_escort", label: "Male escort" },
+  { value: "couples", label: "Couples" },
 ]
 
 // ── Rens telefonnummer fra scraper ────────────────────────────────────────────
@@ -417,24 +416,47 @@ export default function CreateProfilePage() {
                 </div>
               </div>
 
-              {/* Køn + Kategori */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label style={labelStyle}>Køn</label>
-                  <select value={profile.gender} onChange={e => p("gender", e.target.value)} style={selectStyle}>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="trans">Trans</option>
-                  </select>
+              {/* Who are you? */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Who are you? *
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                  {[
+                    { gender: "female",  category: "escort",  label: "Woman",  emoji: "👩" },
+                    { gender: "male",    category: "escort",  label: "Man",    emoji: "👨" },
+                    { gender: "trans",   category: "escort",  label: "Trans",  emoji: "⚧" },
+                    { gender: "female",  category: "couples", label: "Couple", emoji: "👫" },
+                  ].map(opt => {
+                    const selected = profile.gender === opt.gender && profile.category === opt.category
+                    return (
+                      <button
+                        key={opt.label}
+                        type="button"
+                        onClick={() => { p("gender", opt.gender); p("category", opt.category) }}
+                        style={{
+                          padding: "12px 8px", borderRadius: 10, border: selected ? "2px solid #DC2626" : "1px solid #E5E7EB",
+                          background: selected ? "#FEF2F2" : "#F9FAFB", cursor: "pointer",
+                          display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 4,
+                          fontSize: 11, fontWeight: 700, color: selected ? "#DC2626" : "#6B7280",
+                        }}
+                      >
+                        <span style={{ fontSize: 20 }}>{opt.emoji}</span>
+                        {opt.label}
+                      </button>
+                    )
+                  })}
                 </div>
-                <div>
-                  <label style={labelStyle}>Kategori</label>
-                  <select value={profile.category} onChange={e => p("category", e.target.value)} style={selectStyle}>
-                    {CATEGORIES.map(c => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                  </select>
-                </div>
+              </div>
+
+              {/* Service type (category) */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Service type</label>
+                <select value={profile.category} onChange={e => p("category", e.target.value)} style={selectStyle}>
+                  {CATEGORIES.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Alder + Email */}

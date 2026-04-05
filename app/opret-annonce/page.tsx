@@ -65,9 +65,9 @@ const SERVICE_LABELS: Record<string, Record<string, string>> = {
 };
 
 const GENDER_LABELS: Record<string, Record<string, string>> = {
-  "Woman":          { en:"Woman", da:"Kvinde", de:"Frau", fr:"Femme", es:"Mujer", it:"Donna", pt:"Mulher", nl:"Vrouw", sv:"Kvinna", no:"Kvinne", ar:"امرأة", th:"ผู้หญิง", ru:"Женщина", pl:"Kobieta" },
-  "Man":            { en:"Man", da:"Mand", de:"Mann", fr:"Homme", es:"Hombre", it:"Uomo", pt:"Homem", nl:"Man", sv:"Man", no:"Mann", ar:"رجل", th:"ผู้ชาย", ru:"Мужчина", pl:"Mężczyzna" },
-  "Trans / Non-binary": { en:"Trans / Non-binary", da:"Trans / Non-binær", de:"Trans / Nicht-binär", fr:"Trans / Non-binaire", es:"Trans / No binario", it:"Trans / Non-binario", pt:"Trans / Não-binário", nl:"Trans / Niet-binair", sv:"Trans / Icke-binär", no:"Trans / Ikke-binær", ar:"ترانس", th:"ทรานส์", ru:"Транс / Небинарный", pl:"Trans / Niebinarne" },
+  "female":  { en:"Woman", da:"Kvinde", de:"Frau", fr:"Femme", es:"Mujer", it:"Donna", pt:"Mulher", nl:"Vrouw", sv:"Kvinna", no:"Kvinne", ar:"امرأة", th:"ผู้หญิง", ru:"Женщина", pl:"Kobieta" },
+  "male":    { en:"Man", da:"Mand", de:"Mann", fr:"Homme", es:"Hombre", it:"Uomo", pt:"Homem", nl:"Man", sv:"Man", no:"Mann", ar:"رجل", th:"ผู้ชาย", ru:"Мужчина", pl:"Mężczyzna" },
+  "trans":   { en:"Trans", da:"Trans", de:"Trans", fr:"Trans", es:"Trans", it:"Trans", pt:"Trans", nl:"Trans", sv:"Trans", no:"Trans", ar:"ترانس", th:"ทรานส์", ru:"Транс", pl:"Trans" },
 };
 
 const LANGUAGE_OPTIONS = ["Dansk", "Engelsk", "Tysk", "Fransk", "Spansk"];
@@ -441,40 +441,51 @@ export default function OpretAnnoncePage() {
                   />
                 </div>
 
+                {/* Who are you? */}
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Kategori</label>
+                  <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wide">Who are you? *</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { gender: "female", category: "Escort",  label: GENDER_LABELS["female"]?.[locale] ?? "Woman",  emoji: "👩" },
+                      { gender: "male",   category: "Escort",  label: GENDER_LABELS["male"]?.[locale] ?? "Man",      emoji: "👨" },
+                      { gender: "trans",  category: "Escort",  label: GENDER_LABELS["trans"]?.[locale] ?? "Trans",    emoji: "⚧" },
+                      { gender: "female", category: "Couples", label: "Couple", emoji: "👫" },
+                    ].map(opt => {
+                      const selected = form.gender === opt.gender && form.category === opt.category
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => { updateField("gender", opt.gender); updateField("category", opt.category) }}
+                          className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-xs font-bold transition ${
+                            selected
+                              ? "border-red-600 bg-red-50 text-red-600 border-2"
+                              : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300"
+                          }`}
+                        >
+                          <span className="text-xl">{opt.emoji}</span>
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Service type (category) */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Service type</label>
                   <select
                     value={form.category}
                     onChange={(e) => updateField("category", e.target.value)}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   >
                     <option value="" disabled>
-                      Vælg kategori
+                      Vælg type
                     </option>
                     {CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Køn</label>
-                  <div className="flex gap-3">
-                    {GENDERS.map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => updateField("gender", g)}
-                        className={`rounded-full border px-6 py-2 text-sm font-medium transition ${
-                          form.gender === g
-                            ? "border-red-600 bg-red-600 text-white"
-                            : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-                        }`}
-                      >
-                        {GENDER_LABELS[g]?.[locale] ?? g}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 <div>
@@ -998,7 +1009,7 @@ export default function OpretAnnoncePage() {
                   <div className="space-y-1 text-sm text-gray-600">
                     <p><span className="font-medium">Titel:</span> {form.title || "–"}</p>
                     <p><span className="font-medium">Kategori:</span> {form.category || "–"}</p>
-                    <p><span className="font-medium">Køn:</span> {form.gender || "–"}</p>
+                    <p><span className="font-medium">Køn:</span> {(GENDER_LABELS[form.gender]?.[locale] ?? form.gender) || "–"}</p>
                     <p><span className="font-medium">Alder:</span> {form.age || "–"}</p>
                     <p><span className="font-medium">Lokation:</span> {form.location || "–"}</p>
                     {form.about && (

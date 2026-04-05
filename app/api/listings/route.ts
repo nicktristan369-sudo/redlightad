@@ -35,7 +35,16 @@ export async function GET(req: NextRequest) {
 
     if (country) query = query.in("country", getCountryVariants(country));
     if (city)     query = query.ilike("city", city);
-    if (category) query = query.ilike("category", category);
+    if (category) {
+      if (category.toLowerCase() === "trans") {
+        // Trans profiler kan have gender=trans ELLER category=trans
+        query = query.or(`gender.ilike.trans,category.ilike.trans`)
+      } else if (category.toLowerCase() === "male escort" || category.toLowerCase() === "male_escort") {
+        query = query.or(`gender.ilike.male,gender.ilike.man,category.ilike.male_escort`)
+      } else {
+        query = query.ilike("category", category)
+      }
+    }
     if (gender)   query = query.ilike("gender", gender);
     if (q)        query = query.or(`title.ilike.%${q}%,about.ilike.%${q}%`);
     if (ageMin)   query = query.gte("age", parseInt(ageMin));

@@ -44,7 +44,15 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   }
   if (country) query = query.ilike("country", country)
   if (city) query = query.ilike("city", `%${city}%`)
-  if (category) query = query.ilike("category", category)
+  if (category) {
+    if (category.toLowerCase() === "trans") {
+      query = query.or(`gender.ilike.trans,category.ilike.trans`)
+    } else if (category.toLowerCase() === "male escort" || category.toLowerCase() === "male_escort") {
+      query = query.or(`gender.ilike.male,gender.ilike.man,category.ilike.male_escort`)
+    } else {
+      query = query.ilike("category", category)
+    }
+  }
   if (gender) query = query.ilike("gender", gender)
 
   // Sorting

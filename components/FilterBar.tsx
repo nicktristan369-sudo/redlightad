@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Check } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
-import { GENDERS } from "@/lib/constants/genders"
+import { GENDERS, GENDER_LABELS } from "@/lib/constants/genders"
 import { SUPPORTED_COUNTRIES, getCountryByName, slugify, COUNTRIES, getCountryEntryByCode, getCountryEntryByName, COUNTRY_CITIES } from "@/lib/countries"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
@@ -223,7 +223,7 @@ function GenderMenu({ current, onSelect }: { current: string; onSelect: (v: stri
             current === g ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
           }`}
         >
-          {g || t.common_all}
+          {g ? (GENDER_LABELS[g] ?? g) : t.common_all}
         </button>
       ))}
     </DropMenu>
@@ -567,7 +567,7 @@ function FilterBarInner() {
             <div className="relative">
               <Pill
                 icon={<Users size={13} />}
-                label={gender || t.filter_gender}
+                label={gender ? (GENDER_LABELS[gender] ?? gender) : t.filter_gender}
                 active={!!gender}
                 onClick={() => toggle("gender")}
               />
