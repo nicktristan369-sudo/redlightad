@@ -520,7 +520,7 @@ function FilterBarInner() {
                 onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#E5E7EB" }}
                 onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#F3F4F6" }}
               >
-                {tab.label === "OnlyFans" && <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 13, width: "auto", filter: isActive ? "brightness(0) invert(1)" : "none" }} />}
+                {tab.label === "OnlyFans" && <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 14, width: 80, objectFit: "contain", objectPosition: "left center", filter: isActive ? "brightness(0) invert(1)" : "none" }} />}
                 {tab.label === "RedLightCAM" && <span style={{ width: 7, height: 7, borderRadius: "50%", background: isActive ? "#fff" : "#DC2626", display: "inline-block", flexShrink: 0 }} />}
                 {tab.label !== "OnlyFans" && tab.label}
               </a>
