@@ -37,72 +37,91 @@ function OFCard({ l }: { l: Listing }) {
   const ofUrl = l.social_links?.onlyfans?.url || ""
   const handle = extractOFHandle(ofUrl, l.onlyfans_username)
   const price = l.onlyfans_price_usd ? `$${l.onlyfans_price_usd}/mo` : "FREE"
+  // Strip emojis from display name
+  const cleanName = (l.display_name || l.title || "Creator").replace(/[\u{1F300}-\u{1FFFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|❤️|💋|🔴/gu, "").trim()
 
   return (
-    <div
-      style={{
-        display: "flex", gap: 20, padding: "20px 0",
-        borderBottom: "1px solid #E5E7EB",
-        transition: "background 0.15s",
-      }}
-      onMouseEnter={e => { e.currentTarget.style.background = "#1a1a1a" }}
-      onMouseLeave={e => { e.currentTarget.style.background = "transparent" }}
+    <div style={{
+      background: "#fff",
+      border: "1px solid #E5E7EB",
+      borderRadius: 16,
+      padding: 20,
+      display: "flex",
+      gap: 18,
+      transition: "box-shadow 0.15s",
+      marginBottom: 12,
+    }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.08)" }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none" }}
     >
-      {/* Avatar */}
-      <img
-        src={l.profile_image || "/placeholder.png"}
-        alt=""
-        loading="lazy"
-        style={{
-          width: 80, height: 80, borderRadius: "50%",
-          objectFit: "cover", flexShrink: 0, background: "#333",
-        }}
-      />
+      {/* Square avatar */}
+      <div style={{ flexShrink: 0 }}>
+        <img
+          src={l.profile_image || "/placeholder.png"}
+          alt=""
+          loading="lazy"
+          style={{ width: 90, height: 90, borderRadius: 12, objectFit: "cover", background: "#F3F4F6", display: "block" }}
+        />
+      </div>
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-          <span style={{ fontSize: 11, color: "#6B7280" }}>onlyfans.com/{handle}</span>
-          {/* Social icons */}
-          {l.social_links?.tiktok?.url && (
-            <a href={l.social_links.tiktok.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#666", textDecoration: "none" }} title="TikTok">🎵</a>
-          )}
-          {l.social_links?.instagram?.url && (
-            <a href={l.social_links.instagram.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#666", textDecoration: "none" }} title="Instagram">📷</a>
-          )}
+        {/* OF handle */}
+        <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 3, fontWeight: 500 }}>
+          onlyfans.com/{handle}
         </div>
-        <Link href={`/ads/${l.id}`} style={{ textDecoration: "none" }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
-            {l.display_name || l.title || "Creator"}
-          </div>
-        </Link>
+
+        {/* Name */}
+        <div style={{ fontSize: 17, fontWeight: 800, color: "#111", marginBottom: 4, lineHeight: 1.2 }}>
+          {cleanName}
+        </div>
+
+        {/* Bio */}
         <div style={{
-          fontSize: 13, color: "#6B7280", marginBottom: 10,
+          fontSize: 13, color: "#6B7280", marginBottom: 12, lineHeight: 1.5,
           overflow: "hidden", display: "-webkit-box",
           WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
         }}>
-          {(l.onlyfans_bio || l.about || "").slice(0, 200)}
+          {l.onlyfans_bio || l.about || ""}
         </div>
-        {/* Stats */}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: "#6B7280" }}>
-          {(l.onlyfans_subscribers ?? 0) > 0 && <span>👤 {l.onlyfans_subscribers!.toLocaleString()}</span>}
-          <span style={{ color: "#00AFF0", fontWeight: 700 }}>Price: {price}</span>
-          {(l.onlyfans_photos_count ?? 0) > 0 && <span>📸 {l.onlyfans_photos_count!.toLocaleString()}</span>}
-          {(l.onlyfans_videos_count ?? 0) > 0 && <span>🎬 {l.onlyfans_videos_count!.toLocaleString()}</span>}
-          {(l.onlyfans_likes_count ?? 0) > 0 && <span>❤️ {l.onlyfans_likes_count!.toLocaleString()}</span>}
-        </div>
-      </div>
 
-      {/* VIP badge */}
-      {l.premium_tier && (
-        <div style={{
-          fontSize: 11, fontWeight: 700, color: "#F59E0B",
-          background: "#FFF7ED", padding: "3px 8px", borderRadius: 6,
-          height: "fit-content",
-        }}>
-          VIP
+        {/* Stats row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 12 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#DC2626", background: "#FEF2F2", padding: "3px 10px", borderRadius: 20 }}>
+            {price}
+          </span>
+          {(l.onlyfans_subscribers ?? 0) > 0 && (
+            <span style={{ fontSize: 12, color: "#6B7280" }}>
+              {l.onlyfans_subscribers!.toLocaleString()} subscribers
+            </span>
+          )}
+          {(l.onlyfans_photos_count ?? 0) > 0 && (
+            <span style={{ fontSize: 12, color: "#6B7280" }}>{l.onlyfans_photos_count} photos</span>
+          )}
+          {(l.onlyfans_videos_count ?? 0) > 0 && (
+            <span style={{ fontSize: 12, color: "#6B7280" }}>{l.onlyfans_videos_count} videos</span>
+          )}
+          {l.premium_tier && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#F59E0B", background: "#FFF7ED", padding: "2px 8px", borderRadius: 20 }}>
+              VIP
+            </span>
+          )}
         </div>
-      )}
+
+        {/* See profile button */}
+        <Link
+          href={`/ads/${l.id}`}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontSize: 12, fontWeight: 700, color: "#DC2626",
+            textDecoration: "none", border: "1px solid #FECACA",
+            padding: "6px 14px", borderRadius: 20, background: "#FEF2F2",
+            transition: "all 0.15s",
+          }}
+        >
+          See profile on RedLightAD →
+        </Link>
+      </div>
     </div>
   )
 }
