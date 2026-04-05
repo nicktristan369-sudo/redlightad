@@ -19,10 +19,7 @@ export type SocialLinks = Partial<Record<SocialPlatform, SocialLinkConfig>>;
 // ─── Brand SVG Icons ──────────────────────────────────────────────────────────
 const Icons: Record<SocialPlatform, React.ReactElement> = {
   onlyfans: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="12" fill="#00AFF0"/>
-      <path d="M12 6.5C8.96 6.5 6.5 8.96 6.5 12C6.5 15.04 8.96 17.5 12 17.5C15.04 17.5 17.5 15.04 17.5 12H14.8C14.8 13.55 13.55 14.8 12 14.8C10.45 14.8 9.2 13.55 9.2 12C9.2 10.45 10.45 9.2 12 9.2C12.73 9.2 13.4 9.48 13.9 9.94L15.9 7.94C14.87 7 13.5 6.5 12 6.5Z" fill="white"/>
-    </svg>
+    <img src="/onlyfans-logo.svg" alt="OnlyFans" width={60} height={20} style={{ objectFit: "contain" }} />
   ),
   snapchat: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
