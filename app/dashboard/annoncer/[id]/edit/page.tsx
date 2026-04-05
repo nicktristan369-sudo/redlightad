@@ -106,6 +106,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
     phone: "", whatsapp: "", telegram: "", snapchat: "", email: "",
     height: "", weight: "", body_build: "", hair_color: "", eye_color: "",
     grooming: "", bra_size: "", nationality: "",
+    onlyfans_username: "", onlyfans_price_usd: "",
     outcall: false, handicap_friendly: false, has_own_place: false,
   });
 
@@ -218,6 +219,8 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         grooming: listing.grooming ?? "",
         bra_size: listing.bra_size ?? "",
         nationality: listing.nationality ?? "",
+        onlyfans_username: listing.onlyfans_username ?? "",
+        onlyfans_price_usd: listing.onlyfans_price_usd ? String(listing.onlyfans_price_usd) : "",
         outcall: listing.outcall ?? false,
         handicap_friendly: listing.handicap_friendly ?? false,
         has_own_place: listing.has_own_place ?? false,
@@ -321,6 +324,8 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         timezone:        timezone,
         voice_message_url: voiceMessageUrl || null,
         social_links:    Object.keys(socialLinks).length > 0 ? socialLinks : null,
+        onlyfans_username: form.onlyfans_username || null,
+        onlyfans_price_usd: form.onlyfans_price_usd ? parseFloat(form.onlyfans_price_usd) : null,
         updated_at:      new Date().toISOString(),
         // Keep existing status + tier — admin must re-approve changes
         status:          "pending",
@@ -734,6 +739,35 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                     )}
                   </div>
                   <SocialLinksEditor value={socialLinks} onChange={setSocialLinks} isPremium={isPremium} />
+                </div>
+
+                {/* OnlyFans Profile */}
+                <div>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3">OnlyFans Profile</p>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
+                      <span className="w-24 text-[12px] text-gray-400 flex-shrink-0">@username</span>
+                      <input
+                        type="text"
+                        value={form.onlyfans_username}
+                        onChange={e => updateField("onlyfans_username", e.target.value)}
+                        placeholder="username"
+                        className="flex-1 text-[13px] bg-transparent border-0 outline-none text-gray-900"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
+                      <span className="w-24 text-[12px] text-gray-400 flex-shrink-0">Price (USD)</span>
+                      <input
+                        type="number"
+                        value={form.onlyfans_price_usd}
+                        onChange={e => updateField("onlyfans_price_usd", e.target.value)}
+                        placeholder="9.99"
+                        min="0"
+                        step="0.01"
+                        className="flex-1 text-[13px] bg-transparent border-0 outline-none text-gray-900"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* ── Skift Lokation (Premium only) ── */}

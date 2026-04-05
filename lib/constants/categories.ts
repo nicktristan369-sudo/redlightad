@@ -4,6 +4,7 @@ export const CATEGORIES = [
   "Webcam",
   "Fetish",
   "Couples",
+  "OnlyFans",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];

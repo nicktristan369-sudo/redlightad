@@ -461,6 +461,8 @@ export async function POST(req: NextRequest) {
       ...(profile.profile_video_url ? { profile_video_url: profile.profile_video_url } : {}),
       // Betalingsmetoder
       ...(profile.payment_methods && profile.payment_methods.length > 0 ? { payment_methods: profile.payment_methods } : {}),
+      ...(profile.onlyfans_username ? { onlyfans_username: profile.onlyfans_username } : {}),
+      ...(profile.onlyfans_price_usd ? { onlyfans_price_usd: profile.onlyfans_price_usd } : {}),
     })
     .select()
 

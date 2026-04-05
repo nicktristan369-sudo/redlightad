@@ -51,6 +51,7 @@ const CATEGORIES = [
   { value: "webcam", label: "Webcam" },
   { value: "fetish", label: "Fetish" },
   { value: "couples", label: "Couples" },
+  { value: "onlyfans", label: "OnlyFans" },
 ]
 
 // ── Rens telefonnummer fra scraper ────────────────────────────────────────────
@@ -108,6 +109,9 @@ type ProfileData = {
   profile_video_url?: string | null;
   // Betalingsmetoder
   payment_methods?: string[];
+  // OnlyFans
+  onlyfans_username?: string;
+  onlyfans_price_usd?: number | null;
 };
 
 type CreateResult = {
@@ -800,6 +804,38 @@ export default function CreateProfilePage() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* OnlyFans Profile */}
+            <div className="mt-4 p-4 rounded-xl" style={{ border: "1px solid #E5E5E5" }}>
+              <p className="text-[13px] font-semibold text-gray-900 mb-3">OnlyFans Profile</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={labelStyle}>OnlyFans username</label>
+                  <div style={{ display: "flex", alignItems: "center", border: "1px solid #E5E5E5", borderRadius: 8, overflow: "hidden" }}>
+                    <span style={{ padding: "10px 8px 10px 12px", fontSize: 13, color: "#9CA3AF", background: "#F9FAFB", borderRight: "1px solid #E5E5E5" }}>@</span>
+                    <input
+                      type="text"
+                      value={profile.onlyfans_username || ""}
+                      onChange={e => p("onlyfans_username", e.target.value)}
+                      style={{ flex: 1, padding: "10px 12px", fontSize: 13, border: "none", outline: "none", background: "transparent" }}
+                      placeholder="username"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>Monthly price ($)</label>
+                  <input
+                    type="number"
+                    value={profile.onlyfans_price_usd ?? ""}
+                    onChange={e => p("onlyfans_price_usd", e.target.value ? parseFloat(e.target.value) : null)}
+                    style={inputStyle}
+                    placeholder="9.99"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
               </div>
             </div>
 

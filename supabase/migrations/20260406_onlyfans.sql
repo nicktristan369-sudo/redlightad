@@ -1,0 +1,6 @@
+-- OnlyFans directory kolonner
+-- Kør i Supabase SQL Editor:
+-- alter table public.listings add column if not exists onlyfans_username text;
+-- alter table public.listings add column if not exists onlyfans_price_usd numeric(10,2);
+-- alter table public.listings add column if not exists onlyfans_teaser_url text;
+-- alter table public.listings add column if not exists onlyfans_subscribers integer default 0;

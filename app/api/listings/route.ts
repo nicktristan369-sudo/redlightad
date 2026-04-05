@@ -41,6 +41,9 @@ export async function GET(req: NextRequest) {
         query = query.or(`gender.ilike.trans,category.ilike.trans`)
       } else if (category.toLowerCase() === "male escort" || category.toLowerCase() === "male_escort") {
         query = query.or(`gender.ilike.male,gender.ilike.man,category.ilike.male_escort`)
+      } else if (category.toLowerCase() === "onlyfans") {
+        // OnlyFans: filter client-side efter query (social_links JSONB nested filter virker ikke)
+        // Vi henter alle aktive og filtrerer nedenfor
       } else {
         query = query.ilike("category", category)
       }
@@ -95,7 +98,15 @@ export async function GET(req: NextRequest) {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
-    return NextResponse.json({ listings: sorted });
+    // OnlyFans category: filter på social_links->onlyfans->url
+    const final = category?.toLowerCase() === "onlyfans"
+      ? sorted.filter((l: Record<string, unknown>) => {
+          const sl = l.social_links as Record<string, { url?: string }> | null
+          return sl?.onlyfans?.url
+        })
+      : sorted
+
+    return NextResponse.json({ listings: final });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

@@ -124,6 +124,7 @@ export default function Navbar() {
     { href: "/videos", label: "Videos" },
     { href: "/reviews", label: "Reviews" },
     { href: "/marketplace", label: "Marketplace" },
+    { href: "/onlyfans", label: "OnlyFans" },
     { href: "/dashboard/buy-coins", label: "🔴 Red Coins", isRedCoins: true },
     { href: "/support", label: t.nav_support },
   ];
