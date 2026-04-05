@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react"
 import AdminLayout from "@/components/AdminLayout"
+import Link from "next/link"
 
 /* ─── Types ─── */
 
@@ -348,9 +349,9 @@ export default function AdminKycPage() {
                             C
                           </div>
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: 13, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }}>
+                            <Link href={`/admin/brugere/${s.user_id}`} style={{ fontWeight: 700, fontSize: 13, color: "#DC2626", textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200, display: "block" }}>
                               {s.full_name}
-                            </div>
+                            </Link>
                             {s.email && (
                               <div style={{ fontSize: 11, color: "#9CA3AF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }}>
                                 {s.email}
