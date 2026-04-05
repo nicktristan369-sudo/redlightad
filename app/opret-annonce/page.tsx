@@ -8,6 +8,14 @@ import LocationSelector from "@/components/LocationSelector";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import SocialLinksEditor from "@/components/SocialLinksEditor";
 import type { SocialLinks } from "@/components/SocialLinksSection";
+import { CreditCard, Banknote, Coins, Zap } from "lucide-react";
+
+const PAYMENT_OPTIONS = [
+  { id: "revolut",   label: "Revolut",    icon: CreditCard },
+  { id: "cash",      label: "Cash",       icon: Banknote },
+  { id: "redcoins",  label: "Red Coins",  icon: Coins },
+  { id: "crypto",    label: "Crypto",     icon: Zap },
+];
 
 const DAYS_OF_WEEK = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const;
 type DayKey = typeof DAYS_OF_WEEK[number];
@@ -93,6 +101,7 @@ export default function OpretAnnoncePage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [userTier, setUserTier] = useState<string | null>(null);
   const [timezone, setTimezone] = useState("Europe/Copenhagen");
   const [openingHours, setOpeningHours] = useState<OpeningHours>(() => {
@@ -240,6 +249,7 @@ export default function OpretAnnoncePage() {
         timezone: timezone,
         voice_message_url: voiceMessageUrl || null,
         social_links: Object.keys(socialLinks).length > 0 ? socialLinks : null,
+        payment_methods: paymentMethods,
         status: "pending",
       });
       if (error) throw error;
@@ -794,6 +804,32 @@ export default function OpretAnnoncePage() {
                         />
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* ── PAYMENT METHODS ── */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">Payment Methods</label>
+                  <div className="flex flex-wrap gap-2">
+                    {PAYMENT_OPTIONS.map(opt => {
+                      const active = paymentMethods.includes(opt.id)
+                      const Icon = opt.icon
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setPaymentMethods(prev => prev.includes(opt.id) ? prev.filter(m => m !== opt.id) : [...prev, opt.id])}
+                          className={`flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+                            active
+                              ? "border-red-600 bg-red-600 text-white"
+                              : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                          }`}
+                        >
+                          <Icon size={14} />
+                          {opt.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 

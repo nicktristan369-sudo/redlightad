@@ -1,0 +1,15 @@
+-- Kør i Supabase SQL Editor:
+-- alter table public.listings add column if not exists payment_methods text[] default array[]::text[];
+--
+-- create table if not exists public.redcoin_tips (
+--   id uuid default gen_random_uuid() primary key,
+--   from_user_id uuid references auth.users(id),
+--   to_listing_id uuid references public.listings(id),
+--   to_user_id uuid references auth.users(id),
+--   amount integer not null check (amount > 0),
+--   message text,
+--   created_at timestamptz default now()
+-- );
+-- alter table public.redcoin_tips enable row level security;
+-- create policy "Users insert own tips" on public.redcoin_tips for insert with check (auth.uid() = from_user_id);
+-- create policy "Providers view received tips" on public.redcoin_tips for select using (auth.uid() = to_user_id);

@@ -16,6 +16,7 @@ import TravelScheduleSection from "@/components/TravelScheduleSection";
 import StickyActionBar from "@/components/StickyActionBar";
 import SendMessageBox from "@/components/SendMessageBox";
 import ReportModal from "@/components/ReportModal";
+import PayMeBox from "@/components/PayMeBox";
 import PhotoGrid from "@/components/PhotoGrid";
 import PrivateContentPreview from "@/components/PrivateContentPreview";
 import MarketplaceSection from "@/components/MarketplaceSection";
@@ -75,6 +76,7 @@ interface Listing {
   available_for?: string | null;
   meeting_with?: string | null;
   travel?: string | null;
+  payment_methods?: string[] | null;
 }
 
 export default function AdDetailPage() {
@@ -367,6 +369,12 @@ export default function AdDetailPage() {
                   profileImage: ad.profile_image,
                   name: ad.title,
                 }} />
+                {ad.payment_methods && ad.payment_methods.length > 0 && (
+                  <PayMeBox
+                    listing={ad}
+                    providerUserId={ad.user_id}
+                  />
+                )}
                 <SendMessageBox
                   listingId={ad.id}
                   listingTitle={ad.title}
