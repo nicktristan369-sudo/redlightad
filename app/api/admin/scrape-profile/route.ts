@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import * as cheerio from "cheerio"
+import { load } from "cheerio"
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CheerioDoc = ReturnType<typeof load>
 
 export async function POST(req: NextRequest) {
   const { url } = await req.json()
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const $ = cheerio.load(html)
+  const $ = load(html)
   const domain = new URL(url).hostname
 
   let result: Record<string, unknown> = {}
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(result)
 }
 
-function parseEuroGirlsEscort($: cheerio.CheerioAPI, url: string) {
+function parseEuroGirlsEscort($: CheerioDoc, url: string) {
   const name = $("h1").first().text().trim() ||
     $("[class*=name]").first().text().trim()
 
@@ -79,7 +81,7 @@ function parseEuroGirlsEscort($: cheerio.CheerioAPI, url: string) {
   return { name, age, city, phone, description, images: images.slice(0, 10), height, weight, nationality, source_url: url }
 }
 
-function parseGeneric($: cheerio.CheerioAPI, url: string) {
+function parseGeneric($: CheerioDoc, url: string) {
   const name = $("h1").first().text().trim()
   const description =
     $("meta[name='description']").attr("content") ||
