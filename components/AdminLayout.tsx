@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck,
   CreditCard, Coins, ArrowDownToLine, Mail, MessageCircle,
   Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight,
-  ShieldCheck, Menu, X, Link2, UserPlus,
+  ShieldCheck, Menu, X, Link2,
 } from "lucide-react";
 
 type NavItem = {
@@ -219,19 +219,18 @@ export default function AdminLayout({
 
   const SECTIONS: NavSection[] = [
     {
+      title: "CONTENT",
       items: [
-        { href: "/admin", label: "Overview", icon: LayoutDashboard },
+        { href: "/admin",                label: "Overview",         icon: LayoutDashboard },
+        { href: "/admin/annoncer",        label: "Profiles",        icon: FileText,    badge: pendingListings },
+        { href: "/admin/marketplace",     label: "Marketplace",     icon: ShoppingBag, badge: pendingMarketplace },
+        { href: "/admin/brugere",         label: "Users",           icon: Users },
       ],
     },
     {
-      title: "CONTENT",
+      title: "VERIFICATION",
       items: [
-        { href: "/admin/annoncer",        label: "Listings",        icon: FileText,    badge: pendingListings },
-        { href: "/admin/marketplace",     label: "Marketplace",     icon: ShoppingBag, badge: pendingMarketplace },
-        { href: "/admin/brugere",         label: "Users",           icon: Users },
-        { href: "/admin/create-profile",  label: "Opret profil",    icon: UserPlus },
         { href: "/admin/verification",    label: "Verification",    icon: BadgeCheck },
-        { href: "/admin/kyc",             label: "KYC / ID",        icon: BadgeCheck },
       ],
     },
     {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare, Crown, MapPin, ChevronDown, Star } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, CheckCircle, XCircle, CheckSquare, Crown, MapPin, ChevronDown, Star, Users } from "lucide-react";
 import Link from "next/link";
 import { SUPPORTED_COUNTRIES } from "@/lib/countries";
 
@@ -18,6 +18,7 @@ interface Listing {
   id: string;
   title: string;
   category: string | null;
+  gender: string | null;
   city: string | null;
   country: string | null;
   status: string;
@@ -175,6 +176,7 @@ export default function AdminAnnoncerPage() {
   const [tab, setTab]                   = useState<Tab>("pending");
   const [search, setSearch]             = useState("");
   const [country, setCountry]           = useState("all");
+  const [gender, setGender]             = useState("all");
   const [page, setPage]                 = useState(1);
   const [busy, setBusy]                 = useState<string | null>(null);
   const [carouselBusy, setCarouselBusy] = useState<string | null>(null);
@@ -190,7 +192,7 @@ export default function AdminAnnoncerPage() {
   }, [country]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { setPage(1); }, [tab, search, country]);
+  useEffect(() => { setPage(1); }, [tab, search, country, gender]);
 
   const update = async (id: string, status: "active" | "rejected") => {
     setBusy(id);
@@ -258,9 +260,11 @@ export default function AdminAnnoncerPage() {
 
   const q = search.toLowerCase();
   const base = tab === "all" ? listings : listings.filter(l => l.status === tab);
-  const filtered = base.filter(l =>
-    !q || l.title?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(q) || l.country?.toLowerCase().includes(q)
-  );
+  const filtered = base
+    .filter(l => gender === "all" || (l.gender ?? "").toLowerCase() === gender.toLowerCase())
+    .filter(l =>
+      !q || l.title?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(q) || l.country?.toLowerCase().includes(q)
+    );
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -276,8 +280,8 @@ export default function AdminAnnoncerPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-[22px] font-bold text-gray-900">Listings</h1>
-          <p className="text-[13px] text-gray-400 mt-0.5">{counts.all} listings{country !== "all" ? ` in ${country}` : ""}</p>
+          <h1 className="text-[22px] font-bold text-gray-900">Profiles</h1>
+          <p className="text-[13px] text-gray-400 mt-0.5">{counts.all} profiles{country !== "all" ? ` in ${country}` : ""}</p>
         </div>
         {tab === "pending" && counts.pending > 0 && (
           <button onClick={bulkApprove} disabled={bulkLoading}
@@ -308,7 +312,7 @@ export default function AdminAnnoncerPage() {
           ))}
         </div>
 
-        {/* Country filter — alle lande fra SUPPORTED_COUNTRIES */}
+        {/* Country filter */}
         <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2" style={{ border: "1px solid #E5E5E5" }}>
           <MapPin size={13} color="#9CA3AF" />
           <select
@@ -320,6 +324,21 @@ export default function AdminAnnoncerPage() {
             {allCountries.map(c => (
               <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
             ))}
+          </select>
+        </div>
+
+        {/* Gender filter */}
+        <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-2" style={{ border: "1px solid #E5E5E5" }}>
+          <Users size={13} color="#9CA3AF" />
+          <select
+            value={gender}
+            onChange={e => setGender(e.target.value)}
+            className="text-[13px] bg-transparent outline-none text-gray-700 cursor-pointer"
+          >
+            <option value="all">All genders</option>
+            <option value="Woman">Women</option>
+            <option value="Man">Men</option>
+            <option value="Trans / Non-binary">Trans</option>
           </select>
         </div>
 
