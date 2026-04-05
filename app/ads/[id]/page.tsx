@@ -21,6 +21,7 @@ import PhotoGrid from "@/components/PhotoGrid";
 import PrivateContentPreview from "@/components/PrivateContentPreview";
 import MarketplaceSection from "@/components/MarketplaceSection";
 import LockedContentSection from "@/components/LockedContentSection";
+import ReadMoreText from "@/components/ReadMoreText";
 import StoryCircles from "@/components/StoryCircles";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
@@ -262,7 +263,7 @@ export default function AdDetailPage() {
               {ad.about && (
                 <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
                   <h3 className="mb-3 text-lg font-bold text-gray-900">{t.ad_about_me}</h3>
-                  <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">{ad.about}</p>
+                  <ReadMoreText text={ad.about} maxChars={300} />
                 </div>
               )}
 
