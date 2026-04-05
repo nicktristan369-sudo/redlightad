@@ -181,26 +181,6 @@ export default function Navbar() {
             <Logo variant="light" height={28} />
           </Link>
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex" style={{ alignItems: "center", gap: 4, marginLeft: 8 }}>
-            <Link href="/" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#374151", textDecoration: "none", whiteSpace: "nowrap" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F7" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}>
-              Escorts
-            </Link>
-            <Link href="/onlyfans" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#374151", textDecoration: "none", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F7" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}>
-              <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 14, width: "auto" }} />
-            </Link>
-            <Link href="/cam" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#111", textDecoration: "none", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F7" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#DC2626", display: "inline-block", flexShrink: 0, animation: "camPulse 1.5s infinite" }} />
-              RedLight<span style={{ color: "#DC2626" }}>CAM</span>
-            </Link>
-          </div>
-
           {/* Right icons */}
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 

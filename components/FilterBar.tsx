@@ -495,6 +495,40 @@ function FilterBarInner() {
   return (
     <>
     <div ref={ref} className="bg-white border-b border-gray-200" style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+      {/* Section tabs */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-2 pb-0">
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none" }}>
+          {[
+            { href: "/",            label: "Escorts" },
+            { href: "/onlyfans",    label: "OnlyFans" },
+            { href: "/cam",         label: "RedLightCAM" },
+            { href: "/marketplace", label: "Marketplace" },
+            { href: "/reviews",     label: "Reviews" },
+            { href: "/videos",      label: "Videos" },
+          ].map(tab => {
+            const isActive = pathname === tab.href || (tab.href !== "/" && pathname.startsWith(tab.href))
+            return (
+              <a key={tab.href} href={tab.href} style={{
+                display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+                padding: "6px 14px", borderRadius: 8,
+                fontSize: 13, fontWeight: 600,
+                background: isActive ? "#111" : "#F3F4F6",
+                color: isActive ? "#fff" : "#374151",
+                textDecoration: "none",
+                transition: "all 0.15s", flexShrink: 0,
+              }}
+                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#E5E7EB" }}
+                onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#F3F4F6" }}
+              >
+                {tab.label === "OnlyFans" && <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 13, width: "auto", filter: isActive ? "brightness(0) invert(1)" : "none" }} />}
+                {tab.label === "RedLightCAM" && <span style={{ width: 7, height: 7, borderRadius: "50%", background: isActive ? "#fff" : "#DC2626", display: "inline-block", flexShrink: 0 }} />}
+                {tab.label !== "OnlyFans" && tab.label}
+              </a>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-2">
 
         {/* Search — full width top row on mobile */}
