@@ -68,7 +68,24 @@ export async function POST(req: NextRequest) {
     result = parseGeneric($, url)
   }
 
-  return NextResponse.json(result)
+  // Return both flat format (for Step 2 import) and nested profile format (for Step 1 handleScrape)
+  return NextResponse.json({
+    ...result,
+    profile: {
+      title: result.name,
+      display_name: result.name,
+      age: result.age ? parseInt(result.age as string) || null : null,
+      location: result.city,
+      city: result.city,
+      country: result.nationality || "",
+      nationality: result.nationality,
+      phone: result.phone,
+      description: result.description,
+      height: result.height,
+      weight: result.weight,
+      images: result.images,
+    }
+  })
 }
 
 function parseEuroGirlsEscort($: CheerioDoc, url: string) {
