@@ -1,0 +1,81 @@
+import { NextRequest, NextResponse } from "next/server"
+import { createHmac } from "crypto"
+import { createClient } from "@/lib/supabaseServer"
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.text()
+    const signature = req.headers.get("x-nowpayments-sig")
+    const ipnSecret = process.env.NOWPAYMENTS_IPN_SECRET
+
+    // Verificer signatur hvis IPN secret er konfigureret
+    if (ipnSecret && signature) {
+      const hmac = createHmac("sha512", ipnSecret)
+      const sortedBody = JSON.stringify(JSON.parse(body), Object.keys(JSON.parse(body)).sort())
+      hmac.update(sortedBody)
+      const expected = hmac.digest("hex")
+      if (expected !== signature) {
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
+      }
+    }
+
+    const data = JSON.parse(body)
+    const { payment_status, order_id } = data
+
+    // Kun behandl bekræftede betalinger
+    if (payment_status !== "finished" && payment_status !== "confirmed") {
+      return NextResponse.json({ ok: true })
+    }
+
+    // Parse order_id: format = "redcoins_{packageId}_{userId}_{timestamp}"
+    const parts = order_id?.split("_")
+    if (!parts || parts.length < 4) {
+      return NextResponse.json({ error: "Invalid order_id" }, { status: 400 })
+    }
+
+    const packageId = `${parts[1]}_${parts[2]}` // f.eks. "coins_600"
+    const userId = parts[3]
+
+    // Hent antal coins fra packageId
+    const coinsMap: Record<string, number> = {
+      "coins_100": 100,
+      "coins_300": 300,
+      "coins_600": 600,
+      "coins_1200": 1200,
+      "coins_2500": 2500,
+      "coins_5000": 5000,
+    }
+    const coins = coinsMap[packageId]
+    if (!coins || !userId) {
+      return NextResponse.json({ error: "Invalid package or user" }, { status: 400 })
+    }
+
+    const supabase = createClient()
+
+    // Tilføj coins til brugerens wallet
+    const { error } = await supabase.rpc("add_red_coins", {
+      p_user_id: userId,
+      p_coins: coins,
+    })
+
+    if (error) {
+      console.error("add_red_coins fejl:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Log købet
+    await supabase.from("coin_purchases").insert({
+      user_id: userId,
+      package_id: packageId,
+      coins_amount: coins,
+      payment_provider: "nowpayments",
+      payment_id: data.payment_id?.toString(),
+      status: "completed",
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
