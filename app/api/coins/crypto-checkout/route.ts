@@ -1,20 +1,33 @@
 import { NextRequest, NextResponse } from "next/server"
 import { COIN_PACKAGES } from "@/lib/coinPackages"
-import { importPKCS8, SignJWT } from "jose"
+import { SignJWT } from "jose"
+import { createPrivateKey } from "crypto"
 import { randomBytes } from "crypto"
 
-function normalizePem(raw: string): string {
-  // Håndter escaped newlines fra Vercel env vars
-  let pem = raw.replace(/\\n/g, "\n").replace(/\\r/g, "").trim()
+function extractPrivateKey(raw: string): string {
+  // Normaliser escaped newlines fra Vercel
+  const normalized = raw.replace(/\\n/g, "\n").replace(/\\r/g, "").trim()
 
-  // Hvis PEM headers mangler, antag PKCS8 private key
-  if (!pem.startsWith("-----BEGIN")) {
-    const body = pem.replace(/\s/g, "").match(/.{1,64}/g)?.join("\n") ?? pem
+  // Hvis det er JSON (hele Coinbase nøglefilen) — udtræk privateKey feltet
+  if (normalized.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(normalized)
+      const pk = parsed.privateKey || parsed.private_key || parsed.pem
+      if (pk) return extractPrivateKey(pk) // rekursivt normaliser
+      throw new Error("Ingen privateKey felt fundet i JSON")
+    } catch (e) {
+      throw new Error(`JSON parse fejl: ${e instanceof Error ? e.message : e}`)
+    }
+  }
+
+  // Hvis PEM header mangler — tilføj den
+  if (!normalized.startsWith("-----BEGIN")) {
+    const body = normalized.replace(/\s/g, "").match(/.{1,64}/g)?.join("\n") ?? normalized
     return `-----BEGIN PRIVATE KEY-----\n${body}\n-----END PRIVATE KEY-----\n`
   }
 
-  // Genopbyg PEM med korrekte linjeskift
-  const lines = pem.split("\n").map(l => l.trim()).filter(Boolean)
+  // Genopbyg PEM med korrekte 64-char linjeskift
+  const lines = normalized.split("\n").map(l => l.trim()).filter(Boolean)
   const header = lines[0]
   const footer = lines[lines.length - 1]
   const body = lines.slice(1, -1).join("").replace(/\s/g, "")
@@ -35,25 +48,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Crypto betaling ikke konfigureret" }, { status: 503 })
     }
 
-    const pemKey = normalizePem(rawPrivateKey)
-
-    // Prøv Ed25519 først, fallback til EC P-256
-    let privateKey
+    // Udtræk og normaliser private key
+    let pemKey: string
     try {
-      privateKey = await importPKCS8(pemKey, "EdDSA")
-    } catch {
-      try {
-        privateKey = await importPKCS8(pemKey, "ES256")
-      } catch (e2) {
-        const msg = e2 instanceof Error ? e2.message : String(e2)
-        return NextResponse.json({ error: `Nøgle-fejl: ${msg}` }, { status: 500 })
-      }
+      pemKey = extractPrivateKey(rawPrivateKey)
+    } catch (e) {
+      return NextResponse.json({ error: `Key-format fejl: ${e instanceof Error ? e.message : e}` }, { status: 500 })
     }
 
-    const alg = (privateKey.type === "private" && privateKey.algorithm?.name === "Ed25519") ? "EdDSA" : "ES256"
+    // Node.js crypto håndterer både EC SEC1 og PKCS8 formater automatisk
+    let nodeKey: ReturnType<typeof createPrivateKey>
+    try {
+      nodeKey = createPrivateKey(pemKey)
+    } catch (e) {
+      return NextResponse.json({ error: `Key load fejl: ${e instanceof Error ? e.message : e}` }, { status: 500 })
+    }
+
+    // Bestem algoritme ud fra nøgletype
+    const keyType = nodeKey.asymmetricKeyType
+    const alg = keyType === "ed25519" ? "EdDSA" : "ES256"
+
     const nonce = randomBytes(16).toString("hex")
     const now = Math.floor(Date.now() / 1000)
 
+    // jose accepterer KeyObject direkte fra Node.js crypto
     const jwt = await new SignJWT({
       sub: keyId,
       iss: "cdp",
@@ -62,7 +80,7 @@ export async function POST(req: NextRequest) {
       uri: "POST api.commerce.coinbase.com/charges",
     })
       .setProtectedHeader({ alg, kid: keyId, typ: "JWT", nonce })
-      .sign(privateKey)
+      .sign(nodeKey)
 
     const res = await fetch("https://api.commerce.coinbase.com/charges", {
       method: "POST",
