@@ -64,23 +64,20 @@ export default function KundeVerify() {
     setSubmitting(true)
     setError("")
     try {
-      const supabase = createClient()
-      const ext = file.name.split(".").pop() || "jpg"
-      const path = `customer/${userId}/${Date.now()}.${ext}`
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from("kyc-documents")
-        .upload(path, file)
-      if (uploadErr || !uploadData) throw new Error("Upload failed")
-      const imageUrl = supabase.storage.from("kyc-documents").getPublicUrl(uploadData.path).data.publicUrl
+      // Upload via server-side API (bruger service role — bypasser RLS)
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("userId", userId)
+      formData.append("fullName", fullName)
+      formData.append("birthdate", birthdate)
 
-      const { error: insertErr } = await supabase.from("customer_kyc_requests").insert({
-        user_id: userId,
-        full_name: fullName.trim(),
-        birthdate,
-        id_image_url: imageUrl,
-        status: "pending",
+      const res = await fetch("/api/kyc/upload", {
+        method: "POST",
+        body: formData,
       })
-      if (insertErr) throw new Error(insertErr.message)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Upload failed")
+
       setStatus("pending")
       setKycData({ status: "pending", created_at: new Date().toISOString(), reviewed_at: null })
     } catch (e: unknown) {
