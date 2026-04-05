@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient()
     const userId = meta.user_id
     const coinsAmount = parseInt(meta.coins_amount)
-    const priceUsd = parseFloat(meta.price_usd || "0")
+    const priceUsd = parseFloat(meta.price_eur || meta.price_usd || "0")
     const paymentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || ""
 
     // Upsert wallet

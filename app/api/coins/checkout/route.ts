@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       line_items: [{
         price_data: {
-          currency: "usd",
+          currency: "eur",
           product_data: {
             name: `${pkg.coins} RedCoins`,
             description: `${pkg.coins} coins til dit RedLightAd wallet`,
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         coins_amount: pkg.coins.toString(),
         package_id: packageId,
-        price_usd: pkg.price_usd.toString(),
+        price_eur: pkg.price_eur.toString(),
       },
     })
 
