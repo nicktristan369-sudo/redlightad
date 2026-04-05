@@ -1,9 +1,9 @@
--- Tilføj boost kolonner til listings
+-- Tilføj boost kolonner til listings (score-baseret, ingen timer)
 alter table public.listings
-  add column if not exists boost_expires_at timestamptz,
-  add column if not exists boost_purchased_at timestamptz;
+  add column if not exists boost_score integer default 0,       -- coins brugt på seneste push
+  add column if not exists boost_purchased_at timestamptz;      -- tidspunkt for seneste push
 
--- Tilføj premium_until hvis det ikke allerede er der (burde eksistere)
+-- Tilføj premium_until
 alter table public.listings
   add column if not exists premium_until timestamptz;
 
@@ -15,7 +15,6 @@ create table if not exists public.boost_purchases (
   package_id text not null,
   coins_spent integer not null,
   boost_type text not null check (boost_type in ('premium', 'push_to_top')),
-  expires_at timestamptz not null,
   created_at timestamptz default now()
 );
 
@@ -25,7 +24,11 @@ create policy "Users view own boost_purchases" on public.boost_purchases
 create policy "Service role insert boost_purchases" on public.boost_purchases
   for insert with check (true);
 
--- add_red_coins function hvis den ikke eksisterer
+-- Index til hurtig sortering
+create index if not exists listings_boost_score_idx on public.listings (boost_score desc, boost_purchased_at desc);
+create index if not exists listings_premium_until_idx on public.listings (premium_until desc);
+
+-- add_red_coins function
 create or replace function public.add_red_coins(p_user_id uuid, p_coins integer)
 returns void language plpgsql security definer as $$
 begin

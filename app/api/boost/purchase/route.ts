@@ -9,7 +9,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Manglende parametre" }, { status: 400 })
     }
 
-    // Find pakke — tjek både premium og boost
     const premiumPkg = PREMIUM_PACKAGES.find(p => p.id === packageId)
     const boostPkg = BOOST_PACKAGES.find(p => p.id === packageId)
     const pkg = premiumPkg || boostPkg
@@ -17,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServerClient()
 
-    // Træk coins fra wallet via database function
+    // Træk coins fra wallet
     const { data: success, error: deductError } = await supabase.rpc("deduct_red_coins", {
       p_user_id: userId,
       p_coins: pkg.coins,
@@ -27,8 +26,8 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date()
-    let expiresAt: Date
     let updateData: Record<string, unknown> = {}
+    let expiresAt: Date | null = null
 
     if (premiumPkg) {
       // Premium: sæt premium_tier og premium_until
@@ -39,14 +38,12 @@ export async function POST(req: NextRequest) {
         premium_until: expiresAt.toISOString(),
       }
     } else if (boostPkg) {
-      // Push to Top: sæt boost_expires_at
-      expiresAt = new Date(now.getTime() + boostPkg.hours * 60 * 60 * 1000)
+      // Push to Top: score-baseret — jo flere coins, jo højere placering
+      // Samme score → nyeste push vinder (boost_purchased_at er tiebreaker)
       updateData = {
-        boost_expires_at: expiresAt.toISOString(),
+        boost_score: boostPkg.coins,
         boost_purchased_at: now.toISOString(),
       }
-    } else {
-      return NextResponse.json({ error: "Ugyldig pakke type" }, { status: 400 })
     }
 
     // Opdater listing
@@ -57,6 +54,8 @@ export async function POST(req: NextRequest) {
       .eq("user_id", userId)
 
     if (updateError) {
+      // Coins er allerede trukket — refunder
+      await supabase.rpc("add_red_coins", { p_user_id: userId, p_coins: pkg.coins })
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
@@ -67,10 +66,13 @@ export async function POST(req: NextRequest) {
       package_id: packageId,
       coins_spent: pkg.coins,
       boost_type: premiumPkg ? "premium" : "push_to_top",
-      expires_at: expiresAt!.toISOString(),
     })
 
-    return NextResponse.json({ ok: true, expires_at: expiresAt!.toISOString() })
+    return NextResponse.json({
+      ok: true,
+      boost_score: boostPkg?.coins ?? null,
+      premium_until: expiresAt?.toISOString() ?? null,
+    })
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Fejl" }, { status: 500 })
   }

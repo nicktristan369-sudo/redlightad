@@ -6,9 +6,12 @@ export const PREMIUM_PACKAGES = [
   { id: "premium_12m", months: 12, coins: 4200, label: "12 måneder", popular: false, discount: 30 },
 ] as const
 
-// Push to Top pakker
+// Push to Top pakker — score-baseret rangering (ingen timer)
+// Jo flere coins du bruger, jo højere score → jo højere placering
+// Samme score = nyeste push vinder
 export const BOOST_PACKAGES = [
-  { id: "boost_6h",  hours: 6,  coins: 50,  label: "6 timer"  },
-  { id: "boost_24h", hours: 24, coins: 100, label: "24 timer", popular: true },
-  { id: "boost_72h", hours: 72, coins: 250, label: "72 timer" },
+  { id: "boost_50",   coins: 50,   label: "Lille Push",  popular: false, description: "Kom højere op end gratis profiler" },
+  { id: "boost_150",  coins: 150,  label: "Medium Push", popular: false, description: "Overgå de fleste konkurrenter" },
+  { id: "boost_500",  coins: 500,  label: "Stor Push",   popular: true,  description: "Dominér din by og kategori" },
+  { id: "boost_1000", coins: 1000, label: "Mega Push",   popular: false, description: "Absolut topplacering — #1 på forsiden" },
 ] as const
