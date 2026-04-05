@@ -1,9 +1,23 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import AdminLayout from "@/components/AdminLayout"
 
-interface KycSubmission {
+/* ─── Types ─── */
+
+interface CustomerKyc {
+  id: string
+  user_id: string
+  full_name: string
+  birthdate: string
+  id_image_url: string | null
+  status: string
+  created_at: string
+  reviewed_at: string | null
+  email?: string
+}
+
+interface EscortKyc {
   id: string
   user_id: string
   listing_id: string
@@ -17,86 +31,169 @@ interface KycSubmission {
   rejection_reason: string | null
   submitted_at: string
   reviewed_at: string | null
-  listings?: { title: string } | null
 }
 
-function statusBadge(status: string) {
-  const colors: Record<string, { bg: string; color: string }> = {
-    pending: { bg: "#FEF3C7", color: "#92400E" },
-    approved: { bg: "#D1FAE5", color: "#065F46" },
-    rejected: { bg: "#FEE2E2", color: "#991B1B" },
+type Tab = "customer" | "escort"
+
+/* ─── Helpers ─── */
+
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; dot: string }> = {
+    pending: { bg: "#FEF3C7", color: "#92400E", dot: "#F59E0B" },
+    approved: { bg: "#D1FAE5", color: "#065F46", dot: "#10B981" },
+    rejected: { bg: "#FEE2E2", color: "#991B1B", dot: "#EF4444" },
   }
-  const c = colors[status] || { bg: "#F3F4F6", color: "#374151" }
+  const c = map[status] || { bg: "#F3F4F6", color: "#374151", dot: "#9CA3AF" }
   return (
-    <span style={{ background: c.bg, color: c.color, fontSize: 11, fontWeight: 600, padding: "2px 8px", textTransform: "uppercase" }}>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        background: c.bg,
+        color: c.color,
+        fontSize: 11,
+        fontWeight: 600,
+        padding: "3px 10px",
+        borderRadius: 12,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+      }}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.dot }} />
       {status}
     </span>
   )
 }
 
-export default function AdminKycPage() {
-  const [submissions, setSubmissions] = useState<KycSubmission[]>([])
-  const [loading, setLoading] = useState(true)
-  const [expanded, setExpanded] = useState<string | null>(null)
-  const [acting, setActing] = useState<string | null>(null)
-  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({})
-  const [showRejectInput, setShowRejectInput] = useState<string | null>(null)
+/* ─── ID Image component with signed URL ─── */
+
+function IDImage({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("/api/admin/kyc")
+    if (!path) return
+    fetch(`/api/admin/kyc-signed-url?path=${encodeURIComponent(path)}`)
       .then((r) => r.json())
-      .then((d) => { if (Array.isArray(d)) setSubmissions(d) })
-      .finally(() => setLoading(false))
-  }, [])
-
-  async function handleAction(id: string, action: "approve" | "reject") {
-    setActing(id)
-    try {
-      const res = await fetch("/api/admin/kyc", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          submission_id: id,
-          action,
-          rejection_reason: action === "reject" ? (rejectReasons[id] || null) : null,
-        }),
+      .then((d) => {
+        if (d.url) setUrl(d.url)
       })
-      const json = await res.json()
-      if (json.ok) {
-        setSubmissions((prev) =>
-          prev.map((s) =>
-            s.id === id ? { ...s, status: action === "approve" ? "approved" : "rejected", reviewed_at: new Date().toISOString() } : s
-          )
-        )
-        setShowRejectInput(null)
-      } else {
-        alert(json.error || "Failed")
-      }
+      .catch(() => {})
+  }, [path])
+
+  if (!url) {
+    return (
+      <div
+        style={{
+          width: 50,
+          height: 70,
+          background: "#F3F4F6",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 10,
+          color: "#9CA3AF",
+          border: "1px solid #E5E7EB",
+          borderRadius: 4,
+        }}
+      >
+        Loading
+      </div>
+    )
+  }
+
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      <img
+        src={url}
+        alt="ID Document"
+        style={{
+          width: 50,
+          height: 70,
+          objectFit: "cover",
+          border: "1px solid #E5E7EB",
+          borderRadius: 4,
+          cursor: "pointer",
+        }}
+      />
+    </a>
+  )
+}
+
+/* ─── Stats Row ─── */
+
+function StatsRow({ items }: { items: { label: string; count: number; bg: string; color: string }[] }) {
+  return (
+    <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+      {items.map((s) => (
+        <div
+          key={s.label}
+          style={{
+            background: s.bg,
+            color: s.color,
+            padding: "8px 16px",
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            minWidth: 100,
+          }}
+        >
+          {s.count} {s.label}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ─── Main Page ─── */
+
+export default function AdminKycPage() {
+  const [tab, setTab] = useState<Tab>("customer")
+  const [customerKyc, setCustomerKyc] = useState<CustomerKyc[]>([])
+  const [escortKyc, setEscortKyc] = useState<EscortKyc[]>([])
+  const [loading, setLoading] = useState(true)
+  const [acting, setActing] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [custRes, escRes] = await Promise.all([
+        fetch("/api/admin/customer-kyc"),
+        fetch("/api/admin/kyc"),
+      ])
+      const custData = await custRes.json()
+      const escData = await escRes.json()
+      if (Array.isArray(custData)) setCustomerKyc(custData)
+      if (Array.isArray(escData)) setEscortKyc(escData)
     } finally {
-      setActing(null)
+      setLoading(false)
     }
-  }
-
-  const thStyle: React.CSSProperties = {
-    fontSize: 11, fontWeight: 600, color: "#6B7280", textTransform: "uppercase",
-    padding: "8px 12px", textAlign: "left", borderBottom: "1px solid #E5E5E5",
-  }
-  const tdStyle: React.CSSProperties = {
-    fontSize: 13, color: "#374151", padding: "10px 12px", borderBottom: "1px solid #F3F4F6",
-  }
-
-  // Customer KYC
-  const [customerKyc, setCustomerKyc] = useState<{ id: string; user_id: string; full_name: string; birthdate: string; id_image_url: string; status: string; created_at: string; reviewed_at: string | null }[]>([])
-  const [customerActing, setCustomerActing] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch("/api/admin/customer-kyc")
-      .then((r) => r.json())
-      .then((d) => { if (Array.isArray(d)) setCustomerKyc(d) })
   }, [])
 
-  async function handleCustomerKyc(id: string, userId: string, action: "approve" | "reject") {
-    setCustomerActing(id)
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  /* ─── Customer KYC actions ─── */
+  async function handleCustomerAction(id: string, userId: string, action: "approve" | "reject") {
+    setActing(id)
     try {
       const res = await fetch("/api/admin/customer-kyc", {
         method: "PATCH",
@@ -107,210 +204,362 @@ export default function AdminKycPage() {
       if (json.ok) {
         setCustomerKyc((prev) =>
           prev.map((s) =>
-            s.id === id ? { ...s, status: action === "approve" ? "approved" : "rejected", reviewed_at: new Date().toISOString() } : s
+            s.id === id
+              ? { ...s, status: action === "approve" ? "approved" : "rejected", reviewed_at: new Date().toISOString() }
+              : s
           )
         )
       } else {
-        alert(json.error || "Failed")
+        alert(json.error || "Action failed")
       }
     } finally {
-      setCustomerActing(null)
+      setActing(null)
     }
   }
 
+  /* ─── Escort KYC actions ─── */
+  async function handleEscortAction(id: string, action: "approve" | "reject", rejectionReason?: string) {
+    setActing(id)
+    try {
+      const res = await fetch("/api/admin/kyc", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submission_id: id,
+          action,
+          rejection_reason: action === "reject" ? (rejectionReason || null) : null,
+        }),
+      })
+      const json = await res.json()
+      if (json.ok) {
+        setEscortKyc((prev) =>
+          prev.map((s) =>
+            s.id === id
+              ? { ...s, status: action === "approve" ? "approved" : "rejected", reviewed_at: new Date().toISOString() }
+              : s
+          )
+        )
+      } else {
+        alert(json.error || "Action failed")
+      }
+    } finally {
+      setActing(null)
+    }
+  }
+
+  /* ─── Stats ─── */
+  const activeList = tab === "customer" ? customerKyc : escortKyc
+  const pending = activeList.filter((s) => s.status === "pending").length
+  const approved = activeList.filter((s) => s.status === "approved").length
+  const rejected = activeList.filter((s) => s.status === "rejected").length
+
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    padding: "10px 20px",
+    fontSize: 14,
+    fontWeight: 600,
+    color: active ? "#DC2626" : "#6B7280",
+    borderBottom: active ? "2px solid #DC2626" : "2px solid transparent",
+    background: "none",
+    border: "none",
+    borderBottomWidth: 2,
+    borderBottomStyle: "solid",
+    borderBottomColor: active ? "#DC2626" : "transparent",
+    cursor: "pointer",
+    transition: "color 0.15s",
+  })
+
   return (
     <AdminLayout>
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 20 }}>KYC Verification</h1>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 24 }}>
+          KYC Verification
+        </h1>
 
-        {/* Customer KYC section */}
-        <div style={{ marginBottom: 40 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 14 }}>Kunde KYC (ID Verificering)</h2>
-          {customerKyc.length === 0 ? (
-            <p style={{ color: "#999", fontSize: 13 }}>Ingen kunde KYC ansogninger</p>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Navn</th>
-                    <th style={thStyle}>Fodselsdato</th>
-                    <th style={thStyle}>ID Billede</th>
-                    <th style={thStyle}>Dato</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Handlinger</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customerKyc.map((s) => (
-                    <tr key={s.id}>
-                      <td style={tdStyle}>{s.full_name}</td>
-                      <td style={tdStyle}>{s.birthdate}</td>
-                      <td style={tdStyle}>
-                        {s.id_image_url ? (
-                          <a href={s.id_image_url} target="_blank" rel="noopener noreferrer">
-                            <img src={s.id_image_url} alt="ID" style={{ width: 80, height: 50, objectFit: "cover", border: "1px solid #E5E5E5" }} />
-                          </a>
-                        ) : "—"}
-                      </td>
-                      <td style={tdStyle}>{new Date(s.created_at).toLocaleDateString()}</td>
-                      <td style={tdStyle}>{statusBadge(s.status)}</td>
-                      <td style={tdStyle}>
-                        {s.status === "pending" ? (
-                          <div style={{ display: "flex", gap: 4 }}>
-                            <button
-                              onClick={() => handleCustomerKyc(s.id, s.user_id, "approve")}
-                              disabled={customerActing === s.id}
-                              style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", background: "#16A34A", color: "#fff", border: "none", borderRadius: 0, cursor: "pointer" }}
-                            >
-                              Godkend
-                            </button>
-                            <button
-                              onClick={() => handleCustomerKyc(s.id, s.user_id, "reject")}
-                              disabled={customerActing === s.id}
-                              style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 0, cursor: "pointer" }}
-                            >
-                              Afvis
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 11, color: "#999" }}>—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* ─── Tabs ─── */}
+        <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #E5E7EB", marginBottom: 20 }}>
+          <button style={tabStyle(tab === "customer")} onClick={() => setTab("customer")}>
+            Customer KYC ({customerKyc.length})
+          </button>
+          <button style={tabStyle(tab === "escort")} onClick={() => setTab("escort")}>
+            Escort KYC ({escortKyc.length})
+          </button>
         </div>
 
-        {/* Existing escort KYC */}
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 14 }}>Escort KYC</h2>
+        {/* ─── Stats ─── */}
+        <StatsRow
+          items={[
+            { label: "Pending", count: pending, bg: "#FEF3C7", color: "#92400E" },
+            { label: "Approved", count: approved, bg: "#D1FAE5", color: "#065F46" },
+            { label: "Rejected", count: rejected, bg: "#FEE2E2", color: "#991B1B" },
+          ]}
+        />
 
-        {loading ? (
-          <p style={{ color: "#999", fontSize: 13 }}>Loading...</p>
-        ) : submissions.length === 0 ? (
-          <p style={{ color: "#999", fontSize: 13 }}>No KYC submissions</p>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Name</th>
-                  <th style={thStyle}>Country</th>
-                  <th style={thStyle}>DOB</th>
-                  <th style={thStyle}>Submitted</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {submissions.map((s) => (
-                  <>
-                    <tr
-                      key={s.id}
-                      onClick={() => setExpanded(expanded === s.id ? null : s.id)}
-                      style={{ cursor: "pointer" }}
+        {/* ─── Loading ─── */}
+        {loading && <p style={{ color: "#9CA3AF", fontSize: 13 }}>Loading...</p>}
+
+        {/* ─── Customer KYC Cards ─── */}
+        {!loading && tab === "customer" && (
+          customerKyc.length === 0 ? (
+            <p style={{ color: "#9CA3AF", fontSize: 13 }}>No customer KYC requests</p>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+              {customerKyc.map((s) => (
+                <div
+                  key={s.id}
+                  style={{
+                    background: "#fff",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: 10,
+                    padding: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                  }}
+                >
+                  {/* Header: avatar + name */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: "#FEE2E2",
+                        color: "#DC2626",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
                     >
-                      <td style={tdStyle}>{s.full_name}</td>
-                      <td style={tdStyle}>{s.country}</td>
-                      <td style={tdStyle}>{s.date_of_birth}</td>
-                      <td style={tdStyle}>{new Date(s.submitted_at).toLocaleDateString()}</td>
-                      <td style={tdStyle}>{statusBadge(s.status)}</td>
-                      <td style={tdStyle}>
-                        {s.status === "pending" ? (
-                          <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => handleAction(s.id, "approve")}
-                              disabled={acting === s.id}
-                              style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", background: "#16A34A", color: "#fff", border: "none", borderRadius: 0, cursor: "pointer" }}
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => setShowRejectInput(showRejectInput === s.id ? null : s.id)}
-                              disabled={acting === s.id}
-                              style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 0, cursor: "pointer" }}
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 11, color: "#999" }}>—</span>
-                        )}
-                      </td>
-                    </tr>
-                    {/* Reject reason input */}
-                    {showRejectInput === s.id && (
-                      <tr key={`${s.id}-reject`}>
-                        <td colSpan={6} style={{ padding: "8px 12px", background: "#FEF2F2" }} onClick={(e) => e.stopPropagation()}>
-                          <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-                            <textarea
-                              placeholder="Rejection reason..."
-                              value={rejectReasons[s.id] || ""}
-                              onChange={(e) => setRejectReasons((prev) => ({ ...prev, [s.id]: e.target.value }))}
-                              style={{ flex: 1, fontSize: 12, border: "1px solid #FCA5A5", borderRadius: 0, padding: 8, resize: "vertical", minHeight: 40 }}
-                            />
-                            <button
-                              onClick={() => handleAction(s.id, "reject")}
-                              disabled={acting === s.id}
-                              style={{ fontSize: 11, fontWeight: 600, padding: "8px 14px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 0, cursor: "pointer", whiteSpace: "nowrap" }}
-                            >
-                              Confirm Reject
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                      {getInitials(s.full_name)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>
+                        {s.full_name}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#6B7280" }}>
+                        Born: {s.birthdate}
+                      </div>
+                      {s.email && (
+                        <div style={{ fontSize: 12, color: "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {s.email}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ID image + submitted date */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    {s.id_image_url ? (
+                      <IDImage path={s.id_image_url} />
+                    ) : (
+                      <div
+                        style={{
+                          width: 50,
+                          height: 70,
+                          background: "#F3F4F6",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 10,
+                          color: "#9CA3AF",
+                          border: "1px solid #E5E7EB",
+                          borderRadius: 4,
+                        }}
+                      >
+                        No ID
+                      </div>
                     )}
-                    {/* Expanded details */}
-                    {expanded === s.id && (
-                      <tr key={`${s.id}-detail`}>
-                        <td colSpan={6} style={{ padding: "12px", background: "#F9FAFB", borderBottom: "1px solid #E5E5E5" }}>
-                          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13 }}>
-                            {s.id_front_url && (
-                              <div>
-                                <p style={{ fontSize: 11, color: "#6B7280", marginBottom: 4 }}>ID Front</p>
-                                <a href={s.id_front_url} target="_blank" rel="noopener noreferrer">
-                                  <img src={s.id_front_url} alt="ID Front" style={{ width: 160, height: 100, objectFit: "cover", border: "1px solid #E5E5E5" }} />
-                                </a>
-                              </div>
-                            )}
-                            {s.id_back_url && (
-                              <div>
-                                <p style={{ fontSize: 11, color: "#6B7280", marginBottom: 4 }}>ID Back</p>
-                                <a href={s.id_back_url} target="_blank" rel="noopener noreferrer">
-                                  <img src={s.id_back_url} alt="ID Back" style={{ width: 160, height: 100, objectFit: "cover", border: "1px solid #E5E5E5" }} />
-                                </a>
-                              </div>
-                            )}
-                            {s.selfie_url && (
-                              <div>
-                                <p style={{ fontSize: 11, color: "#6B7280", marginBottom: 4 }}>Selfie with ID</p>
-                                <a href={s.selfie_url} target="_blank" rel="noopener noreferrer">
-                                  <img src={s.selfie_url} alt="Selfie" style={{ width: 160, height: 100, objectFit: "cover", border: "1px solid #E5E5E5" }} />
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                          {s.listings && (
-                            <p style={{ fontSize: 12, color: "#6B7280", marginTop: 8 }}>
-                              Listing: <strong>{typeof s.listings === "object" && "title" in s.listings ? s.listings.title : "—"}</strong>
-                            </p>
-                          )}
-                          {s.rejection_reason && (
-                            <p style={{ fontSize: 12, color: "#991B1B", marginTop: 8 }}>
-                              Rejection reason: {s.rejection_reason}
-                            </p>
-                          )}
-                        </td>
-                      </tr>
+                    <div>
+                      <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 2 }}>Submitted</div>
+                      <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
+                        {formatDate(s.created_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status + actions */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto" }}>
+                    <StatusBadge status={s.status} />
+                    {s.status === "pending" && (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => handleCustomerAction(s.id, s.user_id, "approve")}
+                          disabled={acting === s.id}
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "6px 14px",
+                            background: "#16A34A",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: acting === s.id ? "not-allowed" : "pointer",
+                            opacity: acting === s.id ? 0.6 : 1,
+                          }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleCustomerAction(s.id, s.user_id, "reject")}
+                          disabled={acting === s.id}
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "6px 14px",
+                            background: "#DC2626",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: acting === s.id ? "not-allowed" : "pointer",
+                            opacity: acting === s.id ? 0.6 : 1,
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </div>
                     )}
-                  </>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* ─── Escort KYC Cards ─── */}
+        {!loading && tab === "escort" && (
+          escortKyc.length === 0 ? (
+            <p style={{ color: "#9CA3AF", fontSize: 13 }}>No escort KYC submissions</p>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+              {escortKyc.map((s) => (
+                <div
+                  key={s.id}
+                  style={{
+                    background: "#fff",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: 10,
+                    padding: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                  }}
+                >
+                  {/* Header: avatar + name */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: "#FEE2E2",
+                        color: "#DC2626",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {getInitials(s.full_name)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <a
+                        href={s.listing_id ? `/ads/${s.listing_id}` : "#"}
+                        style={{ fontWeight: 700, fontSize: 15, color: "#DC2626", textDecoration: "none" }}
+                      >
+                        {s.full_name}
+                      </a>
+                      <div style={{ fontSize: 12, color: "#6B7280" }}>
+                        {s.country} &middot; Born: {s.date_of_birth}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Documents row */}
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    {s.id_front_url && (
+                      <div>
+                        <div style={{ fontSize: 10, color: "#9CA3AF", marginBottom: 2 }}>Front</div>
+                        <IDImage path={s.id_front_url} />
+                      </div>
+                    )}
+                    {s.id_back_url && (
+                      <div>
+                        <div style={{ fontSize: 10, color: "#9CA3AF", marginBottom: 2 }}>Back</div>
+                        <IDImage path={s.id_back_url} />
+                      </div>
+                    )}
+                    {s.selfie_url && (
+                      <div>
+                        <div style={{ fontSize: 10, color: "#9CA3AF", marginBottom: 2 }}>Selfie</div>
+                        <IDImage path={s.selfie_url} />
+                      </div>
+                    )}
+                    <div style={{ marginLeft: "auto" }}>
+                      <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 2 }}>Submitted</div>
+                      <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
+                        {formatDate(s.submitted_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rejection reason if present */}
+                  {s.rejection_reason && (
+                    <div style={{ fontSize: 12, color: "#991B1B", background: "#FEF2F2", padding: "6px 10px", borderRadius: 6 }}>
+                      Reason: {s.rejection_reason}
+                    </div>
+                  )}
+
+                  {/* Status + actions */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto" }}>
+                    <StatusBadge status={s.status} />
+                    {s.status === "pending" && (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => handleEscortAction(s.id, "approve")}
+                          disabled={acting === s.id}
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "6px 14px",
+                            background: "#16A34A",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: acting === s.id ? "not-allowed" : "pointer",
+                            opacity: acting === s.id ? 0.6 : 1,
+                          }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleEscortAction(s.id, "reject")}
+                          disabled={acting === s.id}
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "6px 14px",
+                            background: "#DC2626",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: acting === s.id ? "not-allowed" : "pointer",
+                            opacity: acting === s.id ? 0.6 : 1,
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
     </AdminLayout>
