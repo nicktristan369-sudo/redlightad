@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import Navbar from "@/components/Navbar"
@@ -10,120 +10,92 @@ interface Listing {
   title: string | null
   display_name: string | null
   profile_image: string | null
-  profile_video_url: string | null
+  about: string | null
   social_links: Record<string, { url?: string; locked?: boolean; price_coins?: number }> | null
   onlyfans_username: string | null
   onlyfans_price_usd: number | null
-  age: number | null
-  city: string | null
-  country: string | null
+  onlyfans_bio: string | null
+  onlyfans_subscribers: number | null
+  onlyfans_photos_count: number | null
+  onlyfans_videos_count: number | null
+  onlyfans_likes_count: number | null
+  premium_tier: string | null
+  created_at: string
   boost_score: number | null
 }
 
-function VideoCard({ listing }: { listing: Listing }) {
-  const [hovered, setHovered] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
+type SortOption = "subscribers" | "newest" | "price"
 
-  useEffect(() => {
-    if (hovered && videoRef.current) {
-      videoRef.current.play().catch(() => {})
-    } else if (videoRef.current) {
-      videoRef.current.pause()
-      videoRef.current.currentTime = 0
-    }
-  }, [hovered])
+function OFCard({ l }: { l: Listing }) {
+  const ofUrl = l.social_links?.onlyfans?.url || `https://onlyfans.com/${l.onlyfans_username}`
+  const handle = l.onlyfans_username || (ofUrl ? ofUrl.replace("https://onlyfans.com/", "") : "")
+  const price = l.onlyfans_price_usd ? `$${l.onlyfans_price_usd}/mo` : "FREE"
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", gap: 20, padding: "20px 0",
+        borderBottom: "1px solid #1f1f1f",
+        transition: "background 0.15s",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = "#1a1a1a" }}
+      onMouseLeave={e => { e.currentTarget.style.background = "transparent" }}
     >
-      {/* Thumbnail / Video — 16:9 */}
-      <div style={{
-        position: "relative",
-        paddingBottom: "56.25%",
-        background: "#1a1a1a",
-        overflow: "hidden",
-        borderRadius: 8,
-      }}>
-        {listing.profile_image && (
-          <img
-            src={listing.profile_image}
-            alt=""
-            loading="lazy"
-            style={{
-              position: "absolute", inset: 0,
-              width: "100%", height: "100%", objectFit: "cover",
-            }}
-          />
-        )}
+      {/* Avatar */}
+      <img
+        src={l.profile_image || "/placeholder.png"}
+        alt=""
+        loading="lazy"
+        style={{
+          width: 80, height: 80, borderRadius: "50%",
+          objectFit: "cover", flexShrink: 0, background: "#333",
+        }}
+      />
 
-        {listing.profile_video_url && hovered && (
-          <video
-            ref={videoRef}
-            src={listing.profile_video_url}
-            muted
-            playsInline
-            loop
-            style={{
-              position: "absolute", inset: 0,
-              width: "100%", height: "100%", objectFit: "cover",
-            }}
-          />
-        )}
-
-        {/* Price badge */}
-        {listing.onlyfans_price_usd && (
-          <div style={{
-            position: "absolute", bottom: 8, right: 8,
-            background: "rgba(0,0,0,0.85)", color: "#00AFF0",
-            fontSize: 11, fontWeight: 700,
-            padding: "3px 8px", borderRadius: 6,
-          }}>
-            from ${listing.onlyfans_price_usd}/mo
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+          <span style={{ fontSize: 11, color: "#888" }}>onlyfans.com/{handle}</span>
+          {/* Social icons */}
+          {l.social_links?.tiktok?.url && (
+            <a href={l.social_links.tiktok.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#666", textDecoration: "none" }} title="TikTok">🎵</a>
+          )}
+          {l.social_links?.instagram?.url && (
+            <a href={l.social_links.instagram.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#666", textDecoration: "none" }} title="Instagram">📷</a>
+          )}
+        </div>
+        <Link href={`/ads/${l.id}`} style={{ textDecoration: "none" }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
+            {l.display_name || l.title || "Creator"}
           </div>
-        )}
-
-        {/* Avatar overlay */}
-        {listing.profile_image && (
-          <div style={{
-            position: "absolute", bottom: 8, left: 8,
-            width: 36, height: 36, borderRadius: "50%",
-            overflow: "hidden", border: "2px solid #0F0F0F",
-            background: "#333",
-          }}>
-            <img
-              src={listing.profile_image}
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Info under thumbnail */}
-      <div style={{ display: "flex", gap: 10, padding: "10px 2px" }}>
-        <img
-          src={listing.profile_image || "/placeholder.png"}
-          alt=""
-          style={{
-            width: 36, height: 36, borderRadius: "50%",
-            objectFit: "cover", flexShrink: 0, background: "#333",
-          }}
-        />
-        <div style={{ minWidth: 0 }}>
-          <div style={{
-            fontSize: 14, fontWeight: 700, color: "#fff", lineHeight: 1.3,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {listing.display_name || listing.title || "Creator"}
-          </div>
-          <div style={{ fontSize: 12, color: "#aaa", marginTop: 2 }}>
-            {listing.onlyfans_username ? `@${listing.onlyfans_username}` : listing.city || ""}
-            {listing.age ? ` · ${listing.age}` : ""}
-          </div>
+        </Link>
+        <div style={{
+          fontSize: 13, color: "#aaa", marginBottom: 10,
+          overflow: "hidden", display: "-webkit-box",
+          WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
+        }}>
+          {(l.onlyfans_bio || l.about || "").slice(0, 200)}
+        </div>
+        {/* Stats */}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: "#888" }}>
+          {(l.onlyfans_subscribers ?? 0) > 0 && <span>👤 {l.onlyfans_subscribers!.toLocaleString()}</span>}
+          <span style={{ color: "#00AFF0", fontWeight: 700 }}>Price: {price}</span>
+          {(l.onlyfans_photos_count ?? 0) > 0 && <span>📸 {l.onlyfans_photos_count!.toLocaleString()}</span>}
+          {(l.onlyfans_videos_count ?? 0) > 0 && <span>🎬 {l.onlyfans_videos_count!.toLocaleString()}</span>}
+          {(l.onlyfans_likes_count ?? 0) > 0 && <span>❤️ {l.onlyfans_likes_count!.toLocaleString()}</span>}
         </div>
       </div>
+
+      {/* VIP badge */}
+      {l.premium_tier && (
+        <div style={{
+          fontSize: 11, fontWeight: 700, color: "#F59E0B",
+          background: "#1a1200", padding: "3px 8px", borderRadius: 6,
+          height: "fit-content",
+        }}>
+          VIP
+        </div>
+      )}
     </div>
   )
 }
@@ -132,19 +104,19 @@ export default function OnlyFansDirectoryPage() {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [sort, setSort] = useState<SortOption>("subscribers")
 
   const fetchListings = useCallback(async () => {
     const supabase = createClient()
     const { data } = await supabase
       .from("listings")
-      .select("id, title, display_name, profile_image, profile_video_url, social_links, onlyfans_username, onlyfans_price_usd, age, city, country, boost_score")
+      .select("id, title, display_name, profile_image, about, social_links, onlyfans_username, onlyfans_price_usd, onlyfans_bio, onlyfans_subscribers, onlyfans_photos_count, onlyfans_videos_count, onlyfans_likes_count, premium_tier, created_at, boost_score")
       .eq("status", "active")
       .order("boost_score", { ascending: false })
       .order("created_at", { ascending: false })
 
-    // Filter client-side: must have social_links->onlyfans->url
     const filtered = (data ?? []).filter((l: Listing) =>
-      l.social_links?.onlyfans?.url
+      l.social_links?.onlyfans?.url || l.onlyfans_username
     )
     setListings(filtered)
     setLoading(false)
@@ -152,46 +124,72 @@ export default function OnlyFansDirectoryPage() {
 
   useEffect(() => { fetchListings() }, [fetchListings])
 
-  const filtered = search.trim()
+  // Filter by search
+  const searched = search.trim()
     ? listings.filter(l => {
         const q = search.toLowerCase()
         return (
           (l.display_name || "").toLowerCase().includes(q) ||
           (l.title || "").toLowerCase().includes(q) ||
-          (l.onlyfans_username || "").toLowerCase().includes(q) ||
-          (l.city || "").toLowerCase().includes(q)
+          (l.onlyfans_username || "").toLowerCase().includes(q)
         )
       })
     : listings
+
+  // Sort
+  const sorted = [...searched].sort((a, b) => {
+    if (sort === "subscribers") return (b.onlyfans_subscribers ?? 0) - (a.onlyfans_subscribers ?? 0)
+    if (sort === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    // price: free first, then asc
+    const aP = a.onlyfans_price_usd ?? 0
+    const bP = b.onlyfans_price_usd ?? 0
+    if (aP === 0 && bP > 0) return -1
+    if (bP === 0 && aP > 0) return 1
+    return aP - bP
+  })
 
   return (
     <div style={{ minHeight: "100vh", background: "#0F0F0F" }}>
       <Navbar />
 
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "32px 20px 60px" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 20px 60px" }}>
         {/* Header */}
         <h1 style={{ color: "#fff", fontSize: 28, fontWeight: 800, marginBottom: 4 }}>
-          OnlyFans{" "}
-          <span style={{ color: "#00AFF0" }}>Directory</span>
+          OnlyFans <span style={{ color: "#00AFF0" }}>Directory</span>
         </h1>
-        <p style={{ color: "#888", fontSize: 14, marginBottom: 24 }}>
-          {filtered.length} creators · Browse and discover
+        <p style={{ color: "#888", fontSize: 14, marginBottom: 20 }}>
+          {sorted.length} creators
         </p>
 
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search creators..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{
-            width: "100%", maxWidth: 400,
-            padding: "10px 16px", borderRadius: 24,
-            background: "#272727", border: "1px solid #3f3f3f",
-            color: "#fff", fontSize: 14, marginBottom: 28,
-            outline: "none",
-          }}
-        />
+        {/* Controls */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
+          <input
+            type="text"
+            placeholder="Search by name or username..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              flex: 1, minWidth: 200, maxWidth: 400,
+              padding: "10px 16px", borderRadius: 24,
+              background: "#272727", border: "1px solid #3f3f3f",
+              color: "#fff", fontSize: 14, outline: "none",
+            }}
+          />
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value as SortOption)}
+            style={{
+              padding: "10px 16px", borderRadius: 24,
+              background: "#272727", border: "1px solid #3f3f3f",
+              color: "#fff", fontSize: 13, outline: "none",
+              cursor: "pointer",
+            }}
+          >
+            <option value="subscribers">Most subscribers</option>
+            <option value="newest">Newest</option>
+            <option value="price">Price</option>
+          </select>
+        </div>
 
         {/* Loading */}
         {loading && (
@@ -206,40 +204,24 @@ export default function OnlyFansDirectoryPage() {
           </div>
         )}
 
-        {/* Empty state */}
-        {!loading && filtered.length === 0 && (
+        {/* Empty */}
+        {!loading && sorted.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <p style={{ color: "#666", fontSize: 15 }}>
-              {search ? "No creators found matching your search." : "No OnlyFans creators yet."}
+              {search ? "No creators found." : "No OnlyFans creators yet."}
             </p>
           </div>
         )}
 
-        {/* Grid */}
-        {!loading && filtered.length > 0 && (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-            gap: 20,
-          }}>
-            {filtered.map(listing => (
-              <Link
-                href={`/ads/${listing.id}`}
-                key={listing.id}
-                style={{ textDecoration: "none" }}
-              >
-                <VideoCard listing={listing} />
-              </Link>
-            ))}
+        {/* List */}
+        {!loading && sorted.length > 0 && (
+          <div>
+            {sorted.map(l => <OFCard key={l.id} l={l} />)}
           </div>
         )}
       </div>
 
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

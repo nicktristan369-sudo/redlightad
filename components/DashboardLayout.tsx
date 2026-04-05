@@ -20,6 +20,7 @@ import {
   Tag,
   Zap,
   Eye,
+  Star,
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
@@ -46,6 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isAdmin, setIsAdmin] = useState(false)
   const [listingId, setListingId] = useState<string | null>(null)
   const [listingChecked, setListingChecked] = useState(false)
+  const [isPremium, setIsPremium] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -65,12 +67,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       // Tjek om brugeren har en eksisterende listing
       const { data: listing } = await supabase
         .from("listings")
-        .select("id")
+        .select("id, premium_tier")
         .eq("user_id", user.id)
         .eq("status", "active")
         .limit(1)
         .single()
       setListingId(listing?.id ?? null)
+      setIsPremium(!!listing?.premium_tier && ["basic", "featured", "vip"].includes(listing.premium_tier))
       setListingChecked(true)
 
       const { data: adminStatus } = await supabase.rpc("get_my_admin_status")
@@ -120,6 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     NAV_ITEMS[0], // Oversigt
     ...dynamicItems,
     ...NAV_ITEMS.slice(1),
+    ...(isPremium ? [{ href: "/dashboard/onlyfans", label: "OnlyFans", icon: Star }] : []),
     ...(isAdmin ? [{ href: "/admin", label: "Admin panel", icon: Shield }] : []),
   ]
   const bottomNavItems = NAV_ITEMS.slice(0, 5)

@@ -1,0 +1,7 @@
+-- OnlyFans v2 — ekstra profil-felter
+-- Kør i Supabase SQL Editor:
+-- alter table public.listings add column if not exists onlyfans_bio text;
+-- alter table public.listings add column if not exists onlyfans_cover_url text;
+-- alter table public.listings add column if not exists onlyfans_photos_count integer default 0;
+-- alter table public.listings add column if not exists onlyfans_videos_count integer default 0;
+-- alter table public.listings add column if not exists onlyfans_likes_count integer default 0;
