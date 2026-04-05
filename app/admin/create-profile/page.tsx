@@ -112,6 +112,15 @@ type ProfileData = {
   // OnlyFans
   onlyfans_username?: string;
   onlyfans_price_usd?: number | null;
+  // Kontakt / sociale medier
+  telegram?: string;
+  whatsapp?: string;
+  signal?: string;
+  // Video URL (ekstern)
+  video_url?: string;
+  // Ekstra
+  height?: string;
+  weight?: string;
 };
 
 type CreateResult = {
@@ -175,6 +184,15 @@ export default function CreateProfilePage() {
   const [importMsg, setImportMsg] = useState("");
   const [importedImages, setImportedImages] = useState<string[]>([]);
 
+  // Fuzzy match: find closest option value (case-insensitive, partial)
+  const matchOption = (value: string, options: string[]): string => {
+    if (!value) return "";
+    const v = value.toLowerCase();
+    return options.find(o => o.toLowerCase() === v)
+      || options.find(o => o.toLowerCase().includes(v) || v.includes(o.toLowerCase()))
+      || "";
+  };
+
   const handleImport = async () => {
     if (!importUrl.trim()) return;
     setImporting(true);
@@ -187,13 +205,36 @@ export default function CreateProfilePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scraping fejlede");
-      if (data.name) setProfile(p => ({ ...p, title: data.name, display_name: data.name }));
-      if (data.age && !isNaN(parseInt(data.age))) setProfile(p => ({ ...p, age: parseInt(data.age) }));
-      if (data.city) setProfile(p => ({ ...p, location: data.city }));
-      if (data.description) setProfile(p => ({ ...p, description: data.description }));
-      if (data.phone) setProfile(p => ({ ...p, phone: data.phone }));
-      if (data.height) setProfile(p => ({ ...p, height: data.height }));
-      if (data.nationality) setProfile(p => ({ ...p, nationality: data.nationality }));
+
+      setProfile(prev => ({
+        ...prev,
+        ...(data.name && { title: data.name, display_name: data.name }),
+        ...(data.age && !isNaN(parseInt(data.age)) && { age: parseInt(data.age) }),
+        ...(data.city && { location: data.city }),
+        ...(data.description && { description: data.description }),
+        ...(data.phone && { phone: data.phone }),
+        ...(data.height && { height: data.height }),
+        ...(data.weight && { weight: data.weight }),
+        ...(data.nationality && { nationality: data.nationality }),
+        ...(data.telegram && { telegram: data.telegram }),
+        ...(data.video && { video_url: data.video }),
+        // Dropdowns — fuzzy match
+        ...(data.ethnicity && { ethnicity: matchOption(data.ethnicity, ETHNICITY_OPTIONS) }),
+        ...(data.orientation && { orientation: matchOption(data.orientation, ORIENTATION_OPTIONS) }),
+        ...(data.eye_color && { eye_color: matchOption(data.eye_color, EYE_OPTIONS) }),
+        ...(data.hair_color && { hair_color: matchOption(data.hair_color, HAIR_COLOR_OPTIONS) }),
+        ...(data.hair_length && { hair_length: matchOption(data.hair_length, HAIR_LENGTH_OPTIONS) }),
+        ...(data.pubic_hair && { pubic_hair: matchOption(data.pubic_hair, PUBIC_OPTIONS) }),
+        ...(data.bust_size && { bust_size: matchOption(data.bust_size, BUST_SIZE_OPTIONS) }),
+        ...(data.bust_type && { bust_type: matchOption(data.bust_type, BUST_TYPE_OPTIONS) }),
+        ...(data.smoker && { smoker: matchOption(data.smoker, SMOKER_OPTIONS) }),
+        ...(data.tattoo && { tattoo: matchOption(data.tattoo, TATTOO_OPTIONS) }),
+        ...(data.piercing && { piercing: matchOption(data.piercing, PIERCING_OPTIONS) }),
+        ...(data.available && { available_for: matchOption(data.available, AVAILABLE_FOR_OPTIONS) }),
+        ...(data.meeting_with && { meeting_with: matchOption(data.meeting_with, MEETING_WITH_OPTIONS) }),
+        ...(data.travel && { travel: matchOption(data.travel, TRAVEL_OPTIONS) }),
+      }));
+
       if (data.images?.length > 0) setImportedImages(data.images);
       setImportMsg("✓ Importeret fra " + new URL(importUrl).hostname);
     } catch (e: unknown) {
@@ -840,6 +881,36 @@ export default function CreateProfilePage() {
                 <button onClick={() => setSendSMS(!sendSMS)} className="relative w-10 h-5 rounded-full transition-colors" style={{ background: sendSMS ? "#000" : "#D1D5DB" }}>
                   <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ left: 2, transform: sendSMS ? "translateX(20px)" : "translateX(0)" }} />
                 </button>
+              </div>
+            </div>
+
+            {/* Sociale medier + Video */}
+            <div className="bg-white rounded-xl p-6" style={{ border: "1px solid #E5E5E5" }}>
+              <p className="text-[13px] font-semibold text-gray-900 mb-4">Kontakt & Sociale Medier</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={labelStyle}>Telegram</label>
+                  <div style={{ display: "flex", alignItems: "center", border: "1px solid #E5E7EB", borderRadius: 8, overflow: "hidden" }}>
+                    <span style={{ padding: "0 10px", color: "#6B7280", fontSize: 13, background: "#F9FAFB", borderRight: "1px solid #E5E7EB", height: 40, display: "flex", alignItems: "center" }}>@</span>
+                    <input type="text" value={profile.telegram || ""} onChange={e => p("telegram", e.target.value)}
+                      placeholder="username" style={{ flex: 1, height: 40, padding: "0 12px", border: "none", outline: "none", fontSize: 13 }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>WhatsApp</label>
+                  <input type="text" value={profile.whatsapp || ""} onChange={e => p("whatsapp", e.target.value)}
+                    placeholder="+45 XX XX XX XX" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Signal</label>
+                  <input type="text" value={profile.signal || ""} onChange={e => p("signal", e.target.value)}
+                    placeholder="+45 XX XX XX XX" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Video URL (mp4)</label>
+                  <input type="url" value={profile.video_url || ""} onChange={e => p("video_url", e.target.value)}
+                    placeholder="https://..." style={inputStyle} />
+                </div>
               </div>
             </div>
 
