@@ -170,6 +170,38 @@ export default function CreateProfilePage() {
     weight_kg: null,
   });
   const [result, setResult] = useState<CreateResult | null>(null);
+  const [importUrl, setImportUrl] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
+  const [importedImages, setImportedImages] = useState<string[]>([]);
+
+  const handleImport = async () => {
+    if (!importUrl.trim()) return;
+    setImporting(true);
+    setImportMsg("");
+    try {
+      const res = await fetch("/api/admin/scrape-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: importUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Scraping fejlede");
+      if (data.name) setProfile(p => ({ ...p, title: data.name, display_name: data.name }));
+      if (data.age && !isNaN(parseInt(data.age))) setProfile(p => ({ ...p, age: parseInt(data.age) }));
+      if (data.city) setProfile(p => ({ ...p, location: data.city }));
+      if (data.description) setProfile(p => ({ ...p, description: data.description }));
+      if (data.phone) setProfile(p => ({ ...p, phone: data.phone }));
+      if (data.height) setProfile(p => ({ ...p, height: data.height }));
+      if (data.nationality) setProfile(p => ({ ...p, nationality: data.nationality }));
+      if (data.images?.length > 0) setImportedImages(data.images);
+      setImportMsg("✓ Importeret fra " + new URL(importUrl).hostname);
+    } catch (e: unknown) {
+      setImportMsg(e instanceof Error ? e.message : "Fejl");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleScrape = async () => {
     if (!url.trim()) return;
@@ -358,6 +390,43 @@ export default function CreateProfilePage() {
         {step === 2 && (
           <div className="bg-white rounded-xl p-6" style={{ border: "1px solid #E5E5E5" }}>
             <div className="space-y-4">
+
+              {/* ── Import fra ekstern URL ── */}
+              <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "14px 16px" }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#166534", margin: "0 0 4px" }}>Import fra ekstern URL</p>
+                <p style={{ fontSize: 12, color: "#4B7C5D", margin: "0 0 10px" }}>Kun med eskortens samtykke. Auto-udfylder form.</p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="url"
+                    placeholder="https://www.eurogirlsescort.com/escort/..."
+                    value={importUrl}
+                    onChange={e => setImportUrl(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleImport()}
+                    style={{ flex: 1, height: 38, padding: "0 12px", border: "1px solid #D1FAE5", borderRadius: 8, fontSize: 13, outline: "none", background: "#fff" }}
+                  />
+                  <button
+                    onClick={handleImport}
+                    disabled={importing || !importUrl.trim()}
+                    style={{ height: 38, padding: "0 16px", borderRadius: 8, background: "#16A34A", color: "#fff", border: "none", fontWeight: 600, fontSize: 13, cursor: importing ? "not-allowed" : "pointer", opacity: importing ? 0.6 : 1, whiteSpace: "nowrap" }}
+                  >
+                    {importing ? "Henter..." : "Import"}
+                  </button>
+                </div>
+                {importMsg && (
+                  <p style={{ fontSize: 12, marginTop: 8, color: importMsg.startsWith("✓") ? "#16A34A" : "#DC2626" }}>{importMsg}</p>
+                )}
+                {importedImages.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "#166534", marginBottom: 6 }}>Importerede billeder ({importedImages.length}):</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {importedImages.map((src, i) => (
+                        <img key={i} src={src} alt="" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 8, border: "2px solid #BBF7D0" }} />
+                      ))}
+                    </div>
+                    <p style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Billeder vises som preview. Upload dem manuelt i Media-sektionen nedenfor.</p>
+                  </div>
+                )}
+              </div>
 
               {/* Navn */}
               <div>
