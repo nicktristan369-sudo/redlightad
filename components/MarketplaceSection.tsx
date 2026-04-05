@@ -42,8 +42,18 @@ export default function MarketplaceSection({ listingId, isLoggedIn }: Props) {
       .catch(() => setLoading(false))
   }, [listingId])
 
+  const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null)
+
+  const showToast = (msg: string, type: "ok" | "err") => {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3500)
+  }
+
   const handleBuy = async (itemId: string) => {
-    if (!isLoggedIn) { router.push("/login"); return }
+    if (!isLoggedIn) {
+      router.push("/login")
+      return
+    }
     setBuyingId(itemId)
     try {
       const res = await fetch("/api/marketplace/purchase", {
@@ -52,18 +62,41 @@ export default function MarketplaceSection({ listingId, isLoggedIn }: Props) {
         body: JSON.stringify({ item_id: itemId }),
       })
       const data = await res.json()
-      if (data.ok) alert("Purchase successful!")
-      else if (data.error === "insufficient_coins") alert("Not enough RedCoins. Top up at /dashboard/coins")
-      else if (data.error === "already_purchased") alert("You already own this item.")
-      else alert(data.error || "Purchase failed")
-    } catch { alert("Error — please try again") }
+      if (data.ok) {
+        showToast("Purchase successful! Check your purchases.", "ok")
+      } else if (data.error === "insufficient_coins") {
+        showToast("Not enough RedCoins — top up your balance.", "err")
+        setTimeout(() => router.push("/kunde/buy-coins"), 2000)
+      } else if (data.error === "already_purchased") {
+        showToast("You already own this item.", "err")
+      } else if (data.error === "Unauthorized" || data.error === "unauthorized") {
+        showToast("Please sign in with a customer account.", "err")
+        setTimeout(() => router.push("/login"), 2000)
+      } else {
+        showToast(data.error || "Purchase failed — please try again.", "err")
+      }
+    } catch {
+      showToast("Connection error — please try again.", "err")
+    }
     setBuyingId(null)
   }
 
   if (loading || items.length === 0) return null
 
   return (
-    <div>
+    <div style={{ position: "relative" }}>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+          background: toast.type === "ok" ? "#10B981" : "#DC2626",
+          color: "#fff", padding: "12px 20px", borderRadius: 12,
+          fontSize: 13, fontWeight: 600, zIndex: 9999,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.2)", whiteSpace: "nowrap",
+        }}>
+          {toast.msg}
+        </div>
+      )}
       <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 20, marginBottom: 14 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111", margin: 0 }}>Marketplace</h2>
         <p style={{ fontSize: 13, color: "#999", marginTop: 4, margin: "4px 0 0" }}>
