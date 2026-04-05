@@ -497,7 +497,7 @@ function FilterBarInner() {
     <div ref={ref} className="bg-white border-b border-gray-200" style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
       {/* Section tabs */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-2 pb-0">
-        <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none" }}>
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", minHeight: 36, paddingBottom: 8 }}>
           {[
             { href: "/",            label: "Escorts" },
             { href: "/onlyfans",    label: "OnlyFans" },
