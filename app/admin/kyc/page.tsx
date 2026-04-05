@@ -85,10 +85,108 @@ export default function AdminKycPage() {
     fontSize: 13, color: "#374151", padding: "10px 12px", borderBottom: "1px solid #F3F4F6",
   }
 
+  // Customer KYC
+  const [customerKyc, setCustomerKyc] = useState<{ id: string; user_id: string; full_name: string; birthdate: string; id_image_url: string; status: string; created_at: string; reviewed_at: string | null }[]>([])
+  const [customerActing, setCustomerActing] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch("/api/admin/customer-kyc")
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setCustomerKyc(d) })
+  }, [])
+
+  async function handleCustomerKyc(id: string, userId: string, action: "approve" | "reject") {
+    setCustomerActing(id)
+    try {
+      const res = await fetch("/api/admin/customer-kyc", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, user_id: userId, action }),
+      })
+      const json = await res.json()
+      if (json.ok) {
+        setCustomerKyc((prev) =>
+          prev.map((s) =>
+            s.id === id ? { ...s, status: action === "approve" ? "approved" : "rejected", reviewed_at: new Date().toISOString() } : s
+          )
+        )
+      } else {
+        alert(json.error || "Failed")
+      }
+    } finally {
+      setCustomerActing(null)
+    }
+  }
+
   return (
     <AdminLayout>
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 20 }}>KYC Verification</h1>
+
+        {/* Customer KYC section */}
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 14 }}>Kunde KYC (ID Verificering)</h2>
+          {customerKyc.length === 0 ? (
+            <p style={{ color: "#999", fontSize: 13 }}>Ingen kunde KYC ansogninger</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Navn</th>
+                    <th style={thStyle}>Fodselsdato</th>
+                    <th style={thStyle}>ID Billede</th>
+                    <th style={thStyle}>Dato</th>
+                    <th style={thStyle}>Status</th>
+                    <th style={thStyle}>Handlinger</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customerKyc.map((s) => (
+                    <tr key={s.id}>
+                      <td style={tdStyle}>{s.full_name}</td>
+                      <td style={tdStyle}>{s.birthdate}</td>
+                      <td style={tdStyle}>
+                        {s.id_image_url ? (
+                          <a href={s.id_image_url} target="_blank" rel="noopener noreferrer">
+                            <img src={s.id_image_url} alt="ID" style={{ width: 80, height: 50, objectFit: "cover", border: "1px solid #E5E5E5" }} />
+                          </a>
+                        ) : "—"}
+                      </td>
+                      <td style={tdStyle}>{new Date(s.created_at).toLocaleDateString()}</td>
+                      <td style={tdStyle}>{statusBadge(s.status)}</td>
+                      <td style={tdStyle}>
+                        {s.status === "pending" ? (
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <button
+                              onClick={() => handleCustomerKyc(s.id, s.user_id, "approve")}
+                              disabled={customerActing === s.id}
+                              style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", background: "#16A34A", color: "#fff", border: "none", borderRadius: 0, cursor: "pointer" }}
+                            >
+                              Godkend
+                            </button>
+                            <button
+                              onClick={() => handleCustomerKyc(s.id, s.user_id, "reject")}
+                              disabled={customerActing === s.id}
+                              style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 0, cursor: "pointer" }}
+                            >
+                              Afvis
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 11, color: "#999" }}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Existing escort KYC */}
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 14 }}>Escort KYC</h2>
 
         {loading ? (
           <p style={{ color: "#999", fontSize: 13 }}>Loading...</p>

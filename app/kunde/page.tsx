@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import KundeLayout from "@/components/KundeLayout"
 import Link from "next/link"
-import { MessageSquare, Coins, Shield, Heart, User, CheckCircle } from "lucide-react"
+import { MessageSquare, Coins, Shield, Heart, User, CheckCircle, Search } from "lucide-react"
 
 export default function KundeDashboard() {
   const [stats, setStats] = useState({ messages: 0, following: 0, coins: 0, verified: false })
@@ -36,7 +36,7 @@ export default function KundeDashboard() {
       <div style={{ maxWidth: 760 }}>
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111", margin: 0 }}>Hej, {username} 👋</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111", margin: 0 }}>Hej, {username}</h1>
           <p style={{ fontSize: 14, color: "#6B7280", marginTop: 4 }}>Din private konto — kun synlig for profiler du kontakter</p>
         </div>
 
@@ -72,15 +72,17 @@ export default function KundeDashboard() {
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "#111", margin: 0 }}>Hvad vil du gøre?</h2>
           </div>
           {[
-            { href: "/", label: "Gennemse profiler", icon: "🔍", desc: "Find og kontakt eskorteprofiler" },
-            { href: "/kunde/profil", label: "Opdater din profil", icon: "👤", desc: "Tilføj billede, bio og alder" },
-            { href: "/kunde/coins", label: "Køb RedCoins", icon: "🔴", desc: "Betaling for låst indhold" },
-            { href: "/kunde/verify", label: "Verificer dig selv", icon: "🛡️", desc: "Byg tillid hos profilerne" },
-          ].map(({ href, label, icon, desc }) => (
+            { href: "/", label: "Gennemse profiler", icon: Search, desc: "Find og kontakt eskorteprofiler" },
+            { href: "/kunde/profil", label: "Opdater din profil", icon: User, desc: "Tilføj billede, bio og alder" },
+            { href: "/kunde/coins", label: "Køb RedCoins", icon: Coins, desc: "Betaling for låst indhold" },
+            { href: "/kunde/verify", label: "Verificer dig selv", icon: Shield, desc: "Byg tillid hos profilerne" },
+          ].map(({ href, label, icon: Icon, desc }) => (
             <Link key={href} href={href} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", textDecoration: "none", borderBottom: "1px solid #F9FAFB" }}
               onMouseEnter={e => (e.currentTarget.style.background = "#FAFAFA")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon size={16} color="#6B7280" />
+              </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{label}</div>
                 <div style={{ fontSize: 12, color: "#9CA3AF" }}>{desc}</div>
