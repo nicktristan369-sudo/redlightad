@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, profile_video_url, video_url, age, gender, category, location, city, country, about, languages, premium_tier, created_at, voice_message_url, images, opening_hours, timezone")
+      .select("id, title, profile_image, profile_video_url, video_url, age, gender, category, location, city, country, about, languages, premium_tier, premium_until, boost_expires_at, created_at, voice_message_url, images, opening_hours, timezone")
       .eq("status", "active")
       .limit(limit);
 
@@ -54,11 +54,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Sort: VIP → Featured → Standard (unless explicit sort)
-    const tierOrder = (t: string | null) => t === "vip" ? 0 : t === "featured" ? 1 : t === "basic" ? 2 : 3;
-    const sorted = sortBy === "premium" || sortBy === "newest"
-      ? [...(listings ?? [])].sort((a, b) => tierOrder(a.premium_tier) - tierOrder(b.premium_tier))
-      : (listings ?? []);
+    // Sort: Boosted → Premium/VIP → Featured → Standard
+    const now = new Date()
+    const sorted = [...(listings ?? [])].sort((a, b) => {
+      const aBoost = a.boost_expires_at && new Date(a.boost_expires_at) > now
+      const bBoost = b.boost_expires_at && new Date(b.boost_expires_at) > now
+      const aPremium = a.premium_until && new Date(a.premium_until) > now && a.premium_tier
+      const bPremium = b.premium_until && new Date(b.premium_until) > now && b.premium_tier
+
+      if (aBoost && !bBoost) return -1
+      if (!aBoost && bBoost) return 1
+      if (aBoost && bBoost) return new Date(b.boost_expires_at).getTime() - new Date(a.boost_expires_at).getTime()
+      if (aPremium && !bPremium) return -1
+      if (!aPremium && bPremium) return 1
+
+      // Fallback: tier order then newest
+      const tierOrder = (t: string | null) => t === "vip" ? 0 : t === "featured" ? 1 : t === "basic" ? 2 : 3
+      const tierDiff = tierOrder(a.premium_tier) - tierOrder(b.premium_tier)
+      if (tierDiff !== 0) return tierDiff
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
 
     return NextResponse.json({ listings: sorted });
   } catch (err) {

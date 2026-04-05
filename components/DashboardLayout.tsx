@@ -18,6 +18,7 @@ import {
   LogOut,
   ShoppingBag,
   Tag,
+  Zap,
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/mine-kob",       label: "Mine køb",            icon: ShoppingBag },
   { href: "/dashboard/wallet",         label: "Wallet",              icon: Wallet },
   { href: "/dashboard/buy-coins",      label: "Køb coins",           icon: Coins },
+  { href: "/dashboard/boost",          label: "Premium & Boost",     icon: Zap },
   { href: "/dashboard/profil",         label: "Profil indstillinger", icon: Settings },
 ]
 
