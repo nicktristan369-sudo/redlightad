@@ -17,51 +17,26 @@ export async function POST(req: NextRequest) {
   let buffer: Buffer | null = null
   let contentType = "video/mp4"
 
-  // Try 1: Direct download with headers
+  // Download via VPS proxy (bypasser CDN hotlink protection)
+  const vpsProxy = process.env.VPS_VIDPROXY_URL || "http://76.13.154.9:3001"
+  const referer = url.includes("eurogirlsescort") ? "https://www.eurogirlsescort.com/" : new URL(url).origin + "/"
+  const proxyUrl = `${vpsProxy}/download?url=${encodeURIComponent(url)}&referer=${encodeURIComponent(referer)}`
+
   try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Referer": new URL(url).origin + "/",
-        "Accept": "video/mp4,video/*,*/*",
-        "Accept-Language": "en-US,en;q=0.9",
-      }
-    })
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(120000) })
     if (res.ok) {
       contentType = res.headers.get("content-type") || "video/mp4"
       buffer = Buffer.from(await res.arrayBuffer())
+    } else {
+      const err = await res.text()
+      return NextResponse.json({ error: `VPS proxy fejlede: ${err}` }, { status: 422 })
     }
-  } catch { /* fallthrough */ }
-
-  // Try 2: Via FlareSolverr (handles cookies/Cloudflare)
-  if (!buffer) {
-    const flareSolverrUrl = process.env.FLARESOLVERR_URL
-    if (flareSolverrUrl) {
-      try {
-        const fsRes = await fetch(`${flareSolverrUrl}/v1`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cmd: "request.get", url, maxTimeout: 60000 }),
-        })
-        if (fsRes.ok) {
-          const fsData = await fsRes.json()
-          // FlareSolverr returns response as base64 for binary
-          const responseBody = fsData?.solution?.response
-          if (responseBody) {
-            // Try to parse as base64
-            try {
-              buffer = Buffer.from(responseBody, "base64")
-            } catch {
-              buffer = Buffer.from(responseBody)
-            }
-          }
-        }
-      } catch { /* fallthrough */ }
-    }
+  } catch (e: unknown) {
+    return NextResponse.json({ error: `VPS proxy fejlede: ${e instanceof Error ? e.message : "timeout"}` }, { status: 422 })
   }
 
   if (!buffer || buffer.length < 1000) {
-    return NextResponse.json({ error: "Kunne ikke downloade video — CDN blokerer. Prøv at downloade manuelt og upload." }, { status: 422 })
+    return NextResponse.json({ error: "Video for lille eller tom — CDN blokerer stadig." }, { status: 422 })
   }
 
   const path = storagePath
