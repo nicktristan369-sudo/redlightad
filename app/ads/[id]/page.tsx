@@ -19,6 +19,7 @@ import ReportModal from "@/components/ReportModal";
 import PhotoGrid from "@/components/PhotoGrid";
 import PrivateContentPreview from "@/components/PrivateContentPreview";
 import MarketplaceSection from "@/components/MarketplaceSection";
+import LockedContentSection from "@/components/LockedContentSection";
 import StoryCircles from "@/components/StoryCircles";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
@@ -319,6 +320,9 @@ export default function AdDetailPage() {
                   />
                 </div>
               )}
+
+              {/* Eksklusivt indhold (locked_content) */}
+              <LockedContentSection listingId={ad.id} />
 
               {/* Marketplace */}
               <MarketplaceSection listingId={ad.id} isLoggedIn={currentUserId !== null} />
