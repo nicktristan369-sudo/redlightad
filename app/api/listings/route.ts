@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, profile_video_url, video_url, age, gender, category, location, city, country, about, languages, premium_tier, premium_until, created_at, voice_message_url, images, opening_hours, timezone")
+      .select("id, title, profile_image, profile_video_url, video_url, age, gender, category, location, city, country, about, languages, premium_tier, premium_until, boost_score, boost_purchased_at, created_at, voice_message_url, images, opening_hours, timezone")
       .eq("status", "active")
       .limit(limit);
 
@@ -61,12 +61,28 @@ export async function GET(req: NextRequest) {
     // Gratis: alle andre
     const now = new Date()
     const sorted = [...(listings ?? [])].sort((a, b) => {
+      const aScore = (a.boost_score ?? 0) as number
+      const bScore = (b.boost_score ?? 0) as number
+      const aBoosted = aScore > 0
+      const bBoosted = bScore > 0
       const aPremium = a.premium_until && new Date(a.premium_until) > now && a.premium_tier
       const bPremium = b.premium_until && new Date(b.premium_until) > now && b.premium_tier
 
+      // Boost øverst — højere score vinder, samme score → nyeste push vinder
+      if (aBoosted && !bBoosted) return -1
+      if (!aBoosted && bBoosted) return 1
+      if (aBoosted && bBoosted) {
+        if (aScore !== bScore) return bScore - aScore
+        const aTime = a.boost_purchased_at ? new Date(a.boost_purchased_at).getTime() : 0
+        const bTime = b.boost_purchased_at ? new Date(b.boost_purchased_at).getTime() : 0
+        return bTime - aTime
+      }
+
+      // Premium næst
       if (aPremium && !bPremium) return -1
       if (!aPremium && bPremium) return 1
 
+      // Gratis → nyeste oprettet
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
