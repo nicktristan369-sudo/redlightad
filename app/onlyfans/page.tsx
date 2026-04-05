@@ -26,9 +26,15 @@ interface Listing {
 
 type SortOption = "subscribers" | "newest" | "price"
 
+function extractOFHandle(url: string, username?: string | null): string {
+  if (username) return username
+  if (!url) return ""
+  return url.replace(/^https?:\/\/(www\.)?onlyfans\.com\//i, "").split("?")[0].split("/")[0]
+}
+
 function OFCard({ l }: { l: Listing }) {
-  const ofUrl = l.social_links?.onlyfans?.url || `https://onlyfans.com/${l.onlyfans_username}`
-  const handle = l.onlyfans_username || (ofUrl ? ofUrl.replace("https://onlyfans.com/", "") : "")
+  const ofUrl = l.social_links?.onlyfans?.url || ""
+  const handle = extractOFHandle(ofUrl, l.onlyfans_username)
   const price = l.onlyfans_price_usd ? `$${l.onlyfans_price_usd}/mo` : "FREE"
 
   return (

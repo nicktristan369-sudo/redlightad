@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 import { Star, ExternalLink } from "lucide-react"
-import { uploadMedia } from "@/lib/uploadImages"
 
 interface ListingData {
   id: string
@@ -14,7 +13,9 @@ interface ListingData {
   display_name: string | null
   title: string | null
   profile_image: string | null
+  images: string[] | null
   about: string | null
+  social_links: Record<string, { url?: string; locked?: boolean; price_coins?: number }> | null
   onlyfans_username: string | null
   onlyfans_bio: string | null
   onlyfans_cover_url: string | null
@@ -24,7 +25,12 @@ interface ListingData {
   onlyfans_videos_count: number | null
   onlyfans_likes_count: number | null
   onlyfans_teaser_url: string | null
-  profile_video_url: string | null
+}
+
+function extractOFHandle(url: string, username?: string | null): string {
+  if (username) return username
+  if (!url) return ""
+  return url.replace(/^https?:\/\/(www\.)?onlyfans\.com\//i, "").split("?")[0].split("/")[0]
 }
 
 export default function OnlyFansDashboard() {
@@ -35,16 +41,20 @@ export default function OnlyFansDashboard() {
   const [toast, setToast] = useState("")
 
   // Form state
-  const [username, setUsername] = useState("")
-  const [bio, setBio] = useState("")
+  const [ofUsername, setOfUsername] = useState("")
+  const [ofBio, setOfBio] = useState("")
   const [coverUrl, setCoverUrl] = useState("")
   const [teaserUrl, setTeaserUrl] = useState("")
+  const [price, setPrice] = useState(0)
   const [subscribers, setSubscribers] = useState(0)
   const [photos, setPhotos] = useState(0)
   const [videos, setVideos] = useState(0)
   const [likes, setLikes] = useState(0)
-  const [price, setPrice] = useState(0)
+
   const [uploadingCover, setUploadingCover] = useState(false)
+  const [uploadingTeaser, setUploadingTeaser] = useState(false)
+  const [teaserError, setTeaserError] = useState("")
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -52,17 +62,18 @@ export default function OnlyFansDashboard() {
       if (!user) { router.replace("/login"); return }
       const { data } = await supabase
         .from("listings")
-        .select("id, premium_tier, display_name, title, profile_image, about, onlyfans_username, onlyfans_bio, onlyfans_cover_url, onlyfans_price_usd, onlyfans_subscribers, onlyfans_photos_count, onlyfans_videos_count, onlyfans_likes_count, onlyfans_teaser_url, profile_video_url")
+        .select("id, premium_tier, display_name, title, profile_image, images, about, social_links, onlyfans_username, onlyfans_bio, onlyfans_cover_url, onlyfans_price_usd, onlyfans_subscribers, onlyfans_photos_count, onlyfans_videos_count, onlyfans_likes_count, onlyfans_teaser_url")
         .eq("user_id", user.id)
         .eq("status", "active")
         .limit(1)
         .single()
       if (data) {
         setListing(data)
-        setUsername(data.onlyfans_username || "")
-        setBio(data.onlyfans_bio || "")
+        const handle = extractOFHandle(data.social_links?.onlyfans?.url || "", data.onlyfans_username)
+        setOfUsername(handle)
+        setOfBio(data.onlyfans_bio || "")
         setCoverUrl(data.onlyfans_cover_url || "")
-        setTeaserUrl(data.onlyfans_teaser_url || data.profile_video_url || "")
+        setTeaserUrl(data.onlyfans_teaser_url || "")
         setSubscribers(data.onlyfans_subscribers || 0)
         setPhotos(data.onlyfans_photos_count || 0)
         setVideos(data.onlyfans_videos_count || 0)
@@ -73,28 +84,67 @@ export default function OnlyFansDashboard() {
     })
   }, [router])
 
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (file: File, type: "cover" | "teaser") => {
+    if (!listing) return
+    if (type === "cover") setUploadingCover(true)
+    else setUploadingTeaser(true)
+    setTeaserError("")
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("listingId", listing.id)
+      formData.append("type", type)
+
+      const res = await fetch("/api/onlyfans/upload-teaser", { method: "POST", body: formData })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Upload failed")
+
+      if (type === "cover") setCoverUrl(json.url)
+      else setTeaserUrl(json.url)
+    } catch (err: unknown) {
+      setToast(err instanceof Error ? err.message : "Upload failed")
+    }
+
+    if (type === "cover") setUploadingCover(false)
+    else setUploadingTeaser(false)
+  }
+
+  const handleTeaserSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploadingCover(true)
-    try {
-      const result = await uploadMedia(file)
-      setCoverUrl(result.url)
-    } catch {
-      setToast("Upload failed")
+    if (file.size > 50 * 1024 * 1024) {
+      setTeaserError("File must be under 50MB")
+      return
     }
-    setUploadingCover(false)
+
+    // Check duration
+    const video = document.createElement("video")
+    video.preload = "metadata"
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src)
+      if (video.duration > 20) {
+        setTeaserError("Video must be max 20 seconds")
+        return
+      }
+      setTeaserError("")
+      handleUpload(file, "teaser")
+    }
+    video.src = URL.createObjectURL(file)
   }
 
   const handleSave = async () => {
     if (!listing) return
     setSaving(true)
     const supabase = createClient()
+
+    const existingSocialLinks = listing.social_links || {}
+
     const { error } = await supabase
       .from("listings")
       .update({
-        onlyfans_username: username || null,
-        onlyfans_bio: bio || null,
+        onlyfans_username: ofUsername || null,
+        onlyfans_bio: ofBio || null,
         onlyfans_cover_url: coverUrl || null,
         onlyfans_teaser_url: teaserUrl || null,
         onlyfans_price_usd: price || null,
@@ -102,17 +152,17 @@ export default function OnlyFansDashboard() {
         onlyfans_photos_count: photos || 0,
         onlyfans_videos_count: videos || 0,
         onlyfans_likes_count: likes || 0,
+        social_links: { ...existingSocialLinks, onlyfans: { url: `https://onlyfans.com/${ofUsername}` } },
       })
       .eq("id", listing.id)
     setSaving(false)
-    if (error) { setToast("Error saving: " + error.message); return }
+    if (error) { setToast("Error: " + error.message); return }
     setToast("Saved!")
     setTimeout(() => setToast(""), 3000)
   }
 
   const isPremium = listing?.premium_tier && ["basic", "featured", "vip"].includes(listing.premium_tier)
-  const handle = username || "username"
-  const displayPrice = price ? `$${price}/mo` : "FREE"
+  const coverImage = coverUrl || (listing?.images?.[0]) || ""
 
   if (loading) {
     return (
@@ -138,7 +188,7 @@ export default function OnlyFansDashboard() {
             href="/dashboard/boost"
             style={{
               display: "inline-block",
-              background: "#000",
+              background: "#DC2626",
               color: "#fff",
               padding: "10px 24px",
               borderRadius: 10,
@@ -147,24 +197,42 @@ export default function OnlyFansDashboard() {
               textDecoration: "none",
             }}
           >
-            Upgrade Now →
+            Upgrade Now
           </Link>
         </div>
       </DashboardLayout>
     )
   }
 
+  const sectionStyle: React.CSSProperties = {
+    background: "#fff",
+    borderRadius: 16,
+    border: "1px solid #E5E7EB",
+    padding: 24,
+    marginBottom: 16,
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: "1px solid #E5E7EB",
+    fontSize: 14,
+    outline: "none",
+    background: "#FAFAFA",
+  }
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#666",
+    display: "block",
+    marginBottom: 6,
+  }
+
   return (
     <DashboardLayout>
       <div style={{ maxWidth: 720 }}>
-        {/* Header */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800 }}>OnlyFans Profile</h1>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#F59E0B", background: "#FEF3C7", padding: "2px 8px", borderRadius: 6 }}>PREMIUM</span>
-          </div>
-          <p style={{ color: "#888", fontSize: 13 }}>Manage your OnlyFans presence on RedLightAD</p>
-        </div>
 
         {/* Toast */}
         {toast && (
@@ -178,106 +246,168 @@ export default function OnlyFansDashboard() {
           </div>
         )}
 
-        {/* 1. Profile Link */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Profile Link</h3>
+        {/* ── Sektion 1: Profile Preview ── */}
+        <div style={{ ...sectionStyle, padding: 0, overflow: "hidden" }}>
+          {/* Cover */}
+          <div style={{
+            height: 200,
+            background: coverImage ? `url(${coverImage}) center/cover no-repeat` : "#E5E7EB",
+          }} />
+
+          {/* Profile info */}
+          <div style={{ padding: "0 24px 24px", marginTop: -50 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
+              <img
+                src={listing?.profile_image || "/placeholder.png"}
+                alt=""
+                style={{
+                  width: 100, height: 100, borderRadius: 8,
+                  objectFit: "cover", border: "4px solid #fff",
+                  background: "#E5E7EB", flexShrink: 0,
+                }}
+              />
+              <div style={{ paddingBottom: 4, flex: 1, minWidth: 0 }}>
+                <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>
+                  {listing?.display_name || listing?.title || "Your Name"}
+                </h1>
+                <p style={{ fontSize: 13, color: "#888", margin: "2px 0 0" }}>
+                  @{ofUsername || "username"} &middot; onlyfans.com/{ofUsername || "username"}
+                </p>
+              </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <Link
+                href={`/ads/${listing?.id}`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  background: "#DC2626", color: "#fff",
+                  padding: "8px 18px", borderRadius: 10,
+                  fontSize: 13, fontWeight: 600, textDecoration: "none",
+                }}
+              >
+                See my profile on RedLightAD <ExternalLink size={14} />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Sektion 2: OnlyFans Username ── */}
+        <div style={sectionStyle}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, marginTop: 0 }}>OnlyFans Username</h3>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ color: "#888", fontSize: 14 }}>@</span>
+            <span style={{ color: "#888", fontSize: 14, fontWeight: 600 }}>@</span>
             <input
               type="text"
               placeholder="your_username"
-              value={username}
-              onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, ""))}
-              style={{
-                flex: 1, padding: "8px 12px", borderRadius: 8,
-                border: "1px solid #E5E7EB", fontSize: 14, outline: "none",
-              }}
+              value={ofUsername}
+              onChange={e => setOfUsername(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, ""))}
+              style={inputStyle}
             />
           </div>
-          {username && (
+          {ofUsername && (
             <a
-              href={`https://onlyfans.com/${username}`}
+              href={`https://onlyfans.com/${ofUsername}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: "#00AFF0", marginTop: 8, textDecoration: "none" }}
             >
-              onlyfans.com/{username} <ExternalLink size={12} />
+              onlyfans.com/{ofUsername} <ExternalLink size={12} />
             </a>
           )}
-        </section>
+        </div>
 
-        {/* 2. Cover & Teaser */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Cover & Teaser</h3>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, color: "#666", display: "block", marginBottom: 6 }}>Cover Image (1280×720)</label>
+        {/* ── Sektion 3: Cover & Teaser Video ── */}
+        <div style={sectionStyle}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>Cover & Teaser Video</h3>
+
+          {/* Cover image */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>Cover Image</label>
             {coverUrl && (
-              <img src={coverUrl} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 8, marginBottom: 8 }} />
+              <img src={coverUrl} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 10, marginBottom: 8 }} />
             )}
-            <input type="file" accept="image/*" onChange={handleCoverUpload} disabled={uploadingCover} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                if (file.size > 5 * 1024 * 1024) { setToast("Image must be under 5MB"); return }
+                handleUpload(file, "cover")
+              }}
+              disabled={uploadingCover}
+              style={{ fontSize: 13 }}
+            />
             {uploadingCover && <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>Uploading...</span>}
           </div>
-          <div>
-            <label style={{ fontSize: 12, color: "#666", display: "block", marginBottom: 6 }}>Teaser Video URL</label>
-            <input
-              type="url"
-              placeholder="https://..."
-              value={teaserUrl}
-              onChange={e => setTeaserUrl(e.target.value)}
-              style={{
-                width: "100%", padding: "8px 12px", borderRadius: 8,
-                border: "1px solid #E5E7EB", fontSize: 14, outline: "none",
-              }}
-            />
-          </div>
-        </section>
 
-        {/* 3. OF Bio */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>OnlyFans Bio</h3>
+          {/* Teaser video */}
+          <div>
+            <label style={labelStyle}>Teaser Video (max 20 seconds, 50MB)</label>
+            {teaserUrl && (
+              <video
+                ref={videoRef}
+                src={teaserUrl}
+                muted
+                loop
+                controls
+                style={{ width: "100%", maxHeight: 300, borderRadius: 10, marginBottom: 8, background: "#000" }}
+              />
+            )}
+            <input
+              type="file"
+              accept="video/mp4,video/mov,video/quicktime"
+              onChange={handleTeaserSelect}
+              disabled={uploadingTeaser}
+              style={{ fontSize: 13 }}
+            />
+            {uploadingTeaser && <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>Uploading video...</span>}
+            {teaserError && <p style={{ color: "#DC2626", fontSize: 12, marginTop: 6, fontWeight: 600 }}>{teaserError}</p>}
+          </div>
+        </div>
+
+        {/* ── Sektion 4: OnlyFans Bio ── */}
+        <div style={sectionStyle}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, marginTop: 0 }}>OnlyFans Bio</h3>
           <textarea
-            placeholder="Write your OnlyFans bio..."
-            value={bio}
-            onChange={e => { if (e.target.value.length <= 500) setBio(e.target.value) }}
+            placeholder="Write a bio that will appear in the OnlyFans directory..."
+            value={ofBio}
+            onChange={e => { if (e.target.value.length <= 500) setOfBio(e.target.value) }}
             rows={4}
             style={{
-              width: "100%", padding: "8px 12px", borderRadius: 8,
-              border: "1px solid #E5E7EB", fontSize: 14, outline: "none",
+              ...inputStyle,
               resize: "vertical",
             }}
           />
-          <div style={{ textAlign: "right", fontSize: 11, color: bio.length > 450 ? "#DC2626" : "#aaa", marginTop: 4 }}>
-            {bio.length}/500
+          <div style={{ textAlign: "right", fontSize: 11, color: ofBio.length > 450 ? "#DC2626" : "#aaa", marginTop: 4 }}>
+            {ofBio.length}/500
           </div>
-        </section>
+        </div>
 
-        {/* 4. Stats */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Stats</h3>
+        {/* ── Sektion 5: Stats ── */}
+        <div style={sectionStyle}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, marginTop: 0 }}>Stats</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {[
+            {([
               { label: "Subscribers", value: subscribers, set: setSubscribers },
               { label: "Photos", value: photos, set: setPhotos },
               { label: "Videos", value: videos, set: setVideos },
               { label: "Likes", value: likes, set: setLikes },
-            ].map(f => (
+            ] as const).map(f => (
               <div key={f.label}>
-                <label style={{ fontSize: 12, color: "#666", display: "block", marginBottom: 4 }}>{f.label}</label>
+                <label style={labelStyle}>{f.label}</label>
                 <input
                   type="number"
                   min={0}
                   value={f.value}
                   onChange={e => f.set(Math.max(0, parseInt(e.target.value) || 0))}
-                  style={{
-                    width: "100%", padding: "8px 12px", borderRadius: 8,
-                    border: "1px solid #E5E7EB", fontSize: 14, outline: "none",
-                  }}
+                  style={inputStyle}
                 />
               </div>
             ))}
             <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ fontSize: 12, color: "#666", display: "block", marginBottom: 4 }}>
-                Monthly Price (USD) — {price === 0 ? '"Free"' : `$${price}/mo`}
+              <label style={labelStyle}>
+                Monthly Price (USD) {price === 0 ? '— "FREE"' : `— $${price}/mo`}
               </label>
               <input
                 type="number"
@@ -285,52 +415,19 @@ export default function OnlyFansDashboard() {
                 step={0.01}
                 value={price}
                 onChange={e => setPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                style={{
-                  width: "100%", padding: "8px 12px", borderRadius: 8,
-                  border: "1px solid #E5E7EB", fontSize: 14, outline: "none",
-                }}
+                style={inputStyle}
               />
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* 5. Preview */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Preview</h3>
-          <div style={{ background: "#0F0F0F", borderRadius: 12, padding: 20 }}>
-            <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-              <img
-                src={listing?.profile_image || "/placeholder.png"}
-                alt=""
-                style={{ width: 60, height: 60, borderRadius: "50%", objectFit: "cover", flexShrink: 0, background: "#333" }}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: "#888", marginBottom: 2 }}>onlyfans.com/{handle}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
-                  {listing?.display_name || listing?.title || "Your Name"}
-                </div>
-                <div style={{ fontSize: 12, color: "#aaa", marginBottom: 10, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
-                  {(bio || listing?.about || "Your bio will appear here...").slice(0, 120)}
-                </div>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: "#888" }}>
-                  {subscribers > 0 && <span>👤 {subscribers.toLocaleString()}</span>}
-                  <span style={{ color: "#00AFF0", fontWeight: 700 }}>Price: {displayPrice}</span>
-                  {photos > 0 && <span>📸 {photos.toLocaleString()}</span>}
-                  {videos > 0 && <span>🎬 {videos.toLocaleString()}</span>}
-                  {likes > 0 && <span>❤️ {likes.toLocaleString()}</span>}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Save */}
+        {/* ── Sektion 6: Save ── */}
         <button
           onClick={handleSave}
           disabled={saving}
           style={{
-            width: "100%", padding: "12px 0", borderRadius: 12,
-            background: "#000", color: "#fff", fontSize: 14, fontWeight: 700,
+            width: "100%", padding: "14px 0", borderRadius: 12,
+            background: "#DC2626", color: "#fff", fontSize: 15, fontWeight: 700,
             border: "none", cursor: saving ? "not-allowed" : "pointer",
             opacity: saving ? 0.6 : 1,
           }}

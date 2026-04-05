@@ -21,6 +21,7 @@ import {
   Zap,
   Eye,
   Star,
+  ExternalLink,
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
@@ -123,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     NAV_ITEMS[0], // Oversigt
     ...dynamicItems,
     ...NAV_ITEMS.slice(1),
-    ...(isPremium ? [{ href: "/dashboard/onlyfans", label: "OnlyFans", icon: Star }] : []),
+    { href: "/dashboard/onlyfans", label: "OnlyFans", icon: ExternalLink },
     ...(isAdmin ? [{ href: "/admin", label: "Admin panel", icon: Shield }] : []),
   ]
   const bottomNavItems = NAV_ITEMS.slice(0, 5)
