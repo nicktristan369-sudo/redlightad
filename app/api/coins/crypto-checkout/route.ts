@@ -1,38 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { COIN_PACKAGES } from "@/lib/coinPackages"
-import { sign, randomBytes } from "crypto"
+import { importPKCS8, SignJWT } from "jose"
+import { randomBytes } from "crypto"
 
-// Coinbase CDP JWT — Ed25519 signing (EdDSA, ikke ES256)
-function buildCoinbaseJWT(keyId: string, privateKeyPem: string): string {
-  const now = Math.floor(Date.now() / 1000)
-  const nonce = randomBytes(16).toString("hex")
+function normalizePem(raw: string): string {
+  // Håndter escaped newlines fra Vercel env vars
+  let pem = raw.replace(/\\n/g, "\n").replace(/\\r/g, "").trim()
 
-  const header = {
-    alg: "EdDSA",
-    kid: keyId,
-    typ: "JWT",
-    nonce,
+  // Hvis PEM headers mangler, antag PKCS8 private key
+  if (!pem.startsWith("-----BEGIN")) {
+    const body = pem.replace(/\s/g, "").match(/.{1,64}/g)?.join("\n") ?? pem
+    return `-----BEGIN PRIVATE KEY-----\n${body}\n-----END PRIVATE KEY-----\n`
   }
 
-  const payload = {
-    sub: keyId,
-    iss: "cdp",
-    nbf: now,
-    exp: now + 120,
-    uri: "POST api.commerce.coinbase.com/charges",
-  }
-
-  const encode = (obj: object) =>
-    Buffer.from(JSON.stringify(obj)).toString("base64url")
-
-  const headerB64 = encode(header)
-  const payloadB64 = encode(payload)
-  const signingInput = `${headerB64}.${payloadB64}`
-
-  // Ed25519 kræver sign(null, ...) — ingen hash algoritme
-  const signature = sign(null, Buffer.from(signingInput), privateKeyPem).toString("base64url")
-
-  return `${signingInput}.${signature}`
+  // Genopbyg PEM med korrekte linjeskift
+  const lines = pem.split("\n").map(l => l.trim()).filter(Boolean)
+  const header = lines[0]
+  const footer = lines[lines.length - 1]
+  const body = lines.slice(1, -1).join("").replace(/\s/g, "")
+  const formatted = body.match(/.{1,64}/g)?.join("\n") ?? body
+  return `${header}\n${formatted}\n${footer}\n`
 }
 
 export async function POST(req: NextRequest) {
@@ -42,16 +29,40 @@ export async function POST(req: NextRequest) {
     if (!pkg) return NextResponse.json({ error: "Invalid package" }, { status: 400 })
 
     const keyId = process.env.COINBASE_COMMERCE_API_KEY_ID
-    const privateKey = process.env.COINBASE_COMMERCE_PRIVATE_KEY
+    const rawPrivateKey = process.env.COINBASE_COMMERCE_PRIVATE_KEY
 
-    if (!keyId || !privateKey) {
+    if (!keyId || !rawPrivateKey) {
       return NextResponse.json({ error: "Crypto betaling ikke konfigureret" }, { status: 503 })
     }
 
-    // Normaliser private key — Vercel gemmer \n som literal string
-    const normalizedKey = privateKey.replace(/\\n/g, "\n")
+    const pemKey = normalizePem(rawPrivateKey)
 
-    const jwt = buildCoinbaseJWT(keyId, normalizedKey)
+    // Prøv Ed25519 først, fallback til EC P-256
+    let privateKey
+    try {
+      privateKey = await importPKCS8(pemKey, "EdDSA")
+    } catch {
+      try {
+        privateKey = await importPKCS8(pemKey, "ES256")
+      } catch (e2) {
+        const msg = e2 instanceof Error ? e2.message : String(e2)
+        return NextResponse.json({ error: `Nøgle-fejl: ${msg}` }, { status: 500 })
+      }
+    }
+
+    const alg = (privateKey.type === "private" && privateKey.algorithm?.name === "Ed25519") ? "EdDSA" : "ES256"
+    const nonce = randomBytes(16).toString("hex")
+    const now = Math.floor(Date.now() / 1000)
+
+    const jwt = await new SignJWT({
+      sub: keyId,
+      iss: "cdp",
+      nbf: now,
+      exp: now + 120,
+      uri: "POST api.commerce.coinbase.com/charges",
+    })
+      .setProtectedHeader({ alg, kid: keyId, typ: "JWT", nonce })
+      .sign(privateKey)
 
     const res = await fetch("https://api.commerce.coinbase.com/charges", {
       method: "POST",
