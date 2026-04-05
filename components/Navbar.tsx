@@ -181,12 +181,25 @@ export default function Navbar() {
             <Logo variant="light" height={28} />
           </Link>
 
-          {/* CAM link (desktop) */}
-          <Link href="/cam" style={{ display: "none", alignItems: "center", gap: 5, fontWeight: 800, color: "#111", textDecoration: "none", fontSize: 14, marginLeft: 16 }}
-            className="cam-nav-link">
-            <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#DC2626", animation: "camPulse 1.5s infinite" }} />
-            RedLight<span style={{ color: "#DC2626" }}>CAM</span>
-          </Link>
+          {/* Desktop nav links */}
+          <div className="desktop-nav-links" style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 8 }}>
+            <Link href="/" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#374151", textDecoration: "none", whiteSpace: "nowrap" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F7" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}>
+              Escorts
+            </Link>
+            <Link href="/onlyfans" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#374151", textDecoration: "none", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F7" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}>
+              <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 14, width: "auto" }} />
+            </Link>
+            <Link href="/cam" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#111", textDecoration: "none", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F7" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#DC2626", display: "inline-block", flexShrink: 0, animation: "camPulse 1.5s infinite" }} />
+              RedLight<span style={{ color: "#DC2626" }}>CAM</span>
+            </Link>
+          </div>
 
           {/* Right icons */}
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -471,7 +484,9 @@ export default function Navbar() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
         }
-        @media (min-width: 640px) {
+        .desktop-nav-links { display: none; }
+        @media (min-width: 768px) {
+          .desktop-nav-links { display: flex !important; }
           .cam-nav-link { display: flex !important; }
         }
         @media (max-width: 639px) {
