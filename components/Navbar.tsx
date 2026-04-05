@@ -126,7 +126,6 @@ export default function Navbar() {
     { href: "/marketplace", label: "Marketplace" },
     { href: "/dashboard/buy-coins", label: "🔴 Red Coins", isRedCoins: true },
     { href: "/support", label: t.nav_support },
-    { href: "/opret-annonce", label: t.nav_post_ad, isPostAd: true },
   ];
 
   // Avatar component
