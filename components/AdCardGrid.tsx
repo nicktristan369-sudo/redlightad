@@ -50,12 +50,13 @@ interface AdCardGridProps {
   hasStory?: boolean
   onStoryClick?: () => void
   staggerDelay?: number
+  social_links?: Record<string, { url?: string }> | null
 }
 
 export default function AdCardGrid({
   id, title, display_name, image, images, profileVideoUrl, verified, age, city, country, location,
   category, created_at, opening_hours, timezone, premium_tier,
-  hasStory = false, onStoryClick, staggerDelay = 0,
+  hasStory = false, onStoryClick, staggerDelay = 0, social_links,
 }: AdCardGridProps) {
   const displayTitle = display_name
     ? `${display_name}${age ? `, ${age}` : ""}`
@@ -168,6 +169,20 @@ export default function AdCardGrid({
               padding: "3px 8px", textTransform: "uppercase",
               background: "#111", color: "#fff",
             }}>PREMIUM</div>
+          )}
+          {/* OnlyFans badge */}
+          {social_links?.onlyfans?.url && (
+            <div style={{
+              position: "absolute", bottom: 8, right: 8,
+              display: "flex", alignItems: "center", gap: 4,
+              background: "rgba(0,175,240,0.92)", backdropFilter: "blur(4px)",
+              borderRadius: 20, padding: "3px 8px",
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 14c-2.67 0-8-1.34-8-4v-2c0-2.66 5.33-4 8-4s8 1.34 8 4v2c0 2.66-5.33 4-8 4z"/>
+              </svg>
+              <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", letterSpacing: "0.05em" }}>OF</span>
+            </div>
           )}
         </div>
 

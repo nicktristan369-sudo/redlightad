@@ -446,6 +446,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
               category={ad.category}
               created_at={ad.created_at}
               staggerDelay={idx * 700}
+              social_links={(ad as any).social_links ?? null}
             />
           ))}
         </div>
