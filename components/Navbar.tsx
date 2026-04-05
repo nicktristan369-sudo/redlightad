@@ -125,6 +125,7 @@ export default function Navbar() {
     { href: "/reviews", label: "Reviews" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/onlyfans", label: "OnlyFans" },
+    { href: "/cam", label: "RedLightCAM", isCam: true },
     { href: "/dashboard/buy-coins", label: "🔴 Red Coins", isRedCoins: true },
     { href: "/support", label: t.nav_support },
   ];
@@ -178,6 +179,13 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" style={{ flexShrink: 0 }}>
             <Logo variant="light" height={28} />
+          </Link>
+
+          {/* CAM link (desktop) */}
+          <Link href="/cam" style={{ display: "none", alignItems: "center", gap: 5, fontWeight: 800, color: "#111", textDecoration: "none", fontSize: 14, marginLeft: 16 }}
+            className="cam-nav-link">
+            <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#DC2626", animation: "camPulse 1.5s infinite" }} />
+            RedLight<span style={{ color: "#DC2626" }}>CAM</span>
           </Link>
 
           {/* Right icons */}
@@ -374,17 +382,18 @@ export default function Navbar() {
         {/* ── Nav links ── */}
         <div style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
           <nav>
-            {navLinks.map(({ href, label, isRedCoins }) => (
+            {navLinks.map(({ href, label, isRedCoins, isCam }) => (
               <Link key={href} href={href} onClick={closeDrawer}
                 style={{
-                  display: "flex", alignItems: "center",
+                  display: "flex", alignItems: "center", gap: isCam ? 6 : 0,
                   padding: "11px 20px", fontSize: 15,
-                  fontWeight: isRedCoins ? 700 : 450,
-                  color: isRedCoins ? "#DC2626" : "#1A1A1A",
+                  fontWeight: isRedCoins || isCam ? 700 : 450,
+                  color: isRedCoins || isCam ? "#DC2626" : "#1A1A1A",
                   textDecoration: "none", letterSpacing: "-0.01em",
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = "#F7F7F7"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                {isCam && <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#DC2626", animation: "camPulse 1.5s infinite" }} />}
                 {label}
               </Link>
             ))}
@@ -458,6 +467,13 @@ export default function Navbar() {
       </div>
 
       <style>{`
+        @keyframes camPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        @media (min-width: 640px) {
+          .cam-nav-link { display: flex !important; }
+        }
         @media (max-width: 639px) {
           div[style*="width: 280px"][style*="z-index: 9999"] {
             width: 100vw !important;
