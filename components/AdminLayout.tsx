@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import {
-  LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck,
+  LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck, UserPlus,
   CreditCard, Coins, ArrowDownToLine, Mail, MessageCircle,
   Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight,
   ShieldCheck, Menu, X, Link2,
