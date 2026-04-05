@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { COIN_PACKAGES } from "@/lib/coinPackages"
-import { createHmac, createSign } from "crypto"
-import { randomUUID } from "crypto"
+import { sign, randomBytes } from "crypto"
 
-// Coinbase Developer Platform (CDP) API — Ed25519 JWT authentication
-function buildJWT(keyId: string, privateKeyPem: string): string {
+// Coinbase CDP JWT — Ed25519 signing (EdDSA, ikke ES256)
+function buildCoinbaseJWT(keyId: string, privateKeyPem: string): string {
   const now = Math.floor(Date.now() / 1000)
-  const header = { alg: "ES256", kid: keyId, typ: "JWT", nonce: randomUUID() }
+  const nonce = randomBytes(16).toString("hex")
+
+  const header = {
+    alg: "EdDSA",
+    kid: keyId,
+    typ: "JWT",
+    nonce,
+  }
+
   const payload = {
     sub: keyId,
     iss: "cdp",
     nbf: now,
     exp: now + 120,
-    uri: "POST api.developer.coinbase.com/onramp/v1/buy/quote",
+    uri: "POST api.commerce.coinbase.com/charges",
   }
 
   const encode = (obj: object) =>
@@ -22,9 +29,8 @@ function buildJWT(keyId: string, privateKeyPem: string): string {
   const payloadB64 = encode(payload)
   const signingInput = `${headerB64}.${payloadB64}`
 
-  const sign = createSign("SHA256")
-  sign.update(signingInput)
-  const signature = sign.sign(privateKeyPem, "base64url")
+  // Ed25519 kræver sign(null, ...) — ingen hash algoritme
+  const signature = sign(null, Buffer.from(signingInput), privateKeyPem).toString("base64url")
 
   return `${signingInput}.${signature}`
 }
@@ -39,13 +45,13 @@ export async function POST(req: NextRequest) {
     const privateKey = process.env.COINBASE_COMMERCE_PRIVATE_KEY
 
     if (!keyId || !privateKey) {
-      return NextResponse.json({ error: "Crypto payments not configured" }, { status: 503 })
+      return NextResponse.json({ error: "Crypto betaling ikke konfigureret" }, { status: 503 })
     }
 
-    // Normalize private key (Vercel may store \n as literal string)
+    // Normaliser private key — Vercel gemmer \n som literal string
     const normalizedKey = privateKey.replace(/\\n/g, "\n")
 
-    const jwt = buildJWT(keyId, normalizedKey)
+    const jwt = buildCoinbaseJWT(keyId, normalizedKey)
 
     const res = await fetch("https://api.commerce.coinbase.com/charges", {
       method: "POST",
@@ -70,7 +76,8 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      return NextResponse.json({ error: err?.error?.message || "Coinbase API fejl" }, { status: 500 })
+      const msg = err?.error?.message || `Coinbase fejl (${res.status})`
+      return NextResponse.json({ error: msg }, { status: 500 })
     }
 
     const data = await res.json()
