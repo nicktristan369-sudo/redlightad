@@ -44,6 +44,7 @@ function VideoModal({
   hasPurchased: boolean
   onPurchase: (videoId: string) => void
 }) {
+  const { t } = useLanguage()
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(video.likes)
   const [purchasing, setPurchasing] = useState(false)
@@ -75,13 +76,13 @@ function VideoModal({
       })
       const data = await res.json()
       if (!res.ok) {
-        if (data.error === "insufficient_coins") setPurchaseError("Du har ikke nok RedCoins")
-        else setPurchaseError("Noget gik galt — prøv igen")
+        if (data.error === "insufficient_coins") setPurchaseError(t.video_insufficient)
+        else setPurchaseError(t.video_error)
       } else {
         onPurchase(video.id)
       }
     } catch {
-      setPurchaseError("Netværksfejl — prøv igen")
+      setPurchaseError(t.video_network_error)
     }
     setPurchasing(false)
   }
@@ -130,12 +131,12 @@ function VideoModal({
                 <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
                   <Lock size={24} color="#fff" />
                 </div>
-                <p className="text-white font-semibold text-lg">Lås op for {video.redcoin_price} RedCoins</p>
+                <p className="text-white font-semibold text-lg">{t.video_unlock} {video.redcoin_price} RedCoins</p>
                 {!isLoggedIn ? (
                   <Link href="/register"
                     className="px-6 py-2.5 rounded text-sm font-semibold text-white"
                     style={{ background: "#DC2626" }}>
-                    Opret konto for at købe
+                    {t.video_create_to_buy}
                   </Link>
                 ) : (
                   <>
@@ -145,11 +146,11 @@ function VideoModal({
                       className="flex items-center gap-2 px-6 py-2.5 rounded text-sm font-semibold text-white disabled:opacity-60"
                       style={{ background: "#DC2626" }}>
                       <ShoppingCart size={16} />
-                      {purchasing ? "Behandler..." : `Lås op — ${video.redcoin_price} RedCoins`}
+                      {purchasing ? t.video_processing : `${t.video_unlock_btn} — ${video.redcoin_price} RedCoins`}
                     </button>
                     {purchaseError && <p className="text-red-400 text-sm">{purchaseError}</p>}
                     <Link href="/dashboard/buy-coins" className="text-white/60 text-xs hover:text-white">
-                      Køb flere RedCoins →
+                      {t.video_buy_more}
                     </Link>
                   </>
                 )}
@@ -265,9 +266,9 @@ export default function VideoSection({ videos, isLoggedIn, listingId, currentUse
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-bold text-gray-900 uppercase tracking-wide">
-            My Videos
+            {t.video_my_videos}
           </h2>
-          <span className="text-sm text-gray-400">{videos.length} video{videos.length !== 1 ? "er" : ""}</span>
+          <span className="text-sm text-gray-400">{videos.length} {videos.length !== 1 ? t.video_count_plural : t.video_count}</span>
         </div>
 
         {/* Grid: 2 cols mobil, 3 cols desktop */}

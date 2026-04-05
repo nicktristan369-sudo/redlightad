@@ -22,6 +22,7 @@ import MarketplaceSection from "@/components/MarketplaceSection";
 import StoryCircles from "@/components/StoryCircles";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Listing {
   id: string;
@@ -84,6 +85,7 @@ export default function AdDetailPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [gridLightbox, setGridLightbox] = useState<number | null>(null);
   const [videos, setVideos] = useState<{ id: string; url: string; thumbnail_url: string | null; title: string | null; is_locked: boolean; redcoin_price: number; views: number; likes: number; sort_order: number }[]>([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const load = async () => {
@@ -145,8 +147,8 @@ export default function AdDetailPage() {
       <>
         <Navbar />
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-3">
-          <p className="text-[18px] font-semibold text-gray-900">Annonce ikke fundet</p>
-          <a href="/" className="text-[14px] text-red-600 hover:underline">← Tilbage til forsiden</a>
+          <p className="text-[18px] font-semibold text-gray-900">{t.ad_not_found}</p>
+          <a href="/" className="text-[14px] text-red-600 hover:underline">{t.ad_back_home}</a>
         </div>
       </>
     );
@@ -181,7 +183,7 @@ export default function AdDetailPage() {
             const crumbLabel = shortTitle.length < ad.title.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim().length ? shortTitle + '…' : shortTitle;
             return (
               <nav className="mb-3 flex items-center gap-1 text-[12px] text-gray-400">
-                <a href="/" className="hover:text-red-600 transition-colors">Home</a>
+                <a href="/" className="hover:text-red-600 transition-colors">{t.ad_home}</a>
                 <span className="text-red-400">/</span>
                 <a href={`/country/${ad.country.toLowerCase()}`} className="hover:text-red-600 transition-colors capitalize">{ad.country}</a>
                 <span className="text-red-400">/</span>
@@ -256,7 +258,7 @@ export default function AdDetailPage() {
 
               {ad.about && (
                 <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
-                  <h3 className="mb-3 text-lg font-bold text-gray-900">About me</h3>
+                  <h3 className="mb-3 text-lg font-bold text-gray-900">{t.ad_about_me}</h3>
                   <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">{ad.about}</p>
                 </div>
               )}
@@ -264,7 +266,7 @@ export default function AdDetailPage() {
               {/* Services */}
               {ad.services && ad.services.length > 0 && (
                 <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
-                  <h3 className="mb-4 text-lg font-bold text-gray-900">Services</h3>
+                  <h3 className="mb-4 text-lg font-bold text-gray-900">{t.ad_services}</h3>
                   <div className="flex flex-wrap gap-2">
                     {ad.services.map(s => (
                       <span key={s} className="rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">{s}</span>
@@ -288,9 +290,9 @@ export default function AdDetailPage() {
                 <div>
                   <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 20, marginBottom: 14 }}>
                     <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: 0 }}>
-                      Gallery{" "}
+                      {t.ad_gallery}{" "}
                       <span style={{ fontSize: 14, fontWeight: 400, color: "#9CA3AF" }}>
-                        ({(ad.images ?? []).length} photos)
+                        ({(ad.images ?? []).length} {t.ad_photos})
                       </span>
                     </h2>
                   </div>
@@ -303,9 +305,9 @@ export default function AdDetailPage() {
                 <div>
                   <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: 20, marginBottom: 14 }}>
                     <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: 0 }}>
-                      Private Content{" "}
+                      {t.ad_private_content}{" "}
                       <span style={{ fontSize: 14, fontWeight: 400, color: "#9CA3AF" }}>
-                        ({(ad.locked_images ?? []).length + lockedVideos.length} items)
+                        ({(ad.locked_images ?? []).length + lockedVideos.length} {t.ad_items})
                       </span>
                     </h2>
                   </div>
@@ -418,7 +420,7 @@ export default function AdDetailPage() {
           onClick={() => setReportOpen(true)}
           style={{ fontSize: 12, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
         >
-          ⚑ Report Profile
+          {t.ad_report_profile}
         </button>
       </div>
       <ReportModal
@@ -429,7 +431,7 @@ export default function AdDetailPage() {
       />
 
       <footer className="border-t border-gray-200 bg-white px-6 py-8 text-center text-sm text-gray-500">
-        &copy; 2026 RedLightAD. All rights reserved.
+        {t.ad_copyright}
       </footer>
     </>
   );

@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import Logo from "@/components/Logo";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -68,14 +70,14 @@ export default function LoginPage() {
         </div>
 
         {/* Header */}
-        <h1 className="text-[24px] font-bold text-center mb-1" style={{ color: "#000" }}>Welcome back</h1>
-        <p className="text-center mb-8" style={{ fontSize: "14px", color: "#6B7280" }}>Sign in to your account</p>
+        <h1 className="text-[24px] font-bold text-center mb-1" style={{ color: "#000" }}>{t.auth_login_title}</h1>
+        <p className="text-center mb-8" style={{ fontSize: "14px", color: "#6B7280" }}>{t.auth_login_subtitle}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
           <div>
             <label htmlFor="email" className="block mb-1.5 font-medium" style={{ fontSize: "13px", color: "#374151" }}>
-              Email
+              {t.auth_email}
             </label>
             <input
               id="email"
@@ -95,10 +97,10 @@ export default function LoginPage() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label htmlFor="password" className="font-medium" style={{ fontSize: "13px", color: "#374151" }}>
-                Password
+                {t.auth_password}
               </label>
               <Link href="#" className="text-[13px] text-gray-900 hover:underline transition-colors" style={{ color: "#374151" }}>
-                Forgot password?
+                {t.auth_forgot_password}
               </Link>
             </div>
             <div className="relative">
@@ -151,22 +153,22 @@ export default function LoginPage() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-            ) : "Sign In →"}
+            ) : t.auth_login_btn}
           </button>
         </form>
 
         {/* Divider */}
         <div className="my-6 flex items-center gap-3">
           <div className="h-px flex-1" style={{ background: "#D1D5DB" }} />
-          <span className="text-[13px]" style={{ color: "#9CA3AF" }}>or</span>
+          <span className="text-[13px]" style={{ color: "#9CA3AF" }}>{t.common_or}</span>
           <div className="h-px flex-1" style={{ background: "#D1D5DB" }} />
         </div>
 
         {/* Sign up */}
         <p className="text-center text-[14px]" style={{ color: "#6B7280" }}>
-          Don&apos;t have an account?{" "}
+          {t.auth_no_account}{" "}
           <Link href="/register" className="font-bold text-gray-900 hover:underline">
-            Sign up
+            {t.auth_create_account}
           </Link>
         </p>
       </div>

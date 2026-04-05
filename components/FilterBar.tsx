@@ -6,6 +6,7 @@ import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Chec
 import { CATEGORIES } from "@/lib/constants/categories"
 import { GENDERS } from "@/lib/constants/genders"
 import { SUPPORTED_COUNTRIES, getCountryByName, slugify, COUNTRIES, getCountryEntryByCode, getCountryEntryByName, COUNTRY_CITIES } from "@/lib/countries"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 // ── Filter Drawer ─────────────────────────────────────────────────────────────
 function FilterDrawer({
@@ -17,6 +18,7 @@ function FilterDrawer({
   onApply: (filters: Record<string, string>) => void
   initial: Record<string, string>
 }) {
+  const { t } = useLanguage()
   const [ageMin, setAgeMin] = useState(initial.age_min ?? "")
   const [ageMax, setAgeMax] = useState(initial.age_max ?? "")
   const [premiumOnly, setPremiumOnly] = useState(initial.premium_only === "1")
@@ -24,9 +26,9 @@ function FilterDrawer({
   const [sort, setSort] = useState(initial.sort ?? "premium")
 
   const SORT_OPTIONS = [
-    { value: "premium", label: "Premium first" },
-    { value: "newest",  label: "Newest first" },
-    { value: "oldest",  label: "Oldest first" },
+    { value: "premium", label: t.filter_premium_first },
+    { value: "newest",  label: t.filter_newest },
+    { value: "oldest",  label: t.filter_oldest },
   ]
 
   const apply = () => {
@@ -76,7 +78,7 @@ function FilterDrawer({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="text-base font-bold text-gray-900">Filters</h2>
+          <h2 className="text-base font-bold text-gray-900">{t.filter_title}</h2>
           <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
             <X size={18} color="#374151" />
           </button>
@@ -87,7 +89,7 @@ function FilterDrawer({
 
           {/* Sort */}
           <div className="mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 mt-3">Sort by</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 mt-3">{t.filter_sort}</p>
             <div className="flex flex-col gap-1">
               {SORT_OPTIONS.map(opt => (
                 <button
@@ -111,17 +113,17 @@ function FilterDrawer({
 
           {/* Age range */}
           <div className="mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Age range</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t.filter_age_range}</p>
             <div className="flex items-center gap-2">
               <input
-                type="number" min="18" max="99" placeholder="Min"
+                type="number" min="18" max="99" placeholder={t.filter_min}
                 value={ageMin}
                 onChange={e => setAgeMin(e.target.value)}
                 style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }}
               />
               <span className="text-gray-400 text-sm">–</span>
               <input
-                type="number" min="18" max="99" placeholder="Max"
+                type="number" min="18" max="99" placeholder={t.filter_max}
                 value={ageMax}
                 onChange={e => setAgeMax(e.target.value)}
                 style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }}
@@ -131,9 +133,9 @@ function FilterDrawer({
 
           {/* Toggles */}
           <div className="mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Show only</p>
-            <Toggle label="Premium profiles" value={premiumOnly} onChange={setPremiumOnly} />
-            <Toggle label="Has video" value={hasVideo} onChange={setHasVideo} />
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{t.filter_show_only}</p>
+            <Toggle label={t.filter_premium_profiles} value={premiumOnly} onChange={setPremiumOnly} />
+            <Toggle label={t.filter_has_video} value={hasVideo} onChange={setHasVideo} />
           </div>
 
         </div>
@@ -145,14 +147,14 @@ function FilterDrawer({
             className="flex-1 py-2.5 text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
             style={{ borderRadius: 0 }}
           >
-            Reset
+            {t.filter_reset}
           </button>
           <button
             onClick={apply}
             className="flex-1 py-2.5 text-sm font-bold text-white transition-colors"
             style={{ borderRadius: 0, background: "#111" }}
           >
-            Apply filters
+            {t.filter_apply}
           </button>
         </div>
       </div>
@@ -190,6 +192,7 @@ function DropMenu({ children }: { children: React.ReactNode }) {
 
 // ── Category ─────────────────────────────────────────────────────────
 function CategoryMenu({ current, onSelect }: { current: string; onSelect: (v: string) => void }) {
+  const { t } = useLanguage()
   return (
     <DropMenu>
       {["", ...CATEGORIES].map(c => (
@@ -200,7 +203,7 @@ function CategoryMenu({ current, onSelect }: { current: string; onSelect: (v: st
             current === c ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
           }`}
         >
-          {c || "All categories"}
+          {c || t.filter_all_categories}
         </button>
       ))}
     </DropMenu>
@@ -209,6 +212,7 @@ function CategoryMenu({ current, onSelect }: { current: string; onSelect: (v: st
 
 // ── Gender ───────────────────────────────────────────────────────────
 function GenderMenu({ current, onSelect }: { current: string; onSelect: (v: string) => void }) {
+  const { t } = useLanguage()
   return (
     <DropMenu>
       {["", ...GENDERS].map(g => (
@@ -219,7 +223,7 @@ function GenderMenu({ current, onSelect }: { current: string; onSelect: (v: stri
             current === g ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
           }`}
         >
-          {g || "All"}
+          {g || t.common_all}
         </button>
       ))}
     </DropMenu>
@@ -236,6 +240,7 @@ function LocationMenu({
   currentCity: string
   onSelect: (v: { country: string; city: string }) => void
 }) {
+  const { t } = useLanguage()
   const [selCountry, setSelCountry] = useState(currentCountry)
   const [selCode, setSelCode] = useState(() => {
     const entry = getCountryEntryByName(currentCountry)
@@ -260,7 +265,7 @@ function LocationMenu({
         <div className="p-2 border-b border-gray-100 flex-shrink-0">
           <input
             autoFocus
-            placeholder="Search country..."
+            placeholder={t.filter_search_country}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full text-sm px-3 py-1.5 border border-gray-200 outline-none focus:border-gray-400"
@@ -272,7 +277,7 @@ function LocationMenu({
           onClick={() => onSelect({ country: "", city: "" })}
           className="flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 border-b border-gray-200"
         >
-          <MapPin size={14} className="flex-shrink-0" /> All countries
+          <MapPin size={14} className="flex-shrink-0" /> {t.filter_all_countries}
         </button>
         {/* Scrollable list */}
         <div className="overflow-y-auto flex-1">
@@ -280,7 +285,7 @@ function LocationMenu({
           {filteredEurope.length > 0 && (
             <>
               <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
-                Europe
+                {t.filter_europe}
               </div>
               {filteredEurope.map(c => (
                 <button
@@ -299,7 +304,7 @@ function LocationMenu({
           {filteredWorldwide.length > 0 && (
             <>
               <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
-                Worldwide
+                {t.filter_worldwide}
               </div>
               {filteredWorldwide.map(c => (
                 <button
@@ -315,7 +320,7 @@ function LocationMenu({
             </>
           )}
           {filteredEurope.length === 0 && filteredWorldwide.length === 0 && (
-            <p className="px-4 py-4 text-sm text-gray-400 text-center">No results</p>
+            <p className="px-4 py-4 text-sm text-gray-400 text-center">{t.filter_no_results}</p>
           )}
         </div>
       </div>
@@ -339,10 +344,10 @@ function LocationMenu({
           onClick={() => onSelect({ country: selCountry, city: "" })}
           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 border-b border-gray-100"
         >
-          All cities in {selCountry}
+          {t.filter_all_cities} {selCountry}
         </button>
         {cities.length === 0 ? (
-          <p className="px-4 py-4 text-sm text-gray-400 text-center">No cities available</p>
+          <p className="px-4 py-4 text-sm text-gray-400 text-center">{t.filter_no_cities}</p>
         ) : cities.map(city => (
           <button
             key={city}
@@ -407,6 +412,7 @@ function unslugify(slug: string): string {
 
 // ── Inner (uses useSearchParams) ──────────────────────────────────────
 function FilterBarInner() {
+  const { t } = useLanguage()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -461,7 +467,7 @@ function FilterBarInner() {
 
   const locationLabel = currentCityName
     ? `📍 ${currentCityName}`
-    : currentCountryName || "Location"
+    : currentCountryName || t.filter_location
 
   const locationIcon = countryCode
     ? <span className={`fi fi-${countryCode}`} style={{ width: 16, height: 11, display: "inline-block", flexShrink: 0 }} />
@@ -496,7 +502,7 @@ function FilterBarInner() {
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t.common_search}
             value={q}
             onChange={e => setQ(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") update({ q }) }}
@@ -514,7 +520,7 @@ function FilterBarInner() {
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={t.common_search}
               value={q}
               onChange={e => setQ(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") update({ q }) }}
@@ -531,7 +537,7 @@ function FilterBarInner() {
             <div className="relative">
               <Pill
                 icon={<Grid3X3 size={13} />}
-                label={category || "Category"}
+                label={category || t.filter_category}
                 active={!!category}
                 onClick={() => toggle("category")}
               />
@@ -561,7 +567,7 @@ function FilterBarInner() {
             <div className="relative">
               <Pill
                 icon={<Users size={13} />}
-                label={gender || "Gender"}
+                label={gender || t.filter_gender}
                 active={!!gender}
                 onClick={() => toggle("gender")}
               />
@@ -583,7 +589,7 @@ function FilterBarInner() {
                 }}
               >
                 <SlidersHorizontal size={13} />
-                Filters
+                {t.filter_filters}
                 {(ageMin || ageMax || premiumOnly || hasVideo || sort) && (
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#DC2626", flexShrink: 0 }} />
                 )}
@@ -598,7 +604,7 @@ function FilterBarInner() {
                   className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-red-200 text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
                   style={{ borderRadius: 0 }}
                 >
-                  <X size={13} /> Clear
+                  <X size={13} /> {t.filter_clear}
                 </button>
               </div>
             )}

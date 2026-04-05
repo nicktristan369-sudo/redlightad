@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, Maximize2, Lock } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface PhotoGalleryProps {
   images: string[];
@@ -17,6 +18,7 @@ export default function PhotoGallery({
   name,
   isLoggedIn = false,
 }: PhotoGalleryProps) {
+  const { t } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -164,7 +166,7 @@ export default function PhotoGallery({
         <Lock size={16} color="#fff" />
       </div>
       <span className="text-[11px] font-semibold text-white/80 tracking-wide uppercase">
-        Gratis konto
+        {t.photo_free_account}
       </span>
     </div>
   );
@@ -509,10 +511,10 @@ export default function PhotoGallery({
             </div>
 
             <h2 className="text-[20px] font-black text-gray-900 mb-2 leading-tight">
-              Opret en gratis konto<br />for at se alle billeder
+              {t.photo_create_free_title}<br />{t.photo_see_all}
             </h2>
             <p className="text-[14px] text-gray-500 mb-7 leading-relaxed">
-              Registrering er gratis og tager under 1 minut. Ingen betaling krævet.
+              {t.photo_registration_free}
             </p>
 
             <div className="flex flex-col gap-3">
@@ -522,14 +524,14 @@ export default function PhotoGallery({
                 style={{ background: "#000" }}
                 onClick={() => setLockModalOpen(false)}
               >
-                Opret gratis konto
+                {t.photo_create_btn}
               </Link>
               <Link
                 href="/login"
                 className="block w-full py-3 rounded text-[15px] font-medium text-gray-700 text-center border border-[#E5E5E5] transition-colors hover:bg-gray-50"
                 onClick={() => setLockModalOpen(false)}
               >
-                Log ind
+                {t.photo_login}
               </Link>
             </div>
           </div>

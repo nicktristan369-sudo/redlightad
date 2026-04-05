@@ -48,31 +48,31 @@ export default function AdSidebar({
   const { t } = useLanguage();
 
   const mainRows = [
-    { icon: <Cake size={14} color="#9CA3AF" />,      label: "Age",       value: age ? `${age}` : null },
-    { icon: <User size={14} color="#9CA3AF" />,      label: "Gender",    value: gender },
-    { icon: <Folder size={14} color="#9CA3AF" />,    label: "Category",  value: category },
-    { icon: <MapPin size={14} color="#9CA3AF" />,    label: "Location",  value: [city, country].filter(Boolean).join(", ") },
-    { icon: <Languages size={14} color="#9CA3AF" />, label: "Languages", value: languages?.join(", ") || null },
+    { icon: <Cake size={14} color="#9CA3AF" />,      label: t.sidebar_age,       value: age ? `${age}` : null },
+    { icon: <User size={14} color="#9CA3AF" />,      label: t.sidebar_gender,    value: gender },
+    { icon: <Folder size={14} color="#9CA3AF" />,    label: t.sidebar_category,  value: category },
+    { icon: <MapPin size={14} color="#9CA3AF" />,    label: t.sidebar_location,  value: [city, country].filter(Boolean).join(", ") },
+    { icon: <Languages size={14} color="#9CA3AF" />, label: t.sidebar_languages, value: languages?.join(", ") || null },
   ];
 
   const extraRows = [
-    { label: "Height",       value: height_cm   ? `${height_cm} cm / ${cmToFeet(height_cm)}` : null },
-    { label: "Weight",       value: weight_kg   ? `${weight_kg} kg / ${Math.round(weight_kg * 2.205)} lbs` : null },
-    { label: "Ethnicity",    value: ethnicity   || null },
-    { label: "Nationality",  value: nationality || null },
-    { label: "Orientation",  value: orientation || null },
-    { label: "Eyes",         value: eye_color   || null },
-    { label: "Hair color",   value: hair_color  || null },
-    { label: "Hair length",  value: hair_length || null },
-    { label: "Pubic hair",   value: pubic_hair  || null },
-    { label: "Bust size",    value: bust_size   || null },
-    { label: "Bust type",    value: bust_type   || null },
-    { label: "Smoker",       value: smoker      || null },
-    { label: "Tattoo",       value: tattoo      || null },
-    { label: "Piercing",     value: piercing    || null },
-    { label: "Available for",value: available_for || null },
-    { label: "Meeting with", value: meeting_with || null },
-    { label: "Travel",       value: travel      || null },
+    { label: t.sidebar_height,        value: height_cm   ? `${height_cm} cm / ${cmToFeet(height_cm)}` : null },
+    { label: t.sidebar_weight,        value: weight_kg   ? `${weight_kg} kg / ${Math.round(weight_kg * 2.205)} lbs` : null },
+    { label: t.sidebar_ethnicity,     value: ethnicity   || null },
+    { label: t.sidebar_nationality,   value: nationality || null },
+    { label: t.sidebar_orientation,   value: orientation || null },
+    { label: t.sidebar_eyes,          value: eye_color   || null },
+    { label: t.sidebar_hair_color,    value: hair_color  || null },
+    { label: t.sidebar_hair_length,   value: hair_length || null },
+    { label: t.sidebar_pubic_hair,    value: pubic_hair  || null },
+    { label: t.sidebar_bust_size,     value: bust_size   || null },
+    { label: t.sidebar_bust_type,     value: bust_type   || null },
+    { label: t.sidebar_smoker,        value: smoker      || null },
+    { label: t.sidebar_tattoo,        value: tattoo      || null },
+    { label: t.sidebar_piercing,      value: piercing    || null },
+    { label: t.sidebar_available_for, value: available_for || null },
+    { label: t.sidebar_meeting_with,  value: meeting_with || null },
+    { label: t.sidebar_travel,        value: travel      || null },
   ].filter(r => r.value);
 
   const allRows = [...mainRows.filter(r => r.value !== null && r.value !== ""), ...extraRows];

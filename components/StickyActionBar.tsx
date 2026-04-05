@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Phone, Star, MessageCircle, Flag, X, Send, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import { Sheet, ContactModal as SharedContactModal } from "@/components/ContactModal"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface Props {
   phone: string | null
@@ -19,6 +20,7 @@ interface Props {
 
 // ── Login gate (shared) ───────────────────────────────────────────────────────
 function LoginGate({ title, body, onClose }: { title: string; body: string; onClose: () => void }) {
+  const { t } = useLanguage()
   return (
     <Sheet onClose={onClose}>
       <div className="px-6 pt-3 pb-6 text-center space-y-4">
@@ -27,11 +29,11 @@ function LoginGate({ title, body, onClose }: { title: string; body: string; onCl
         <Link href="/register" onClick={onClose}
           className="block w-full py-3 rounded-xl text-[14px] font-semibold text-white text-center"
           style={{ background: "#DC2626" }}>
-          Opret gratis konto
+          {t.sticky_create_free}
         </Link>
         <Link href="/login" onClick={onClose}
           className="block w-full py-3 rounded-xl text-[14px] font-semibold text-gray-700 bg-gray-100 text-center">
-          Log ind
+          {t.sticky_login}
         </Link>
       </div>
     </Sheet>
@@ -45,6 +47,7 @@ const ContactModal = SharedContactModal
 function MessageModal({
   phone, listingTitle, isLoggedIn, onClose,
 }: { phone: string | null; listingTitle: string; isLoggedIn: boolean; onClose: () => void }) {
+  const { t } = useLanguage()
   const [showForm, setShowForm] = useState(false)
   const [msg, setMsg] = useState("")
   const [sent, setSent] = useState(false)
@@ -54,23 +57,23 @@ function MessageModal({
       <Sheet onClose={onClose}>
         <div className="px-6 pt-3 pb-6 space-y-3">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-[17px] font-bold text-gray-900">Send besked</h3>
+            <h3 className="text-[17px] font-bold text-gray-900">{t.sticky_send_msg}</h3>
             <button onClick={() => setShowForm(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
               <X size={15} color="#6B7280" />
             </button>
           </div>
-          <p className="text-[12px] text-gray-400">Til: <strong className="text-gray-700">{listingTitle}</strong></p>
+          <p className="text-[12px] text-gray-400">{t.sticky_to} <strong className="text-gray-700">{listingTitle}</strong></p>
           {sent ? (
-            <p className="text-[14px] text-green-600 font-semibold text-center py-6">Besked sendt ✓</p>
+            <p className="text-[14px] text-green-600 font-semibold text-center py-6">{t.sticky_msg_sent}</p>
           ) : (
             <>
               <textarea rows={4} value={msg} onChange={e => setMsg(e.target.value)}
-                placeholder="Skriv din besked…"
+                placeholder={t.sticky_write_msg}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-[14px] resize-none focus:outline-none focus:border-gray-400" />
               <button onClick={() => { setSent(true); setTimeout(onClose, 1500) }} disabled={!msg.trim()}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[14px] font-semibold text-white disabled:opacity-40"
                 style={{ background: "#DC2626" }}>
-                <Send size={15} /> Send besked
+                <Send size={15} /> {t.sticky_send_msg}
               </button>
             </>
           )}
@@ -83,7 +86,7 @@ function MessageModal({
     <Sheet onClose={onClose}>
       <div className="px-6 pt-3 pb-6 space-y-3">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-[17px] font-bold text-gray-900">Kontakt {listingTitle}</h3>
+          <h3 className="text-[17px] font-bold text-gray-900">{t.sticky_contact_title} {listingTitle}</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
             <X size={15} color="#6B7280" />
           </button>
@@ -96,7 +99,7 @@ function MessageModal({
             style={{ background: "#111" }}>
             <Phone size={18} />
             <div>
-              <div>Send SMS</div>
+              <div>{t.sticky_send_sms}</div>
               <div className="text-[11px] font-normal opacity-70 mt-0.5">{phone}</div>
             </div>
           </a>
@@ -109,8 +112,8 @@ function MessageModal({
             style={{ background: "#DC2626" }}>
             <MessageSquare size={18} />
             <div>
-              <div>Send besked på platformen</div>
-              <div className="text-[11px] font-normal opacity-80 mt-0.5">100% anonymt</div>
+              <div>{t.sticky_platform_msg}</div>
+              <div className="text-[11px] font-normal opacity-80 mt-0.5">{t.sticky_platform_anonymous}</div>
             </div>
           </button>
         ) : (
@@ -118,20 +121,20 @@ function MessageModal({
             <div className="flex items-center gap-3">
               <MessageSquare size={18} color="#6B7280" />
               <div>
-                <p className="text-[14px] font-semibold text-gray-700">Send besked på platformen</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Platform beskeder er 100% anonyme</p>
+                <p className="text-[14px] font-semibold text-gray-700">{t.sticky_platform_msg}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{t.sticky_platform_anonymous}</p>
               </div>
             </div>
-            <p className="text-[12px] text-gray-500">Opret en gratis konto for at sende anonyme beskeder</p>
+            <p className="text-[12px] text-gray-500">{t.sticky_create_free}</p>
             <div className="flex gap-2">
               <Link href="/register" onClick={onClose}
                 className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-white text-center"
                 style={{ background: "#DC2626" }}>
-                Opret konto
+                {t.sticky_create_account}
               </Link>
               <Link href="/login" onClick={onClose}
                 className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-gray-700 bg-gray-100 text-center">
-                Log ind
+                {t.sticky_login}
               </Link>
             </div>
           </div>
@@ -143,14 +146,15 @@ function MessageModal({
 
 // ── Report Modal ──────────────────────────────────────────────────────────────
 function ReportModal({ listingId, isLoggedIn, onClose }: { listingId: string; isLoggedIn: boolean; onClose: () => void }) {
+  const { t } = useLanguage()
   const [reason, setReason] = useState("")
   const [sent, setSent] = useState(false)
 
   if (!isLoggedIn) {
     return (
       <LoginGate
-        title="Rapporter annonce"
-        body="Opret en gratis konto for at rapportere en annonce"
+        title={t.sticky_report_title}
+        body={t.sticky_report_body}
         onClose={onClose}
       />
     )
@@ -173,22 +177,22 @@ function ReportModal({ listingId, isLoggedIn, onClose }: { listingId: string; is
     <Sheet onClose={onClose}>
       <div className="px-6 pt-3 pb-6 space-y-3">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-[17px] font-bold text-gray-900">Rapporter annonce</h3>
+          <h3 className="text-[17px] font-bold text-gray-900">{t.sticky_report_title}</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
             <X size={15} color="#6B7280" />
           </button>
         </div>
         {sent ? (
-          <p className="text-[14px] text-green-600 font-semibold text-center py-6">Tak — rapport modtaget ✓</p>
+          <p className="text-[14px] text-green-600 font-semibold text-center py-6">{t.sticky_report_received}</p>
         ) : (
           <>
             <textarea rows={4} value={reason} onChange={e => setReason(e.target.value)}
-              placeholder="Beskriv problemet kort…"
+              placeholder={t.sticky_describe_problem}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-[14px] resize-none focus:outline-none focus:border-gray-400" />
             <button onClick={submit} disabled={!reason.trim()}
               className="w-full py-3 rounded-xl text-[14px] font-semibold text-white disabled:opacity-40"
               style={{ background: "#111" }}>
-              Send rapport
+              {t.sticky_send_report}
             </button>
           </>
         )}
@@ -199,10 +203,11 @@ function ReportModal({ listingId, isLoggedIn, onClose }: { listingId: string; is
 
 // ── Review gate ───────────────────────────────────────────────────────────────
 function ReviewGate({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage()
   return (
     <LoginGate
-      title="Skriv en anmeldelse"
-      body="Opret en gratis konto for at skrive en anmeldelse"
+      title={t.sticky_write_review}
+      body={t.sticky_review_body}
       onClose={onClose}
     />
   )
@@ -218,6 +223,7 @@ function scrollToReviews() {
 type Modal = "contact" | "message" | "report" | "review-gate" | null
 
 export default function StickyActionBar({ phone, whatsapp, listingId, listingTitle, isLoggedIn, profileImage, name }: Props) {
+  const { t } = useLanguage()
   const [modal, setModal] = useState<Modal>(null)
 
   const handleReview = () => {
@@ -226,10 +232,10 @@ export default function StickyActionBar({ phone, whatsapp, listingId, listingTit
   }
 
   const buttons = [
-    { icon: <Phone size={20} />,          label: "Contact", primary: true,  action: () => setModal("contact") },
-    { icon: <Star size={20} />,           label: "Review",  primary: false, action: handleReview },
-    { icon: <MessageCircle size={20} />,  label: "Message", primary: false, action: () => setModal("message") },
-    { icon: <Flag size={20} />,           label: "Report",  primary: false, action: () => setModal("report") },
+    { icon: <Phone size={20} />,          label: t.sticky_contact, primary: true,  action: () => setModal("contact") },
+    { icon: <Star size={20} />,           label: t.sticky_review,  primary: false, action: handleReview },
+    { icon: <MessageCircle size={20} />,  label: t.sticky_message, primary: false, action: () => setModal("message") },
+    { icon: <Flag size={20} />,           label: t.sticky_report,  primary: false, action: () => setModal("report") },
   ]
 
   return (

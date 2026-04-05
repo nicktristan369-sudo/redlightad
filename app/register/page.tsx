@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import Logo from "@/components/Logo";
 import { Smartphone, CheckCircle, RefreshCw } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type AccountType = "provider" | "customer" | null;
 
@@ -84,13 +85,14 @@ export default function RegisterPage() {
   const [dialSearch, setDialSearch] = useState("");
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { t } = useLanguage();
 
   const fullPhone = dialCode + phoneNumber.replace(/\s/g, "");
 
   // Resend countdown
   useEffect(() => {
     if (resendTimer > 0) {
-      timerRef.current = setInterval(() => setResendTimer(t => t - 1), 1000);
+      timerRef.current = setInterval(() => setResendTimer(prev => prev - 1), 1000);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [resendTimer]);
@@ -98,8 +100,8 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
-    if (password !== confirmPassword) { setError("Passwords do not match"); return; }
+    if (password.length < 6) { setError(t.reg_password_short); return; }
+    if (password !== confirmPassword) { setError(t.reg_password_mismatch); return; }
     setLoading(true);
     const supabase = createClient();
     const { data, error: authError } = await supabase.auth.signUp({
@@ -115,7 +117,7 @@ export default function RegisterPage() {
   const sendCode = async () => {
     setPhoneError("");
     if (!phoneNumber.trim() || phoneNumber.replace(/\D/g, "").length < 5) {
-      setPhoneError("Please enter a valid phone number");
+      setPhoneError(t.reg_phone_invalid);
       return;
     }
     setSendingCode(true);
@@ -178,16 +180,16 @@ export default function RegisterPage() {
           <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "#DCFCE7" }}>
             <CheckCircle size={28} color="#16A34A" />
           </div>
-          <h2 className="text-[20px] font-bold text-gray-900 mb-2">Account Created!</h2>
+          <h2 className="text-[20px] font-bold text-gray-900 mb-2">{t.reg_account_created}</h2>
           <p className="text-[14px] text-gray-500 mb-6">
-            Check your email at <strong>{email}</strong> to confirm your account, then log in.
+            {t.reg_check_email} <strong>{email}</strong>
           </p>
           <Link href="/login"
             className="inline-block w-full py-3 text-[13px] font-semibold text-white rounded-xl transition-colors"
             style={{ background: "#000" }}
             onMouseEnter={e => (e.currentTarget.style.background = "#CC0000")}
             onMouseLeave={e => (e.currentTarget.style.background = "#000")}>
-            Go to Login →
+            {t.reg_go_login}
           </Link>
         </div>
       </div>
@@ -216,9 +218,9 @@ export default function RegisterPage() {
           {step === 1 && (
             <div className="p-8 sm:p-10">
               <div className="text-center mb-8">
-                <p className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3">Step 1 of 3</p>
-                <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">Select Your Account Type</h1>
-                <p className="text-base text-gray-500">Choose how you want to use RedLightAD</p>
+                <p className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3">{t.reg_step_of} 1/3</p>
+                <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">{t.reg_select_type}</h1>
+                <p className="text-base text-gray-500">{t.reg_choose_how}</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 {/* Provider */}
@@ -230,11 +232,11 @@ export default function RegisterPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">Create Profile</h2>
-                  <p className="text-[11px] font-bold text-red-600 tracking-[0.1em] uppercase mb-2">For Providers</p>
-                  <p className="text-sm text-gray-500 mb-4">Post listings, receive bookings, and grow your business</p>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">{t.reg_create_profile}</h2>
+                  <p className="text-[11px] font-bold text-red-600 tracking-[0.1em] uppercase mb-2">{t.reg_for_providers}</p>
+                  <p className="text-sm text-gray-500 mb-4">{t.reg_provider_features}</p>
                   <ul className="space-y-1.5">
-                    {["Post Listings", "Receive Messages", "Add Media & Videos", "Voice Messages", "Boost Visibility"].map(f => (
+                    {[t.reg_post_listings, t.reg_receive_messages, t.reg_add_media, t.reg_voice_messages, t.reg_boost_visibility].map(f => (
                       <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
                         <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                         {f}
@@ -251,11 +253,11 @@ export default function RegisterPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">Customer Account</h2>
-                  <p className="text-[11px] font-bold text-gray-400 tracking-[0.1em] uppercase mb-2">For Clients</p>
-                  <p className="text-sm text-gray-500 mb-4">Browse providers, message securely</p>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">{t.reg_customer_account}</h2>
+                  <p className="text-[11px] font-bold text-gray-400 tracking-[0.1em] uppercase mb-2">{t.reg_for_clients}</p>
+                  <p className="text-sm text-gray-500 mb-4">{t.reg_customer_features}</p>
                   <ul className="space-y-1.5">
-                    {["Private Profile", "Secure Messaging", "Buy RedCoins", "Unlock Exclusive Content"].map(f => (
+                    {[t.reg_private_profile, t.reg_secure_messaging, t.reg_buy_redcoins, t.reg_unlock_content].map(f => (
                       <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
                         <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                         {f}
@@ -265,11 +267,11 @@ export default function RegisterPage() {
                 </button>
               </div>
               <div className="flex gap-3">
-                <Link href="/" className="px-5 py-3 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap">Cancel</Link>
+                <Link href="/" className="px-5 py-3 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap">{t.common_cancel}</Link>
                 <button type="button" disabled={!accountType} onClick={() => setStep(2)}
                   className="flex-1 py-3 text-sm font-semibold text-white transition-colors"
                   style={{ borderRadius: "8px", backgroundColor: accountType ? "#111" : "#D1D5DB", cursor: accountType ? "pointer" : "not-allowed" }}>
-                  Continue →
+                  {t.auth_continue}
                 </button>
               </div>
             </div>
@@ -284,16 +286,16 @@ export default function RegisterPage() {
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <span className="inline-flex items-center rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "#000" }}>
-                  {accountType === "provider" ? "Provider" : "Customer"}
+                  {accountType === "provider" ? t.auth_provider : t.auth_customer}
                 </span>
-                <span className="text-[12px] text-gray-400 ml-auto">Step 2 of 3</span>
+                <span className="text-[12px] text-gray-400 ml-auto">{t.reg_step_of} 2/3</span>
               </div>
               <div className="flex justify-center mb-6"><Logo variant="light" height={28} /></div>
-              <h1 className="text-[24px] font-bold text-center mb-1">Create Account</h1>
-              <p className="text-center mb-7 text-[14px] text-gray-500">Fill in your details to get started</p>
+              <h1 className="text-[24px] font-bold text-center mb-1">{t.auth_register_title}</h1>
+              <p className="text-center mb-7 text-[14px] text-gray-500">{t.reg_fill_details}</p>
               <form onSubmit={handleRegister} className="space-y-4">
                 <div>
-                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">Email</label>
+                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">{t.auth_email}</label>
                   <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
                     onFocus={() => setEmailFocus(true)} onBlur={() => setEmailFocus(false)}
                     placeholder="your@email.com"
@@ -301,10 +303,10 @@ export default function RegisterPage() {
                     style={{ border: `1px solid ${emailFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }} />
                 </div>
                 <div>
-                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">Password</label>
+                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">{t.auth_password}</label>
                   <div className="relative">
                     <input type={showPassword ? "text" : "password"} required value={password} onChange={e => setPassword(e.target.value)}
-                      onFocus={() => setPwFocus(true)} onBlur={() => setPwFocus(false)} placeholder="Min. 6 characters"
+                      onFocus={() => setPwFocus(true)} onBlur={() => setPwFocus(false)} placeholder={t.reg_min_chars}
                       className="w-full px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors"
                       style={{ border: `1px solid ${pwFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -316,10 +318,10 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">Confirm Password</label>
+                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">{t.auth_confirm_password}</label>
                   <div className="relative">
                     <input type={showConfirmPassword ? "text" : "password"} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                      onFocus={() => setCpwFocus(true)} onBlur={() => setCpwFocus(false)} placeholder="Repeat your password"
+                      onFocus={() => setCpwFocus(true)} onBlur={() => setCpwFocus(false)} placeholder={t.reg_repeat_password}
                       className="w-full px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors"
                       style={{ border: `1px solid ${cpwFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }} />
                     <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -333,11 +335,11 @@ export default function RegisterPage() {
                 <div className="space-y-3 pt-1">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" required checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} className="mt-0.5 h-4 w-4 flex-shrink-0 accent-black" />
-                    <span className="text-[13px] text-gray-700">I agree to the <Link href="/terms" className="underline font-medium" target="_blank">Terms of Service</Link> and <Link href="/privacy" className="underline font-medium" target="_blank">Privacy Policy</Link></span>
+                    <span className="text-[13px] text-gray-700">{t.reg_agree_terms} <Link href="/terms" className="underline font-medium" target="_blank">{t.reg_terms}</Link> & <Link href="/privacy" className="underline font-medium" target="_blank">{t.reg_privacy}</Link></span>
                   </label>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" required checked={agreeAge} onChange={e => setAgreeAge(e.target.checked)} className="mt-0.5 h-4 w-4 flex-shrink-0 accent-black" />
-                    <span className="text-[13px] text-gray-700">I confirm I am 18 years of age or older</span>
+                    <span className="text-[13px] text-gray-700">{t.reg_age_confirm}</span>
                   </label>
                 </div>
                 {error && <p className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-[13px] text-red-600">{error}</p>}
@@ -345,11 +347,11 @@ export default function RegisterPage() {
                   className="w-full py-3 text-sm font-semibold text-white flex items-center justify-center transition-all disabled:opacity-40"
                   style={{ background: btnHov && !loading ? "#CC0000" : "#000", borderRadius: "8px" }}
                   onMouseEnter={() => setBtnHov(true)} onMouseLeave={() => setBtnHov(false)}>
-                  {loading ? <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> : "Continue →"}
+                  {loading ? <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> : t.auth_continue}
                 </button>
               </form>
-              <div className="my-6 flex items-center gap-3"><div className="h-px flex-1" style={{ background: "#D1D5DB" }} /><span className="text-[13px] text-gray-400">or</span><div className="h-px flex-1" style={{ background: "#D1D5DB" }} /></div>
-              <p className="text-center text-[14px] text-gray-500">Already have an account? <Link href="/login" className="font-bold text-gray-900 hover:underline">Sign in</Link></p>
+              <div className="my-6 flex items-center gap-3"><div className="h-px flex-1" style={{ background: "#D1D5DB" }} /><span className="text-[13px] text-gray-400">{t.common_or}</span><div className="h-px flex-1" style={{ background: "#D1D5DB" }} /></div>
+              <p className="text-center text-[14px] text-gray-500">{t.auth_have_account} <Link href="/login" className="font-bold text-gray-900 hover:underline">{t.auth_sign_in}</Link></p>
             </div>
           )}
 
@@ -361,20 +363,20 @@ export default function RegisterPage() {
                   <Smartphone size={20} color="#374151" />
                 </div>
                 <div>
-                  <h1 className="text-[20px] font-bold text-gray-900">Verify your phone</h1>
-                  <p className="text-[12px] text-gray-400">Step 3 of 3 · optional but recommended</p>
+                  <h1 className="text-[20px] font-bold text-gray-900">{t.reg_verify_phone}</h1>
+                  <p className="text-[12px] text-gray-400">{t.reg_step3_desc}</p>
                 </div>
               </div>
 
               {!codeSent ? (
                 <div className="space-y-4">
                   <p className="text-[14px] text-gray-600">
-                    Enter your phone number to receive a verification code via SMS.
+                    {t.reg_phone_desc}
                   </p>
 
                   {/* Phone input */}
                   <div>
-                    <label className="block mb-1.5 text-[13px] font-medium text-gray-700">Phone number</label>
+                    <label className="block mb-1.5 text-[13px] font-medium text-gray-700">{t.reg_phone_number}</label>
                     <div className="flex gap-2">
                       {/* Dial code picker */}
                       <div className="relative">
@@ -389,7 +391,7 @@ export default function RegisterPage() {
                             style={{ border: "1px solid #E5E5E5", width: "220px" }}>
                             <div className="p-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
                               <input value={dialSearch} onChange={e => setDialSearch(e.target.value)}
-                                placeholder="Search country…"
+                                placeholder={t.reg_search_country}
                                 className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
                                 style={{ border: "1px solid #E5E5E5" }} autoFocus />
                             </div>
@@ -422,12 +424,12 @@ export default function RegisterPage() {
                     style={{ background: "#000" }}
                     onMouseEnter={e => { if (!sendingCode) e.currentTarget.style.background = "#CC0000"; }}
                     onMouseLeave={e => e.currentTarget.style.background = "#000"}>
-                    {sendingCode ? "Sending…" : "Send verification code"}
+                    {sendingCode ? t.reg_sending : t.reg_send_code}
                   </button>
 
                   <button onClick={skipPhone} type="button"
                     className="w-full py-3 text-[13px] font-medium text-gray-400 hover:text-gray-600 transition-colors">
-                    Skip for now →
+                    {t.reg_skip}
                   </button>
                 </div>
               ) : (
@@ -435,12 +437,12 @@ export default function RegisterPage() {
                   <div className="flex items-start gap-3 px-4 py-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
                     <CheckCircle size={16} color="#16A34A" className="flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-green-700">
-                      Code sent to <strong>{fullPhone}</strong>. Valid for 10 minutes.
+                      {t.reg_code_sent_to} <strong>{fullPhone}</strong>
                     </p>
                   </div>
 
                   <div>
-                    <label className="block mb-3 text-[13px] font-medium text-gray-700">Enter the 6-digit code</label>
+                    <label className="block mb-3 text-[13px] font-medium text-gray-700">{t.reg_enter_code}</label>
                     <div className="flex gap-2 justify-center">
                       {codeInputs.map((v, i) => (
                         <input
@@ -463,29 +465,29 @@ export default function RegisterPage() {
                     style={{ background: "#000" }}
                     onMouseEnter={e => { if (!verifying) e.currentTarget.style.background = "#CC0000"; }}
                     onMouseLeave={e => e.currentTarget.style.background = "#000"}>
-                    {verifying ? "Verifying…" : "Verify →"}
+                    {verifying ? t.reg_verifying : t.reg_verify_btn}
                   </button>
 
                   <div className="flex items-center justify-between text-[13px]">
                     <button type="button" onClick={() => { setCodeSent(false); setCodeInputs(["","","","","",""]); setPhoneError(""); }}
                       className="text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-                      ← Change number
+                      {t.reg_change_number}
                     </button>
                     {resendTimer > 0 ? (
                       <span className="text-gray-400 flex items-center gap-1">
-                        <RefreshCw size={12} /> Resend in {resendTimer}s
+                        <RefreshCw size={12} /> {t.reg_resend_in} {resendTimer}s
                       </span>
                     ) : (
                       <button type="button" onClick={sendCode} disabled={sendingCode}
                         className="text-gray-900 font-semibold hover:text-red-600 transition-colors flex items-center gap-1">
-                        <RefreshCw size={12} /> Resend code
+                        <RefreshCw size={12} /> {t.reg_resend_code}
                       </button>
                     )}
                   </div>
 
                   <button onClick={skipPhone} type="button"
                     className="w-full py-2 text-[13px] font-medium text-gray-400 hover:text-gray-600 transition-colors">
-                    Skip verification →
+                    {t.reg_skip_verify}
                   </button>
                 </div>
               )}

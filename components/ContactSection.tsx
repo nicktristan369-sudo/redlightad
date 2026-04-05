@@ -88,7 +88,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
               </div>
               <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: "#0088CC" }}>
-                OPEN
+                {t.contact_open}
               </span>
             </a>
           )}
@@ -126,7 +126,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
               </div>
               <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg text-gray-600" style={{ background: "#F3F4F6" }}>
-                OPEN
+                {t.contact_open}
               </span>
             </a>
           )}
