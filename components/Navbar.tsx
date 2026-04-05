@@ -182,7 +182,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav links */}
-          <div className="desktop-nav-links" style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 8 }}>
+          <div className="hidden md:flex" style={{ alignItems: "center", gap: 4, marginLeft: 8 }}>
             <Link href="/" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#374151", textDecoration: "none", whiteSpace: "nowrap" }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F7" }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}>
@@ -484,9 +484,7 @@ export default function Navbar() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
         }
-        .desktop-nav-links { display: none; }
         @media (min-width: 768px) {
-          .desktop-nav-links { display: flex !important; }
           .cam-nav-link { display: flex !important; }
         }
         @media (max-width: 639px) {
