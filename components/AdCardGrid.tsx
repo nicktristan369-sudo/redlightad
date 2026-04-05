@@ -174,14 +174,11 @@ export default function AdCardGrid({
           {social_links?.onlyfans?.url && (
             <div style={{
               position: "absolute", bottom: 8, right: 8,
-              display: "flex", alignItems: "center", gap: 4,
-              background: "rgba(0,175,240,0.92)", backdropFilter: "blur(4px)",
-              borderRadius: 20, padding: "3px 8px",
+              background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)",
+              borderRadius: 20, padding: "4px 6px",
+              display: "flex", alignItems: "center",
             }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 14c-2.67 0-8-1.34-8-4v-2c0-2.66 5.33-4 8-4s8 1.34 8 4v2c0 2.66-5.33 4-8 4z"/>
-              </svg>
-              <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", letterSpacing: "0.05em" }}>OF</span>
+              <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ width: 52, height: 16, objectFit: "contain" }} />
             </div>
           )}
         </div>

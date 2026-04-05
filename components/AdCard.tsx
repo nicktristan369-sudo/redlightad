@@ -111,12 +111,9 @@ export default function AdCard({
           )}
           {/* OnlyFans badge */}
           {social_links?.onlyfans?.url && (
-            <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full px-2 py-1"
-              style={{ background: "rgba(0,175,240,0.92)", backdropFilter: "blur(4px)" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm4 10.5H8v-1.5c0-2.67 5.33-4 8-4 0 0-1.33 1.33-1.33 2.67V16.5z"/>
-              </svg>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", letterSpacing: "0.03em" }}>OF</span>
+            <div className="absolute bottom-2 right-2 flex items-center rounded-full px-2 py-1"
+              style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
+              <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ width: 52, height: 16, objectFit: "contain" }} />
             </div>
           )}
         </div>
