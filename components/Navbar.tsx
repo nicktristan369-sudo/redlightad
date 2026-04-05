@@ -124,6 +124,7 @@ export default function Navbar() {
     { href: "/videos", label: "Videos" },
     { href: "/reviews", label: "Reviews" },
     { href: "/marketplace", label: "Marketplace" },
+    { href: "/dashboard/buy-coins", label: "🔴 Red Coins", isRedCoins: true },
     { href: "/support", label: t.nav_support },
     { href: "/opret-annonce", label: t.nav_post_ad, isPostAd: true },
   ];
@@ -373,13 +374,13 @@ export default function Navbar() {
         {/* ── Nav links ── */}
         <div style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
           <nav>
-            {navLinks.map(({ href, label, isPostAd }) => (
+            {navLinks.map(({ href, label, isPostAd, isRedCoins }) => (
               <Link key={href} href={href} onClick={closeDrawer}
                 style={{
                   display: "flex", alignItems: "center",
                   padding: "11px 20px", fontSize: 15,
-                  fontWeight: isPostAd ? 700 : 450,
-                  color: isPostAd ? "#DC2626" : "#1A1A1A",
+                  fontWeight: isPostAd || isRedCoins ? 700 : 450,
+                  color: isPostAd ? "#DC2626" : isRedCoins ? "#DC2626" : "#1A1A1A",
                   textDecoration: "none", letterSpacing: "-0.01em",
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = "#F7F7F7"; }}
