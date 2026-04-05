@@ -27,9 +27,10 @@ interface Listing {
 type SortOption = "subscribers" | "newest" | "price"
 
 function extractOFHandle(url: string, username?: string | null): string {
-  if (username) return username
+  const clean = (s: string) => s.replace(/^https?:\/\/(www\.)?onlyfans\.com\//i, "").split("?")[0].split("/")[0].trim()
+  if (username) return clean(username)
   if (!url) return ""
-  return url.replace(/^https?:\/\/(www\.)?onlyfans\.com\//i, "").split("?")[0].split("/")[0]
+  return clean(url)
 }
 
 function OFCard({ l }: { l: Listing }) {
@@ -41,7 +42,7 @@ function OFCard({ l }: { l: Listing }) {
     <div
       style={{
         display: "flex", gap: 20, padding: "20px 0",
-        borderBottom: "1px solid #1f1f1f",
+        borderBottom: "1px solid #E5E7EB",
         transition: "background 0.15s",
       }}
       onMouseEnter={e => { e.currentTarget.style.background = "#1a1a1a" }}
@@ -61,7 +62,7 @@ function OFCard({ l }: { l: Listing }) {
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-          <span style={{ fontSize: 11, color: "#888" }}>onlyfans.com/{handle}</span>
+          <span style={{ fontSize: 11, color: "#6B7280" }}>onlyfans.com/{handle}</span>
           {/* Social icons */}
           {l.social_links?.tiktok?.url && (
             <a href={l.social_links.tiktok.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#666", textDecoration: "none" }} title="TikTok">🎵</a>
@@ -76,14 +77,14 @@ function OFCard({ l }: { l: Listing }) {
           </div>
         </Link>
         <div style={{
-          fontSize: 13, color: "#aaa", marginBottom: 10,
+          fontSize: 13, color: "#6B7280", marginBottom: 10,
           overflow: "hidden", display: "-webkit-box",
           WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
         }}>
           {(l.onlyfans_bio || l.about || "").slice(0, 200)}
         </div>
         {/* Stats */}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: "#888" }}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: "#6B7280" }}>
           {(l.onlyfans_subscribers ?? 0) > 0 && <span>👤 {l.onlyfans_subscribers!.toLocaleString()}</span>}
           <span style={{ color: "#00AFF0", fontWeight: 700 }}>Price: {price}</span>
           {(l.onlyfans_photos_count ?? 0) > 0 && <span>📸 {l.onlyfans_photos_count!.toLocaleString()}</span>}
@@ -96,7 +97,7 @@ function OFCard({ l }: { l: Listing }) {
       {l.premium_tier && (
         <div style={{
           fontSize: 11, fontWeight: 700, color: "#F59E0B",
-          background: "#1a1200", padding: "3px 8px", borderRadius: 6,
+          background: "#FFF7ED", padding: "3px 8px", borderRadius: 6,
           height: "fit-content",
         }}>
           VIP
@@ -155,15 +156,15 @@ export default function OnlyFansDirectoryPage() {
   })
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0F0F0F" }}>
+    <div style={{ minHeight: "100vh", background: "#F9FAFB" }}>
       <Navbar />
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 20px 60px" }}>
         {/* Header */}
-        <h1 style={{ color: "#fff", fontSize: 28, fontWeight: 800, marginBottom: 4 }}>
+        <h1 style={{ color: "#111", fontSize: 28, fontWeight: 800, marginBottom: 4 }}>
           OnlyFans <span style={{ color: "#00AFF0" }}>Directory</span>
         </h1>
-        <p style={{ color: "#888", fontSize: 14, marginBottom: 20 }}>
+        <p style={{ color: "#6B7280", fontSize: 14, marginBottom: 20 }}>
           {sorted.length} creators
         </p>
 
@@ -177,8 +178,8 @@ export default function OnlyFansDirectoryPage() {
             style={{
               flex: 1, minWidth: 200, maxWidth: 400,
               padding: "10px 16px", borderRadius: 24,
-              background: "#272727", border: "1px solid #3f3f3f",
-              color: "#fff", fontSize: 14, outline: "none",
+              background: "#fff", border: "1px solid #E5E7EB",
+              color: "#111", fontSize: 14, outline: "none",
             }}
           />
           <select
@@ -186,8 +187,8 @@ export default function OnlyFansDirectoryPage() {
             onChange={e => setSort(e.target.value as SortOption)}
             style={{
               padding: "10px 16px", borderRadius: 24,
-              background: "#272727", border: "1px solid #3f3f3f",
-              color: "#fff", fontSize: 13, outline: "none",
+              background: "#fff", border: "1px solid #E5E7EB",
+              color: "#111", fontSize: 13, outline: "none",
               cursor: "pointer",
             }}
           >
@@ -201,7 +202,7 @@ export default function OnlyFansDirectoryPage() {
         {loading && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <div style={{
-              width: 32, height: 32, border: "3px solid #333",
+              width: 32, height: 32, border: "3px solid #E5E7EB",
               borderTop: "3px solid #00AFF0", borderRadius: "50%",
               margin: "0 auto 12px",
               animation: "spin 0.8s linear infinite",
