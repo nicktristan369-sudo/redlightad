@@ -256,7 +256,7 @@ export default function AdDetailPage() {
 
               {ad.about && (
                 <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
-                  <h3 className="mb-3 text-lg font-bold text-gray-900">Om mig</h3>
+                  <h3 className="mb-3 text-lg font-bold text-gray-900">About me</h3>
                   <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">{ad.about}</p>
                 </div>
               )}

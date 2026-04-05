@@ -1,3 +1,5 @@
+"use client"
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { Cake, User, Folder, MapPin, Languages, Ruler, Globe, Heart, Eye, Cigarette, Zap, Flag } from "lucide-react";
 import RatesPanel from "./RatesPanel";
 
@@ -43,6 +45,7 @@ export default function AdSidebar({
   pubic_hair, bust_size, bust_type, orientation, smoker, tattoo,
   piercing, nationality, available_for, meeting_with, travel,
 }: AdSidebarProps) {
+  const { t } = useLanguage();
 
   const mainRows = [
     { icon: <Cake size={14} color="#9CA3AF" />,      label: "Age",       value: age ? `${age}` : null },
@@ -77,7 +80,7 @@ export default function AdSidebar({
   return (
     <div className="rounded-xl bg-white shadow-md overflow-hidden" style={{ border: "1px solid #E5E7EB" }}>
       <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-[15px] font-bold text-gray-900">Profile Info</h3>
+        <h3 className="text-[15px] font-bold text-gray-900">{t.profile_info}</h3>
       </div>
 
       <div className="divide-y divide-gray-50">

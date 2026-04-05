@@ -120,6 +120,15 @@ export type TranslationKeys = {
   listing_contact: string
   listing_photos: string
   listing_submit: string
+  // Profile page
+  contact_info: string
+  contact_phone: string
+  contact_show: string
+  contact_call: string
+  profile_info: string
+  about_me: string
+  watch_videos: string
+  view_profile: string
   listing_preview: string
   listing_step1: string
   listing_step2: string
@@ -305,6 +314,14 @@ const en: TranslationKeys = {
   listing_services: "Services", listing_languages: "Languages", listing_prices: "Prices",
   listing_contact: "Contact", listing_photos: "Photos", listing_submit: "Publish listing",
   listing_preview: "Preview", listing_step1: "Basic info", listing_step2: "Details", listing_step3: "Contact & Photos",
+  contact_info: "Contact Info",
+  contact_phone: "Phone",
+  contact_show: "Show",
+  contact_call: "Call",
+  profile_info: "Profile Info",
+  about_me: "About me",
+  watch_videos: "Watch my videos →",
+  view_profile: "View profile",
   // Common UI
   common_save: "Save", common_cancel: "Cancel", common_close: "Close",
   common_back: "Back", common_loading: "Loading...", common_error: "Error",
@@ -468,6 +485,14 @@ const da: TranslationKeys = {
   listing_services: "Services", listing_languages: "Sprog", listing_prices: "Priser",
   listing_contact: "Kontakt", listing_photos: "Billeder", listing_submit: "Udgiv annonce",
   listing_preview: "Forhåndsvisning", listing_step1: "Basis info", listing_step2: "Detaljer", listing_step3: "Kontakt & Billeder",
+  contact_info: "Kontaktinfo",
+  contact_phone: "Telefon",
+  contact_show: "Vis",
+  contact_call: "Ring",
+  profile_info: "Profilinfo",
+  about_me: "Om mig",
+  watch_videos: "Se mine videoer →",
+  view_profile: "Se profil",
   // Common UI
   common_save: "Gem", common_cancel: "Annuller", common_close: "Luk",
   common_back: "Tilbage", common_loading: "Indlæser...", common_error: "Fejl",
@@ -698,6 +723,14 @@ const de: TranslationKeys = {
   verified_badge: "✓ Von RedLightAD verifiziert",
   filter_age_range: "Altersgruppe", filter_price_range: "Preisbereich",
   filter_verified_only: "Nur verifiziert", filter_with_video: "Mit Video", filter_apply: "Filter anwenden",
+  contact_info: "Kontaktinfo",
+  contact_phone: "Telefon",
+  contact_show: "Anzeigen",
+  contact_call: "Anrufen",
+  profile_info: "Profilinfo",
+  about_me: "Über mich",
+  watch_videos: "Meine Videos →",
+  view_profile: "Profil ansehen",
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -742,6 +775,14 @@ const fr: TranslationKeys = {
   listing_services: "Services", listing_languages: "Langues", listing_prices: "Tarifs",
   listing_contact: "Contact", listing_photos: "Photos", listing_submit: "Publier l'annonce",
   listing_preview: "Aperçu", listing_step1: "Info de base", listing_step2: "Détails", listing_step3: "Contact & Photos",
+  contact_info: "Contact",
+  contact_phone: "Téléphone",
+  contact_show: "Afficher",
+  contact_call: "Appeler",
+  profile_info: "Profil",
+  about_me: "À propos",
+  watch_videos: "Voir mes vidéos →",
+  view_profile: "Voir le profil",
   common_save: "Enregistrer", common_cancel: "Annuler", common_close: "Fermer",
   common_back: "Retour", common_loading: "Chargement...", common_error: "Erreur",
   common_send: "Envoyer", common_edit: "Modifier", common_add: "Ajouter",
@@ -902,6 +943,14 @@ const es = makeSimple({
   verified_badge: "✓ Verificado por RedLightAD",
   filter_age_range: "Rango de edad", filter_price_range: "Rango de precio",
   filter_verified_only: "Solo verificados", filter_with_video: "Con video", filter_apply: "Aplicar filtros",
+  contact_info: "Contacto",
+  contact_phone: "Teléfono",
+  contact_show: "Mostrar",
+  contact_call: "Llamar",
+  profile_info: "Perfil",
+  about_me: "Sobre mí",
+  watch_videos: "Ver mis vídeos →",
+  view_profile: "Ver perfil",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -978,6 +1027,14 @@ const it = makeSimple({
   verified_badge: "✓ Verificato da RedLightAD",
   filter_age_range: "Fascia d'età", filter_price_range: "Fascia di prezzo",
   filter_verified_only: "Solo verificati", filter_with_video: "Con video", filter_apply: "Applica filtri",
+  contact_info: "Contatti",
+  contact_phone: "Telefono",
+  contact_show: "Mostra",
+  contact_call: "Chiama",
+  profile_info: "Profilo",
+  about_me: "Su di me",
+  watch_videos: "Guarda i miei video →",
+  view_profile: "Vedi profilo",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1054,6 +1111,14 @@ const pt = makeSimple({
   verified_badge: "✓ Verificado pelo RedLightAD",
   filter_age_range: "Faixa etária", filter_price_range: "Faixa de preço",
   filter_verified_only: "Apenas verificados", filter_with_video: "Com vídeo", filter_apply: "Aplicar filtros",
+  contact_info: "Contato",
+  contact_phone: "Telefone",
+  contact_show: "Mostrar",
+  contact_call: "Ligar",
+  profile_info: "Perfil",
+  about_me: "Sobre mim",
+  watch_videos: "Ver meus vídeos →",
+  view_profile: "Ver perfil",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1130,6 +1195,14 @@ const nl = makeSimple({
   verified_badge: "✓ Geverifieerd door RedLightAD",
   filter_age_range: "Leeftijdsgroep", filter_price_range: "Prijsbereik",
   filter_verified_only: "Alleen geverifieerd", filter_with_video: "Met video", filter_apply: "Filters toepassen",
+  contact_info: "Contact",
+  contact_phone: "Telefoon",
+  contact_show: "Tonen",
+  contact_call: "Bellen",
+  profile_info: "Profiel",
+  about_me: "Over mij",
+  watch_videos: "Mijn video's →",
+  view_profile: "Profiel bekijken",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1206,6 +1279,14 @@ const sv = makeSimple({
   verified_badge: "✓ Verifierad av RedLightAD",
   filter_age_range: "Åldersgrupp", filter_price_range: "Prisintervall",
   filter_verified_only: "Endast verifierade", filter_with_video: "Med video", filter_apply: "Tillämpa filter",
+  contact_info: "Kontaktinfo",
+  contact_phone: "Telefon",
+  contact_show: "Visa",
+  contact_call: "Ring",
+  profile_info: "Profilinfo",
+  about_me: "Om mig",
+  watch_videos: "Se videor →",
+  view_profile: "Se profil",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1282,6 +1363,14 @@ const no = makeSimple({
   verified_badge: "✓ Verifisert av RedLightAD",
   filter_age_range: "Aldersgruppe", filter_price_range: "Prisintervall",
   filter_verified_only: "Kun verifiserte", filter_with_video: "Med video", filter_apply: "Bruk filtre",
+  contact_info: "Kontaktinfo",
+  contact_phone: "Telefon",
+  contact_show: "Vis",
+  contact_call: "Ring",
+  profile_info: "Profilinfo",
+  about_me: "Om meg",
+  watch_videos: "Se videoer →",
+  view_profile: "Se profil",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1359,6 +1448,14 @@ const ar = makeSimple({
   verified_badge: "✓ موثّق من RedLightAD",
   filter_age_range: "الفئة العمرية", filter_price_range: "نطاق السعر",
   filter_verified_only: "الموثّقون فقط", filter_with_video: "مع فيديو", filter_apply: "تطبيق الفلاتر",
+  contact_info: "معلومات الاتصال",
+  contact_phone: "هاتف",
+  contact_show: "إظهار",
+  contact_call: "اتصال",
+  profile_info: "معلومات الملف",
+  about_me: "عني",
+  watch_videos: "شاهد مقاطع الفيديو →",
+  view_profile: "عرض الملف",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1435,6 +1532,14 @@ const th = makeSimple({
   verified_badge: "✓ ยืนยันโดย RedLightAD",
   filter_age_range: "ช่วงอายุ", filter_price_range: "ช่วงราคา",
   filter_verified_only: "เฉพาะที่ยืนยันแล้ว", filter_with_video: "มีวิดีโอ", filter_apply: "ใช้ตัวกรอง",
+  contact_info: "ข้อมูลติดต่อ",
+  contact_phone: "โทรศัพท์",
+  contact_show: "แสดง",
+  contact_call: "โทร",
+  profile_info: "ข้อมูลโปรไฟล์",
+  about_me: "เกี่ยวกับฉัน",
+  watch_videos: "ดูวิดีโอของฉัน →",
+  view_profile: "ดูโปรไฟล์",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1512,6 +1617,14 @@ const ru = makeSimple({
   verified_badge: "✓ Подтверждён RedLightAD",
   filter_age_range: "Возрастная группа", filter_price_range: "Ценовой диапазон",
   filter_verified_only: "Только подтверждённые", filter_with_video: "С видео", filter_apply: "Применить фильтры",
+  contact_info: "Контакты",
+  contact_phone: "Телефон",
+  contact_show: "Показать",
+  contact_call: "Позвонить",
+  profile_info: "Профиль",
+  about_me: "Обо мне",
+  watch_videos: "Смотреть мои видео →",
+  view_profile: "Смотреть профиль",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1589,6 +1702,14 @@ const pl = makeSimple({
   verified_badge: "✓ Zweryfikowany przez RedLightAD",
   filter_age_range: "Przedział wiekowy", filter_price_range: "Przedział cenowy",
   filter_verified_only: "Tylko zweryfikowani", filter_with_video: "Z filmem", filter_apply: "Zastosuj filtry",
+  contact_info: "Kontakt",
+  contact_phone: "Telefon",
+  contact_show: "Pokaż",
+  contact_call: "Zadzwoń",
+  profile_info: "Profil",
+  about_me: "O mnie",
+  watch_videos: "Zobacz moje filmy →",
+  view_profile: "Zobacz profil",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────

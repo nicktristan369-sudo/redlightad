@@ -1,4 +1,5 @@
 "use client"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 import { useState } from "react"
 import { Play, Lock, Heart, Eye, X, ShoppingCart } from "lucide-react"
@@ -239,6 +240,7 @@ function VideoCard({ video, onClick }: { video: Video; onClick: () => void }) {
 
 // ── Main VideoSection ───────────────────────────────────────────────
 export default function VideoSection({ videos, isLoggedIn, listingId, currentUserId }: VideoSectionProps) {
+  const { t } = useLanguage();
   const [activeVideo, setActiveVideo] = useState<Video | null>(null)
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set())
 
@@ -280,7 +282,7 @@ export default function VideoSection({ videos, isLoggedIn, listingId, currentUse
           onClick={() => videos[0] && handleOpen(videos[0])}
           className="mt-4 w-full py-3 rounded text-sm font-semibold text-white text-center transition-opacity hover:opacity-90"
           style={{ background: "#DC2626" }}>
-          WATCH MY VIDEOS →
+          {t.watch_videos}
         </button>
       </div>
 

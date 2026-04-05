@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Phone, Mail, MessageCircle } from "lucide-react"
 import { ContactModal } from "@/components/ContactModal"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface ContactInfo {
   phone?: string | null
@@ -33,6 +34,7 @@ function TelegramIcon() {
 
 // ── Main component ─────────────────────────────────────────────
 export default function ContactSection({ contact }: { contact: ContactInfo }) {
+  const { t } = useLanguage()
   const [modalOpen, setModalOpen] = useState(false)
 
   const hasPhone = !!(contact.phone || contact.whatsapp)
@@ -47,7 +49,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
       <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
         {/* Header */}
         <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-[15px] font-bold text-gray-900">Contact Info</h3>
+          <h3 className="text-[15px] font-bold text-gray-900">{t.contact_info}</h3>
         </div>
 
         <div className="divide-y divide-gray-50">
@@ -61,11 +63,11 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 <Phone size={15} color="#DC2626" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Telefon</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t.contact_phone}</p>
                 <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
               </div>
               <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: "#DC2626" }}>
-                SHOW
+                {t.contact_show}
               </span>
             </button>
           )}
@@ -105,7 +107,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
               </div>
               <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: "#25D366" }}>
-                SHOW
+                {t.contact_show}
               </span>
             </button>
           )}
