@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { v2 as cloudinary } from "cloudinary"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 export async function POST(req: NextRequest) {
   const { url, listingId } = await req.json()
@@ -41,13 +42,16 @@ export async function POST(req: NextRequest) {
 
   const path = storagePath
 
-  const { error } = await supabase.storage
-    .from("media")
-    .upload(path, buffer!, { contentType, upsert: true })
+  // Upload til Cloudinary som video
+  const publicUrl = await new Promise<string>((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      { resource_type: "video", folder: "redlightad/videos", use_filename: false },
+      (err, result) => {
+        if (err || !result) reject(err || new Error("Upload failed"))
+        else resolve(result.secure_url)
+      }
+    ).end(buffer!)
+  })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path)
-
-  return NextResponse.json({ url: publicUrl, path })
+  return NextResponse.json({ url: publicUrl })
 }
