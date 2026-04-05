@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   Tag,
   Zap,
+  Eye,
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
@@ -26,8 +27,6 @@ const OnboardingPopup = dynamic(() => import("@/components/OnboardingPopup"), { 
 
 const NAV_ITEMS = [
   { href: "/dashboard",                label: "Oversigt",            icon: LayoutDashboard },
-  { href: "/dashboard/annoncer",       label: "Mine annoncer",       icon: FileText },
-  { href: "/opret-annonce",            label: "Opret annonce",       icon: Plus },
   { href: "/dashboard/beskeder",       label: "Beskeder",            icon: MessageSquare },
   { href: "/dashboard/locked-content", label: "Eksklusivt indhold",  icon: Lock },
   { href: "/dashboard/marketplace",    label: "Sælg på Marketplace", icon: Tag },
@@ -45,6 +44,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [loading, setLoading] = useState(true)
   const [totalUnread, setTotalUnread] = useState(0)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [listingId, setListingId] = useState<string | null>(null)
+  const [listingChecked, setListingChecked] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -60,6 +61,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         return
       }
       setEmail(user.email ?? null)
+
+      // Tjek om brugeren har en eksisterende listing
+      const { data: listing } = await supabase
+        .from("listings")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .limit(1)
+        .single()
+      setListingId(listing?.id ?? null)
+      setListingChecked(true)
 
       const { data: adminStatus } = await supabase.rpc("get_my_admin_status")
       setIsAdmin(!!adminStatus)
@@ -93,8 +105,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
+  const dynamicItems = listingChecked
+    ? listingId
+      ? [
+          { href: `/dashboard/annoncer/${listingId}/edit`, label: "Min profil", icon: FileText },
+          { href: `/ads/${listingId}`, label: "Forhåndsvisning", icon: Eye, target: "_blank" as const },
+        ]
+      : [
+          { href: "/opret-annonce", label: "Opret profil", icon: Plus },
+        ]
+    : []
+
   const allNavItems = [
-    ...NAV_ITEMS,
+    NAV_ITEMS[0], // Oversigt
+    ...dynamicItems,
+    ...NAV_ITEMS.slice(1),
     ...(isAdmin ? [{ href: "/admin", label: "Admin panel", icon: Shield }] : []),
   ]
   const bottomNavItems = NAV_ITEMS.slice(0, 5)
@@ -130,10 +155,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 ? pathname.startsWith(item.href)
                 : pathname === item.href
             const Icon = item.icon
+            const target = "target" in item ? (item as { target?: string }).target : undefined
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                {...(target ? { target, rel: "noopener noreferrer" } : {})}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors group relative"
                 style={{
                   background: isActive ? "#000" : "transparent",

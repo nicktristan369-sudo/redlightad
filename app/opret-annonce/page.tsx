@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { createClient } from "@/lib/supabase";
 import LocationSelector from "@/components/LocationSelector";
@@ -64,10 +65,29 @@ const GENDER_LABELS: Record<string, Record<string, string>> = {
 const LANGUAGE_OPTIONS = ["Dansk", "Engelsk", "Tysk", "Fransk", "Spansk"];
 
 export default function OpretAnnoncePage() {
+  const router = useRouter()
   const { t, locale } = useLanguage()
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [redirecting, setRedirecting] = useState(true);
+
+  useEffect(() => {
+    const checkExisting = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setRedirecting(false); return; }
+      const { data: listing } = await supabase
+        .from("listings").select("id").eq("user_id", user.id).eq("status", "active").limit(1).single();
+      if (listing?.id) {
+        alert("Du har allerede en profil. Rediger den her.");
+        router.replace(`/dashboard/annoncer/${listing.id}/edit`);
+        return;
+      }
+      setRedirecting(false);
+    };
+    checkExisting();
+  }, [router]);
   const [success, setSuccess] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -279,6 +299,14 @@ export default function OpretAnnoncePage() {
     { num: 2, label: "Detaljer" },
     { num: 3, label: "Kontakt & Billeder" },
   ];
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-7 h-7 border-2 border-black border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (success) {
     return (

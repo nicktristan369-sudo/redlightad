@@ -1,7 +1,8 @@
 "use client"
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSearchParams } from "next/navigation"
+import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
@@ -52,6 +53,17 @@ function DashboardContent() {
   const searchParams = useSearchParams()
   const upgraded = searchParams.get("upgraded")
   const tier = searchParams.get("tier")
+  const [listingId, setListingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { data: listing } = await supabase
+        .from("listings").select("id").eq("user_id", user.id).eq("status", "active").limit(1).single()
+      setListingId(listing?.id ?? null)
+    })
+  }, [])
 
   return (
     <DashboardLayout>
@@ -92,16 +104,39 @@ function DashboardContent() {
         <div className="bg-white p-6 mb-6"
           style={{ border: "1px solid #E5E5E5", borderRadius: "12px" }}>
           <h2 className="text-[15px] font-semibold text-gray-900 mb-4">Hurtige handlinger</h2>
-          <div className="flex flex-wrap gap-3">
-            <QuickBtn href="/opret-annonce" style="black">Opret ny annonce</QuickBtn>
-            <QuickBtn href="/dashboard/annoncer" style="outline">Se mine annoncer</QuickBtn>
-            <QuickBtn href="/upgrade" style="gold">Opgrader til Premium</QuickBtn>
-            <QuickBtn href="/dashboard/stories" style="outline">{t.dash_stories}</QuickBtn>
-            <QuickBtn href="/dashboard/travel" style="outline">{t.dash_travel}</QuickBtn>
-            <QuickBtn href="/dashboard/marketplace" style="outline">{t.dash_marketplace}</QuickBtn>
-            <QuickBtn href="/dashboard/earnings" style="outline">{t.dash_earnings}</QuickBtn>
-            <QuickBtn href="/dashboard/verify" style="outline">{t.dash_verification}</QuickBtn>
-          </div>
+          {listingId !== null ? (
+            <div className="flex flex-wrap gap-3">
+              <QuickBtn href={`/dashboard/annoncer/${listingId}/edit`} style="black">Rediger min profil</QuickBtn>
+              <Link
+                href={`/ads/${listingId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-2.5 rounded-lg text-[13px] font-semibold inline-block transition-colors duration-200"
+                style={{ background: "#fff", border: "1px solid #000", color: "#000" }}
+              >
+                Forhåndsvisning
+              </Link>
+              <QuickBtn href="/dashboard/boost" style="gold">Premium &amp; Boost</QuickBtn>
+              <QuickBtn href="/dashboard/stories" style="outline">{t.dash_stories}</QuickBtn>
+              <QuickBtn href="/dashboard/travel" style="outline">{t.dash_travel}</QuickBtn>
+              <QuickBtn href="/dashboard/marketplace" style="outline">{t.dash_marketplace}</QuickBtn>
+              <QuickBtn href="/dashboard/earnings" style="outline">{t.dash_earnings}</QuickBtn>
+              <QuickBtn href="/dashboard/verify" style="outline">{t.dash_verification}</QuickBtn>
+            </div>
+          ) : (
+            <div>
+              <Link
+                href="/opret-annonce"
+                className="px-8 py-4 rounded-lg text-[15px] font-semibold inline-block transition-colors duration-200"
+                style={{ background: "#CC0000", color: "#fff" }}
+              >
+                Opret din profil
+              </Link>
+              <p className="text-[13px] text-gray-500 mt-3">
+                Du har endnu ikke oprettet din profil. Kom i gang nu!
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
