@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     result = parseGeneric($, url)
   }
 
-  // Return both flat format (for Step 2 import) and nested profile format (for Step 1 handleScrape)
+  // Return both flat format (Step 2 import) and nested profile format (Step 1 handleScrape)
   return NextResponse.json({
     ...result,
     profile: {
@@ -77,12 +77,17 @@ export async function POST(req: NextRequest) {
       age: result.age ? parseInt(result.age as string) || null : null,
       location: result.city,
       city: result.city,
-      country: result.nationality || "",
+      country: (result.nationality as string) || "",
       nationality: result.nationality,
       phone: result.phone,
+      telegram: result.telegram,
       description: result.description,
       height: result.height,
       weight: result.weight,
+      languages: result.languages,
+      services: result.services,
+      ethnicity: result.ethnicity,
+      video_url: result.video,
       images: result.images,
     }
   })
@@ -92,22 +97,54 @@ function parseEuroGirlsEscort($: CheerioDoc, url: string) {
   const name = $("h1").first().text().trim() ||
     $("[class*=name]").first().text().trim()
 
-  const age = $("[class*=age]").first().text().replace(/\D/g, "").trim()
+  // Description/bio — find "Hello!" text block
+  let description = ""
+  $("p span, p").each((_i, el) => {
+    const txt = $(el).text().trim()
+    if (txt.length > 80 && !description) description = txt
+  })
+  description = description.slice(0, 2000)
 
-  const city = $("[class*=city]").first().text().trim() ||
-    $("[class*=location]").first().text().trim()
+  // Profile attributes from rows: <span>Label:</span><strong>Value</strong>
+  const attrs: Record<string, string> = {}
+  $("div.row, tr").each((_i, el) => {
+    const label = $(el).find("span").first().text().replace(":", "").trim().toLowerCase()
+    const value = $(el).find("strong").first().text().trim()
+    if (label && value) attrs[label] = value
+  })
 
-  const phone = $("a[href^='tel:']").first().attr("href")?.replace("tel:", "") ||
-    $("[class*=phone]").first().text().trim()
+  // Also parse <span>Label:</span><strong>Value</strong> pattern directly
+  $("span").each((_i, el) => {
+    const txt = $(el).text().trim()
+    if (txt.endsWith(":")) {
+      const label = txt.slice(0, -1).toLowerCase()
+      const value = $(el).next("strong").text().trim() || $(el).parent().find("strong").first().text().trim()
+      if (value && !attrs[label]) attrs[label] = value
+    }
+  })
 
-  const description = $("[class*=description]").first().text().trim().slice(0, 2000) ||
-    $("[class*=about]").first().text().trim().slice(0, 2000) ||
-    $("[class*=bio]").first().text().trim().slice(0, 2000)
+  const age = attrs["age"] || $("[class*=age]").first().text().replace(/\D/g, "").trim()
+  const city = attrs["city"] || attrs["location"]?.split("/")[0]?.trim() || ""
+  const nationality = attrs["nationality"] || ""
+  const height = attrs["height"]?.match(/\d+/)?.[0] || ""
+  const weight = attrs["weight"]?.match(/\d+/)?.[0] || ""
+  const languages = attrs["languages"] || ""
+  const services = attrs["services"] || ""
+  const ethnicity = attrs["ethnicity"] || ""
+  const available = attrs["available for"] || ""
 
-  const height = $("[class*=height]").first().text().replace(/\D/g, "").trim()
-  const weight = $("[class*=weight]").first().text().replace(/\D/g, "").trim()
-  const nationality = $("[class*=nation]").first().text().trim() ||
-    $("[class*=country]").first().text().trim()
+  // Phone — partially visible in span.opacity-horizontal, encrypted in data-phone
+  const phonePartial = $(".opacity-horizontal").first().text().replace(/\u00a0/g, "").trim()
+  const phone = phonePartial || ""
+
+  // Telegram — data-telegram attribute
+  const telegram = $("[data-telegram]").first().attr("data-telegram") || ""
+
+  // WhatsApp — check if WhatsApp icon exists
+  const hasWhatsapp = $(".icon-whatsapp, [class*=whatsapp]").length > 0
+
+  // Video URL — data-video attribute
+  const video = $("[data-video]").first().attr("data-video") || ""
 
   const images: string[] = []
   const adDomains = ["escortmodels", "escortmod", "banner", "advert", "sponsor", "affiliate", "promo"]
@@ -130,7 +167,7 @@ function parseEuroGirlsEscort($: CheerioDoc, url: string) {
     })
   }
 
-  return { name, age, city, phone, description, images: images.slice(0, 10), height, weight, nationality, source_url: url }
+  return { name, age, city, phone, telegram, hasWhatsapp, description, images: images.slice(0, 10), video, height, weight, nationality, languages, services, ethnicity, available, source_url: url }
 }
 
 function parseGeneric($: CheerioDoc, url: string) {
