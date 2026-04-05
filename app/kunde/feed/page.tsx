@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import KundeLayout from "@/components/KundeLayout"
 import Link from "next/link"
+import { Heart } from "lucide-react"
 
 interface FeedItem {
   id: string
@@ -19,7 +20,7 @@ function timeAgo(iso: string) {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
   if (diff < 60) return `${diff}s`
   if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}t`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
   return `${Math.floor(diff / 86400)}d`
 }
 
@@ -32,21 +33,21 @@ export default function KundeFeed() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
-      // Hent følgeliste
+      // Get follow list
       const { data: follows } = await supabase
         .from("customer_follows")
         .select("listing_id, listings(id, title, profile_image)")
         .eq("customer_id", user.id)
       const followList = (follows ?? []).map((f: any) => ({
         listing_id: f.listing_id,
-        name: f.listings?.title || "Ukendt",
+        name: f.listings?.title || "Unknown",
         image: f.listings?.profile_image || null,
       }))
       setFollowing(followList)
 
       if (followList.length === 0) { setLoading(false); return }
 
-      // Hent feed fra fulgte profiler
+      // Get feed from followed profiles
       const ids = followList.map(f => f.listing_id)
       const { data: videos } = await supabase.from("listing_videos")
         .select("id, listing_id, url, created_at, listings(title, profile_image)")
@@ -73,8 +74,8 @@ export default function KundeFeed() {
   return (
     <KundeLayout>
       <div style={{ maxWidth: 600 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>Mit Feed</h1>
-        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Indhold fra profiler du følger</p>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>My Feed</h1>
+        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Content from profiles you follow</p>
 
         {/* Following row */}
         {following.length > 0 && (
@@ -98,16 +99,18 @@ export default function KundeFeed() {
           </div>
         ) : following.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 20px" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>💔</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 8 }}>Du følger ingen endnu</h2>
-            <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 20 }}>Besøg en profil og tryk "Følg" for at se deres indhold her</p>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}>
+              <Heart size={40} color="#9CA3AF" />
+            </div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 8 }}>You are not following anyone yet</h2>
+            <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 20 }}>Visit a profile and click "Follow" to see their content here</p>
             <Link href="/" style={{ display: "inline-block", padding: "10px 20px", background: "#000", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-              Gennemse profiler
+              Browse profiles
             </Link>
           </div>
         ) : feed.length === 0 ? (
           <div style={{ textAlign: "center", padding: "32px 20px", color: "#9CA3AF", fontSize: 14 }}>
-            Ingen nyt indhold endnu fra profiler du følger
+            No new content yet from profiles you follow
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>

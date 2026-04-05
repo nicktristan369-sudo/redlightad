@@ -36,7 +36,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
       if (!user) return
       setUserId(user.id)
 
-      // Hent conversation info
+      // Get conversation info
       const { data: c } = await supabase
         .from("conversations")
         .select("*, listings(title, profile_image)")
@@ -44,7 +44,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
         .single()
       setConv(c)
 
-      // Hent alle beskeder
+      // Get all messages
       const { data: msgs } = await supabase
         .from("messages")
         .select("*")
@@ -53,7 +53,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
       setMessages(msgs || [])
       setLoading(false)
 
-      // Marker som læst
+      // Mark as read
       await supabase.from("conversations")
         .update({ customer_unread: 0 })
         .eq("id", convId)
@@ -78,7 +78,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
     return () => { supabase.removeChannel(channel) }
   }, [convId])
 
-  // Scroll til bunden ved nye beskeder
+  // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
@@ -103,10 +103,10 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
     setSending(false)
   }
 
-  const fmt = (ts: string) => new Date(ts).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-  const fmtDate = (ts: string) => new Date(ts).toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })
+  const fmt = (ts: string) => new Date(ts).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+  const fmtDate = (ts: string) => new Date(ts).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })
 
-  // Gruppér beskeder per dag
+  // Group messages per day
   const grouped: { date: string; msgs: Message[] }[] = []
   for (const m of messages) {
     const d = fmtDate(m.created_at)
@@ -118,7 +118,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
   }
 
   const profileImg = conv?.listings?.profile_image || null
-  const profileTitle = conv?.listings?.title || "Profil"
+  const profileTitle = conv?.listings?.title || "Profile"
   const profileHref = conv?.listing_id ? `/ads/${conv.listing_id}` : null
 
   return (
@@ -128,7 +128,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexShrink: 0 }}>
           <Link href="/kunde/beskeder" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#9CA3AF", textDecoration: "none", fontWeight: 600 }}>
-            <ArrowLeft size={16} /> Tilbage
+            <ArrowLeft size={16} /> Back
           </Link>
           {profileHref ? (
             <Link href={profileHref} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flex: 1 }}>
@@ -141,7 +141,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
               </div>
               <div>
                 <p style={{ fontSize: 14, fontWeight: 800, color: "#111", margin: 0 }}>{profileTitle}</p>
-                <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>Se profil →</p>
+                <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>View profile</p>
               </div>
             </Link>
           ) : (
@@ -163,12 +163,12 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
               </div>
             ) : messages.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                <p style={{ fontSize: 13, color: "#9CA3AF" }}>Start samtalen — din første besked er allerede sendt</p>
+                <p style={{ fontSize: 13, color: "#9CA3AF" }}>Start the conversation — your first message has already been sent</p>
               </div>
             ) : (
               grouped.map(({ date, msgs }) => (
                 <div key={date}>
-                  {/* Dato-separator */}
+                  {/* Date separator */}
                   <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0" }}>
                     <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
                     <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, textTransform: "capitalize" }}>{date}</span>
@@ -217,7 +217,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
               value={msg}
               onChange={e => setMsg(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Skriv en besked..."
+              placeholder="Write a message..."
               rows={1}
               style={{ flex: 1, padding: "10px 14px", fontSize: 14, border: "1px solid #E5E7EB", borderRadius: 24, outline: "none", resize: "none", background: "#F9FAFB", lineHeight: 1.4, maxHeight: 120, overflowY: "auto", boxSizing: "border-box" }}
               onInput={e => {

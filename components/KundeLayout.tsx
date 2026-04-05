@@ -9,13 +9,13 @@ import {
 } from "lucide-react"
 
 const NAV = [
-  { href: "/kunde",           label: "Oversigt",   icon: LayoutDashboard },
-  { href: "/kunde/feed",      label: "Feed",        icon: Heart },
-  { href: "/kunde/beskeder",  label: "Beskeder",    icon: MessageSquare },
-  { href: "/kunde/mine-kob",  label: "Mine køb",    icon: ShoppingBag },
-  { href: "/kunde/coins",     label: "RedCoins",    icon: Coins },
-  { href: "/kunde/profil",    label: "Min profil",  icon: User },
-  { href: "/kunde/verify",    label: "Verificer",   icon: Shield },
+  { href: "/kunde",           label: "Overview",     icon: LayoutDashboard },
+  { href: "/kunde/feed",      label: "Feed",          icon: Heart },
+  { href: "/kunde/beskeder",  label: "Messages",      icon: MessageSquare },
+  { href: "/kunde/mine-kob",  label: "My Purchases",  icon: ShoppingBag },
+  { href: "/kunde/coins",     label: "RedCoins",      icon: Coins },
+  { href: "/kunde/profil",    label: "My Profile",    icon: User },
+  { href: "/kunde/verify",    label: "Verify",        icon: Shield },
 ]
 
 export default function KundeLayout({ children }: { children: React.ReactNode }) {
@@ -38,11 +38,11 @@ export default function KundeLayout({ children }: { children: React.ReactNode })
       supabase.from("customer_profiles").select("*").eq("user_id", user.id).single()
         .then(({ data }) => {
           if (data) {
-            setDisplayName(data.username || user.email?.split("@")[0] || "Kunde")
+            setDisplayName(data.username || user.email?.split("@")[0] || "Customer")
             setAvatar(data.avatar_url)
             setCoins(data.redcoins || 0)
           } else {
-            setDisplayName(user.email?.split("@")[0] || "Kunde")
+            setDisplayName(user.email?.split("@")[0] || "Customer")
           }
         })
     })
@@ -60,7 +60,7 @@ export default function KundeLayout({ children }: { children: React.ReactNode })
       <div style={{ padding: "20px 20px 12px" }}>
         <Logo variant="dark" height={22} />
         <div style={{ marginTop: 4, fontSize: 10, color: "#6B7280", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-          KUNDE PORTAL
+          CUSTOMER PORTAL
         </div>
       </div>
 
@@ -72,7 +72,7 @@ export default function KundeLayout({ children }: { children: React.ReactNode })
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
-            <div style={{ fontSize: 11, color: "#6B7280" }}>Privat konto</div>
+            <div style={{ fontSize: 11, color: "#6B7280" }}>Private account</div>
           </div>
         </div>
         {/* RedCoins */}
@@ -80,7 +80,7 @@ export default function KundeLayout({ children }: { children: React.ReactNode })
           <span style={{ fontSize: 14 }}>🔴</span>
           <span style={{ fontSize: 12, fontWeight: 700, color: "#DC2626" }}>{coins.toLocaleString()}</span>
           <span style={{ fontSize: 11, color: "#6B7280" }}>RedCoins</span>
-          <Link href="/kunde/coins" style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: "#DC2626", textDecoration: "none" }}>+ Køb</Link>
+          <Link href="/kunde/coins" style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: "#DC2626", textDecoration: "none" }}>+ Buy</Link>
         </div>
       </div>
 
@@ -113,7 +113,7 @@ export default function KundeLayout({ children }: { children: React.ReactNode })
           transition: "color 0.15s",
         }}>
           <LogOut size={16} />
-          Log ud
+          Sign out
         </button>
       </div>
     </div>

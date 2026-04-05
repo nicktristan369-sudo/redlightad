@@ -4,7 +4,6 @@ import Link from "next/link"
 import { MessageSquare } from "lucide-react"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
-import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface Conv {
   id: string
@@ -18,7 +17,6 @@ interface Conv {
 }
 
 export default function KundeBeskeder() {
-  const { t } = useLanguage()
   const [convos, setConvos] = useState<Conv[]>([])
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -41,16 +39,16 @@ export default function KundeBeskeder() {
   const fmt = (ts: string) => {
     const d = new Date(ts)
     const diffH = (Date.now() - d.getTime()) / 3600000
-    if (diffH < 24) return d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-    if (diffH < 168) return d.toLocaleDateString("da-DK", { weekday: "short" })
-    return d.toLocaleDateString("da-DK", { day: "numeric", month: "short" })
+    if (diffH < 24) return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+    if (diffH < 168) return d.toLocaleDateString("en-US", { weekday: "short" })
+    return d.toLocaleDateString("en-US", { day: "numeric", month: "short" })
   }
 
   return (
     <KundeLayout>
       <div style={{ maxWidth: 600 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>{t.msg_title}</h1>
-        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>{t.msg_subtitle}</p>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>Messages</h1>
+        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Private conversations — only visible to you and the profile</p>
 
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB", overflow: "hidden" }}>
           {loading ? (
@@ -61,10 +59,10 @@ export default function KundeBeskeder() {
           ) : convos.length === 0 ? (
             <div style={{ padding: "48px 24px", textAlign: "center" }}>
               <MessageSquare size={36} color="#E5E7EB" style={{ margin: "0 auto 12px" }} />
-              <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 6 }}>{t.msg_no_convos}</p>
-              <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>{t.msg_no_convos_sub}</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 6 }}>No conversations yet</p>
+              <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Contact a profile to start a private conversation</p>
               <Link href="/" style={{ display: "inline-block", padding: "10px 20px", background: "#000", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-                {t.msg_find_profile}
+                Find a profile
               </Link>
             </div>
           ) : (
@@ -86,12 +84,12 @@ export default function KundeBeskeder() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
                       <p style={{ fontSize: 14, fontWeight: unread > 0 ? 800 : 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {c.listings?.title || "Profil"}
+                        {c.listings?.title || "Profile"}
                       </p>
                       <span style={{ fontSize: 11, color: "#9CA3AF", flexShrink: 0, marginLeft: 8 }}>{fmt(c.last_message_at)}</span>
                     </div>
                     <p style={{ fontSize: 12, color: unread > 0 ? "#374151" : "#9CA3AF", fontWeight: unread > 0 ? 600 : 400, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.last_message || t.msg_no_messages}
+                      {c.last_message || "No messages yet"}
                     </p>
                   </div>
                   {unread > 0 && (

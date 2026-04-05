@@ -58,7 +58,7 @@ export default function KundeVerify() {
 
   const handleSubmit = async () => {
     if (!userId || !fullName.trim() || !birthdate || !file) {
-      setError("Udfyld alle felter og upload et billede af dit ID")
+      setError("Please fill in all fields and upload a photo of your ID")
       return
     }
     setSubmitting(true)
@@ -70,7 +70,7 @@ export default function KundeVerify() {
       const { data: uploadData, error: uploadErr } = await supabase.storage
         .from("kyc-documents")
         .upload(path, file)
-      if (uploadErr || !uploadData) throw new Error("Upload fejlede")
+      if (uploadErr || !uploadData) throw new Error("Upload failed")
       const imageUrl = supabase.storage.from("kyc-documents").getPublicUrl(uploadData.path).data.publicUrl
 
       const { error: insertErr } = await supabase.from("customer_kyc_requests").insert({
@@ -84,7 +84,7 @@ export default function KundeVerify() {
       setStatus("pending")
       setKycData({ status: "pending", created_at: new Date().toISOString(), reviewed_at: null })
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Noget gik galt")
+      setError(e instanceof Error ? e.message : "Something went wrong")
     }
     setSubmitting(false)
   }
@@ -104,31 +104,31 @@ export default function KundeVerify() {
         {/* State: Not applied */}
         {status === "none" && (
           <>
-            <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>ID Verificering</h1>
-            <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Verificer din identitet og fa et tillids-badge pa din profil</p>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>ID Verification</h1>
+            <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Verify your identity and get a trust badge on your profile</p>
 
             {/* Privacy info */}
             <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "12px 16px", marginBottom: 24, display: "flex", alignItems: "flex-start", gap: 10 }}>
               <Shield size={16} color="#16A34A" style={{ flexShrink: 0, marginTop: 2 }} />
               <p style={{ fontSize: 12, color: "#166534", margin: 0, lineHeight: 1.6 }}>
-                Dine personlige oplysninger deles aldrig med andre brugere. Kun platformen ser dit ID. Verificerings-badget er det eneste der er synligt.
+                Your personal information is never shared with other users. Only the platform sees your ID. The verification badge is the only thing visible.
               </p>
             </div>
 
             {/* Form */}
             <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB", padding: 24 }}>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Fuldt navn</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Full name</label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  placeholder="Som det star pa dit ID"
+                  placeholder="As it appears on your ID"
                   style={{ width: "100%", padding: "10px 12px", fontSize: 14, border: "1px solid #E5E7EB", borderRadius: 8, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Fodselsdato</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Date of birth</label>
                 <input
                   type="date"
                   value={birthdate}
@@ -137,8 +137,8 @@ export default function KundeVerify() {
                 />
               </div>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Billede af ID</label>
-                <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 8px" }}>Pas, korekort eller nationalID — forside</p>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>ID photo</label>
+                <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 8px" }}>Passport, driver license or national ID — front side</p>
                 <label style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   padding: "14px", border: "2px dashed #E5E7EB", borderRadius: 10, cursor: "pointer",
@@ -146,7 +146,7 @@ export default function KundeVerify() {
                 }}>
                   <Upload size={18} color={file ? "#16A34A" : "#9CA3AF"} />
                   <span style={{ fontSize: 13, color: file ? "#16A34A" : "#6B7280", fontWeight: 600 }}>
-                    {file ? file.name : "Vaelg fil"}
+                    {file ? file.name : "Choose file"}
                   </span>
                   <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
                 </label>
@@ -164,11 +164,11 @@ export default function KundeVerify() {
                   borderRadius: 10, border: "none", fontSize: 14, fontWeight: 700, cursor: submitting ? "default" : "pointer",
                 }}
               >
-                {submitting ? "Sender..." : "Send ansogning"}
+                {submitting ? "Submitting..." : "Submit application"}
               </button>
 
               <p style={{ fontSize: 11, color: "#9CA3AF", textAlign: "center", marginTop: 12 }}>
-                Vi behandler din ansogning inden for 48 timer
+                We process your application within 48 hours
               </p>
             </div>
           </>
@@ -178,13 +178,13 @@ export default function KundeVerify() {
         {status === "pending" && (
           <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 14, padding: 28, textAlign: "center" }}>
             <Clock size={40} color="#D97706" style={{ margin: "0 auto 12px" }} />
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#92400E", margin: "0 0 8px" }}>Ansogning modtaget</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#92400E", margin: "0 0 8px" }}>Application received</h2>
             <p style={{ fontSize: 13, color: "#92400E", lineHeight: 1.6 }}>
-              Vi behandler din ansogning inden for 48 timer. Du far besked nar den er godkendt.
+              We are processing your application within 48 hours. You will be notified when approved.
             </p>
             {kycData?.created_at && (
               <p style={{ fontSize: 12, color: "#B45309", marginTop: 12 }}>
-                Indsendt: {new Date(kycData.created_at).toLocaleDateString("da-DK")}
+                Submitted: {new Date(kycData.created_at).toLocaleDateString("en-US")}
               </p>
             )}
           </div>
@@ -194,13 +194,13 @@ export default function KundeVerify() {
         {status === "approved" && (
           <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 14, padding: 28, textAlign: "center" }}>
             <CheckCircle size={40} color="#16A34A" style={{ margin: "0 auto 12px" }} />
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#166534", margin: "0 0 8px" }}>ID Verificeret</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#166534", margin: "0 0 8px" }}>ID Verified</h2>
             <p style={{ fontSize: 13, color: "#166534", lineHeight: 1.6 }}>
-              Dit verificerings-badge er synligt for alle profiler du kontakter
+              Your verification badge is visible to all profiles you contact
             </p>
             {kycData?.reviewed_at && (
               <p style={{ fontSize: 12, color: "#15803D", marginTop: 12 }}>
-                Godkendt: {new Date(kycData.reviewed_at).toLocaleDateString("da-DK")}
+                Approved: {new Date(kycData.reviewed_at).toLocaleDateString("en-US")}
               </p>
             )}
           </div>
@@ -210,9 +210,9 @@ export default function KundeVerify() {
         {status === "rejected" && (
           <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 14, padding: 28, textAlign: "center" }}>
             <X size={40} color="#DC2626" style={{ margin: "0 auto 12px" }} />
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#991B1B", margin: "0 0 8px" }}>Ansogning afvist</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#991B1B", margin: "0 0 8px" }}>Application rejected</h2>
             <p style={{ fontSize: 13, color: "#991B1B", lineHeight: 1.6, marginBottom: 16 }}>
-              Din ansogning blev afvist. Du kan indsende en ny.
+              Your application was rejected. You can submit a new one.
             </p>
             <button
               onClick={resetForm}
@@ -221,7 +221,7 @@ export default function KundeVerify() {
                 borderRadius: 8, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer",
               }}
             >
-              Indsend ny ansogning
+              Submit new application
             </button>
           </div>
         )}

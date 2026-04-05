@@ -20,9 +20,9 @@ interface Purchase {
 
 function timeAgo(iso: string) {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (diff < 3600) return `${Math.floor(diff / 60)} min. siden`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} t. siden`
-  return `${Math.floor(diff / 86400)} d. siden`
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
 }
 
 export default function MineKob() {
@@ -45,7 +45,7 @@ export default function MineKob() {
         .order("created_at", { ascending: false })
       setPurchases((data ?? []).map((p: any) => ({
         ...p,
-        listing_title: p.listings?.title || "Ukendt profil",
+        listing_title: p.listings?.title || "Unknown profile",
         listing_image: p.listings?.profile_image || null,
       })))
       setLoading(false)
@@ -55,8 +55,8 @@ export default function MineKob() {
   return (
     <KundeLayout>
       <div style={{ maxWidth: 680 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>Mine køb</h1>
-        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 24 }}>Indhold du har låst op med RedCoins</p>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4 }}>My Purchases</h1>
+        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 24 }}>Content unlocked with RedCoins</p>
 
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
@@ -66,10 +66,10 @@ export default function MineKob() {
         ) : purchases.length === 0 ? (
           <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB", padding: "52px 24px", textAlign: "center" }}>
             <Lock size={40} color="#E5E7EB" style={{ margin: "0 auto 16px" }} />
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 8 }}>Ingen køb endnu</h2>
-            <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 24 }}>Lås eksklusivt indhold op med RedCoins på profil-sider</p>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 8 }}>No purchases yet</h2>
+            <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 24 }}>Unlock exclusive content with RedCoins on profile pages</p>
             <Link href="/" style={{ display: "inline-block", padding: "10px 24px", background: "#000", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-              Gennemse profiler
+              Browse profiles
             </Link>
           </div>
         ) : (
