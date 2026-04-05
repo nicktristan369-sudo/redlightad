@@ -12,20 +12,19 @@ const METHOD_CONFIG = {
 }
 
 const CURRENCIES = [
-  { code: "EUR", symbol: "€",  cc: "eu" },
-  { code: "USD", symbol: "$",  cc: "us" },
-  { code: "DKK", symbol: "kr", cc: "dk" },
-  { code: "GBP", symbol: "£",  cc: "gb" },
-  { code: "THB", symbol: "฿",  cc: "th" },
-  { code: "NOK", symbol: "kr", cc: "no" },
+  { code: "EUR", symbol: "€",  fi: "eu" },
+  { code: "USD", symbol: "$",  fi: "us" },
+  { code: "DKK", symbol: "kr", fi: "dk" },
+  { code: "GBP", symbol: "£",  fi: "gb" },
+  { code: "THB", symbol: "฿",  fi: "th" },
+  { code: "NOK", symbol: "kr", fi: "no" },
 ]
 
-function FlagImg({ cc }: { cc: string }) {
+function FlagImg({ fi }: { fi: string }) {
   return (
-    <img
-      src={`https://flagcdn.com/w20/${cc}.png`}
-      alt={cc}
-      style={{ width: 18, height: 18, objectFit: "cover", borderRadius: 3, display: "inline-block", flexShrink: 0 }}
+    <span
+      className={`fi fi-${fi}`}
+      style={{ width: 18, height: 14, display: "inline-block", flexShrink: 0, borderRadius: 2 }}
     />
   )
 }
@@ -180,12 +179,12 @@ export default function PayMeBox({ listing, providerUserId }: { listing: any, pr
                     </div>
                     {!ratesLoading && rates && (
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px 16px" }}>
-                        {CURRENCIES.map(({ code, symbol, cc }) => {
+                        {CURRENCIES.map(({ code, symbol, fi }) => {
                           const rate = rates[code] ?? 1
                           const value = eurValue * rate
                           return (
                             <div key={code} style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                              <FlagImg cc={cc} />
+                              <FlagImg fi={fi} />
                               <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>
                                 {symbol}{value < 10 ? value.toFixed(2) : value.toFixed(0)}
                               </span>
