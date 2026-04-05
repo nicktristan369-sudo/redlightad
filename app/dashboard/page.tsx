@@ -1,5 +1,6 @@
 "use client"
 import { Suspense, useState } from "react"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSearchParams } from "next/navigation"
 import DashboardLayout from "@/components/DashboardLayout"
 import Link from "next/link"
@@ -47,6 +48,7 @@ function QuickBtn({
 }
 
 function DashboardContent() {
+  const { t } = useLanguage()
   const searchParams = useSearchParams()
   const upgraded = searchParams.get("upgraded")
   const tier = searchParams.get("tier")
@@ -94,11 +96,11 @@ function DashboardContent() {
             <QuickBtn href="/opret-annonce" style="black">Opret ny annonce</QuickBtn>
             <QuickBtn href="/dashboard/annoncer" style="outline">Se mine annoncer</QuickBtn>
             <QuickBtn href="/upgrade" style="gold">Opgrader til Premium</QuickBtn>
-            <QuickBtn href="/dashboard/stories" style="outline">Stories</QuickBtn>
-            <QuickBtn href="/dashboard/travel" style="outline">Travel Schedule</QuickBtn>
-            <QuickBtn href="/dashboard/marketplace" style="outline">My Marketplace</QuickBtn>
-            <QuickBtn href="/dashboard/earnings" style="outline">Earnings</QuickBtn>
-            <QuickBtn href="/dashboard/verify" style="outline">Verification</QuickBtn>
+            <QuickBtn href="/dashboard/stories" style="outline">{t.dash_stories}</QuickBtn>
+            <QuickBtn href="/dashboard/travel" style="outline">{t.dash_travel}</QuickBtn>
+            <QuickBtn href="/dashboard/marketplace" style="outline">{t.dash_marketplace}</QuickBtn>
+            <QuickBtn href="/dashboard/earnings" style="outline">{t.dash_earnings}</QuickBtn>
+            <QuickBtn href="/dashboard/verify" style="outline">{t.dash_verification}</QuickBtn>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { createClient } from "@/lib/supabase";
 import LocationSelector from "@/components/LocationSelector";
 import VoiceRecorder from "@/components/VoiceRecorder";
@@ -45,9 +46,25 @@ const SERVICE_OPTIONS = [
   "Weekend getaways",
 ];
 
+// Service label translations (key = English DB value)
+const SERVICE_LABELS: Record<string, Record<string, string>> = {
+  "Dinner dates":       { en:"Dinner dates", da:"Middagsaftaler", de:"Abendessen", fr:"Dîner en tête-à-tête", es:"Cenas románticas", it:"Cene romantiche", pt:"Jantares", nl:"Etentjes", sv:"Middagar", no:"Middager", ar:"عشاء رومانسي", th:"ทานอาหารค่ำ", ru:"Ужины", pl:"Kolacje" },
+  "Social events":      { en:"Social events", da:"Sociale arrangementer", de:"Gesellschaftliche Events", fr:"Événements sociaux", es:"Eventos sociales", it:"Eventi sociali", pt:"Eventos sociais", nl:"Sociale evenementen", sv:"Sociala evenemang", no:"Sosiale arrangementer", ar:"فعاليات اجتماعية", th:"งานสังคม", ru:"Социальные мероприятия", pl:"Imprezy towarzyskie" },
+  "Travel companion":   { en:"Travel companion", da:"Rejseledsager", de:"Reisebegleiterin", fr:"Compagnon de voyage", es:"Compañía de viaje", it:"Accompagnatrice viaggi", pt:"Acompanhante de viagem", nl:"Reisgezel", sv:"Ressällskap", no:"Reiseledsager", ar:"رفيق سفر", th:"เพื่อนร่วมเดินทาง", ru:"Попутчик", pl:"Towarzysz podróży" },
+  "Private meetings":   { en:"Private meetings", da:"Private møder", de:"Private Treffen", fr:"Rencontres privées", es:"Encuentros privados", it:"Incontri privati", pt:"Encontros privados", nl:"Privéafspraken", sv:"Privata möten", no:"Private møter", ar:"لقاءات خاصة", th:"การพบปะส่วนตัว", ru:"Приватные встречи", pl:"Prywatne spotkania" },
+  "Weekend getaways":   { en:"Weekend getaways", da:"Weekendture", de:"Wochenendausflüge", fr:"Escapades week-end", es:"Escapadas de fin de semana", it:"Fughe del weekend", pt:"Fugas de fim de semana", nl:"Weekenduitjes", sv:"Weekendresor", no:"Helgeturer", ar:"رحلات نهاية الأسبوع", th:"ทริปสุดสัปดาห์", ru:"Поездки на выходных", pl:"Weekendowe wyjazdy" },
+};
+
+const GENDER_LABELS: Record<string, Record<string, string>> = {
+  "Woman":          { en:"Woman", da:"Kvinde", de:"Frau", fr:"Femme", es:"Mujer", it:"Donna", pt:"Mulher", nl:"Vrouw", sv:"Kvinna", no:"Kvinne", ar:"امرأة", th:"ผู้หญิง", ru:"Женщина", pl:"Kobieta" },
+  "Man":            { en:"Man", da:"Mand", de:"Mann", fr:"Homme", es:"Hombre", it:"Uomo", pt:"Homem", nl:"Man", sv:"Man", no:"Mann", ar:"رجل", th:"ผู้ชาย", ru:"Мужчина", pl:"Mężczyzna" },
+  "Trans / Non-binary": { en:"Trans / Non-binary", da:"Trans / Non-binær", de:"Trans / Nicht-binär", fr:"Trans / Non-binaire", es:"Trans / No binario", it:"Trans / Non-binario", pt:"Trans / Não-binário", nl:"Trans / Niet-binair", sv:"Trans / Icke-binär", no:"Trans / Ikke-binær", ar:"ترانس", th:"ทรานส์", ru:"Транс / Небинарный", pl:"Trans / Niebinarne" },
+};
+
 const LANGUAGE_OPTIONS = ["Dansk", "Engelsk", "Tysk", "Fransk", "Spansk"];
 
 export default function OpretAnnoncePage() {
+  const { t, locale } = useLanguage()
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -416,7 +433,7 @@ export default function OpretAnnoncePage() {
                             : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
                         }`}
                       >
-                        {g}
+                        {GENDER_LABELS[g]?.[locale] ?? g}
                       </button>
                     ))}
                   </div>
@@ -501,7 +518,7 @@ export default function OpretAnnoncePage() {
                             : "border-gray-300 bg-white text-gray-600 hover:border-gray-400"
                         }`}
                       >
-                        {s}
+                        {SERVICE_LABELS[s]?.[locale] ?? s}
                       </button>
                     ))}
                   </div>
@@ -755,7 +772,7 @@ export default function OpretAnnoncePage() {
                 {/* ── SOCIAL MEDIA LINKS ── */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-base font-bold text-gray-900">Social Media Links</p>
+                    <p className="text-base font-bold text-gray-900">{t.social_media_links}</p>
                     {!["basic", "featured", "vip"].includes(userTier || "") && (
                       <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                         Låsning kræver premium
@@ -772,11 +789,11 @@ export default function OpretAnnoncePage() {
                 {/* Image upload area */}
                 {/* ── AVAILABILITY & OPENING HOURS ── */}
                 <div>
-                  <p className="text-base font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Availability & Opening Hours</p>
+                  <p className="text-base font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">{t.availability_hours}</p>
 
                   {/* Timezone */}
                   <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 block mb-1">Your Timezone</label>
+                    <label className="text-sm font-medium text-gray-700 block mb-1">{t.your_timezone}</label>
                     <select
                       value={timezone}
                       onChange={e => setTimezone(e.target.value)}
@@ -945,7 +962,7 @@ export default function OpretAnnoncePage() {
               <div className="mt-6 rounded-2xl border border-gray-200 p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                  <h3 className="font-semibold text-gray-900 text-sm">Voice Message</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm">{t.voice_message}</h3>
                   {!["premium", "featured", "vip"].includes(userTier || "") && (
                     <span className="ml-auto text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Premium only</span>
                   )}

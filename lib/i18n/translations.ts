@@ -120,15 +120,23 @@ export type TranslationKeys = {
   listing_contact: string
   listing_photos: string
   listing_submit: string
-  // Profile page
-  contact_info: string
-  contact_phone: string
-  contact_show: string
+  // Profile page (non-duplicates — contact_phone/contact_show/contact_info also in Contact Section below)
   contact_call: string
   profile_info: string
   about_me: string
   watch_videos: string
   view_profile: string
+  // Dashboard quick actions
+  dash_stories: string
+  dash_travel: string
+  dash_marketplace: string
+  dash_earnings: string
+  dash_verification: string
+  // Create listing
+  social_media_links: string
+  availability_hours: string
+  your_timezone: string
+  voice_message: string
   listing_preview: string
   listing_step1: string
   listing_step2: string
@@ -262,6 +270,188 @@ export type TranslationKeys = {
   filter_verified_only: string
   filter_with_video: string
   filter_apply: string
+
+  // ── Ad Sidebar ─────────────────────────────────────────────────────────────
+  sidebar_title: string
+  sidebar_age: string
+  sidebar_gender: string
+  sidebar_category: string
+  sidebar_location: string
+  sidebar_languages: string
+  sidebar_height: string
+  sidebar_weight: string
+  sidebar_ethnicity: string
+  sidebar_nationality: string
+  sidebar_orientation: string
+  sidebar_eyes: string
+  sidebar_hair_color: string
+  sidebar_hair_length: string
+  sidebar_pubic_hair: string
+  sidebar_bust_size: string
+  sidebar_bust_type: string
+  sidebar_smoker: string
+  sidebar_tattoo: string
+  sidebar_piercing: string
+  sidebar_available_for: string
+  sidebar_meeting_with: string
+  sidebar_travel: string
+
+  // ── Contact Section ────────────────────────────────────────────────────────
+  contact_title: string
+  contact_info: string
+  contact_phone: string
+  contact_show: string
+  contact_open: string
+
+  // ── Sticky Action Bar ──────────────────────────────────────────────────────
+  sticky_contact: string
+  sticky_review: string
+  sticky_message: string
+  sticky_report: string
+  sticky_send_msg: string
+  sticky_to: string
+  sticky_msg_sent: string
+  sticky_write_msg: string
+  sticky_contact_title: string
+  sticky_send_sms: string
+  sticky_platform_msg: string
+  sticky_platform_anonymous: string
+  sticky_create_free: string
+  sticky_create_account: string
+  sticky_login: string
+  sticky_report_title: string
+  sticky_report_body: string
+  sticky_describe_problem: string
+  sticky_send_report: string
+  sticky_report_received: string
+  sticky_write_review: string
+  sticky_review_body: string
+
+  // ── Photo Gallery ──────────────────────────────────────────────────────────
+  photo_free_account: string
+  photo_create_free_title: string
+  photo_see_all: string
+  photo_registration_free: string
+  photo_create_btn: string
+  photo_login: string
+
+  // ── Video Section ──────────────────────────────────────────────────────────
+  video_unlock: string
+  video_create_to_buy: string
+  video_processing: string
+  video_unlock_btn: string
+  video_buy_more: string
+  video_my_videos: string
+  video_count: string
+  video_count_plural: string
+  video_watch_all: string
+  video_insufficient: string
+  video_error: string
+  video_network_error: string
+
+  // ── Filter Bar ─────────────────────────────────────────────────────────────
+  filter_title: string
+  filter_sort: string
+  filter_premium_first: string
+  filter_newest: string
+  filter_oldest: string
+  filter_min: string
+  filter_max: string
+  filter_show_only: string
+  filter_premium_profiles: string
+  filter_has_video: string
+  filter_reset: string
+  filter_category: string
+  filter_location: string
+  filter_gender: string
+  filter_filters: string
+  filter_search_country: string
+  filter_all_cities: string
+  filter_no_results: string
+  filter_no_cities: string
+  filter_europe: string
+  filter_worldwide: string
+
+  // ── Register page ──────────────────────────────────────────────────────────
+  reg_step_of: string
+  reg_select_type: string
+  reg_choose_how: string
+  reg_create_profile: string
+  reg_for_providers: string
+  reg_provider_features: string
+  reg_post_listings: string
+  reg_receive_messages: string
+  reg_add_media: string
+  reg_voice_messages: string
+  reg_boost_visibility: string
+  reg_customer_account: string
+  reg_for_clients: string
+  reg_customer_features: string
+  reg_private_profile: string
+  reg_secure_messaging: string
+  reg_buy_redcoins: string
+  reg_unlock_content: string
+  reg_fill_details: string
+  reg_min_chars: string
+  reg_repeat_password: string
+  reg_agree_terms: string
+  reg_terms: string
+  reg_privacy: string
+  reg_age_confirm: string
+  reg_password_short: string
+  reg_password_mismatch: string
+  reg_verify_phone: string
+  reg_step3_desc: string
+  reg_phone_desc: string
+  reg_phone_number: string
+  reg_phone_invalid: string
+  reg_send_code: string
+  reg_sending: string
+  reg_skip: string
+  reg_code_sent_to: string
+  reg_enter_code: string
+  reg_verify_btn: string
+  reg_verifying: string
+  reg_change_number: string
+  reg_resend_in: string
+  reg_resend_code: string
+  reg_skip_verify: string
+  reg_account_created: string
+  reg_check_email: string
+  reg_go_login: string
+  reg_search_country: string
+  reg_sign_up: string
+
+  // ── Ad detail page ─────────────────────────────────────────────────────────
+  ad_not_found: string
+  ad_back_home: string
+  ad_home: string
+  ad_about_me: string
+  ad_services: string
+  ad_gallery: string
+  ad_photos: string
+  ad_private_content: string
+  ad_items: string
+  ad_report_profile: string
+  ad_copyright: string
+
+  // ── Extra common ───────────────────────────────────────────────────────────
+  common_next: string
+  common_done: string
+  common_delete: string
+  common_confirm: string
+  common_yes: string
+  common_no: string
+  common_try_again: string
+  common_share: string
+  common_view_all: string
+  common_see_more: string
+  common_show_less: string
+  common_sending: string
+  common_sent: string
+  common_copy: string
+  common_none: string
+  common_all: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -314,9 +504,6 @@ const en: TranslationKeys = {
   listing_services: "Services", listing_languages: "Languages", listing_prices: "Prices",
   listing_contact: "Contact", listing_photos: "Photos", listing_submit: "Publish listing",
   listing_preview: "Preview", listing_step1: "Basic info", listing_step2: "Details", listing_step3: "Contact & Photos",
-  contact_info: "Contact Info",
-  contact_phone: "Phone",
-  contact_show: "Show",
   contact_call: "Call",
   profile_info: "Profile Info",
   about_me: "About me",
@@ -433,6 +620,111 @@ const en: TranslationKeys = {
   filter_verified_only: "Verified only",
   filter_with_video: "With video",
   filter_apply: "Apply filters",
+  // Ad Sidebar
+  sidebar_title: "Profile Info",
+  sidebar_age: "Age", sidebar_gender: "Gender", sidebar_category: "Category",
+  sidebar_location: "Location", sidebar_languages: "Languages",
+  sidebar_height: "Height", sidebar_weight: "Weight", sidebar_ethnicity: "Ethnicity",
+  sidebar_nationality: "Nationality", sidebar_orientation: "Orientation",
+  sidebar_eyes: "Eyes", sidebar_hair_color: "Hair color", sidebar_hair_length: "Hair length",
+  sidebar_pubic_hair: "Pubic hair", sidebar_bust_size: "Bust size", sidebar_bust_type: "Bust type",
+  sidebar_smoker: "Smoker", sidebar_tattoo: "Tattoo", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Available for", sidebar_meeting_with: "Meeting with", sidebar_travel: "Travel",
+  // Contact Section
+  contact_title: "Contact Info", contact_open: "OPEN",
+  // Sticky Action Bar
+  sticky_contact: "Contact", sticky_review: "Review", sticky_message: "Message", sticky_report: "Report",
+  sticky_send_msg: "Send message", sticky_to: "To:", sticky_msg_sent: "Message sent ✓",
+  sticky_write_msg: "Write your message…", sticky_contact_title: "Contact",
+  sticky_send_sms: "Send SMS", sticky_platform_msg: "Send message on platform",
+  sticky_platform_anonymous: "100% anonymous",
+  sticky_create_free: "Create a free account to send anonymous messages",
+  sticky_create_account: "Create account", sticky_login: "Sign in",
+  sticky_report_title: "Report ad", sticky_report_body: "Create a free account to report an ad",
+  sticky_describe_problem: "Describe the problem briefly…",
+  sticky_send_report: "Send report", sticky_report_received: "Thanks — report received ✓",
+  sticky_write_review: "Write a review", sticky_review_body: "Create a free account to write a review",
+  // Photo Gallery
+  photo_free_account: "Free account",
+  photo_create_free_title: "Create a free account\nto see all photos",
+  photo_see_all: "to see all photos",
+  photo_registration_free: "Registration is free and takes less than 1 minute. No payment required.",
+  photo_create_btn: "Create free account", photo_login: "Sign in",
+  // Video Section
+  video_unlock: "Unlock for", video_create_to_buy: "Create account to buy",
+  video_processing: "Processing...", video_unlock_btn: "Unlock",
+  video_buy_more: "Buy more RedCoins →", video_my_videos: "My Videos",
+  video_count: "video", video_count_plural: "videos", video_watch_all: "WATCH MY VIDEOS →",
+  video_insufficient: "Not enough RedCoins", video_error: "Something went wrong — try again",
+  video_network_error: "Network error — try again",
+  // Filter Bar
+  filter_title: "Filters", filter_sort: "Sort by",
+  filter_premium_first: "Premium first", filter_newest: "Newest first", filter_oldest: "Oldest first",
+  filter_min: "Min", filter_max: "Max", filter_show_only: "Show only",
+  filter_premium_profiles: "Premium profiles", filter_has_video: "Has video",
+  filter_reset: "Reset", filter_category: "Category", filter_location: "Location",
+  filter_gender: "Gender", filter_filters: "Filters",
+  filter_search_country: "Search country...", filter_all_cities: "All cities in",
+  filter_no_results: "No results", filter_no_cities: "No cities available",
+  filter_europe: "Europe", filter_worldwide: "Worldwide",
+  // Register page
+  reg_step_of: "Step", reg_select_type: "Select Your Account Type",
+  reg_choose_how: "Choose how you want to use RedLightAD",
+  reg_create_profile: "Create Profile", reg_for_providers: "For Providers",
+  reg_provider_features: "Post listings, receive bookings, and grow your business",
+  reg_post_listings: "Post Listings", reg_receive_messages: "Receive Messages",
+  reg_add_media: "Add Media & Videos", reg_voice_messages: "Voice Messages",
+  reg_boost_visibility: "Boost Visibility",
+  reg_customer_account: "Customer Account", reg_for_clients: "For Clients",
+  reg_customer_features: "Browse providers, message securely",
+  reg_private_profile: "Private Profile", reg_secure_messaging: "Secure Messaging",
+  reg_buy_redcoins: "Buy RedCoins", reg_unlock_content: "Unlock Exclusive Content",
+  reg_fill_details: "Fill in your details to get started",
+  reg_min_chars: "Min. 6 characters", reg_repeat_password: "Repeat your password",
+  reg_agree_terms: "I agree to the", reg_terms: "Terms of Service", reg_privacy: "Privacy Policy",
+  reg_age_confirm: "I confirm I am 18 years of age or older",
+  reg_password_short: "Password must be at least 6 characters",
+  reg_password_mismatch: "Passwords do not match",
+  reg_verify_phone: "Verify your phone",
+  reg_step3_desc: "Step 3 of 3 · optional but recommended",
+  reg_phone_desc: "Enter your phone number to receive a verification code via SMS.",
+  reg_phone_number: "Phone number", reg_phone_invalid: "Please enter a valid phone number",
+  reg_send_code: "Send verification code", reg_sending: "Sending…",
+  reg_skip: "Skip for now →",
+  reg_code_sent_to: "Code sent to", reg_enter_code: "Enter the 6-digit code",
+  reg_verify_btn: "Verify →", reg_verifying: "Verifying…",
+  reg_change_number: "← Change number", reg_resend_in: "Resend in",
+  reg_resend_code: "Resend code", reg_skip_verify: "Skip verification →",
+  reg_account_created: "Account Created!",
+  reg_check_email: "Check your email at",
+  reg_go_login: "Go to Login →", reg_search_country: "Search country…",
+  reg_sign_up: "Sign up",
+  // Ad detail page
+  ad_not_found: "Listing not found", ad_back_home: "← Back to homepage",
+  ad_home: "Home", ad_about_me: "About me", ad_services: "Services",
+  ad_gallery: "Gallery", ad_photos: "photos", ad_private_content: "Private Content",
+  ad_items: "items", ad_report_profile: "⚑ Report Profile",
+  ad_copyright: "© 2026 RedLightAD. All rights reserved.",
+  // Extra common
+  common_next: "Next", common_done: "Done", common_delete: "Delete",
+  common_confirm: "Confirm", common_yes: "Yes", common_no: "No",
+  common_try_again: "Try again", common_share: "Share",
+  common_view_all: "View all", common_see_more: "See more", common_show_less: "Show less",
+  common_sending: "Sending...", common_sent: "Sent!", common_copy: "Copy",
+  common_none: "None", common_all: "All",
+  dash_stories: "Stories",
+  dash_travel: "Travel Schedule",
+  dash_marketplace: "My Marketplace",
+  dash_earnings: "Earnings",
+  dash_verification: "Verification",
+  social_media_links: "Social Media Links",
+  availability_hours: "Availability & Opening Hours",
+  your_timezone: "Your Timezone",
+  voice_message: "Voice Message",
+
+  contact_info: "Contact Info",
+  contact_phone: "Phone",
+  contact_show: "Show",
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -485,14 +777,6 @@ const da: TranslationKeys = {
   listing_services: "Services", listing_languages: "Sprog", listing_prices: "Priser",
   listing_contact: "Kontakt", listing_photos: "Billeder", listing_submit: "Udgiv annonce",
   listing_preview: "Forhåndsvisning", listing_step1: "Basis info", listing_step2: "Detaljer", listing_step3: "Kontakt & Billeder",
-  contact_info: "Kontaktinfo",
-  contact_phone: "Telefon",
-  contact_show: "Vis",
-  contact_call: "Ring",
-  profile_info: "Profilinfo",
-  about_me: "Om mig",
-  watch_videos: "Se mine videoer →",
-  view_profile: "Se profil",
   // Common UI
   common_save: "Gem", common_cancel: "Annuller", common_close: "Luk",
   common_back: "Tilbage", common_loading: "Indlæser...", common_error: "Fejl",
@@ -604,6 +888,116 @@ const da: TranslationKeys = {
   filter_verified_only: "Kun verificerede",
   filter_with_video: "Med video",
   filter_apply: "Anvend filtre",
+  // Ad Sidebar
+  sidebar_title: "Profilinfo",
+  sidebar_age: "Alder", sidebar_gender: "Køn", sidebar_category: "Kategori",
+  sidebar_location: "Lokation", sidebar_languages: "Sprog",
+  sidebar_height: "Højde", sidebar_weight: "Vægt", sidebar_ethnicity: "Etnicitet",
+  sidebar_nationality: "Nationalitet", sidebar_orientation: "Orientering",
+  sidebar_eyes: "Øjne", sidebar_hair_color: "Hårfarve", sidebar_hair_length: "Hårlængde",
+  sidebar_pubic_hair: "Kønshår", sidebar_bust_size: "Bryststørrelse", sidebar_bust_type: "Brysttype",
+  sidebar_smoker: "Ryger", sidebar_tattoo: "Tatovering", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Tilgængelig for", sidebar_meeting_with: "Mødes med", sidebar_travel: "Rejser",
+  // Contact Section
+  contact_title: "Kontaktinfo", contact_open: "ÅBN",
+  // Sticky Action Bar
+  sticky_contact: "Kontakt", sticky_review: "Anmeld", sticky_message: "Besked", sticky_report: "Rapporter",
+  sticky_send_msg: "Send besked", sticky_to: "Til:", sticky_msg_sent: "Besked sendt ✓",
+  sticky_write_msg: "Skriv din besked…", sticky_contact_title: "Kontakt",
+  sticky_send_sms: "Send SMS", sticky_platform_msg: "Send besked på platformen",
+  sticky_platform_anonymous: "100% anonymt",
+  sticky_create_free: "Opret en gratis konto for at sende anonyme beskeder",
+  sticky_create_account: "Opret konto", sticky_login: "Log ind",
+  sticky_report_title: "Rapporter annonce", sticky_report_body: "Opret en gratis konto for at rapportere en annonce",
+  sticky_describe_problem: "Beskriv problemet kort…",
+  sticky_send_report: "Send rapport", sticky_report_received: "Tak — rapport modtaget ✓",
+  sticky_write_review: "Skriv en anmeldelse", sticky_review_body: "Opret en gratis konto for at skrive en anmeldelse",
+  // Photo Gallery
+  photo_free_account: "Gratis konto",
+  photo_create_free_title: "Opret en gratis konto\nfor at se alle billeder",
+  photo_see_all: "for at se alle billeder",
+  photo_registration_free: "Registrering er gratis og tager under 1 minut. Ingen betaling krævet.",
+  photo_create_btn: "Opret gratis konto", photo_login: "Log ind",
+  // Video Section
+  video_unlock: "Lås op for", video_create_to_buy: "Opret konto for at købe",
+  video_processing: "Behandler...", video_unlock_btn: "Lås op",
+  video_buy_more: "Køb flere RedCoins →", video_my_videos: "Mine videoer",
+  video_count: "video", video_count_plural: "videoer", video_watch_all: "SE MINE VIDEOER →",
+  video_insufficient: "Du har ikke nok RedCoins", video_error: "Noget gik galt — prøv igen",
+  video_network_error: "Netværksfejl — prøv igen",
+  // Filter Bar
+  filter_title: "Filtre", filter_sort: "Sortér efter",
+  filter_premium_first: "Premium først", filter_newest: "Nyeste først", filter_oldest: "Ældste først",
+  filter_min: "Min", filter_max: "Maks", filter_show_only: "Vis kun",
+  filter_premium_profiles: "Premium profiler", filter_has_video: "Har video",
+  filter_reset: "Nulstil", filter_category: "Kategori", filter_location: "Lokation",
+  filter_gender: "Køn", filter_filters: "Filtre",
+  filter_search_country: "Søg land...", filter_all_cities: "Alle byer i",
+  filter_no_results: "Ingen resultater", filter_no_cities: "Ingen byer tilgængelige",
+  filter_europe: "Europa", filter_worldwide: "Verden",
+  // Register page
+  reg_step_of: "Trin", reg_select_type: "Vælg din kontotype",
+  reg_choose_how: "Vælg hvordan du vil bruge RedLightAD",
+  reg_create_profile: "Opret profil", reg_for_providers: "For udbydere",
+  reg_provider_features: "Opret annoncer, modtag bookinger og vækst din forretning",
+  reg_post_listings: "Opret annoncer", reg_receive_messages: "Modtag beskeder",
+  reg_add_media: "Tilføj medier & videoer", reg_voice_messages: "Stemmebeskeder",
+  reg_boost_visibility: "Øg synlighed",
+  reg_customer_account: "Kundekonto", reg_for_clients: "For kunder",
+  reg_customer_features: "Gennemse udbydere, send beskeder sikkert",
+  reg_private_profile: "Privat profil", reg_secure_messaging: "Sikker besked",
+  reg_buy_redcoins: "Køb RedCoins", reg_unlock_content: "Lås eksklusivt indhold op",
+  reg_fill_details: "Udfyld dine oplysninger for at komme i gang",
+  reg_min_chars: "Min. 6 tegn", reg_repeat_password: "Gentag dit kodeord",
+  reg_agree_terms: "Jeg accepterer", reg_terms: "Servicevilkår", reg_privacy: "Privatlivspolitik",
+  reg_age_confirm: "Jeg bekræfter at jeg er 18 år eller ældre",
+  reg_password_short: "Kodeord skal være mindst 6 tegn",
+  reg_password_mismatch: "Kodeord matcher ikke",
+  reg_verify_phone: "Verificér din telefon",
+  reg_step3_desc: "Trin 3 af 3 · valgfrit men anbefalet",
+  reg_phone_desc: "Indtast dit telefonnummer for at modtage en bekræftelseskode via SMS.",
+  reg_phone_number: "Telefonnummer", reg_phone_invalid: "Indtast venligst et gyldigt telefonnummer",
+  reg_send_code: "Send bekræftelseskode", reg_sending: "Sender…",
+  reg_skip: "Spring over →",
+  reg_code_sent_to: "Kode sendt til", reg_enter_code: "Indtast den 6-cifrede kode",
+  reg_verify_btn: "Verificér →", reg_verifying: "Verificerer…",
+  reg_change_number: "← Skift nummer", reg_resend_in: "Send igen om",
+  reg_resend_code: "Send kode igen", reg_skip_verify: "Spring verificering over →",
+  reg_account_created: "Konto oprettet!",
+  reg_check_email: "Tjek din email på",
+  reg_go_login: "Gå til login →", reg_search_country: "Søg land…",
+  reg_sign_up: "Opret konto",
+  // Ad detail page
+  ad_not_found: "Annonce ikke fundet", ad_back_home: "← Tilbage til forsiden",
+  ad_home: "Forside", ad_about_me: "Om mig", ad_services: "Services",
+  ad_gallery: "Galleri", ad_photos: "billeder", ad_private_content: "Privat indhold",
+  ad_items: "elementer", ad_report_profile: "⚑ Rapporter profil",
+  ad_copyright: "© 2026 RedLightAD. Alle rettigheder forbeholdes.",
+  // Extra common
+  common_next: "Næste", common_done: "Færdig", common_delete: "Slet",
+  common_confirm: "Bekræft", common_yes: "Ja", common_no: "Nej",
+  common_try_again: "Prøv igen", common_share: "Del",
+  common_view_all: "Se alle", common_see_more: "Se mere", common_show_less: "Vis mindre",
+  common_sending: "Sender...", common_sent: "Sendt!", common_copy: "Kopiér",
+  common_none: "Ingen", common_all: "Alle",
+  dash_stories: "Stories",
+  dash_travel: "Rejseplan",
+  dash_marketplace: "Min Markedsplads",
+  dash_earnings: "Indtjening",
+  dash_verification: "Verifikation",
+  social_media_links: "Sociale Medier",
+  availability_hours: "Tilgængelighed & Åbningstider",
+  your_timezone: "Din Tidszone",
+  voice_message: "Talebesked",
+  contact_call: "Ring",
+  profile_info: "Profilinfo",
+  watch_videos: "Se mine videoer →",
+  about_me: "Om mig",
+  view_profile: "Se profil",
+
+  contact_info: "Kontaktinfo",
+  contact_phone: "Telefon",
+  contact_show: "Vis",
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -723,14 +1117,108 @@ const de: TranslationKeys = {
   verified_badge: "✓ Von RedLightAD verifiziert",
   filter_age_range: "Altersgruppe", filter_price_range: "Preisbereich",
   filter_verified_only: "Nur verifiziert", filter_with_video: "Mit Video", filter_apply: "Filter anwenden",
-  contact_info: "Kontaktinfo",
-  contact_phone: "Telefon",
-  contact_show: "Anzeigen",
+  // Ad Sidebar
+  sidebar_title: "Profilinfo",
+  sidebar_age: "Alter", sidebar_gender: "Geschlecht", sidebar_category: "Kategorie",
+  sidebar_location: "Standort", sidebar_languages: "Sprachen",
+  sidebar_height: "Größe", sidebar_weight: "Gewicht", sidebar_ethnicity: "Ethnie",
+  sidebar_nationality: "Nationalität", sidebar_orientation: "Orientierung",
+  sidebar_eyes: "Augen", sidebar_hair_color: "Haarfarbe", sidebar_hair_length: "Haarlänge",
+  sidebar_pubic_hair: "Schambehaarung", sidebar_bust_size: "Brustgröße", sidebar_bust_type: "Brusttyp",
+  sidebar_smoker: "Raucher", sidebar_tattoo: "Tattoo", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Verfügbar für", sidebar_meeting_with: "Treffen mit", sidebar_travel: "Reisen",
+  contact_title: "Kontaktinfo", contact_open: "ÖFFNEN",
+  sticky_contact: "Kontakt", sticky_review: "Bewertung", sticky_message: "Nachricht", sticky_report: "Melden",
+  sticky_send_msg: "Nachricht senden", sticky_to: "An:", sticky_msg_sent: "Nachricht gesendet ✓",
+  sticky_write_msg: "Schreibe deine Nachricht…", sticky_contact_title: "Kontakt",
+  sticky_send_sms: "SMS senden", sticky_platform_msg: "Nachricht über Plattform senden",
+  sticky_platform_anonymous: "100% anonym",
+  sticky_create_free: "Erstelle ein kostenloses Konto um anonyme Nachrichten zu senden",
+  sticky_create_account: "Konto erstellen", sticky_login: "Anmelden",
+  sticky_report_title: "Anzeige melden", sticky_report_body: "Erstelle ein kostenloses Konto um eine Anzeige zu melden",
+  sticky_describe_problem: "Beschreibe das Problem kurz…",
+  sticky_send_report: "Bericht senden", sticky_report_received: "Danke — Bericht erhalten ✓",
+  sticky_write_review: "Bewertung schreiben", sticky_review_body: "Erstelle ein kostenloses Konto um eine Bewertung zu schreiben",
+  photo_free_account: "Gratis Konto",
+  photo_create_free_title: "Erstelle ein kostenloses Konto\num alle Fotos zu sehen",
+  photo_see_all: "um alle Fotos zu sehen",
+  photo_registration_free: "Registrierung ist kostenlos und dauert weniger als 1 Minute. Keine Zahlung erforderlich.",
+  photo_create_btn: "Kostenloses Konto erstellen", photo_login: "Anmelden",
+  video_unlock: "Freischalten für", video_create_to_buy: "Konto erstellen zum Kaufen",
+  video_processing: "Verarbeitung...", video_unlock_btn: "Freischalten",
+  video_buy_more: "Mehr RedCoins kaufen →", video_my_videos: "Meine Videos",
+  video_count: "Video", video_count_plural: "Videos", video_watch_all: "MEINE VIDEOS ANSEHEN →",
+  video_insufficient: "Nicht genug RedCoins", video_error: "Etwas ist schiefgelaufen — erneut versuchen",
+  video_network_error: "Netzwerkfehler — erneut versuchen",
+  filter_title: "Filter", filter_sort: "Sortieren nach",
+  filter_premium_first: "Premium zuerst", filter_newest: "Neueste zuerst", filter_oldest: "Älteste zuerst",
+  filter_min: "Min", filter_max: "Max", filter_show_only: "Nur anzeigen",
+  filter_premium_profiles: "Premium-Profile", filter_has_video: "Hat Video",
+  filter_reset: "Zurücksetzen", filter_category: "Kategorie", filter_location: "Standort",
+  filter_gender: "Geschlecht", filter_filters: "Filter",
+  filter_search_country: "Land suchen...", filter_all_cities: "Alle Städte in",
+  filter_no_results: "Keine Ergebnisse", filter_no_cities: "Keine Städte verfügbar",
+  filter_europe: "Europa", filter_worldwide: "Weltweit",
+  reg_step_of: "Schritt", reg_select_type: "Wähle deinen Kontotyp",
+  reg_choose_how: "Wähle wie du RedLightAD nutzen möchtest",
+  reg_create_profile: "Profil erstellen", reg_for_providers: "Für Anbieter",
+  reg_provider_features: "Anzeigen erstellen, Buchungen erhalten und dein Geschäft ausbauen",
+  reg_post_listings: "Anzeigen erstellen", reg_receive_messages: "Nachrichten empfangen",
+  reg_add_media: "Medien & Videos hinzufügen", reg_voice_messages: "Sprachnachrichten",
+  reg_boost_visibility: "Sichtbarkeit erhöhen",
+  reg_customer_account: "Kundenkonto", reg_for_clients: "Für Kunden",
+  reg_customer_features: "Anbieter durchsuchen, sicher kommunizieren",
+  reg_private_profile: "Privates Profil", reg_secure_messaging: "Sichere Nachrichten",
+  reg_buy_redcoins: "RedCoins kaufen", reg_unlock_content: "Exklusive Inhalte freischalten",
+  reg_fill_details: "Gib deine Daten ein um loszulegen",
+  reg_min_chars: "Min. 6 Zeichen", reg_repeat_password: "Passwort wiederholen",
+  reg_agree_terms: "Ich akzeptiere die", reg_terms: "Nutzungsbedingungen", reg_privacy: "Datenschutzrichtlinie",
+  reg_age_confirm: "Ich bestätige, dass ich 18 Jahre oder älter bin",
+  reg_password_short: "Passwort muss mindestens 6 Zeichen lang sein",
+  reg_password_mismatch: "Passwörter stimmen nicht überein",
+  reg_verify_phone: "Telefon verifizieren",
+  reg_step3_desc: "Schritt 3 von 3 · optional aber empfohlen",
+  reg_phone_desc: "Gib deine Telefonnummer ein um einen Bestätigungscode per SMS zu erhalten.",
+  reg_phone_number: "Telefonnummer", reg_phone_invalid: "Bitte gib eine gültige Telefonnummer ein",
+  reg_send_code: "Bestätigungscode senden", reg_sending: "Wird gesendet…",
+  reg_skip: "Überspringen →",
+  reg_code_sent_to: "Code gesendet an", reg_enter_code: "Gib den 6-stelligen Code ein",
+  reg_verify_btn: "Verifizieren →", reg_verifying: "Wird verifiziert…",
+  reg_change_number: "← Nummer ändern", reg_resend_in: "Erneut senden in",
+  reg_resend_code: "Code erneut senden", reg_skip_verify: "Verifizierung überspringen →",
+  reg_account_created: "Konto erstellt!",
+  reg_check_email: "Prüfe deine E-Mail bei",
+  reg_go_login: "Zum Login →", reg_search_country: "Land suchen…",
+  reg_sign_up: "Registrieren",
+  ad_not_found: "Anzeige nicht gefunden", ad_back_home: "← Zurück zur Startseite",
+  ad_home: "Startseite", ad_about_me: "Über mich", ad_services: "Services",
+  ad_gallery: "Galerie", ad_photos: "Fotos", ad_private_content: "Private Inhalte",
+  ad_items: "Elemente", ad_report_profile: "⚑ Profil melden",
+  ad_copyright: "© 2026 RedLightAD. Alle Rechte vorbehalten.",
+  common_next: "Weiter", common_done: "Fertig", common_delete: "Löschen",
+  common_confirm: "Bestätigen", common_yes: "Ja", common_no: "Nein",
+  common_try_again: "Erneut versuchen", common_share: "Teilen",
+  common_view_all: "Alle ansehen", common_see_more: "Mehr sehen", common_show_less: "Weniger zeigen",
+  common_sending: "Wird gesendet...", common_sent: "Gesendet!", common_copy: "Kopieren",
+  common_none: "Keine", common_all: "Alle",
+  dash_stories: "Stories",
+  dash_travel: "Reiseplan",
+  dash_marketplace: "Mein Marktplatz",
+  dash_earnings: "Einnahmen",
+  dash_verification: "Verifizierung",
+  social_media_links: "Social-Media-Links",
+  availability_hours: "Verfügbarkeit & Öffnungszeiten",
+  your_timezone: "Ihre Zeitzone",
+  voice_message: "Sprachnachricht",
   contact_call: "Anrufen",
   profile_info: "Profilinfo",
-  about_me: "Über mich",
   watch_videos: "Meine Videos →",
+  contact_info: "Kontaktinfo",
+  about_me: "Über mich",
   view_profile: "Profil ansehen",
+
+  contact_phone: "Telefon",
+  contact_show: "Anzeigen",
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -858,6 +1346,98 @@ const fr: TranslationKeys = {
   verified_badge: "✓ Vérifié par RedLightAD",
   filter_age_range: "Tranche d'âge", filter_price_range: "Fourchette de prix",
   filter_verified_only: "Vérifiés seulement", filter_with_video: "Avec vidéo", filter_apply: "Appliquer les filtres",
+  sidebar_title: "Infos du profil",
+  sidebar_age: "Âge", sidebar_gender: "Genre", sidebar_category: "Catégorie",
+  sidebar_location: "Lieu", sidebar_languages: "Langues",
+  sidebar_height: "Taille", sidebar_weight: "Poids", sidebar_ethnicity: "Ethnie",
+  sidebar_nationality: "Nationalité", sidebar_orientation: "Orientation",
+  sidebar_eyes: "Yeux", sidebar_hair_color: "Couleur de cheveux", sidebar_hair_length: "Longueur des cheveux",
+  sidebar_pubic_hair: "Pilosité pubienne", sidebar_bust_size: "Tour de poitrine", sidebar_bust_type: "Type de poitrine",
+  sidebar_smoker: "Fumeur", sidebar_tattoo: "Tatouage", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Disponible pour", sidebar_meeting_with: "Rencontre avec", sidebar_travel: "Voyage",
+  contact_title: "Coordonnées", contact_open: "OUVRIR",
+  sticky_contact: "Contact", sticky_review: "Avis", sticky_message: "Message", sticky_report: "Signaler",
+  sticky_send_msg: "Envoyer un message", sticky_to: "À :", sticky_msg_sent: "Message envoyé ✓",
+  sticky_write_msg: "Écrivez votre message…", sticky_contact_title: "Contact",
+  sticky_send_sms: "Envoyer un SMS", sticky_platform_msg: "Envoyer un message sur la plateforme",
+  sticky_platform_anonymous: "100% anonyme",
+  sticky_create_free: "Créez un compte gratuit pour envoyer des messages anonymes",
+  sticky_create_account: "Créer un compte", sticky_login: "Se connecter",
+  sticky_report_title: "Signaler l'annonce", sticky_report_body: "Créez un compte gratuit pour signaler une annonce",
+  sticky_describe_problem: "Décrivez le problème brièvement…",
+  sticky_send_report: "Envoyer le signalement", sticky_report_received: "Merci — signalement reçu ✓",
+  sticky_write_review: "Écrire un avis", sticky_review_body: "Créez un compte gratuit pour écrire un avis",
+  photo_free_account: "Compte gratuit",
+  photo_create_free_title: "Créez un compte gratuit\npour voir toutes les photos",
+  photo_see_all: "pour voir toutes les photos",
+  photo_registration_free: "L'inscription est gratuite et prend moins d'une minute. Aucun paiement requis.",
+  photo_create_btn: "Créer un compte gratuit", photo_login: "Se connecter",
+  video_unlock: "Débloquer pour", video_create_to_buy: "Créer un compte pour acheter",
+  video_processing: "Traitement...", video_unlock_btn: "Débloquer",
+  video_buy_more: "Acheter plus de RedCoins →", video_my_videos: "Mes vidéos",
+  video_count: "vidéo", video_count_plural: "vidéos", video_watch_all: "VOIR MES VIDÉOS →",
+  video_insufficient: "Pas assez de RedCoins", video_error: "Quelque chose s'est mal passé — réessayez",
+  video_network_error: "Erreur réseau — réessayez",
+  filter_title: "Filtres", filter_sort: "Trier par",
+  filter_premium_first: "Premium d'abord", filter_newest: "Plus récents", filter_oldest: "Plus anciens",
+  filter_min: "Min", filter_max: "Max", filter_show_only: "Afficher uniquement",
+  filter_premium_profiles: "Profils premium", filter_has_video: "Avec vidéo",
+  filter_reset: "Réinitialiser", filter_category: "Catégorie", filter_location: "Lieu",
+  filter_gender: "Genre", filter_filters: "Filtres",
+  filter_search_country: "Rechercher un pays...", filter_all_cities: "Toutes les villes de",
+  filter_no_results: "Aucun résultat", filter_no_cities: "Aucune ville disponible",
+  filter_europe: "Europe", filter_worldwide: "Monde entier",
+  reg_step_of: "Étape", reg_select_type: "Choisissez votre type de compte",
+  reg_choose_how: "Choisissez comment utiliser RedLightAD",
+  reg_create_profile: "Créer un profil", reg_for_providers: "Pour les prestataires",
+  reg_provider_features: "Publiez des annonces, recevez des réservations et développez votre activité",
+  reg_post_listings: "Publier des annonces", reg_receive_messages: "Recevoir des messages",
+  reg_add_media: "Ajouter des médias et vidéos", reg_voice_messages: "Messages vocaux",
+  reg_boost_visibility: "Augmenter la visibilité",
+  reg_customer_account: "Compte client", reg_for_clients: "Pour les clients",
+  reg_customer_features: "Parcourir les prestataires, communiquer en toute sécurité",
+  reg_private_profile: "Profil privé", reg_secure_messaging: "Messagerie sécurisée",
+  reg_buy_redcoins: "Acheter des RedCoins", reg_unlock_content: "Débloquer du contenu exclusif",
+  reg_fill_details: "Remplissez vos informations pour commencer",
+  reg_min_chars: "Min. 6 caractères", reg_repeat_password: "Répétez votre mot de passe",
+  reg_agree_terms: "J'accepte les", reg_terms: "Conditions d'utilisation", reg_privacy: "Politique de confidentialité",
+  reg_age_confirm: "Je confirme avoir 18 ans ou plus",
+  reg_password_short: "Le mot de passe doit contenir au moins 6 caractères",
+  reg_password_mismatch: "Les mots de passe ne correspondent pas",
+  reg_verify_phone: "Vérifiez votre téléphone",
+  reg_step3_desc: "Étape 3 sur 3 · optionnel mais recommandé",
+  reg_phone_desc: "Entrez votre numéro de téléphone pour recevoir un code de vérification par SMS.",
+  reg_phone_number: "Numéro de téléphone", reg_phone_invalid: "Veuillez entrer un numéro valide",
+  reg_send_code: "Envoyer le code de vérification", reg_sending: "Envoi…",
+  reg_skip: "Passer →",
+  reg_code_sent_to: "Code envoyé au", reg_enter_code: "Entrez le code à 6 chiffres",
+  reg_verify_btn: "Vérifier →", reg_verifying: "Vérification…",
+  reg_change_number: "← Changer de numéro", reg_resend_in: "Renvoyer dans",
+  reg_resend_code: "Renvoyer le code", reg_skip_verify: "Passer la vérification →",
+  reg_account_created: "Compte créé !",
+  reg_check_email: "Vérifiez votre email à",
+  reg_go_login: "Aller à la connexion →", reg_search_country: "Rechercher un pays…",
+  reg_sign_up: "S'inscrire",
+  ad_not_found: "Annonce introuvable", ad_back_home: "← Retour à l'accueil",
+  ad_home: "Accueil", ad_about_me: "À propos de moi", ad_services: "Services",
+  ad_gallery: "Galerie", ad_photos: "photos", ad_private_content: "Contenu privé",
+  ad_items: "éléments", ad_report_profile: "⚑ Signaler le profil",
+  ad_copyright: "© 2026 RedLightAD. Tous droits réservés.",
+  common_next: "Suivant", common_done: "Terminé", common_delete: "Supprimer",
+  common_confirm: "Confirmer", common_yes: "Oui", common_no: "Non",
+  common_try_again: "Réessayer", common_share: "Partager",
+  common_view_all: "Voir tout", common_see_more: "Voir plus", common_show_less: "Voir moins",
+  common_sending: "Envoi...", common_sent: "Envoyé !", common_copy: "Copier",
+  common_none: "Aucun", common_all: "Tous",
+  dash_stories: "Histoires",
+  dash_travel: "Programme de voyage",
+  dash_marketplace: "Ma Boutique",
+  dash_earnings: "Revenus",
+  dash_verification: "Vérification",
+  social_media_links: "Réseaux sociaux",
+  availability_hours: "Disponibilité & Horaires",
+  your_timezone: "Votre fuseau horaire",
+  voice_message: "Message vocal",
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -945,12 +1525,94 @@ const es = makeSimple({
   filter_verified_only: "Solo verificados", filter_with_video: "Con video", filter_apply: "Aplicar filtros",
   contact_info: "Contacto",
   contact_phone: "Teléfono",
+  sidebar_title: "Info del perfil",
+  sidebar_age: "Edad", sidebar_gender: "Género", sidebar_category: "Categoría",
+  sidebar_location: "Ubicación", sidebar_languages: "Idiomas",
+  sidebar_height: "Altura", sidebar_weight: "Peso", sidebar_ethnicity: "Etnia",
+  sidebar_nationality: "Nacionalidad", sidebar_orientation: "Orientación",
+  sidebar_eyes: "Ojos", sidebar_hair_color: "Color de pelo", sidebar_hair_length: "Largo de pelo",
+  sidebar_smoker: "Fumador", sidebar_tattoo: "Tatuaje", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Disponible para", sidebar_meeting_with: "Encuentro con", sidebar_travel: "Viaje",
+  contact_title: "Información de contacto", contact_open: "ABRIR",
+  sticky_contact: "Contacto", sticky_review: "Reseña", sticky_message: "Mensaje", sticky_report: "Reportar",
+  sticky_send_msg: "Enviar mensaje", sticky_to: "Para:", sticky_msg_sent: "Mensaje enviado ✓",
+  sticky_write_msg: "Escribe tu mensaje…", sticky_contact_title: "Contacto",
+  sticky_send_sms: "Enviar SMS", sticky_platform_msg: "Enviar mensaje en la plataforma",
+  sticky_platform_anonymous: "100% anónimo",
+  sticky_create_free: "Crea una cuenta gratis para enviar mensajes anónimos",
+  sticky_create_account: "Crear cuenta", sticky_login: "Iniciar sesión",
+  sticky_report_title: "Reportar anuncio", sticky_report_body: "Crea una cuenta gratis para reportar un anuncio",
+  sticky_describe_problem: "Describe el problema brevemente…",
+  sticky_send_report: "Enviar reporte", sticky_report_received: "Gracias — reporte recibido ✓",
+  sticky_write_review: "Escribir reseña", sticky_review_body: "Crea una cuenta gratis para escribir una reseña",
+  photo_free_account: "Cuenta gratis",
+  photo_create_free_title: "Crea una cuenta gratis\npara ver todas las fotos",
+  photo_registration_free: "El registro es gratis y toma menos de 1 minuto. Sin pago requerido.",
+  photo_create_btn: "Crear cuenta gratis", photo_login: "Iniciar sesión",
+  video_unlock: "Desbloquear por", video_create_to_buy: "Crear cuenta para comprar",
+  video_processing: "Procesando...", video_unlock_btn: "Desbloquear",
+  video_buy_more: "Comprar más RedCoins →", video_my_videos: "Mis videos",
+  video_count: "video", video_count_plural: "videos", video_watch_all: "VER MIS VIDEOS →",
+  filter_title: "Filtros", filter_sort: "Ordenar por",
+  filter_premium_first: "Premium primero", filter_newest: "Más recientes", filter_oldest: "Más antiguos",
+  filter_min: "Mín", filter_max: "Máx", filter_show_only: "Mostrar solo",
+  filter_premium_profiles: "Perfiles premium", filter_has_video: "Con video",
+  filter_reset: "Reiniciar", filter_category: "Categoría", filter_location: "Ubicación",
+  filter_gender: "Género", filter_filters: "Filtros",
+  filter_search_country: "Buscar país...", filter_all_cities: "Todas las ciudades de",
+  filter_no_results: "Sin resultados", filter_no_cities: "Sin ciudades disponibles",
+  filter_europe: "Europa", filter_worldwide: "Mundial",
+  reg_step_of: "Paso", reg_select_type: "Selecciona tu tipo de cuenta",
+  reg_choose_how: "Elige cómo quieres usar RedLightAD",
+  reg_create_profile: "Crear perfil", reg_for_providers: "Para proveedores",
+  reg_provider_features: "Publica anuncios, recibe reservas y haz crecer tu negocio",
+  reg_customer_account: "Cuenta de cliente", reg_for_clients: "Para clientes",
+  reg_customer_features: "Explora proveedores, mensajería segura",
+  reg_fill_details: "Completa tus datos para comenzar",
+  reg_min_chars: "Mín. 6 caracteres", reg_repeat_password: "Repite tu contraseña",
+  reg_agree_terms: "Acepto los", reg_terms: "Términos de servicio", reg_privacy: "Política de privacidad",
+  reg_age_confirm: "Confirmo que tengo 18 años o más",
+  reg_password_short: "La contraseña debe tener al menos 6 caracteres",
+  reg_password_mismatch: "Las contraseñas no coinciden",
+  reg_verify_phone: "Verifica tu teléfono",
+  reg_step3_desc: "Paso 3 de 3 · opcional pero recomendado",
+  reg_phone_desc: "Ingresa tu número para recibir un código de verificación por SMS.",
+  reg_phone_number: "Número de teléfono", reg_phone_invalid: "Ingresa un número válido",
+  reg_send_code: "Enviar código de verificación", reg_sending: "Enviando…",
+  reg_skip: "Omitir →", reg_code_sent_to: "Código enviado a",
+  reg_enter_code: "Ingresa el código de 6 dígitos",
+  reg_verify_btn: "Verificar →", reg_verifying: "Verificando…",
+  reg_change_number: "← Cambiar número", reg_resend_in: "Reenviar en",
+  reg_resend_code: "Reenviar código", reg_skip_verify: "Omitir verificación →",
+  reg_account_created: "¡Cuenta creada!", reg_check_email: "Revisa tu email en",
+  reg_go_login: "Ir al inicio de sesión →", reg_search_country: "Buscar país…",
+  reg_sign_up: "Registrarse",
+  ad_not_found: "Anuncio no encontrado", ad_back_home: "← Volver al inicio",
+  ad_home: "Inicio", ad_about_me: "Sobre mí", ad_services: "Servicios",
+  ad_gallery: "Galería", ad_photos: "fotos", ad_private_content: "Contenido privado",
+  ad_items: "elementos", ad_report_profile: "⚑ Reportar perfil",
+  ad_copyright: "© 2026 RedLightAD. Todos los derechos reservados.",
+  common_next: "Siguiente", common_done: "Hecho", common_delete: "Eliminar",
+  common_confirm: "Confirmar", common_yes: "Sí", common_no: "No",
+  common_try_again: "Reintentar", common_share: "Compartir",
+  common_view_all: "Ver todo", common_see_more: "Ver más", common_show_less: "Ver menos",
+  common_sending: "Enviando...", common_sent: "¡Enviado!", common_copy: "Copiar",
+  common_none: "Ninguno", common_all: "Todos",
   contact_show: "Mostrar",
   contact_call: "Llamar",
   profile_info: "Perfil",
   about_me: "Sobre mí",
   watch_videos: "Ver mis vídeos →",
   view_profile: "Ver perfil",
+  dash_stories: "Historias",
+  dash_travel: "Agenda de viajes",
+  dash_marketplace: "Mi Mercado",
+  dash_earnings: "Ingresos",
+  dash_verification: "Verificación",
+  social_media_links: "Redes sociales",
+  availability_hours: "Disponibilidad & Horarios",
+  your_timezone: "Tu zona horaria",
+  voice_message: "Mensaje de voz",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1029,12 +1691,94 @@ const it = makeSimple({
   filter_verified_only: "Solo verificati", filter_with_video: "Con video", filter_apply: "Applica filtri",
   contact_info: "Contatti",
   contact_phone: "Telefono",
+  sidebar_title: "Info profilo",
+  sidebar_age: "Età", sidebar_gender: "Genere", sidebar_category: "Categoria",
+  sidebar_location: "Posizione", sidebar_languages: "Lingue",
+  sidebar_height: "Altezza", sidebar_weight: "Peso", sidebar_ethnicity: "Etnia",
+  sidebar_nationality: "Nazionalità", sidebar_orientation: "Orientamento",
+  sidebar_eyes: "Occhi", sidebar_hair_color: "Colore capelli", sidebar_hair_length: "Lunghezza capelli",
+  sidebar_smoker: "Fumatore", sidebar_tattoo: "Tatuaggio", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Disponibile per", sidebar_meeting_with: "Incontro con", sidebar_travel: "Viaggio",
+  contact_title: "Info contatto", contact_open: "APRI",
+  sticky_contact: "Contatto", sticky_review: "Recensione", sticky_message: "Messaggio", sticky_report: "Segnala",
+  sticky_send_msg: "Invia messaggio", sticky_to: "A:", sticky_msg_sent: "Messaggio inviato ✓",
+  sticky_write_msg: "Scrivi il tuo messaggio…", sticky_contact_title: "Contatto",
+  sticky_send_sms: "Invia SMS", sticky_platform_msg: "Invia messaggio sulla piattaforma",
+  sticky_platform_anonymous: "100% anonimo",
+  sticky_create_free: "Crea un account gratuito per inviare messaggi anonimi",
+  sticky_create_account: "Crea account", sticky_login: "Accedi",
+  sticky_report_title: "Segnala annuncio", sticky_report_body: "Crea un account gratuito per segnalare un annuncio",
+  sticky_describe_problem: "Descrivi brevemente il problema…",
+  sticky_send_report: "Invia segnalazione", sticky_report_received: "Grazie — segnalazione ricevuta ✓",
+  sticky_write_review: "Scrivi una recensione", sticky_review_body: "Crea un account gratuito per scrivere una recensione",
+  photo_free_account: "Account gratuito",
+  photo_create_free_title: "Crea un account gratuito\nper vedere tutte le foto",
+  photo_registration_free: "La registrazione è gratuita e richiede meno di 1 minuto. Nessun pagamento richiesto.",
+  photo_create_btn: "Crea account gratuito", photo_login: "Accedi",
+  video_unlock: "Sblocca per", video_create_to_buy: "Crea account per acquistare",
+  video_processing: "Elaborazione...", video_unlock_btn: "Sblocca",
+  video_buy_more: "Compra più RedCoins →", video_my_videos: "I miei video",
+  video_count: "video", video_count_plural: "video", video_watch_all: "GUARDA I MIEI VIDEO →",
+  filter_title: "Filtri", filter_sort: "Ordina per",
+  filter_premium_first: "Premium prima", filter_newest: "Più recenti", filter_oldest: "Più vecchi",
+  filter_min: "Min", filter_max: "Max", filter_show_only: "Mostra solo",
+  filter_premium_profiles: "Profili premium", filter_has_video: "Con video",
+  filter_reset: "Reimposta", filter_category: "Categoria", filter_location: "Posizione",
+  filter_gender: "Genere", filter_filters: "Filtri",
+  filter_search_country: "Cerca paese...", filter_all_cities: "Tutte le città di",
+  filter_no_results: "Nessun risultato", filter_no_cities: "Nessuna città disponibile",
+  filter_europe: "Europa", filter_worldwide: "Mondiale",
+  reg_step_of: "Passo", reg_select_type: "Seleziona il tipo di account",
+  reg_choose_how: "Scegli come vuoi usare RedLightAD",
+  reg_create_profile: "Crea profilo", reg_for_providers: "Per fornitori",
+  reg_provider_features: "Pubblica annunci, ricevi prenotazioni e fai crescere la tua attività",
+  reg_customer_account: "Account cliente", reg_for_clients: "Per clienti",
+  reg_customer_features: "Sfoglia i fornitori, messaggi sicuri",
+  reg_fill_details: "Inserisci i tuoi dati per iniziare",
+  reg_min_chars: "Min. 6 caratteri", reg_repeat_password: "Ripeti la password",
+  reg_agree_terms: "Accetto i", reg_terms: "Termini di servizio", reg_privacy: "Informativa sulla privacy",
+  reg_age_confirm: "Confermo di avere 18 anni o più",
+  reg_password_short: "La password deve avere almeno 6 caratteri",
+  reg_password_mismatch: "Le password non corrispondono",
+  reg_verify_phone: "Verifica il tuo telefono",
+  reg_step3_desc: "Passo 3 di 3 · opzionale ma consigliato",
+  reg_phone_desc: "Inserisci il tuo numero per ricevere un codice di verifica via SMS.",
+  reg_phone_number: "Numero di telefono", reg_phone_invalid: "Inserisci un numero valido",
+  reg_send_code: "Invia codice di verifica", reg_sending: "Invio…",
+  reg_skip: "Salta →", reg_code_sent_to: "Codice inviato a",
+  reg_enter_code: "Inserisci il codice a 6 cifre",
+  reg_verify_btn: "Verifica →", reg_verifying: "Verifica in corso…",
+  reg_change_number: "← Cambia numero", reg_resend_in: "Rinvia tra",
+  reg_resend_code: "Rinvia codice", reg_skip_verify: "Salta la verifica →",
+  reg_account_created: "Account creato!", reg_check_email: "Controlla la tua email a",
+  reg_go_login: "Vai al login →", reg_search_country: "Cerca paese…",
+  reg_sign_up: "Registrati",
+  ad_not_found: "Annuncio non trovato", ad_back_home: "← Torna alla homepage",
+  ad_home: "Home", ad_about_me: "Su di me", ad_services: "Servizi",
+  ad_gallery: "Galleria", ad_photos: "foto", ad_private_content: "Contenuto privato",
+  ad_items: "elementi", ad_report_profile: "⚑ Segnala profilo",
+  ad_copyright: "© 2026 RedLightAD. Tutti i diritti riservati.",
+  common_next: "Avanti", common_done: "Fatto", common_delete: "Elimina",
+  common_confirm: "Conferma", common_yes: "Sì", common_no: "No",
+  common_try_again: "Riprova", common_share: "Condividi",
+  common_view_all: "Vedi tutto", common_see_more: "Vedi di più", common_show_less: "Mostra meno",
+  common_sending: "Invio...", common_sent: "Inviato!", common_copy: "Copia",
+  common_none: "Nessuno", common_all: "Tutti",
   contact_show: "Mostra",
   contact_call: "Chiama",
   profile_info: "Profilo",
   about_me: "Su di me",
   watch_videos: "Guarda i miei video →",
   view_profile: "Vedi profilo",
+  dash_stories: "Storie",
+  dash_travel: "Programma viaggi",
+  dash_marketplace: "Il mio Mercato",
+  dash_earnings: "Guadagni",
+  dash_verification: "Verifica",
+  social_media_links: "Link social",
+  availability_hours: "Disponibilità & Orari",
+  your_timezone: "Il tuo fuso orario",
+  voice_message: "Messaggio vocale",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1113,12 +1857,94 @@ const pt = makeSimple({
   filter_verified_only: "Apenas verificados", filter_with_video: "Com vídeo", filter_apply: "Aplicar filtros",
   contact_info: "Contato",
   contact_phone: "Telefone",
+  sidebar_title: "Info do perfil",
+  sidebar_age: "Idade", sidebar_gender: "Gênero", sidebar_category: "Categoria",
+  sidebar_location: "Localização", sidebar_languages: "Idiomas",
+  sidebar_height: "Altura", sidebar_weight: "Peso", sidebar_ethnicity: "Etnia",
+  sidebar_nationality: "Nacionalidade", sidebar_orientation: "Orientação",
+  sidebar_eyes: "Olhos", sidebar_hair_color: "Cor do cabelo", sidebar_hair_length: "Comprimento do cabelo",
+  sidebar_smoker: "Fumante", sidebar_tattoo: "Tatuagem", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Disponível para", sidebar_meeting_with: "Encontro com", sidebar_travel: "Viagem",
+  contact_title: "Info de contato", contact_open: "ABRIR",
+  sticky_contact: "Contato", sticky_review: "Avaliação", sticky_message: "Mensagem", sticky_report: "Denunciar",
+  sticky_send_msg: "Enviar mensagem", sticky_to: "Para:", sticky_msg_sent: "Mensagem enviada ✓",
+  sticky_write_msg: "Escreva sua mensagem…", sticky_contact_title: "Contato",
+  sticky_send_sms: "Enviar SMS", sticky_platform_msg: "Enviar mensagem na plataforma",
+  sticky_platform_anonymous: "100% anônimo",
+  sticky_create_free: "Crie uma conta grátis para enviar mensagens anônimas",
+  sticky_create_account: "Criar conta", sticky_login: "Entrar",
+  sticky_report_title: "Denunciar anúncio", sticky_report_body: "Crie uma conta grátis para denunciar um anúncio",
+  sticky_describe_problem: "Descreva o problema brevemente…",
+  sticky_send_report: "Enviar denúncia", sticky_report_received: "Obrigado — denúncia recebida ✓",
+  sticky_write_review: "Escrever avaliação", sticky_review_body: "Crie uma conta grátis para escrever uma avaliação",
+  photo_free_account: "Conta grátis",
+  photo_create_free_title: "Crie uma conta grátis\npara ver todas as fotos",
+  photo_registration_free: "O registro é grátis e leva menos de 1 minuto. Sem pagamento necessário.",
+  photo_create_btn: "Criar conta grátis", photo_login: "Entrar",
+  video_unlock: "Desbloquear por", video_create_to_buy: "Criar conta para comprar",
+  video_processing: "Processando...", video_unlock_btn: "Desbloquear",
+  video_buy_more: "Comprar mais RedCoins →", video_my_videos: "Meus vídeos",
+  video_count: "vídeo", video_count_plural: "vídeos", video_watch_all: "ASSISTIR MEUS VÍDEOS →",
+  filter_title: "Filtros", filter_sort: "Ordenar por",
+  filter_premium_first: "Premium primeiro", filter_newest: "Mais recentes", filter_oldest: "Mais antigos",
+  filter_min: "Mín", filter_max: "Máx", filter_show_only: "Mostrar apenas",
+  filter_premium_profiles: "Perfis premium", filter_has_video: "Com vídeo",
+  filter_reset: "Redefinir", filter_category: "Categoria", filter_location: "Localização",
+  filter_gender: "Gênero", filter_filters: "Filtros",
+  filter_search_country: "Buscar país...", filter_all_cities: "Todas as cidades de",
+  filter_no_results: "Sem resultados", filter_no_cities: "Sem cidades disponíveis",
+  filter_europe: "Europa", filter_worldwide: "Mundial",
+  reg_step_of: "Passo", reg_select_type: "Selecione seu tipo de conta",
+  reg_choose_how: "Escolha como usar o RedLightAD",
+  reg_create_profile: "Criar perfil", reg_for_providers: "Para provedores",
+  reg_provider_features: "Publique anúncios, receba reservas e cresça seu negócio",
+  reg_customer_account: "Conta de cliente", reg_for_clients: "Para clientes",
+  reg_customer_features: "Navegue provedores, mensagens seguras",
+  reg_fill_details: "Preencha seus dados para começar",
+  reg_min_chars: "Mín. 6 caracteres", reg_repeat_password: "Repita sua senha",
+  reg_agree_terms: "Eu aceito os", reg_terms: "Termos de Serviço", reg_privacy: "Política de Privacidade",
+  reg_age_confirm: "Confirmo que tenho 18 anos ou mais",
+  reg_password_short: "A senha deve ter pelo menos 6 caracteres",
+  reg_password_mismatch: "As senhas não coincidem",
+  reg_verify_phone: "Verifique seu telefone",
+  reg_step3_desc: "Passo 3 de 3 · opcional mas recomendado",
+  reg_phone_desc: "Digite seu número para receber um código de verificação por SMS.",
+  reg_phone_number: "Número de telefone", reg_phone_invalid: "Digite um número válido",
+  reg_send_code: "Enviar código de verificação", reg_sending: "Enviando…",
+  reg_skip: "Pular →", reg_code_sent_to: "Código enviado para",
+  reg_enter_code: "Digite o código de 6 dígitos",
+  reg_verify_btn: "Verificar →", reg_verifying: "Verificando…",
+  reg_change_number: "← Mudar número", reg_resend_in: "Reenviar em",
+  reg_resend_code: "Reenviar código", reg_skip_verify: "Pular verificação →",
+  reg_account_created: "Conta criada!", reg_check_email: "Verifique seu email em",
+  reg_go_login: "Ir para login →", reg_search_country: "Buscar país…",
+  reg_sign_up: "Cadastrar-se",
+  ad_not_found: "Anúncio não encontrado", ad_back_home: "← Voltar ao início",
+  ad_home: "Início", ad_about_me: "Sobre mim", ad_services: "Serviços",
+  ad_gallery: "Galeria", ad_photos: "fotos", ad_private_content: "Conteúdo privado",
+  ad_items: "itens", ad_report_profile: "⚑ Denunciar perfil",
+  ad_copyright: "© 2026 RedLightAD. Todos os direitos reservados.",
+  common_next: "Próximo", common_done: "Pronto", common_delete: "Excluir",
+  common_confirm: "Confirmar", common_yes: "Sim", common_no: "Não",
+  common_try_again: "Tentar novamente", common_share: "Compartilhar",
+  common_view_all: "Ver tudo", common_see_more: "Ver mais", common_show_less: "Ver menos",
+  common_sending: "Enviando...", common_sent: "Enviado!", common_copy: "Copiar",
+  common_none: "Nenhum", common_all: "Todos",
   contact_show: "Mostrar",
   contact_call: "Ligar",
   profile_info: "Perfil",
   about_me: "Sobre mim",
   watch_videos: "Ver meus vídeos →",
   view_profile: "Ver perfil",
+  dash_stories: "Histórias",
+  dash_travel: "Agenda de viagens",
+  dash_marketplace: "Meu Mercado",
+  dash_earnings: "Ganhos",
+  dash_verification: "Verificação",
+  social_media_links: "Redes sociais",
+  availability_hours: "Disponibilidade & Horários",
+  your_timezone: "Seu fuso horário",
+  voice_message: "Mensagem de voz",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1203,6 +2029,88 @@ const nl = makeSimple({
   about_me: "Over mij",
   watch_videos: "Mijn video's →",
   view_profile: "Profiel bekijken",
+  dash_stories: "Verhalen",
+  dash_travel: "Reisschema",
+  dash_marketplace: "Mijn Marktplaats",
+  dash_earnings: "Inkomsten",
+  dash_verification: "Verificatie",
+  social_media_links: "Sociale media",
+  availability_hours: "Beschikbaarheid & Openingstijden",
+  your_timezone: "Jouw tijdzone",
+  voice_message: "Spraakbericht",
+  sidebar_title: "Profielinfo",
+  sidebar_age: "Leeftijd", sidebar_gender: "Geslacht", sidebar_category: "Categorie",
+  sidebar_location: "Locatie", sidebar_languages: "Talen",
+  sidebar_height: "Lengte", sidebar_weight: "Gewicht", sidebar_ethnicity: "Etniciteit",
+  sidebar_nationality: "Nationaliteit", sidebar_orientation: "Oriëntatie",
+  sidebar_eyes: "Ogen", sidebar_hair_color: "Haarkleur", sidebar_hair_length: "Haarlengte",
+  sidebar_smoker: "Roker", sidebar_tattoo: "Tatoeage", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Beschikbaar voor", sidebar_meeting_with: "Ontmoeting met", sidebar_travel: "Reizen",
+  contact_title: "Contactinfo", contact_open: "OPEN",
+  sticky_contact: "Contact", sticky_review: "Beoordeling", sticky_message: "Bericht", sticky_report: "Melden",
+  sticky_send_msg: "Bericht sturen", sticky_to: "Aan:", sticky_msg_sent: "Bericht verzonden ✓",
+  sticky_write_msg: "Schrijf je bericht…", sticky_contact_title: "Contact",
+  sticky_send_sms: "SMS sturen", sticky_platform_msg: "Bericht sturen via platform",
+  sticky_platform_anonymous: "100% anoniem",
+  sticky_create_free: "Maak een gratis account aan om anonieme berichten te sturen",
+  sticky_create_account: "Account aanmaken", sticky_login: "Inloggen",
+  sticky_report_title: "Advertentie melden", sticky_report_body: "Maak een gratis account aan om een advertentie te melden",
+  sticky_describe_problem: "Beschrijf het probleem kort…",
+  sticky_send_report: "Melding versturen", sticky_report_received: "Bedankt — melding ontvangen ✓",
+  sticky_write_review: "Beoordeling schrijven", sticky_review_body: "Maak een gratis account aan om een beoordeling te schrijven",
+  photo_free_account: "Gratis account",
+  photo_create_free_title: "Maak een gratis account aan\nom alle foto's te zien",
+  photo_registration_free: "Registratie is gratis en duurt minder dan 1 minuut. Geen betaling vereist.",
+  photo_create_btn: "Gratis account aanmaken", photo_login: "Inloggen",
+  video_unlock: "Ontgrendelen voor", video_create_to_buy: "Account aanmaken om te kopen",
+  video_processing: "Verwerken...", video_unlock_btn: "Ontgrendelen",
+  video_buy_more: "Meer RedCoins kopen →", video_my_videos: "Mijn video's",
+  video_count: "video", video_count_plural: "video's", video_watch_all: "BEKIJK MIJN VIDEO'S →",
+  filter_title: "Filters", filter_sort: "Sorteren op",
+  filter_premium_first: "Premium eerst", filter_newest: "Nieuwste eerst", filter_oldest: "Oudste eerst",
+  filter_min: "Min", filter_max: "Max", filter_show_only: "Alleen tonen",
+  filter_premium_profiles: "Premium profielen", filter_has_video: "Heeft video",
+  filter_reset: "Resetten", filter_category: "Categorie", filter_location: "Locatie",
+  filter_gender: "Geslacht", filter_filters: "Filters",
+  filter_search_country: "Zoek land...", filter_all_cities: "Alle steden in",
+  filter_no_results: "Geen resultaten", filter_no_cities: "Geen steden beschikbaar",
+  filter_europe: "Europa", filter_worldwide: "Wereldwijd",
+  reg_step_of: "Stap", reg_select_type: "Selecteer je accounttype",
+  reg_choose_how: "Kies hoe je RedLightAD wilt gebruiken",
+  reg_create_profile: "Profiel aanmaken", reg_for_providers: "Voor aanbieders",
+  reg_provider_features: "Plaats advertenties, ontvang boekingen en laat je bedrijf groeien",
+  reg_customer_account: "Klantaccount", reg_for_clients: "Voor klanten",
+  reg_customer_features: "Bekijk aanbieders, veilig berichten",
+  reg_fill_details: "Vul je gegevens in om te beginnen",
+  reg_min_chars: "Min. 6 tekens", reg_repeat_password: "Herhaal je wachtwoord",
+  reg_agree_terms: "Ik ga akkoord met de", reg_terms: "Servicevoorwaarden", reg_privacy: "Privacybeleid",
+  reg_age_confirm: "Ik bevestig dat ik 18 jaar of ouder ben",
+  reg_password_short: "Wachtwoord moet minimaal 6 tekens zijn",
+  reg_password_mismatch: "Wachtwoorden komen niet overeen",
+  reg_verify_phone: "Verifieer je telefoon",
+  reg_step3_desc: "Stap 3 van 3 · optioneel maar aanbevolen",
+  reg_phone_desc: "Voer je telefoonnummer in om een verificatiecode per SMS te ontvangen.",
+  reg_phone_number: "Telefoonnummer", reg_phone_invalid: "Voer een geldig telefoonnummer in",
+  reg_send_code: "Verificatiecode versturen", reg_sending: "Verzenden…",
+  reg_skip: "Overslaan →", reg_code_sent_to: "Code verstuurd naar",
+  reg_enter_code: "Voer de 6-cijferige code in",
+  reg_verify_btn: "Verifiëren →", reg_verifying: "Verifiëren…",
+  reg_change_number: "← Nummer wijzigen", reg_resend_in: "Opnieuw versturen over",
+  reg_resend_code: "Code opnieuw versturen", reg_skip_verify: "Verificatie overslaan →",
+  reg_account_created: "Account aangemaakt!", reg_check_email: "Check je email op",
+  reg_go_login: "Ga naar login →", reg_search_country: "Zoek land…",
+  reg_sign_up: "Registreren",
+  ad_not_found: "Advertentie niet gevonden", ad_back_home: "← Terug naar home",
+  ad_home: "Home", ad_about_me: "Over mij", ad_services: "Services",
+  ad_gallery: "Galerij", ad_photos: "foto's", ad_private_content: "Privé-inhoud",
+  ad_items: "items", ad_report_profile: "⚑ Profiel melden",
+  ad_copyright: "© 2026 RedLightAD. Alle rechten voorbehouden.",
+  common_next: "Volgende", common_done: "Klaar", common_delete: "Verwijderen",
+  common_confirm: "Bevestigen", common_yes: "Ja", common_no: "Nee",
+  common_try_again: "Opnieuw proberen", common_share: "Delen",
+  common_view_all: "Alles bekijken", common_see_more: "Meer zien", common_show_less: "Minder tonen",
+  common_sending: "Verzenden...", common_sent: "Verzonden!", common_copy: "Kopiëren",
+  common_none: "Geen", common_all: "Alle",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1287,6 +2195,88 @@ const sv = makeSimple({
   about_me: "Om mig",
   watch_videos: "Se videor →",
   view_profile: "Se profil",
+  dash_stories: "Berättelser",
+  dash_travel: "Reseschema",
+  dash_marketplace: "Min Marknadsplats",
+  dash_earnings: "Intäkter",
+  dash_verification: "Verifiering",
+  social_media_links: "Sociala medier",
+  availability_hours: "Tillgänglighet & Öppettider",
+  your_timezone: "Din tidszon",
+  voice_message: "Röstmeddelande",
+  sidebar_title: "Profilinfo",
+  sidebar_age: "Ålder", sidebar_gender: "Kön", sidebar_category: "Kategori",
+  sidebar_location: "Plats", sidebar_languages: "Språk",
+  sidebar_height: "Längd", sidebar_weight: "Vikt", sidebar_ethnicity: "Etnicitet",
+  sidebar_nationality: "Nationalitet", sidebar_orientation: "Orientering",
+  sidebar_eyes: "Ögon", sidebar_hair_color: "Hårfärg", sidebar_hair_length: "Hårlängd",
+  sidebar_smoker: "Rökare", sidebar_tattoo: "Tatuering", sidebar_piercing: "Piercing",
+  sidebar_available_for: "Tillgänglig för", sidebar_meeting_with: "Träffar", sidebar_travel: "Resor",
+  contact_title: "Kontaktinfo", contact_open: "ÖPPNA",
+  sticky_contact: "Kontakt", sticky_review: "Recension", sticky_message: "Meddelande", sticky_report: "Rapportera",
+  sticky_send_msg: "Skicka meddelande", sticky_to: "Till:", sticky_msg_sent: "Meddelande skickat ✓",
+  sticky_write_msg: "Skriv ditt meddelande…", sticky_contact_title: "Kontakt",
+  sticky_send_sms: "Skicka SMS", sticky_platform_msg: "Skicka meddelande via plattformen",
+  sticky_platform_anonymous: "100% anonymt",
+  sticky_create_free: "Skapa ett gratis konto för att skicka anonyma meddelanden",
+  sticky_create_account: "Skapa konto", sticky_login: "Logga in",
+  sticky_report_title: "Rapportera annons", sticky_report_body: "Skapa ett gratis konto för att rapportera en annons",
+  sticky_describe_problem: "Beskriv problemet kort…",
+  sticky_send_report: "Skicka rapport", sticky_report_received: "Tack — rapport mottagen ✓",
+  sticky_write_review: "Skriv en recension", sticky_review_body: "Skapa ett gratis konto för att skriva en recension",
+  photo_free_account: "Gratis konto",
+  photo_create_free_title: "Skapa ett gratis konto\nför att se alla bilder",
+  photo_registration_free: "Registrering är gratis och tar under 1 minut. Ingen betalning krävs.",
+  photo_create_btn: "Skapa gratis konto", photo_login: "Logga in",
+  video_unlock: "Lås upp för", video_create_to_buy: "Skapa konto för att köpa",
+  video_processing: "Bearbetar...", video_unlock_btn: "Lås upp",
+  video_buy_more: "Köp fler RedCoins →", video_my_videos: "Mina videor",
+  video_count: "video", video_count_plural: "videor", video_watch_all: "SE MINA VIDEOR →",
+  filter_title: "Filter", filter_sort: "Sortera efter",
+  filter_premium_first: "Premium först", filter_newest: "Nyaste först", filter_oldest: "Äldst först",
+  filter_min: "Min", filter_max: "Max", filter_show_only: "Visa bara",
+  filter_premium_profiles: "Premium-profiler", filter_has_video: "Har video",
+  filter_reset: "Återställ", filter_category: "Kategori", filter_location: "Plats",
+  filter_gender: "Kön", filter_filters: "Filter",
+  filter_search_country: "Sök land...", filter_all_cities: "Alla städer i",
+  filter_no_results: "Inga resultat", filter_no_cities: "Inga städer tillgängliga",
+  filter_europe: "Europa", filter_worldwide: "Världen",
+  reg_step_of: "Steg", reg_select_type: "Välj din kontotyp",
+  reg_choose_how: "Välj hur du vill använda RedLightAD",
+  reg_create_profile: "Skapa profil", reg_for_providers: "För leverantörer",
+  reg_provider_features: "Lägg upp annonser, ta emot bokningar och väx ditt företag",
+  reg_customer_account: "Kundkonto", reg_for_clients: "För kunder",
+  reg_customer_features: "Bläddra bland leverantörer, meddelanden säkert",
+  reg_fill_details: "Fyll i dina uppgifter för att komma igång",
+  reg_min_chars: "Min. 6 tecken", reg_repeat_password: "Upprepa ditt lösenord",
+  reg_agree_terms: "Jag godkänner", reg_terms: "Användarvillkor", reg_privacy: "Integritetspolicy",
+  reg_age_confirm: "Jag bekräftar att jag är 18 år eller äldre",
+  reg_password_short: "Lösenord måste vara minst 6 tecken",
+  reg_password_mismatch: "Lösenorden stämmer inte överens",
+  reg_verify_phone: "Verifiera din telefon",
+  reg_step3_desc: "Steg 3 av 3 · valfritt men rekommenderat",
+  reg_phone_desc: "Ange ditt telefonnummer för att få en verifieringskod via SMS.",
+  reg_phone_number: "Telefonnummer", reg_phone_invalid: "Ange ett giltigt telefonnummer",
+  reg_send_code: "Skicka verifieringskod", reg_sending: "Skickar…",
+  reg_skip: "Hoppa över →", reg_code_sent_to: "Kod skickad till",
+  reg_enter_code: "Ange den 6-siffriga koden",
+  reg_verify_btn: "Verifiera →", reg_verifying: "Verifierar…",
+  reg_change_number: "← Ändra nummer", reg_resend_in: "Skicka igen om",
+  reg_resend_code: "Skicka kod igen", reg_skip_verify: "Hoppa över verifiering →",
+  reg_account_created: "Konto skapat!", reg_check_email: "Kontrollera din e-post på",
+  reg_go_login: "Gå till login →", reg_search_country: "Sök land…",
+  reg_sign_up: "Registrera dig",
+  ad_not_found: "Annons hittades inte", ad_back_home: "← Tillbaka till startsidan",
+  ad_home: "Hem", ad_about_me: "Om mig", ad_services: "Tjänster",
+  ad_gallery: "Galleri", ad_photos: "bilder", ad_private_content: "Privat innehåll",
+  ad_items: "objekt", ad_report_profile: "⚑ Rapportera profil",
+  ad_copyright: "© 2026 RedLightAD. Alla rättigheter förbehållna.",
+  common_next: "Nästa", common_done: "Klar", common_delete: "Radera",
+  common_confirm: "Bekräfta", common_yes: "Ja", common_no: "Nej",
+  common_try_again: "Försök igen", common_share: "Dela",
+  common_view_all: "Visa alla", common_see_more: "Se mer", common_show_less: "Visa mindre",
+  common_sending: "Skickar...", common_sent: "Skickat!", common_copy: "Kopiera",
+  common_none: "Inga", common_all: "Alla",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1371,6 +2361,15 @@ const no = makeSimple({
   about_me: "Om meg",
   watch_videos: "Se videoer →",
   view_profile: "Se profil",
+  dash_stories: "Historier",
+  dash_travel: "Reiseplan",
+  dash_marketplace: "Min Markedsplass",
+  dash_earnings: "Inntekter",
+  dash_verification: "Verifisering",
+  social_media_links: "Sosiale medier",
+  availability_hours: "Tilgjengelighet & Åpningstider",
+  your_timezone: "Din tidssone",
+  voice_message: "Talemelding",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1456,6 +2455,15 @@ const ar = makeSimple({
   about_me: "عني",
   watch_videos: "شاهد مقاطع الفيديو →",
   view_profile: "عرض الملف",
+  dash_stories: "القصص",
+  dash_travel: "جدول السفر",
+  dash_marketplace: "سوقي",
+  dash_earnings: "الأرباح",
+  dash_verification: "التحقق",
+  social_media_links: "روابط التواصل",
+  availability_hours: "التوفر & أوقات العمل",
+  your_timezone: "منطقتك الزمنية",
+  voice_message: "رسالة صوتية",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1540,6 +2548,15 @@ const th = makeSimple({
   about_me: "เกี่ยวกับฉัน",
   watch_videos: "ดูวิดีโอของฉัน →",
   view_profile: "ดูโปรไฟล์",
+  dash_stories: "สตอรี่",
+  dash_travel: "ตารางเดินทาง",
+  dash_marketplace: "ตลาดของฉัน",
+  dash_earnings: "รายได้",
+  dash_verification: "การยืนยัน",
+  social_media_links: "โซเชียลมีเดีย",
+  availability_hours: "ความพร้อม & เวลาทำการ",
+  your_timezone: "เขตเวลาของคุณ",
+  voice_message: "ข้อความเสียง",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1625,6 +2642,15 @@ const ru = makeSimple({
   about_me: "Обо мне",
   watch_videos: "Смотреть мои видео →",
   view_profile: "Смотреть профиль",
+  dash_stories: "Истории",
+  dash_travel: "График поездок",
+  dash_marketplace: "Мой Рынок",
+  dash_earnings: "Доходы",
+  dash_verification: "Верификация",
+  social_media_links: "Соцсети",
+  availability_hours: "Доступность & Часы работы",
+  your_timezone: "Ваш часовой пояс",
+  voice_message: "Голосовое сообщение",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1710,6 +2736,15 @@ const pl = makeSimple({
   about_me: "O mnie",
   watch_videos: "Zobacz moje filmy →",
   view_profile: "Zobacz profil",
+  dash_stories: "Historie",
+  dash_travel: "Plan podróży",
+  dash_marketplace: "Mój Rynek",
+  dash_earnings: "Zarobki",
+  dash_verification: "Weryfikacja",
+  social_media_links: "Media społecznościowe",
+  availability_hours: "Dostępność & Godziny otwarcia",
+  your_timezone: "Twoja strefa czasowa",
+  voice_message: "Wiadomość głosowa",
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
