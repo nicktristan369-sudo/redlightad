@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createHmac } from "crypto"
-import { createClient } from "@/lib/supabaseServer"
+import { createServerClient } from "@/lib/supabaseServer"
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid package or user" }, { status: 400 })
     }
 
-    const supabase = createClient()
+    const supabase = createServerClient()
 
     // Tilføj coins til brugerens wallet
     const { error } = await supabase.rpc("add_red_coins", {
