@@ -223,6 +223,7 @@ export default function AdminLayout({
       items: [
         { href: "/admin",                label: "Overview",         icon: LayoutDashboard },
         { href: "/admin/annoncer",        label: "Profiles",        icon: FileText,    badge: pendingListings },
+        { href: "/admin/create-profile",  label: "Create Profile",  icon: UserPlus },
         { href: "/admin/marketplace",     label: "Marketplace",     icon: ShoppingBag, badge: pendingMarketplace },
         { href: "/admin/brugere",         label: "Users",           icon: Users },
       ],
