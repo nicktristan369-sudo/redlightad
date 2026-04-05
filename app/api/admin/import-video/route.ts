@@ -7,51 +7,51 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
+// Extend Vercel function timeout to 5 minutes
+export const maxDuration = 300
+
 export async function POST(req: NextRequest) {
-  const { url, listingId } = await req.json()
-  if (!url) return NextResponse.json({ error: "No URL" }, { status: 400 })
-
-  const ext = url.split(".").pop()?.split("?")[0] || "mp4"
-  const filename = `import_${Date.now()}.${ext}`
-  const storagePath = listingId ? `listings/${listingId}/${filename}` : `imports/${filename}`
-
-  let buffer: Buffer | null = null
-  let contentType = "video/mp4"
-
-  // Download via VPS proxy (bypasser CDN hotlink protection)
-  const vpsProxy = process.env.VPS_VIDPROXY_URL || "http://76.13.154.9:3001"
-  const referer = url.includes("eurogirlsescort") ? "https://www.eurogirlsescort.com/" : new URL(url).origin + "/"
-  const proxyUrl = `${vpsProxy}/download?url=${encodeURIComponent(url)}&referer=${encodeURIComponent(referer)}`
-
   try {
-    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(120000) })
-    if (res.ok) {
-      contentType = res.headers.get("content-type") || "video/mp4"
-      buffer = Buffer.from(await res.arrayBuffer())
-    } else {
-      const err = await res.text()
-      return NextResponse.json({ error: `VPS proxy fejlede: ${err}` }, { status: 422 })
-    }
-  } catch (e: unknown) {
-    return NextResponse.json({ error: `VPS proxy fejlede: ${e instanceof Error ? e.message : "timeout"}` }, { status: 422 })
-  }
+    const { url } = await req.json()
+    if (!url) return NextResponse.json({ error: "No URL" }, { status: 400 })
 
-  if (!buffer || buffer.length < 1000) {
-    return NextResponse.json({ error: "Video for lille eller tom — CDN blokerer stadig." }, { status: 422 })
-  }
+    // Download via VPS proxy (bypasser CDN hotlink protection)
+    const vpsProxy = process.env.VPS_VIDPROXY_URL || "http://76.13.154.9:3001"
+    const referer = url.includes("eurogirlsescort") ? "https://www.eurogirlsescort.com/" : new URL(url).origin + "/"
+    const proxyUrl = `${vpsProxy}/download?url=${encodeURIComponent(url)}&referer=${encodeURIComponent(referer)}`
 
-  const path = storagePath
+    let buffer: Buffer | null = null
 
-  // Upload til Cloudinary som video
-  const publicUrl = await new Promise<string>((resolve, reject) => {
-    cloudinary.uploader.upload_stream(
-      { resource_type: "video", folder: "redlightad/videos", use_filename: false },
-      (err, result) => {
-        if (err || !result) reject(err || new Error("Upload failed"))
-        else resolve(result.secure_url)
+    try {
+      const res = await fetch(proxyUrl)
+      if (!res.ok) {
+        const err = await res.text()
+        return NextResponse.json({ error: `VPS proxy: ${err}` }, { status: 422 })
       }
-    ).end(buffer!)
-  })
+      buffer = Buffer.from(await res.arrayBuffer())
+    } catch (e: unknown) {
+      return NextResponse.json({ error: `Download fejlede: ${e instanceof Error ? e.message : "ukendt fejl"}` }, { status: 422 })
+    }
 
-  return NextResponse.json({ url: publicUrl })
+    if (!buffer || buffer.length < 1000) {
+      return NextResponse.json({ error: "Video er tom eller for lille" }, { status: 422 })
+    }
+
+    // Upload til Cloudinary
+    const publicUrl = await new Promise<string>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { resource_type: "video", folder: "redlightad/videos" },
+        (err, result) => {
+          if (err || !result) reject(new Error(err?.message || "Cloudinary upload fejlede"))
+          else resolve(result.secure_url)
+        }
+      )
+      stream.end(buffer!)
+    })
+
+    return NextResponse.json({ url: publicUrl })
+  } catch (e: unknown) {
+    console.error("import-video error:", e)
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Ukendt fejl" }, { status: 500 })
+  }
 }
