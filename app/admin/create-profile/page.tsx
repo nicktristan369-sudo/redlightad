@@ -925,7 +925,7 @@ export default function CreateProfilePage() {
                         Brug URL direkte
                       </button>
                     )}
-                    {profile.video_url && (
+                    {profile.video_url && profile.video_url.includes("cloudinary") && (
                       <button
                         onClick={async () => {
                           setDewatermarking(true); setVideoImportMsg("Fjerner vandmærke...");
@@ -949,6 +949,9 @@ export default function CreateProfilePage() {
                       >
                         {dewatermarking ? "Behandler..." : "Fjern vandmærke"}
                       </button>
+                    )}
+                    {profile.video_url && !profile.video_url.includes("cloudinary") && (
+                      <span style={{ fontSize: 11, color: "#6B7280", alignSelf: "center" }}>Upload video nedenfor for at fjerne vandmærke</span>
                     )}
                   </div>
                   {videoImportMsg && <p style={{ fontSize: 12, marginTop: 6, color: videoImportMsg.startsWith("✓") ? "#16A34A" : "#DC2626" }}>{videoImportMsg}</p>}
