@@ -915,29 +915,14 @@ export default function CreateProfilePage() {
                     <input type="url" value={profile.video_url || ""} onChange={e => { p("video_url", e.target.value); setVideoImportMsg(""); }}
                       placeholder="https://..." style={{ ...inputStyle, flex: 1 }} />
                     {profile.video_url && !profile.video_url.includes("cloudinary") && (
-                      <button
-                        onClick={async () => {
-                          setDewatermarking(true); setVideoImportMsg("Henter video og fjerner vandmærke...");
-                          try {
-                            const r = await fetch("/api/admin/import-and-dewatermark", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ url: profile.video_url }),
-                            });
-                            const d = await r.json();
-                            if (!r.ok) throw new Error(d.error);
-                            p("video_url", d.url);
-                            p("videos", [...(profile.videos || []).filter((v: string) => v !== profile.video_url), d.url]);
-                            setVideoImportMsg(d.warning ? `⚠ ${d.warning}` : "✓ Video hentet og vandmærke fjernet");
-                          } catch (e: unknown) {
-                            setVideoImportMsg(e instanceof Error ? e.message : "Fejl");
-                          } finally { setDewatermarking(false); }
-                        }}
-                        disabled={dewatermarking}
-                        style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#DC2626", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: dewatermarking ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: dewatermarking ? 0.6 : 1 }}
+                      <a
+                        href={profile.video_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", textDecoration: "none" }}
                       >
-                        {dewatermarking ? "Behandler (~30 sek)..." : "Hent & fjern vandmærke"}
-                      </button>
+                        Åbn video
+                      </a>
                     )}
                     {profile.video_url && profile.video_url.includes("cloudinary") && (
                       <button
