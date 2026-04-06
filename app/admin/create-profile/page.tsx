@@ -184,6 +184,7 @@ export default function CreateProfilePage() {
   const [importMsg, setImportMsg] = useState("");
   const [importedImages, setImportedImages] = useState<string[]>([]);
   const [importingVideo, setImportingVideo] = useState(false);
+  const [dewatermarking, setDewatermarking] = useState(false);
   const [videoImportMsg, setVideoImportMsg] = useState("");
 
   // Fuzzy match: find closest option value (case-insensitive, partial)
@@ -922,6 +923,31 @@ export default function CreateProfilePage() {
                         style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#111", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
                       >
                         Brug URL direkte
+                      </button>
+                    )}
+                    {profile.video_url && (
+                      <button
+                        onClick={async () => {
+                          setDewatermarking(true); setVideoImportMsg("Fjerner vandmærke...");
+                          try {
+                            const r = await fetch("/api/admin/dewatermark-video", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ url: profile.video_url }),
+                            });
+                            const d = await r.json();
+                            if (!r.ok) throw new Error(d.error);
+                            p("video_url", d.url);
+                            p("videos", [...(profile.videos || []), d.url]);
+                            setVideoImportMsg("✓ Vandmærke fjernet — sæt som live profil billede nedenfor");
+                          } catch (e: unknown) {
+                            setVideoImportMsg(e instanceof Error ? e.message : "Fejl");
+                          } finally { setDewatermarking(false); }
+                        }}
+                        disabled={dewatermarking}
+                        style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#DC2626", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: dewatermarking ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: dewatermarking ? 0.6 : 1 }}
+                      >
+                        {dewatermarking ? "Behandler..." : "Fjern vandmærke"}
                       </button>
                     )}
                   </div>
