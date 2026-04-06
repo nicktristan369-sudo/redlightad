@@ -25,6 +25,7 @@ interface AdCardProps {
   language: string;
   premium_tier?: string | null;
   social_links?: Record<string, { url?: string }> | null;
+  onlyfans_username?: string | null;
 }
 
 export default function AdCard({
@@ -46,6 +47,7 @@ export default function AdCard({
   language,
   premium_tier,
   social_links,
+  onlyfans_username,
 }: AdCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const { t } = useLanguage()
@@ -110,7 +112,7 @@ export default function AdCard({
             </div>
           )}
           {/* OnlyFans badge */}
-          {social_links?.onlyfans?.url && (
+          {(social_links?.onlyfans?.url || onlyfans_username) && (
             <div className="absolute bottom-2 right-2 flex items-center rounded-full px-2 py-1"
               style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
               <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ width: 52, height: 16, objectFit: "contain" }} />

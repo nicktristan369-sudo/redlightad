@@ -280,10 +280,15 @@ export default function AdDetailPage() {
               )}
 
               {/* Social Links */}
-              {hasSocialLinks && (
+              {(hasSocialLinks || ad.onlyfans_username) && (
                 <SocialLinksSection
                   listingId={ad.id}
-                  socialLinks={ad.social_links!}
+                  socialLinks={{
+                    ...ad.social_links,
+                    ...(ad.onlyfans_username && !ad.social_links?.onlyfans?.url ? {
+                      onlyfans: { url: `https://onlyfans.com/${ad.onlyfans_username}` }
+                    } : {})
+                  } as import("@/components/SocialLinksSection").SocialLinks}
                   isPremium={isPremium}
                   isOwnListing={isOwnListing}
                 />

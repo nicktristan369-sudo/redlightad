@@ -51,12 +51,13 @@ interface AdCardGridProps {
   onStoryClick?: () => void
   staggerDelay?: number
   social_links?: Record<string, { url?: string }> | null
+  onlyfans_username?: string | null
 }
 
 export default function AdCardGrid({
   id, title, display_name, image, images, profileVideoUrl, verified, age, city, country, location,
   category, created_at, opening_hours, timezone, premium_tier,
-  hasStory = false, onStoryClick, staggerDelay = 0, social_links,
+  hasStory = false, onStoryClick, staggerDelay = 0, social_links, onlyfans_username,
 }: AdCardGridProps) {
   const displayTitle = display_name
     ? `${display_name}${age ? `, ${age}` : ""}`
@@ -171,7 +172,7 @@ export default function AdCardGrid({
             }}>PREMIUM</div>
           )}
           {/* OnlyFans badge */}
-          {social_links?.onlyfans?.url && (
+          {(social_links?.onlyfans?.url || onlyfans_username) && (
             <div style={{
               position: "absolute", bottom: 8, right: 8,
               background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)",
