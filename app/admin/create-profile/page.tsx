@@ -236,9 +236,28 @@ export default function CreateProfilePage() {
         ...(data.smoker && { smoker: matchOption(data.smoker, SMOKER_OPTIONS) }),
         ...(data.tattoo && { tattoo: matchOption(data.tattoo, TATTOO_OPTIONS) }),
         ...(data.piercing && { piercing: matchOption(data.piercing, PIERCING_OPTIONS) }),
-        ...(data.available && { available_for: matchOption(data.available, AVAILABLE_FOR_OPTIONS) }),
+        ...(data.available_for && { available_for: matchOption(data.available_for, AVAILABLE_FOR_OPTIONS) }),
+        ...(data.available && !data.available_for && { available_for: matchOption(data.available, AVAILABLE_FOR_OPTIONS) }),
         ...(data.meeting_with && { meeting_with: matchOption(data.meeting_with, MEETING_WITH_OPTIONS) }),
         ...(data.travel && { travel: matchOption(data.travel, TRAVEL_OPTIONS) }),
+        // Country from location
+        ...(data.country && { country: data.country }),
+        // Languages array
+        ...(data.languages && { languages: typeof data.languages === "string"
+          ? data.languages.split(",").map((l: string) => l.trim()).filter(Boolean)
+          : data.languages }),
+        // Rates from parsed table
+        ...(data.rates?.length > 0 && (() => {
+          const rateMap: Record<string, string> = {};
+          (data.rates as { period: string; incall: string; outcall: string }[]).forEach(r => {
+            const p = r.period.toLowerCase();
+            if (p.includes("0.5") || p.includes("30")) rateMap.rate_30min = r.incall || r.outcall;
+            else if (p.includes("1 h") || p.match(/^1\s*h/)) rateMap.rate_1hour = r.incall || r.outcall;
+            else if (p.includes("2 h") || p.match(/^2\s*h/)) rateMap.rate_2hours = r.incall || r.outcall;
+            else if (p.includes("overnight") || p.includes("night")) rateMap.rate_overnight = r.incall || r.outcall;
+          });
+          return rateMap;
+        })()),
       }));
 
       if (data.images?.length > 0) setImportedImages(data.images);

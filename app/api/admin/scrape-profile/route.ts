@@ -77,16 +77,38 @@ export async function POST(req: NextRequest) {
       age: result.age ? parseInt(result.age as string) || null : null,
       location: result.city,
       city: result.city,
-      country: (result.nationality as string) || "",
+      country: result.country || "",
       nationality: result.nationality,
       phone: result.phone,
       telegram: result.telegram,
       description: result.description,
       height: result.height,
       weight: result.weight,
-      languages: result.languages,
-      services: result.services,
+      languages: typeof result.languages === "string"
+        ? (result.languages as string).split(",").map((l: string) => l.trim()).filter(Boolean)
+        : result.languages || [],
+      services: typeof result.services === "string"
+        ? (result.services as string).split(",").map((s: string) => s.trim()).filter(Boolean)
+        : result.services || [],
       ethnicity: result.ethnicity,
+      orientation: result.orientation,
+      eye_color: result.eye_color,
+      hair_color: result.hair_color,
+      hair_length: result.hair_length,
+      pubic_hair: result.pubic_hair,
+      bust_size: result.bust_size,
+      bust_type: result.bust_type,
+      smoker: result.smoker,
+      tattoo: result.tattoo,
+      piercing: result.piercing,
+      travel: result.travel,
+      available_for: result.available_for,
+      meeting_with: result.meeting_with,
+      profile_type: result.profile_type,
+      rates: result.rates,
+      services_detailed: result.services_detailed,
+      working_time: result.working_time,
+      working_timezone: result.working_timezone,
       video_url: result.video,
       images: result.images,
     }
@@ -94,56 +116,181 @@ export async function POST(req: NextRequest) {
 }
 
 function parseEuroGirlsEscort($: CheerioDoc, url: string) {
-  const name = $("h1").first().text().trim() ||
+  // ── Name ──────────────────────────────────────────────────────────────────
+  const name = $("h1").first().text().trim().split(",")[0].trim() ||
     $("[class*=name]").first().text().trim()
 
-  // Description/bio — find "Hello!" text block
+  // ── Description ──────────────────────────────────────────────────────────
   let description = ""
-  $("p span, p").each((_i, el) => {
+  $(".detail-profile p, [class*=description] p, p").each((_i, el) => {
     const txt = $(el).text().trim()
-    if (txt.length > 80 && !description) description = txt
+    if (txt.length > 100 && !description) description = txt
   })
   description = description.slice(0, 2000)
 
-  // Profile attributes from rows: <span>Label:</span><strong>Value</strong>
+  // ── Profile attribute table ───────────────────────────────────────────────
+  // EGE renders profile info as rows with <span>Label:</span><strong>Value</strong>
+  // OR as table rows <td>Label</td><td><a>Value</a></td>
   const attrs: Record<string, string> = {}
-  $("div.row, tr").each((_i, el) => {
-    const label = $(el).find("span").first().text().replace(":", "").trim().toLowerCase()
-    const value = $(el).find("strong").first().text().trim()
-    if (label && value) attrs[label] = value
-  })
 
-  // Also parse <span>Label:</span><strong>Value</strong> pattern directly
+  // Method 1: span + strong sibling pattern
   $("span").each((_i, el) => {
     const txt = $(el).text().trim()
     if (txt.endsWith(":")) {
-      const label = txt.slice(0, -1).toLowerCase()
-      const value = $(el).next("strong").text().trim() || $(el).parent().find("strong").first().text().trim()
-      if (value && !attrs[label]) attrs[label] = value
+      const label = txt.slice(0, -1).toLowerCase().trim()
+      const $parent = $(el).parent()
+      const value =
+        $(el).next("strong").text().trim() ||
+        $(el).next("a").text().trim() ||
+        $parent.find("strong").not($(el).find("strong")).first().text().trim() ||
+        $parent.children().not(el).first().text().trim()
+      if (label && value && value.length < 100) attrs[label] = value
     }
   })
 
+  // Method 2: table rows
+  $("tr").each((_i, el) => {
+    const cells = $(el).find("td")
+    if (cells.length >= 2) {
+      const label = $(cells[0]).text().replace(":", "").trim().toLowerCase()
+      const value = $(cells[1]).text().trim() || $(cells[1]).find("a").first().text().trim()
+      if (label && value && !attrs[label]) attrs[label] = value
+    }
+  })
+
+  // Method 3: definition lists
+  $("dt").each((_i, el) => {
+    const label = $(el).text().replace(":", "").trim().toLowerCase()
+    const value = $(el).next("dd").text().trim()
+    if (label && value && !attrs[label]) attrs[label] = value
+  })
+
+  // ── Extract all standard fields ───────────────────────────────────────────
   const age = attrs["age"] || $("[class*=age]").first().text().replace(/\D/g, "").trim()
-  const city = attrs["city"] || attrs["location"]?.split("/")[0]?.trim() || ""
-  const nationality = attrs["nationality"] || ""
+  const locationRaw = attrs["location"] || ""
+  const city = attrs["city"] || locationRaw.split("/")[0]?.trim() || ""
+  const country = attrs["country"] || locationRaw.split("/")[1]?.trim() || ""
+
   const height = attrs["height"]?.match(/\d+/)?.[0] || ""
   const weight = attrs["weight"]?.match(/\d+/)?.[0] || ""
-  const languages = attrs["languages"] || ""
-  const services = attrs["services"] || ""
+  const nationality = attrs["nationality"] || ""
   const ethnicity = attrs["ethnicity"] || ""
-  const available = attrs["available for"] || ""
+  const orientation = attrs["orientation"] || ""
+  const eye_color = attrs["eyes"] || attrs["eye color"] || ""
+  const hair_color = attrs["hair color"] || attrs["hair"] || ""
+  const hair_length = attrs["hair lenght"] || attrs["hair length"] || attrs["hair_length"] || ""
+  const pubic_hair = attrs["pubic hair"] || attrs["pubic"] || ""
+  const bust_size = attrs["bust size"] || attrs["bra"] || ""
+  const bust_type = attrs["bust type"] || ""
+  const smoker = attrs["smoker"] || ""
+  const tattoo = attrs["tattoo"] || ""
+  const piercing = attrs["piercing"] || ""
+  const travel = attrs["travel"] || ""
+  const available_for = attrs["available for"] || attrs["available"] || ""
+  const meeting_with = attrs["meeting with"] || ""
+  const profile_type = attrs["escort type"] || attrs["type"] || ""
+  const languages = attrs["languages"] || ""
+  const servicesText = attrs["services"] || ""
 
-  // Phone — partially visible in span.opacity-horizontal, encrypted in data-phone
+  // ── Rates table ──────────────────────────────────────────────────────────
+  // Table: Time | Incall | Outcall
+  const rates: { period: string; incall: string; outcall: string }[] = []
+  $("table").each((_i, table) => {
+    const headers = $(table).find("thead th, tr:first-child th, tr:first-child td")
+      .map((_j, el) => $(el).text().toLowerCase().trim()).get()
+    const hasIncall = headers.some(h => h.includes("incall"))
+    const hasTime = headers.some(h => h.includes("time") || h.includes("hour") || h.includes("hour"))
+    if (hasIncall || hasTime) {
+      $(table).find("tbody tr, tr:not(:first-child)").each((_j, row) => {
+        const cells = $(row).find("td")
+        if (cells.length >= 2) {
+          const period = $(cells[0]).text().trim()
+          const incall = $(cells[1]).text().replace(/[^\d€$£EUR]/gi, "").trim() || $(cells[1]).text().trim()
+          const outcall = cells.length >= 3 ? ($(cells[2]).text().replace(/[^\d€$£EUR]/gi, "").trim() || $(cells[2]).text().trim()) : ""
+          if (period && (incall || outcall)) {
+            // Only add if it looks like a rate row (has a number)
+            if (/hour|min|24|48|overnight/i.test(period) || /\d/.test(incall)) {
+              rates.push({ period, incall: incall !== "×" ? incall : "", outcall: outcall !== "×" ? outcall : "" })
+            }
+          }
+        }
+      })
+    }
+  })
+
+  // ── Services detailed table ───────────────────────────────────────────────
+  // Table: Services | Included | Extra (with optional price)
+  const services_detailed: { service: string; type: "included" | "extra"; price: string }[] = []
+  const includedServices: string[] = []
+  $("table").each((_i, table) => {
+    const headers = $(table).find("thead th, tr:first-child th")
+      .map((_j, el) => $(el).text().toLowerCase().trim()).get()
+    if (headers.some(h => h.includes("included") || h.includes("extra"))) {
+      $(table).find("tbody tr, tr:not(:first-child)").each((_j, row) => {
+        const cells = $(row).find("td")
+        if (cells.length >= 2) {
+          const service = $(cells[0]).text().trim()
+          if (!service) return
+          const includedCell = $(cells[1]).text().trim()
+          const extraCell = cells.length >= 3 ? $(cells[2]).text().trim() : ""
+
+          // Check for checkmark symbols (✓, ✔, or just non-empty text that isn't ×)
+          const isIncluded = /✓|✔|check|yes/i.test(includedCell) || (includedCell && includedCell !== "×" && includedCell !== "")
+          const isExtra = extraCell && extraCell !== "×" && extraCell !== ""
+
+          if (isIncluded) {
+            services_detailed.push({ service, type: "included", price: "" })
+            includedServices.push(service)
+          } else if (isExtra) {
+            // Extract price from extra cell
+            const priceMatch = extraCell.match(/[\d,]+\s*(?:EUR|USD|GBP|DKK)?/i)
+            services_detailed.push({ service, type: "extra", price: priceMatch?.[0] || extraCell })
+          }
+        }
+      })
+    }
+  })
+
+  // ── Working time ──────────────────────────────────────────────────────────
+  const working_time: { day: string; from: string; to: string; all_day: boolean }[] = []
+  let working_timezone = ""
+  const dayNames = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+  $("table, [class*=working], [class*=schedule], [class*=hours]").each((_i, el) => {
+    const text = $(el).text().toLowerCase()
+    if (!dayNames.some(d => text.includes(d))) return
+
+    $(el).find("tr").each((_j, row) => {
+      const rowText = $(row).text().trim()
+      const dayMatch = dayNames.find(d => rowText.toLowerCase().startsWith(d))
+      if (dayMatch) {
+        // Time range: "10:00 - 21:00" or "10:00 – 21:00"
+        const timeMatch = rowText.match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/)
+        if (timeMatch) {
+          working_time.push({ day: dayMatch.charAt(0).toUpperCase() + dayMatch.slice(1), from: timeMatch[1], to: timeMatch[2], all_day: false })
+        } else if (/24.{0,3}hour|all day|open 24/i.test(rowText)) {
+          working_time.push({ day: dayMatch.charAt(0).toUpperCase() + dayMatch.slice(1), from: "00:00", to: "24:00", all_day: true })
+        }
+      }
+    })
+
+    // Timezone
+    const tzMatch = $(el).text().match(/\(GMT[^)]+\)\s*[\w/]+/)
+    if (tzMatch && !working_timezone) working_timezone = tzMatch[0].trim()
+  })
+
+  // ── Phone ─────────────────────────────────────────────────────────────────
   const phonePartial = $(".opacity-horizontal").first().text().replace(/\u00a0/g, "").trim()
   const phone = phonePartial || ""
 
-  // Telegram — data-telegram attribute
+  // ── Messaging apps ────────────────────────────────────────────────────────
   const telegram = $("[data-telegram]").first().attr("data-telegram") || ""
+  const hasWhatsapp = $(".icon-whatsapp, [class*=whatsapp], [href*=whatsapp]").length > 0
+  const hasViber = $("[class*=viber], [href*=viber]").length > 0
+  const hasLine = $("[class*=line-app], [href*=line.me]").length > 0
+  const hasSignal = $("[class*=signal], [href*=signal.me]").length > 0
 
-  // WhatsApp — check if WhatsApp icon exists
-  const hasWhatsapp = $(".icon-whatsapp, [class*=whatsapp]").length > 0
-
-  // Video URL — data-video attribute OR regex scan for mp4 URLs in raw HTML
+  // ── Video ─────────────────────────────────────────────────────────────────
   let video = $("[data-video]").first().attr("data-video") || ""
   if (!video) {
     const rawHtml = $.html()
@@ -154,18 +301,15 @@ function parseEuroGirlsEscort($: CheerioDoc, url: string) {
     video = $("video source").first().attr("src") || $("video").first().attr("src") || ""
   }
 
+  // ── Images ────────────────────────────────────────────────────────────────
   const images: string[] = []
-  const adDomains = ["escortmodels", "escortmod", "banner", "advert", "sponsor", "affiliate", "promo"]
-
-  // First: gallery/slider containers only
+  const adDomains = ["escortmodels", "escortmod", "banner", "advert", "sponsor", "affiliate", "promo", "ads."]
   $("[class*=gallery] img, [class*=slider] img, [class*=photo] img, [class*=album] img, .swiper-slide img, .owl-item img, [class*=carousel] img").each((_i, el) => {
     const src = $(el).attr("data-src") || $(el).attr("data-lazy") || $(el).attr("src") || ""
     if (!src.startsWith("http")) return
     if (adDomains.some(d => src.toLowerCase().includes(d))) return
     if (!images.includes(src)) images.push(src)
   })
-
-  // Fallback: broad scan but exclude ad networks
   if (images.length === 0) {
     $("img[src*='escorts'], img[src*='profile'], img[src*='photo'], img[data-src]").each((_i, el) => {
       const src = $(el).attr("data-src") || $(el).attr("src") || ""
@@ -175,7 +319,19 @@ function parseEuroGirlsEscort($: CheerioDoc, url: string) {
     })
   }
 
-  return { name, age, city, phone, telegram, hasWhatsapp, description, images: images.slice(0, 10), video, height, weight, nationality, languages, services, ethnicity, available, source_url: url }
+  return {
+    name, age, city, country, phone, telegram, hasWhatsapp, hasViber, hasLine, hasSignal,
+    description, images: images.slice(0, 20), video,
+    height, weight, nationality, languages, services: servicesText,
+    ethnicity, orientation, eye_color, hair_color, hair_length, pubic_hair,
+    bust_size, bust_type, smoker, tattoo, piercing, travel,
+    available_for, meeting_with, profile_type,
+    rates, services_detailed, includedServices,
+    working_time, working_timezone,
+    source_url: url,
+    // Raw attrs for debugging
+    _attrs: attrs,
+  }
 }
 
 function parseGeneric($: CheerioDoc, url: string) {
