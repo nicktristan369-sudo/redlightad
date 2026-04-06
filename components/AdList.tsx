@@ -525,6 +525,9 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                         ))}
                       </div>
                       <div className="flex items-center gap-2">
+                        {((ad as any).social_links?.onlyfans?.url || (ad as any).onlyfans_username) && (
+                          <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 16, width: "auto", objectFit: "contain", flexShrink: 0 }} />
+                        )}
                         <span className="flex-1 bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2.5 rounded-none text-center transition-colors">
                           View Profile
                         </span>

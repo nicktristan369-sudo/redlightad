@@ -137,6 +137,8 @@ interface PremiumListing {
   timezone: string | null
   created_at: string
   in_carousel?: boolean
+  social_links?: Record<string, { url?: string }> | null
+  onlyfans_username?: string | null
 }
 
 const VISIBLE_COUNT = 7
@@ -224,7 +226,7 @@ export default function PremiumCarousel({
 
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel")
+      .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel, social_links, onlyfans_username")
       .eq("status", "active")
       .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
       .limit(40)
@@ -237,7 +239,7 @@ export default function PremiumCarousel({
         // Column doesn't exist yet (migration pending) → fall back without in_carousel filter
         const fallbackQuery = supabase
           .from("listings")
-          .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at")
+          .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, social_links, onlyfans_username")
           .eq("status", "active")
           .in("premium_tier", ["vip", "featured", "basic"])
           .limit(40)
@@ -381,6 +383,13 @@ export default function PremiumCarousel({
                       >
                         {isVip ? "VIP" : "FEAT"}
                       </div>
+                    </div>
+                  )}
+
+                  {/* OnlyFans badge */}
+                  {(l.social_links?.onlyfans?.url || l.onlyfans_username) && (
+                    <div className="absolute bottom-2 right-2 bg-black/70 rounded px-1 py-0.5 flex items-center">
+                      <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 12, width: "auto" }} />
                     </div>
                   )}
 
