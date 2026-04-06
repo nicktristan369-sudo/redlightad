@@ -1029,18 +1029,37 @@ export default function CreateProfilePage() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        setVideoImportMsg("Uploader video...");
-                        const formData = new FormData();
-                        formData.append("file", file);
+                        setVideoImportMsg(`Uploader video (${(file.size / 1024 / 1024).toFixed(1)} MB)...`);
                         try {
-                          const r = await fetch("/api/admin/upload-video", { method: "POST", body: formData });
-                          const d = await r.json();
-                          if (!r.ok) throw new Error(d.error);
-                          p("video_url", d.url);
-                          p("videos", [...(profile.videos || []), d.url]);
-                          setVideoImportMsg("✓ Video uploadet — klik 'Fjern vandmærke' eller sæt som profil billede");
+                          // Step 1: get signed upload params (no file goes through Vercel)
+                          const sigRes = await fetch("/api/admin/cloudinary-signature", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ folder: "redlightad/videos", resource_type: "video" }),
+                          });
+                          const sig = await sigRes.json();
+                          if (!sigRes.ok) throw new Error(sig.error || "Signature failed");
+
+                          // Step 2: upload directly to Cloudinary (bypasses Vercel 4.5MB limit)
+                          const fd = new FormData();
+                          fd.append("file", file);
+                          fd.append("api_key", sig.apiKey);
+                          fd.append("timestamp", sig.timestamp);
+                          fd.append("signature", sig.signature);
+                          fd.append("folder", sig.folder);
+
+                          const uploadRes = await fetch(
+                            `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`,
+                            { method: "POST", body: fd }
+                          );
+                          const uploadData = await uploadRes.json();
+                          if (!uploadRes.ok) throw new Error(uploadData.error?.message || "Upload failed");
+
+                          p("video_url", uploadData.secure_url);
+                          p("videos", [...(profile.videos || []), uploadData.secure_url]);
+                          setVideoImportMsg("✓ Video uploaded — click 'Remove watermark' or set as profile image");
                         } catch (err: unknown) {
-                          setVideoImportMsg(err instanceof Error ? err.message : "Upload fejlede");
+                          setVideoImportMsg(err instanceof Error ? err.message : "Upload failed");
                         }
                       }}
                       style={{ fontSize: 12, color: "#374151" }}
