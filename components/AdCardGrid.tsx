@@ -241,16 +241,17 @@ export default function AdCardGrid({
           <div style={{ height: 1, background: "#F3F4F6", margin: "10px 0" }} />
 
           {/* Kategori + posted */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4, overflow: "hidden" }}>
             {category ? (
               <span style={{
                 fontSize: 11, color: "#888888",
                 background: "#F5F5F7", padding: "2px 8px",
-                whiteSpace: "nowrap",
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                minWidth: 0,
               }}>{category}</span>
             ) : <span />}
             {ago && (
-              <span style={{ fontSize: 11, color: "#BBBBBB", whiteSpace: "nowrap" }}>{ago}</span>
+              <span style={{ fontSize: 11, color: "#BBBBBB", whiteSpace: "nowrap", flexShrink: 0 }}>{ago}</span>
             )}
           </div>
 

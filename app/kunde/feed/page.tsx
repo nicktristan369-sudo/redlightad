@@ -81,11 +81,11 @@ export default function KundeFeed() {
         {following.length > 0 && (
           <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 16, marginBottom: 20, scrollbarWidth: "none" }}>
             {following.map(f => (
-              <Link key={f.listing_id} href={`/ads/${f.listing_id}`} style={{ flexShrink: 0, textAlign: "center", textDecoration: "none" }}>
+              <Link key={f.listing_id} href={`/ads/${f.listing_id}`} style={{ flexShrink: 0, textAlign: "center", textDecoration: "none", padding: "4px" }}>
                 <div style={{ width: 56, height: 56, borderRadius: "50%", border: "2px solid #DC2626", overflow: "hidden", background: "#E5E7EB", marginBottom: 4 }}>
                   {f.image && <img src={f.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                 </div>
-                <span style={{ fontSize: 10, color: "#374151", maxWidth: 56, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{f.name}</span>
+                <span style={{ fontSize: 12, color: "#374151", maxWidth: 60, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{f.name}</span>
               </Link>
             ))}
           </div>
@@ -104,7 +104,7 @@ export default function KundeFeed() {
             </div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 8 }}>You are not following anyone yet</h2>
             <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 20 }}>Visit a profile and click "Follow" to see their content here</p>
-            <Link href="/" style={{ display: "inline-block", padding: "10px 20px", background: "#000", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+            <Link href="/" style={{ display: "inline-block", padding: "12px 24px", background: "#000", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
               Browse profiles
             </Link>
           </div>
@@ -126,8 +126,8 @@ export default function KundeFeed() {
                       <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#374151", overflow: "hidden", flexShrink: 0 }}>
                         {item.profile_image && <img src={item.profile_image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                       </div>
-                      <span style={{ fontSize: 11, color: "#fff", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.listing_name}</span>
-                      <span style={{ fontSize: 10, color: "#9CA3AF", marginLeft: "auto", flexShrink: 0 }}>{timeAgo(item.created_at)}</span>
+                      <span style={{ fontSize: 12, color: "#fff", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.listing_name}</span>
+                      <span style={{ fontSize: 12, color: "#9CA3AF", marginLeft: "auto", flexShrink: 0 }}>{timeAgo(item.created_at)}</span>
                     </div>
                   </div>
                   {/* Video icon */}

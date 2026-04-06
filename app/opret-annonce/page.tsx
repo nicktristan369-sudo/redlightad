@@ -335,13 +335,13 @@ export default function OpretAnnoncePage() {
             <div className="flex gap-3">
               <a
                 href="/dashboard/annoncer"
-                className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Se mine annoncer
               </a>
               <button
                 onClick={resetForm}
-                className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700"
+                className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-medium text-white hover:bg-red-700"
               >
                 Opret ny annonce
               </button>
@@ -529,7 +529,7 @@ export default function OpretAnnoncePage() {
 
               <button
                 onClick={() => validateStep1() && setStep(2)}
-                className="mt-6 w-full rounded-xl bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700"
+                className="mt-6 w-full rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
               >
                 Fortsæt →
               </button>
@@ -772,13 +772,13 @@ export default function OpretAnnoncePage() {
               <div className="mt-6 flex gap-3">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex-1 rounded-xl border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="flex-1 rounded-xl border border-gray-300 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   ← Tilbage
                 </button>
                 <button
                   onClick={() => setStep(3)}
-                  className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700"
+                  className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
                 >
                   Fortsæt →
                 </button>
@@ -885,14 +885,14 @@ export default function OpretAnnoncePage() {
                   </div>
 
                   {/* Opening hours table */}
-                  <div className="border border-gray-100 rounded-xl overflow-hidden">
-                    <div className="grid grid-cols-[120px_1fr_1fr_80px] gap-0 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                  <div className="border border-gray-100 rounded-xl overflow-x-auto">
+                    <div className="grid grid-cols-[80px_1fr_1fr_60px] sm:grid-cols-[120px_1fr_1fr_80px] gap-0 bg-gray-50 px-3 sm:px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 min-w-[340px]">
                       <span>Day</span><span>Opens</span><span>Closes</span><span className="text-right">Closed</span>
                     </div>
                     {DAYS_OF_WEEK.map(day => {
                       const h = openingHours[day];
                       return (
-                        <div key={day} className={`grid grid-cols-[120px_1fr_1fr_80px] items-center gap-2 px-4 py-2.5 border-b border-gray-50 last:border-0 ${h.closed ? "bg-gray-50/60 opacity-60" : "bg-white"}`}>
+                        <div key={day} className={`grid grid-cols-[80px_1fr_1fr_60px] sm:grid-cols-[120px_1fr_1fr_80px] items-center gap-2 px-3 sm:px-4 py-2.5 border-b border-gray-50 last:border-0 min-w-[340px] ${h.closed ? "bg-gray-50/60 opacity-60" : "bg-white"}`}>
                           <span className="text-sm font-medium text-gray-800">{DAY_LABELS[day]}</span>
                           <select
                             disabled={h.closed}
@@ -1057,14 +1057,14 @@ export default function OpretAnnoncePage() {
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setStep(2)}
-                  className="w-full sm:w-auto rounded-xl border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="w-full sm:w-auto rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   ← Tilbage
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                 >
                   {loading && (
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

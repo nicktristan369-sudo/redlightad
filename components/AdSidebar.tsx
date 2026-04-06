@@ -85,7 +85,7 @@ export default function AdSidebar({
 
       <div className="divide-y divide-gray-50">
         {allRows.map((row) => (
-          <div key={row.label} className="flex items-center justify-between px-5 py-2.5">
+          <div key={row.label} className="flex items-center justify-between px-5 py-3">
             <span className="flex items-center gap-2">
               {"icon" in row && <span>{(row as typeof mainRows[0]).icon}</span>}
               {"icon" in row ? null : <span className="w-[14px]" />}

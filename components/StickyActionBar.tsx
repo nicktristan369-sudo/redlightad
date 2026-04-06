@@ -251,7 +251,7 @@ export default function StickyActionBar({ phone, whatsapp, listingId, listingTit
               className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-opacity active:opacity-70"
               style={{ background: btn.primary ? "#DC2626" : "#fff", color: btn.primary ? "#fff" : "#6B7280" }}>
               {btn.icon}
-              <span className="text-[10px] font-semibold tracking-wide">{btn.label}</span>
+              <span className="text-[11px] font-semibold tracking-wide">{btn.label}</span>
             </button>
           ))}
         </div>

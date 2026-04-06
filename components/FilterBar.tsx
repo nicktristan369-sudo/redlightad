@@ -183,7 +183,7 @@ function DropMenu({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
-      style={{ minWidth: "200px", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+      style={{ minWidth: "200px", maxWidth: "calc(100vw - 32px)", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
     >
       {children}
     </div>
@@ -259,7 +259,7 @@ function LocationMenu({
     return (
       <div
         className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
-        style={{ width: "260px", maxHeight: "420px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+        style={{ width: "min(260px, calc(100vw - 32px))", maxHeight: "420px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
       >
         {/* Search */}
         <div className="p-2 border-b border-gray-100 flex-shrink-0">
@@ -331,7 +331,7 @@ function LocationMenu({
   return (
     <div
       className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
-      style={{ width: "260px", maxHeight: "360px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+      style={{ width: "min(260px, calc(100vw - 32px))", maxHeight: "360px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
     >
       <button
         onClick={() => { setStep("country"); setSearch("") }}

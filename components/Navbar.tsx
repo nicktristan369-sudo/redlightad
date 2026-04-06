@@ -218,7 +218,7 @@ export default function Navbar() {
                       <div onClick={() => setShowNotifications(false)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
                       <div style={{
                         position: "absolute", top: "calc(100% + 8px)", right: 0,
-                        width: 300, background: "#fff", borderRadius: 14,
+                        width: "min(300px, calc(100vw - 32px))", background: "#fff", borderRadius: 14,
                         border: "1px solid #E5E7EB", boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                         zIndex: 50, overflow: "hidden",
                       }}>
@@ -256,7 +256,7 @@ export default function Navbar() {
                       <div onClick={() => setShowUserMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
                       <div style={{
                         position: "absolute", top: "calc(100% + 8px)", right: 0,
-                        width: 220, background: "#fff", borderRadius: 14,
+                        width: "min(220px, calc(100vw - 32px))", background: "#fff", borderRadius: 14,
                         border: "1px solid #E5E7EB", boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                         zIndex: 50, overflow: "hidden",
                       }}>

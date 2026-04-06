@@ -253,7 +253,7 @@ export default function SupportPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-1.5">Name *</label>
                     <input
@@ -353,7 +353,7 @@ export default function SupportPage() {
                 href="https://signal.me/#p/+X333x.27"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-semibold text-white px-5 py-2 rounded-full transition-colors"
+                className="text-sm font-semibold text-white px-5 py-2.5 rounded-full transition-colors"
                 style={{ backgroundColor: "#3A76F0" }}
               >
                 Open Signal Chat
@@ -370,7 +370,7 @@ export default function SupportPage() {
               <p className="font-bold text-gray-900 mb-1">Live Chat</p>
               <p className="text-sm text-gray-600 mb-1">Available 9:00 - 21:00</p>
               <p className="text-xs text-gray-400 mb-3">Mon–Sun, CET</p>
-              <button className="text-sm font-semibold bg-gray-900 hover:bg-black text-white px-5 py-2 rounded-full transition-colors">
+              <button className="text-sm font-semibold bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-full transition-colors">
                 Chat with us now
               </button>
             </div>

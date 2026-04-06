@@ -88,7 +88,7 @@ export default function KundeBuyCoinsPage() {
         </div>
 
         {/* Package grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 14, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 14, marginBottom: 24 }}>
           {COIN_PACKAGES.map((pkg) => (
             <div
               key={pkg.id}
@@ -112,16 +112,16 @@ export default function KundeBuyCoinsPage() {
                   Most Popular
                 </span>
               )}
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{pkg.label}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{pkg.label}</div>
               <div style={{ fontSize: 34, fontWeight: 900, color: "#DC2626", lineHeight: 1, marginBottom: 2 }}>{pkg.coins.toLocaleString()}</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#6B7280", marginBottom: 14 }}>RedCoins</div>
               <div style={{ fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 3 }}>€{pkg.price_eur}</div>
-              <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 16 }}>€{pkg.per_coin.toFixed(3)} per coin</div>
+              <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 16 }}>€{pkg.per_coin.toFixed(3)} per coin</div>
               <button
                 onClick={() => handleBuy(pkg.id)}
                 disabled={loading === pkg.id}
                 style={{
-                  width: "100%", padding: "11px 0", borderRadius: 10, fontSize: 13, fontWeight: 700,
+                  width: "100%", padding: "13px 0", borderRadius: 10, fontSize: 14, fontWeight: 700,
                   background: pkg.popular ? "#DC2626" : "#111", color: "#fff",
                   border: "none", cursor: loading === pkg.id ? "not-allowed" : "pointer",
                   opacity: loading === pkg.id ? 0.7 : 1,

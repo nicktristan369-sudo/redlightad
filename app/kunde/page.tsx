@@ -49,7 +49,7 @@ export default function KundeDashboard() {
         </div>
 
         {/* Stats tiles */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 28 }}>
           {tiles.map(({ href, icon: Icon, label, value, color, desc }) => (
             <Link key={href} href={href} style={{ textDecoration: "none" }}>
               <div style={{ background: "#fff", borderRadius: 12, padding: "18px 16px", border: "1px solid #E5E7EB", transition: "box-shadow 0.15s" }}
@@ -60,7 +60,7 @@ export default function KundeDashboard() {
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 800, color: "#111", lineHeight: 1 }}>{value}</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginTop: 4 }}>{label}</div>
-                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{desc}</div>
+                <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{desc}</div>
               </div>
             </Link>
           ))}
@@ -77,7 +77,7 @@ export default function KundeDashboard() {
             { href: "/kunde/coins", label: "Buy RedCoins", icon: Coins, desc: "Payment for locked content" },
             { href: "/kunde/verify", label: "Verify yourself", icon: Shield, desc: "Build trust with profiles" },
           ].map(({ href, label, icon: Icon, desc }) => (
-            <Link key={href} href={href} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", textDecoration: "none", borderBottom: "1px solid #F9FAFB" }}
+            <Link key={href} href={href} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", textDecoration: "none", borderBottom: "1px solid #F9FAFB" }}
               onMouseEnter={e => (e.currentTarget.style.background = "#FAFAFA")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

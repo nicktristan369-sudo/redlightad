@@ -137,15 +137,15 @@ export default function KundeLayout({ children }: { children: React.ReactNode })
       {/* Mobile drawer */}
       {sidebarOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div onClick={() => setSidebarOpen(false)} style={{ flex: 1, background: "rgba(0,0,0,0.5)" }} />
-          <div style={{ width: 260, height: "100vh", overflow: "auto" }}>
+          <div style={{ width: 260, maxWidth: "80vw", height: "100vh", overflow: "auto" }}>
             <Sidebar />
           </div>
+          <div onClick={() => setSidebarOpen(false)} style={{ flex: 1, background: "rgba(0,0,0,0.5)" }} />
         </div>
       )}
 
       {/* Main */}
-      <main style={{ flex: 1, padding: "24px 24px 24px", paddingTop: 24 }} className="pt-16 md:pt-6">
+      <main style={{ flex: 1 }} className="px-3 py-4 pt-16 md:px-6 md:py-6 md:pt-6 pb-8">
         {children}
       </main>
     </div>

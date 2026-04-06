@@ -62,7 +62,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12" style={{ backgroundColor: "#F5F5F7" }}>
-      <div className="w-full" style={{ maxWidth: "420px", background: "#fff", borderRadius: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", padding: "40px" }}>
+      <div className="w-full p-6 sm:p-10" style={{ maxWidth: "420px", background: "#fff", borderRadius: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
 
         {/* Logo */}
         <div className="flex justify-center mb-6">

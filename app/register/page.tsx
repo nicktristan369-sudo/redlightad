@@ -443,7 +443,7 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block mb-3 text-[13px] font-medium text-gray-700">{t.reg_enter_code}</label>
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex gap-1.5 sm:gap-2 justify-center">
                       {codeInputs.map((v, i) => (
                         <input
                           key={i}
@@ -451,7 +451,7 @@ export default function RegisterPage() {
                           type="text" inputMode="numeric" maxLength={1} value={v}
                           onChange={e => handleCodeInput(i, e.target.value)}
                           onKeyDown={e => handleCodeKeyDown(i, e)}
-                          className="w-11 h-14 text-center text-[20px] font-bold outline-none rounded-xl transition-colors"
+                          className="w-10 h-12 sm:w-11 sm:h-14 text-center text-[18px] sm:text-[20px] font-bold outline-none rounded-xl transition-colors"
                           style={{ border: `2px solid ${v ? "#000" : "#E5E5E5"}` }}
                         />
                       ))}

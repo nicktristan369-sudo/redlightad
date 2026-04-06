@@ -67,7 +67,7 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
             <MessageSquare size={14} color="#DC2626" />
             <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{t.msg_send_title}</span>
           </div>
-          <p style={{ fontSize: 11, color: "#9CA3AF", margin: "1px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{listingTitle}</p>
+          <p style={{ fontSize: 12, color: "#9CA3AF", margin: "1px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{listingTitle}</p>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
                 onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }}
               />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", borderTop: "1px solid #F3F4F6" }}>
-                <span style={{ fontSize: 10, color: "#9CA3AF" }}>{msg.length}/500 · {t.msg_cmd_enter}</span>
+                <span style={{ fontSize: 11, color: "#9CA3AF" }}>{msg.length}/500 · {t.msg_cmd_enter}</span>
                 <button
                   onClick={send}
                   disabled={!msg.trim() || sending}
@@ -139,7 +139,7 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
               </div>
             </div>
             {error && <p style={{ fontSize: 11, color: "#DC2626", marginTop: 6 }}>{error}</p>}
-            <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 8, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 8, lineHeight: 1.5 }}>
               {t.msg_anonymous}
             </p>
           </div>

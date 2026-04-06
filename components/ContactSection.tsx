@@ -63,10 +63,10 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 <Phone size={15} color="#DC2626" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t.contact_phone}</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">{t.contact_phone}</p>
                 <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
               </div>
-              <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: "#DC2626" }}>
+              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#DC2626" }}>
                 {t.contact_show}
               </span>
             </button>
@@ -84,10 +84,10 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 <TelegramIcon />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Telegram</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">Telegram</p>
                 <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
               </div>
-              <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: "#0088CC" }}>
+              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#0088CC" }}>
                 {t.contact_open}
               </span>
             </a>
@@ -103,10 +103,10 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 <WhatsAppIcon />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">WhatsApp</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">WhatsApp</p>
                 <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
               </div>
-              <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: "#25D366" }}>
+              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#25D366" }}>
                 {t.contact_show}
               </span>
             </button>
@@ -122,10 +122,10 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 <Mail size={15} color="#6B7280" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Email</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">Email</p>
                 <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
               </div>
-              <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg text-gray-600" style={{ background: "#F3F4F6" }}>
+              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-gray-600 min-h-[36px] flex items-center" style={{ background: "#F3F4F6" }}>
                 {t.contact_open}
               </span>
             </a>

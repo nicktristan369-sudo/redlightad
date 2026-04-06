@@ -113,7 +113,7 @@ function ItemCard({ item }: { item: MarketplaceItem }) {
             <span className="text-[12px] text-gray-500">{item.seller_name ?? "Seller"}</span>
           </div>
           <button
-            className="text-[12px] font-semibold text-white px-3 py-1.5 transition-colors duration-200"
+            className="text-[12px] font-semibold text-white px-3 py-2.5 transition-colors duration-200"
             style={{ background: btnHov ? "#CC0000" : "#000", borderRadius: "6px" }}
             onMouseEnter={() => setBtnHov(true)}
             onMouseLeave={() => setBtnHov(false)}
@@ -165,36 +165,38 @@ export default function MarketplacePage() {
             </div>
 
             {/* Filters */}
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setActiveCategory("all")}
-                className="px-4 py-2 text-[13px] font-medium transition-colors duration-150"
-                style={{
-                  borderRadius: "8px",
-                  background: activeCategory === "all" ? "#000" : "#fff",
-                  color: activeCategory === "all" ? "#fff" : "#374151",
-                  border: `1px solid ${activeCategory === "all" ? "#000" : "#E5E5E5"}`,
-                }}
-              >
-                All
-              </button>
-              {MARKETPLACE_CATEGORIES.map(cat => (
+            <div className="mt-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
-                  key={cat.value}
-                  onClick={() => setActiveCategory(cat.value)}
+                  onClick={() => setActiveCategory("all")}
                   className="px-4 py-2 text-[13px] font-medium transition-colors duration-150"
                   style={{
                     borderRadius: "8px",
-                    background: activeCategory === cat.value ? "#000" : "#fff",
-                    color: activeCategory === cat.value ? "#fff" : "#374151",
-                    border: `1px solid ${activeCategory === cat.value ? "#000" : "#E5E5E5"}`,
+                    background: activeCategory === "all" ? "#000" : "#fff",
+                    color: activeCategory === "all" ? "#fff" : "#374151",
+                    border: `1px solid ${activeCategory === "all" ? "#000" : "#E5E5E5"}`,
                   }}
                 >
-                  {cat.label}
+                  All
                 </button>
-              ))}
+                {MARKETPLACE_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setActiveCategory(cat.value)}
+                    className="px-4 py-2 text-[13px] font-medium transition-colors duration-150"
+                    style={{
+                      borderRadius: "8px",
+                      background: activeCategory === cat.value ? "#000" : "#fff",
+                      color: activeCategory === cat.value ? "#fff" : "#374151",
+                      border: `1px solid ${activeCategory === cat.value ? "#000" : "#E5E5E5"}`,
+                    }}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
 
-              <div className="ml-auto flex items-center gap-2">
+              <div className="sm:ml-auto flex items-center gap-2">
                 <SlidersHorizontal size={14} color="#6B7280" />
                 <select
                   value={sort}

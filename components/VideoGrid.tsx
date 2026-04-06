@@ -86,7 +86,7 @@ function VideoCard({ video, onShare, mobile = false }: { video: Video; onShare: 
             position: "absolute", top: mobile ? 6 : 10, left: mobile ? 6 : 10,
             background: isVip ? "#F59E0B" : "#6B7280",
             color: isVip ? "#000" : "#fff",
-            fontSize: mobile ? 8 : 9, fontWeight: 800, letterSpacing: "0.15em",
+            fontSize: mobile ? 9 : 9, fontWeight: 800, letterSpacing: "0.15em",
             padding: mobile ? "2px 6px" : "3px 8px", textTransform: "uppercase",
           }}>
             {isVip ? "VIP" : "FEAT"}
@@ -111,7 +111,7 @@ function VideoCard({ video, onShare, mobile = false }: { video: Video; onShare: 
         {/* Name + location bottom-left */}
         <div style={{ position: "absolute", bottom: mobile ? 6 : 10, left: mobile ? 8 : 12, right: mobile ? 8 : 12 }}>
           <p style={{
-            fontSize: mobile ? 10 : 13, fontWeight: 800, color: "#fff",
+            fontSize: mobile ? 12 : 13, fontWeight: 800, color: "#fff",
             letterSpacing: "0.04em", textTransform: "uppercase",
             textShadow: "0 1px 4px rgba(0,0,0,0.8)",
             lineHeight: 1.2, marginBottom: 1,
@@ -121,7 +121,7 @@ function VideoCard({ video, onShare, mobile = false }: { video: Video; onShare: 
           </p>
           {location && (
             <p style={{
-              fontSize: mobile ? 8 : 10, color: "rgba(255,255,255,0.70)",
+              fontSize: mobile ? 10 : 10, color: "rgba(255,255,255,0.70)",
               letterSpacing: "0.04em", textTransform: "uppercase",
               textShadow: "0 1px 3px rgba(0,0,0,0.8)",
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",

@@ -146,7 +146,7 @@ export default function RatesPanel({
   return (
     <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid #E5E7EB" }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-4 border-b border-gray-100">
         <h3 className="text-[15px] font-bold text-gray-900">Rates</h3>
         <div className="flex items-center gap-2">
           {/* Fiat / RC toggle */}
@@ -181,8 +181,8 @@ export default function RatesPanel({
           const isLoading = loading === rate.duration
 
           return (
-            <div key={rate.duration} className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
-              <span className="text-[14px] font-medium text-gray-600">{rate.duration}</span>
+            <div key={rate.duration} className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <span className="text-[14px] font-medium text-gray-600 min-w-0 truncate">{rate.duration}</span>
 
               <div className="flex items-center gap-3">
                 {mode === "fiat" ? (

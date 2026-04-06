@@ -4,7 +4,7 @@ import Image from "next/image"
 export default function PhotoGrid({ images, onImageClick }: { images: string[]; onImageClick: (index: number) => void }) {
   if (!images || images.length === 0) return null
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
+    <div className="grid grid-cols-2 sm:grid-cols-3" style={{ gap: 2 }}>
       {images.map((src, i) => (
         <div
           key={i}

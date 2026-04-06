@@ -178,8 +178,8 @@ function WalletContent() {
                   />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <button onClick={() => setPayoutModal(false)} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-medium">Annuller</button>
-                  <button onClick={handlePayout} disabled={payoutLoading} className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50">
+                  <button onClick={() => setPayoutModal(false)} className="flex-1 border border-gray-200 text-gray-600 py-3 rounded-xl text-sm font-medium">Annuller</button>
+                  <button onClick={handlePayout} disabled={payoutLoading} className="flex-1 bg-gray-900 text-white py-3 rounded-xl text-sm font-semibold disabled:opacity-50">
                     {payoutLoading ? "..." : "Send anmodning"}
                   </button>
                 </div>

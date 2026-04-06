@@ -61,7 +61,7 @@ export default function KundeBeskeder() {
               <MessageSquare size={36} color="#E5E7EB" style={{ margin: "0 auto 12px" }} />
               <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 6 }}>No conversations yet</p>
               <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Contact a profile to start a private conversation</p>
-              <Link href="/" style={{ display: "inline-block", padding: "10px 20px", background: "#000", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+              <Link href="/" style={{ display: "inline-block", padding: "12px 24px", background: "#000", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
                 Find a profile
               </Link>
             </div>
@@ -70,7 +70,7 @@ export default function KundeBeskeder() {
               const unread = c.customer_unread || 0
               return (
                 <Link key={c.id} href={`/kunde/beskeder/${c.id}`}
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", textDecoration: "none", borderBottom: i < convos.length - 1 ? "1px solid #F3F4F6" : "none" }}
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 16px", textDecoration: "none", borderBottom: i < convos.length - 1 ? "1px solid #F3F4F6" : "none" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#FAFAFA")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                   {/* Profile avatar */}
@@ -86,7 +86,7 @@ export default function KundeBeskeder() {
                       <p style={{ fontSize: 14, fontWeight: unread > 0 ? 800 : 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {c.listings?.title || "Profile"}
                       </p>
-                      <span style={{ fontSize: 11, color: "#9CA3AF", flexShrink: 0, marginLeft: 8 }}>{fmt(c.last_message_at)}</span>
+                      <span style={{ fontSize: 12, color: "#9CA3AF", flexShrink: 0, marginLeft: 8 }}>{fmt(c.last_message_at)}</span>
                     </div>
                     <p style={{ fontSize: 12, color: unread > 0 ? "#374151" : "#9CA3AF", fontWeight: unread > 0 ? 600 : 400, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {c.last_message || "No messages yet"}

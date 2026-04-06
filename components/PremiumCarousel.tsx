@@ -362,8 +362,8 @@ export default function PremiumCarousel({
             const isFeatured = l.premium_tier === "featured"
 
             return (
-              <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0" style={{ width: "173px" }}>
-                <div className="relative overflow-hidden cursor-pointer" style={{ width: "173px", height: "260px" }}>
+              <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[173px]">
+                <div className="relative overflow-hidden cursor-pointer w-full" style={{ aspectRatio: "173/260" }}>
                   {/* Cycling gallery image — staggered per card */}
                   <CyclingImage
                     profileImage={l.profile_image}

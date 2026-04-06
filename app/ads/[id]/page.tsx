@@ -410,8 +410,8 @@ export default function AdDetailPage() {
           onClick={() => setGridLightbox(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          <button onClick={() => setGridLightbox(null)} style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", color: "#fff", fontSize: 28, cursor: "pointer", zIndex: 101 }}>✕</button>
-          <button onClick={(e) => { e.stopPropagation(); setGridLightbox(i => i !== null ? Math.max(0, i - 1) : null) }} style={{ position: "absolute", left: 16, background: "none", border: "none", color: "#fff", fontSize: 32, cursor: "pointer", zIndex: 101 }}>‹</button>
+          <button onClick={() => setGridLightbox(null)} style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.5)", border: "none", color: "#fff", fontSize: 24, cursor: "pointer", zIndex: 101, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+          <button onClick={(e) => { e.stopPropagation(); setGridLightbox(i => i !== null ? Math.max(0, i - 1) : null) }} style={{ position: "absolute", left: 8, background: "rgba(0,0,0,0.4)", border: "none", color: "#fff", fontSize: 28, cursor: "pointer", zIndex: 101, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
           <div style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
             <img
               src={(ad?.images ?? [])[gridLightbox]}
@@ -428,7 +428,7 @@ export default function AdDetailPage() {
               }}>REDLIGHTAD.COM</span>
             </div>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); setGridLightbox(i => i !== null ? Math.min((ad?.images ?? []).length - 1, i + 1) : null) }} style={{ position: "absolute", right: 16, background: "none", border: "none", color: "#fff", fontSize: 32, cursor: "pointer", zIndex: 101 }}>›</button>
+          <button onClick={(e) => { e.stopPropagation(); setGridLightbox(i => i !== null ? Math.min((ad?.images ?? []).length - 1, i + 1) : null) }} style={{ position: "absolute", right: 8, background: "rgba(0,0,0,0.4)", border: "none", color: "#fff", fontSize: 28, cursor: "pointer", zIndex: 101, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
           <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", color: "#aaa", fontSize: 13 }}>{gridLightbox + 1} / {(ad?.images ?? []).length}</div>
         </div>
       )}

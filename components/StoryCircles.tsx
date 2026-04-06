@@ -92,6 +92,7 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
               gap: 20,
               padding: "16px 0",
               scrollbarWidth: "none",
+              WebkitOverflowScrolling: "touch",
             }}
           >
             <style>{`.story-scroll::-webkit-scrollbar{display:none}`}</style>

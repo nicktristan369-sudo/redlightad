@@ -84,7 +84,7 @@ export default function ReviewsClient({ reviews }: Props) {
   return (
     <>
       {/* Stats bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 mb-6 flex items-center gap-3">
+      <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 mb-6 flex flex-wrap items-center gap-3">
         <span className="text-2xl font-bold text-gray-900">{avg}</span>
         <StarRating rating={parseFloat(avg) || 0} />
         <span className="text-gray-500 text-sm">{count.toLocaleString()} reviews</span>

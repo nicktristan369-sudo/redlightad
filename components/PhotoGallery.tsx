@@ -343,10 +343,10 @@ export default function PhotoGallery({
             </div>
             <button
               className="absolute top-3 left-3 flex items-center justify-center rounded"
-              style={{ width: 30, height: 30, background: "rgba(0,0,0,0.50)" }}
+              style={{ width: 44, height: 44, background: "rgba(0,0,0,0.50)" }}
               onClick={(e) => { e.stopPropagation(); openLightbox(activeIndex); }}
             >
-              <Maximize2 size={13} color="#fff" />
+              <Maximize2 size={15} color="#fff" />
             </button>
           </div>
 
@@ -451,7 +451,7 @@ export default function PhotoGallery({
           <button
             onClick={closeLightbox}
             className="absolute top-4 right-4 flex items-center justify-center rounded transition-all hover:bg-white/20"
-            style={{ width: 40, height: 40, background: "rgba(255,255,255,0.12)" }}
+            style={{ width: 44, height: 44, background: "rgba(255,255,255,0.12)" }}
             aria-label="Close"
           >
             <X size={20} color="#fff" />

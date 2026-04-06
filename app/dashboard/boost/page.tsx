@@ -202,7 +202,7 @@ export default function BoostPage() {
                     <button
                       onClick={() => handleBuy(pkg.id)}
                       disabled={buyingId !== null}
-                      className="mt-4 w-full py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                      className="mt-4 w-full py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
                       style={{ background: "#EF4444", color: "#fff" }}
                     >
                       {buyingId === pkg.id ? (
@@ -234,7 +234,7 @@ export default function BoostPage() {
                     <button
                       onClick={() => handleBuy(pkg.id)}
                       disabled={buyingId !== null}
-                      className="mt-4 w-full py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                      className="mt-4 w-full py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
                       style={{ background: "#EF4444", color: "#fff" }}
                     >
                       {buyingId === pkg.id ? (

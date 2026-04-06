@@ -9,7 +9,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-black text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
         {/* Logo + tagline */}
         <div className="mb-10">
