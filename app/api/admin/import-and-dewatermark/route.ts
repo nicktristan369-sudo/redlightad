@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Trin 3: FFmpeg vandmærke-fjernelse via VPS
-    const vpsProxy = process.env.VPS_VIDPROXY_URL || "http://76.13.154.9:3001"
     const dewatermarkRes = await fetch(`${vpsProxy}/dewatermark?url=${encodeURIComponent(cloudinaryUrl)}`)
     if (!dewatermarkRes.ok) {
       // Cloudinary upload OK, men dewatermark fejlede — returner ren Cloudinary URL
