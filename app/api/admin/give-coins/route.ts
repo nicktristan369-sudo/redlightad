@@ -13,24 +13,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
 
-    // Ensure wallet exists
-    await supabaseAdmin
+    // Get current balance (if wallet exists)
+    const { data: existing } = await supabaseAdmin
       .from("wallets")
-      .upsert({ user_id: userId, balance: 0 }, { onConflict: "user_id", ignoreDuplicates: true })
+      .select("balance")
+      .eq("user_id", userId)
+      .maybeSingle()
 
-    // Try add_red_coins RPC first (from existing migration)
-    const { error: rpcErr } = await supabaseAdmin.rpc("add_red_coins", {
-      p_user_id: userId,
-      p_coins: coins,
-    })
-
-    if (rpcErr) {
-      // Direct increment fallback
-      const { data: w } = await supabaseAdmin.from("wallets").select("balance").eq("user_id", userId).single()
-      await supabaseAdmin.from("wallets").update({ balance: (w?.balance || 0) + coins }).eq("user_id", userId)
+    if (existing) {
+      // Wallet exists — increment
+      const { error } = await supabaseAdmin
+        .from("wallets")
+        .update({ balance: existing.balance + coins })
+        .eq("user_id", userId)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    } else {
+      // Create wallet with coins
+      const { error } = await supabaseAdmin
+        .from("wallets")
+        .insert({ user_id: userId, balance: coins })
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Log as admin grant (price_usd = 0)
+    // Log as admin grant
     await supabaseAdmin.from("coin_purchases").insert({
       user_id: userId,
       coins_amount: coins,
@@ -38,7 +43,13 @@ export async function POST(req: NextRequest) {
       stripe_payment_id: `ADMIN_GRANT_${Date.now()}`,
     })
 
-    const { data: wallet } = await supabaseAdmin.from("wallets").select("balance").eq("user_id", userId).single()
+    // Return new balance
+    const { data: wallet } = await supabaseAdmin
+      .from("wallets")
+      .select("balance")
+      .eq("user_id", userId)
+      .single()
+
     return NextResponse.json({ success: true, newBalance: wallet?.balance ?? coins })
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500 })
