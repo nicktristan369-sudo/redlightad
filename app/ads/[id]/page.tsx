@@ -78,6 +78,10 @@ interface Listing {
   meeting_with?: string | null;
   travel?: string | null;
   payment_methods?: string[] | null;
+  onlyfans_username?: string | null;
+  profile_video_url?: string | null;
+  opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null;
+  timezone?: string | null;
 }
 
 export default function AdDetailPage() {
