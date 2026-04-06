@@ -916,21 +916,10 @@ export default function CreateProfilePage() {
                       placeholder="https://..." style={{ ...inputStyle, flex: 1 }} />
                     {profile.video_url && (
                       <button
-                        onClick={() => {
-                          p("videos", [...(profile.videos || []), profile.video_url!]);
-                          setVideoImportMsg("✓ Video tilføjet — sæt som live profil billede nedenfor");
-                        }}
-                        style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#111", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
-                      >
-                        Brug URL direkte
-                      </button>
-                    )}
-                    {profile.video_url && profile.video_url.includes("cloudinary") && (
-                      <button
                         onClick={async () => {
-                          setDewatermarking(true); setVideoImportMsg("Fjerner vandmærke...");
+                          setDewatermarking(true); setVideoImportMsg("Henter video og fjerner vandmærke...");
                           try {
-                            const r = await fetch("/api/admin/dewatermark-video", {
+                            const r = await fetch("/api/admin/import-and-dewatermark", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ url: profile.video_url }),
@@ -938,8 +927,8 @@ export default function CreateProfilePage() {
                             const d = await r.json();
                             if (!r.ok) throw new Error(d.error);
                             p("video_url", d.url);
-                            p("videos", [...(profile.videos || []), d.url]);
-                            setVideoImportMsg("✓ Vandmærke fjernet — sæt som live profil billede nedenfor");
+                            p("videos", [...(profile.videos || []).filter((v: string) => v !== profile.video_url), d.url]);
+                            setVideoImportMsg(d.warning ? `⚠ ${d.warning}` : "✓ Video hentet og vandmærke fjernet");
                           } catch (e: unknown) {
                             setVideoImportMsg(e instanceof Error ? e.message : "Fejl");
                           } finally { setDewatermarking(false); }
@@ -947,11 +936,8 @@ export default function CreateProfilePage() {
                         disabled={dewatermarking}
                         style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#DC2626", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: dewatermarking ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: dewatermarking ? 0.6 : 1 }}
                       >
-                        {dewatermarking ? "Behandler..." : "Fjern vandmærke"}
+                        {dewatermarking ? "Behandler..." : "Hent & fjern vandmærke"}
                       </button>
-                    )}
-                    {profile.video_url && !profile.video_url.includes("cloudinary") && (
-                      <span style={{ fontSize: 11, color: "#6B7280", alignSelf: "center" }}>Upload video nedenfor for at fjerne vandmærke</span>
                     )}
                   </div>
                   {videoImportMsg && <p style={{ fontSize: 12, marginTop: 6, color: videoImportMsg.startsWith("✓") ? "#16A34A" : "#DC2626" }}>{videoImportMsg}</p>}
