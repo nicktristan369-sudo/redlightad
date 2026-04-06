@@ -53,13 +53,13 @@ function LiveViewer({ onViewerCount }: { onViewerCount: (n: number) => void }) {
   const hostTrack = tracks.find(t => t.participant?.permissions?.canPublish === false ? false : true)
 
   return (
-    <div style={{ position: "relative", background: "#000", borderRadius: 12, overflow: "hidden", aspectRatio: "16/9" }}>
+    <div style={{ width: "100%", height: "100%", position: "relative", background: "#000" }}>
       {hostTrack ? (
-        <VideoTrack trackRef={hostTrack} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <VideoTrack trackRef={hostTrack} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
       ) : (
         <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
-          <Video color="#555" size={48} />
-          <p style={{ color: "#666", fontSize: 14 }}>Waiting for stream to start...</p>
+          <Video color="#333" size={48} />
+          <p style={{ color: "#555", fontSize: 14 }}>Waiting for stream...</p>
         </div>
       )}
       <RoomAudioRenderer />
@@ -159,38 +159,41 @@ export default function CamRoomPage() {
   if (!listing) return <div style={{ padding: 40, textAlign: "center" }}>Stream not found</div>
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0A0A0A", color: "#fff" }}>
+    <div style={{ height: "100vh", overflow: "hidden", background: "#0A0A0A", color: "#fff", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ borderBottom: "1px solid #1F1F1F", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-        <Link href="/cam" style={{ color: "#9CA3AF", display: "flex", alignItems: "center", gap: 6, fontSize: 14, textDecoration: "none" }}>
-          <ArrowLeft size={16} /> Back
+      <div style={{ borderBottom: "1px solid #1F1F1F", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <Link href="/cam" style={{ color: "#6B7280", display: "flex", alignItems: "center", gap: 4, fontSize: 13, textDecoration: "none", flexShrink: 0 }}>
+          <ArrowLeft size={14} /> Back
         </Link>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
           {listing.profile_image && (
-            <img src={listing.profile_image} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} />
+            <img src={listing.profile_image} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           )}
-          <div>
-            <p style={{ fontSize: 14, fontWeight: 700 }}>{listing.display_name}</p>
-            {listing.cam_title && <p style={{ fontSize: 12, color: "#9CA3AF" }}>{listing.cam_title}</p>}
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{listing.display_name}</p>
+            {listing.cam_title && <p style={{ fontSize: 11, color: "#9CA3AF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{listing.cam_title}</p>}
           </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
           {listing.cam_live && (
-            <span style={{ background: "#DC2626", color: "#fff", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, marginLeft: "auto" }}>● LIVE</span>
+            <span style={{ background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4 }}>● LIVE</span>
           )}
-          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#9CA3AF", marginLeft: 8 }}>
-            <Users size={14} /> {viewerCount}
+          <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 12, color: "#6B7280" }}>
+            <Users size={12} /> {viewerCount}
           </span>
         </div>
       </div>
 
-      <div style={{ display: "flex", height: "calc(100vh - 57px)" }}>
+      {/* Main: video + chat side by side */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* Video */}
-        <div style={{ flex: 1, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "#000", overflow: "hidden" }}>
           {listing.cam_live && livekitToken ? (
-            <LiveKitRoom serverUrl={livekitWsUrl} token={livekitToken} connect={true} audio={true} video={false}>
+            <LiveKitRoom serverUrl={livekitWsUrl} token={livekitToken} connect={true} audio={true} video={false} style={{ width: "100%", height: "100%" }}>
               <LiveViewer onViewerCount={setViewerCount} />
             </LiveKitRoom>
           ) : (
-            <div style={{ aspectRatio: "16/9", background: "#111", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
               <Video color="#333" size={48} />
               <p style={{ color: "#555", fontSize: 15 }}>
                 {listing.cam_live ? "Connecting..." : `${listing.display_name} is offline`}
@@ -200,33 +203,38 @@ export default function CamRoomPage() {
         </div>
 
         {/* Chat */}
-        <div style={{ width: 300, borderLeft: "1px solid #1F1F1F", display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid #1F1F1F", fontSize: 13, fontWeight: 600, color: "#9CA3AF" }}>
-            CHAT
+        <div style={{ width: 280, borderLeft: "1px solid #1A1A1A", display: "flex", flexDirection: "column", background: "#0F0F0F" }}>
+          <div style={{ padding: "10px 14px", borderBottom: "1px solid #1A1A1A", fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.08em" }}>
+            LIVE CHAT
           </div>
-          <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
+            {messages.length === 0 && (
+              <p style={{ fontSize: 12, color: "#333", textAlign: "center", marginTop: 20 }}>No messages yet</p>
+            )}
             {messages.map(m => (
-              <div key={m.id} style={{ fontSize: 13 }}>
+              <div key={m.id} style={{ fontSize: 13, lineHeight: 1.4 }}>
                 {m.is_tip ? (
-                  <span style={{ color: "#F59E0B" }}>💰 <b>{m.username}</b> tipped {m.tip_amount} tokens</span>
+                  <span style={{ color: "#F59E0B", background: "rgba(245,158,11,0.1)", padding: "4px 8px", borderRadius: 6, display: "block", fontSize: 12 }}>
+                    💰 <b>{m.username}</b> tipped {m.tip_amount} RC
+                  </span>
                 ) : (
-                  <span><b style={{ color: "#DC2626" }}>{m.username}</b>: {m.message}</span>
+                  <span><b style={{ color: "#DC2626" }}>{m.username}</b>: <span style={{ color: "#D1D5DB" }}>{m.message}</span></span>
                 )}
               </div>
             ))}
           </div>
-          <div style={{ padding: "12px 16px", borderTop: "1px solid #1F1F1F", display: "flex", gap: 8 }}>
+          <div style={{ padding: "10px 12px", borderTop: "1px solid #1A1A1A", display: "flex", gap: 6 }}>
             <input
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               onKeyDown={e => e.key === "Enter" && sendMessage()}
               placeholder={currentUser ? "Send a message..." : "Log in to chat"}
               disabled={!currentUser}
-              style={{ flex: 1, background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 13, outline: "none" }}
+              style={{ flex: 1, background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13, outline: "none" }}
             />
             <button onClick={sendMessage} disabled={!currentUser}
-              style={{ background: "#DC2626", border: "none", borderRadius: 8, padding: "8px 12px", color: "#fff", cursor: "pointer" }}>
-              <Send size={14} />
+              style={{ background: "#DC2626", border: "none", borderRadius: 8, padding: "8px 12px", color: "#fff", cursor: "pointer", flexShrink: 0 }}>
+              <Send size={13} />
             </button>
           </div>
         </div>
