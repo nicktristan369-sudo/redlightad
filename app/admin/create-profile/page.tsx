@@ -913,29 +913,15 @@ export default function CreateProfilePage() {
                   <div style={{ display: "flex", gap: 8 }}>
                     <input type="url" value={profile.video_url || ""} onChange={e => { p("video_url", e.target.value); setVideoImportMsg(""); }}
                       placeholder="https://..." style={{ ...inputStyle, flex: 1 }} />
-                    {profile.video_url && !profile.video_url.includes("supabase") && (
+                    {profile.video_url && (
                       <button
-                        onClick={async () => {
-                          setImportingVideo(true); setVideoImportMsg("");
-                          try {
-                            const r = await fetch("/api/admin/import-video", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ url: profile.video_url, sourcePageUrl: importUrl }),
-                            });
-                            const d = await r.json();
-                            if (!r.ok) throw new Error(d.error);
-                            p("video_url", d.url);
-                            p("videos", [...(profile.videos || []), d.url]);
-                            setVideoImportMsg("✓ Video importeret til storage");
-                          } catch (e: unknown) {
-                            setVideoImportMsg(e instanceof Error ? e.message : "Fejl");
-                          } finally { setImportingVideo(false); }
+                        onClick={() => {
+                          p("videos", [...(profile.videos || []), profile.video_url!]);
+                          setVideoImportMsg("✓ Video tilføjet — sæt som live profil billede nedenfor");
                         }}
-                        disabled={importingVideo}
-                        style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#111", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: importingVideo ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: importingVideo ? 0.6 : 1 }}
+                        style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#111", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
                       >
-                        {importingVideo ? "Henter..." : "Import til storage"}
+                        Brug URL direkte
                       </button>
                     )}
                   </div>
