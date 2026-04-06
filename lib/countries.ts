@@ -247,6 +247,7 @@ export const COUNTRIES: { europe: CountryEntry[]; worldwide: CountryEntry[] } = 
     { name: "Ukraine", code: "ua" },
   ],
   worldwide: [
+    { name: "Afghanistan", code: "af" },
     { name: "Algeria", code: "dz" },
     { name: "Angola", code: "ao" },
     { name: "Argentina", code: "ar" },
@@ -472,6 +473,7 @@ export const COUNTRY_CITIES: Record<string, string[]> = {
   uy: ["Montevideo","Punta del Este","Colonia del Sacramento","Salto","Maldonado"],
   ve: ["Caracas","Maracaibo","Valencia","Barquisimeto","Maracay","Mérida"],
   zm: ["Lusaka","Kitwe","Ndola","Livingstone","Kabwe"],
+  af: ["Kabul","Kandahar","Herat","Mazar-i-Sharif"],
   // Additional Europe countries
   ad:  ["Andorra la Vella","Escaldes-Engordany","Encamp","La Massana"],
   cy: ["Nicosia","Limassol","Larnaca","Paphos","Famagusta","Ayia Napa"],

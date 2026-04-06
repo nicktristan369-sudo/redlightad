@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { SUPPORTED_COUNTRIES, POPULAR_COUNTRY_CODES, getCountry } from "@/lib/countries"
+import { SUPPORTED_COUNTRIES, POPULAR_COUNTRY_CODES, getCountry, COUNTRIES } from "@/lib/countries"
 
 interface Props {
   onClose?: () => void
@@ -42,9 +42,16 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
     router.push(`/${code}`)
   }
 
+  // Build Europe countries from SUPPORTED_COUNTRIES matching COUNTRIES.europe
+  const europeCodes = new Set(COUNTRIES.europe.map(c => c.code))
+  const worldwideCodes = new Set(COUNTRIES.worldwide.map(c => c.code))
+
+  const europeCountries = SUPPORTED_COUNTRIES.filter(c => europeCodes.has(c.code)).sort((a,b) => a.name.localeCompare(b.name))
+  const worldwideCountries = SUPPORTED_COUNTRIES.filter(c => worldwideCodes.has(c.code)).sort((a,b) => a.name.localeCompare(b.name))
+
   const filteredCountries = SUPPORTED_COUNTRIES.filter(c =>
     !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase())
-  )
+  ).sort((a,b) => a.name.localeCompare(b.name))
 
   const popularCountries = SUPPORTED_COUNTRIES.filter(c => POPULAR_COUNTRY_CODES.includes(c.code))
 
@@ -102,23 +109,44 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
           )}
 
           {search && filteredCountries.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">No countries found for "{search}"</p>
-          ) : (
+            <p className="text-center text-gray-400 py-8">No countries found for &quot;{search}&quot;</p>
+          ) : search ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(search ? filteredCountries : SUPPORTED_COUNTRIES).map(c => (
-                <button
-                  key={c.code}
-                  onClick={() => handleSelect(c.code)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all text-left"
-                >
-                  <span className={`fi fi-${c.code}`} style={{ width: "20px", height: "15px", display: "inline-block" }} />
+              {filteredCountries.map(c => (
+                <button key={c.code} onClick={() => handleSelect(c.code)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all text-left">
+                  <span className="text-lg">{c.flag}</span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
-                    <p className="text-xs text-gray-400 uppercase">{c.code}</p>
                   </div>
                 </button>
               ))}
             </div>
+          ) : (
+            <>
+              {/* EUROPE */}
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 mt-2">🌍 Europe</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-5">
+                {europeCountries.map(c => (
+                  <button key={c.code} onClick={() => handleSelect(c.code)}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all text-left">
+                    <span className="text-base">{c.flag}</span>
+                    <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
+                  </button>
+                ))}
+              </div>
+              {/* WORLDWIDE */}
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">🌐 Worldwide</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {worldwideCountries.map(c => (
+                  <button key={c.code} onClick={() => handleSelect(c.code)}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all text-left">
+                    <span className="text-base">{c.flag}</span>
+                    <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
