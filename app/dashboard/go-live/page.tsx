@@ -1,25 +1,73 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Video, Radio, Square, Users, Clock } from "lucide-react"
+import { Video, Radio, Square, Users, Clock, Mic, MicOff, VideoOff } from "lucide-react"
 import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 
+// LiveKit
+import {
+  LiveKitRoom,
+  useLocalParticipant,
+  useTracks,
+  VideoTrack,
+  TrackToggle,
+  RoomAudioRenderer,
+} from "@livekit/components-react"
+import { Track } from "livekit-client"
+import "@livekit/components-styles"
+
+// ── Inner broadcaster component (inside LiveKitRoom) ─────────────────────────
+function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => void }) {
+  const { localParticipant } = useLocalParticipant()
+  const tracks = useTracks([Track.Source.Camera, Track.Source.Microphone])
+
+  useEffect(() => {
+    localParticipant?.setCameraEnabled(true)
+    localParticipant?.setMicrophoneEnabled(true)
+  }, [localParticipant])
+
+  const camTrack = tracks.find(t => t.source === Track.Source.Camera)
+
+  return (
+    <div style={{ position: "relative" }}>
+      {camTrack ? (
+        <VideoTrack trackRef={camTrack} style={{ width: "100%", borderRadius: 12, background: "#000" }} />
+      ) : (
+        <div style={{ width: "100%", aspectRatio: "16/9", background: "#111", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <VideoOff color="#666" size={40} />
+        </div>
+      )}
+      <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 12 }}>
+        <TrackToggle source={Track.Source.Camera} style={{ background: "rgba(0,0,0,0.7)", border: "none", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+          <Video size={16} /> Camera
+        </TrackToggle>
+        <TrackToggle source={Track.Source.Microphone} style={{ background: "rgba(0,0,0,0.7)", border: "none", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+          <Mic size={16} /> Mic
+        </TrackToggle>
+      </div>
+      <RoomAudioRenderer />
+    </div>
+  )
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
 export default function GoLivePage() {
   const router = useRouter()
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [listing, setListing] = useState<{ id: string } | null>(null)
+  const [listing, setListing] = useState<{ id: string; display_name?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
   const [camTitle, setCamTitle] = useState("")
   const [camCategory, setCamCategory] = useState("public")
   const [tokensPerMin, setTokensPerMin] = useState(20)
   const [viewerCount, setViewerCount] = useState(0)
-  const [cameraError, setCameraError] = useState(false)
   const [streamStart, setStreamStart] = useState<Date | null>(null)
   const [elapsed, setElapsed] = useState("00:00")
-  const streamRef = useRef<MediaStream | null>(null)
+  const [livekitToken, setLivekitToken] = useState<string | null>(null)
+  const [livekitWsUrl, setLivekitWsUrl] = useState<string>("ws://76.13.154.9:7880")
+  const [goingLive, setGoingLive] = useState(false)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     const supabase = createClient()
@@ -27,71 +75,75 @@ export default function GoLivePage() {
       if (!user) { router.replace("/login"); return }
       const { data } = await supabase
         .from("listings")
-        .select("id, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at")
+        .select("id, display_name, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at")
         .eq("user_id", user.id)
-        .eq("status", "active")
-        .limit(1)
         .single()
-      if (data) {
-        setListing({ id: data.id })
-        if (data.cam_live) {
-          setIsLive(true)
-          setCamTitle(data.cam_title || "")
-          setCamCategory(data.cam_category || "public")
-          setTokensPerMin(data.cam_tokens_per_min || 20)
-          setViewerCount(data.cam_viewers || 0)
-          if (data.cam_started_at) setStreamStart(new Date(data.cam_started_at))
-        }
+      if (!data) { router.replace("/dashboard"); return }
+      setListing(data)
+      if (data.cam_live) {
+        setIsLive(true)
+        setCamTitle(data.cam_title || "")
+        setCamCategory(data.cam_category || "public")
+        setTokensPerMin(data.cam_tokens_per_min || 20)
+        setViewerCount(data.cam_viewers || 0)
+        if (data.cam_started_at) setStreamStart(new Date(data.cam_started_at))
       }
       setLoading(false)
     })
   }, [router])
 
-  // Camera preview
-  useEffect(() => {
-    if (videoRef.current && !streamRef.current) {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-          streamRef.current = stream
-          if (videoRef.current) videoRef.current.srcObject = stream
-        })
-        .catch(() => setCameraError(true))
-    }
-    return () => {
-      streamRef.current?.getTracks().forEach(t => t.stop())
-    }
-  }, [loading])
-
   // Live timer
   useEffect(() => {
     if (!isLive || !streamStart) return
-    const interval = setInterval(() => {
+    const t = setInterval(() => {
       const diff = Math.floor((Date.now() - streamStart.getTime()) / 1000)
-      const h = Math.floor(diff / 3600)
-      const m = Math.floor((diff % 3600) / 60)
-      const s = diff % 60
-      setElapsed(h > 0
-        ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-        : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`)
+      const m = Math.floor(diff / 60).toString().padStart(2, "0")
+      const s = (diff % 60).toString().padStart(2, "0")
+      setElapsed(`${m}:${s}`)
     }, 1000)
-    return () => clearInterval(interval)
+    return () => clearInterval(t)
   }, [isLive, streamStart])
 
   const handleGoLive = async () => {
     if (!listing) return
-    const supabase = createClient()
-    const now = new Date().toISOString()
-    await supabase.from("listings").update({
-      cam_live: true,
-      cam_title: camTitle || null,
-      cam_category: camCategory,
-      cam_tokens_per_min: tokensPerMin,
-      cam_started_at: now,
-      cam_viewers: 0,
-    }).eq("id", listing.id)
-    setIsLive(true)
-    setStreamStart(new Date(now))
-    setViewerCount(0)
+    setGoingLive(true)
+    setError("")
+    try {
+      // Get LiveKit token
+      const res = await fetch("/api/cam/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomName: `listing-${listing.id}`,
+          participantName: listing.display_name || listing.id,
+          isHost: true,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      // Mark as live in DB
+      const supabase = createClient()
+      const now = new Date().toISOString()
+      await supabase.from("listings").update({
+        cam_live: true,
+        cam_title: camTitle || null,
+        cam_category: camCategory,
+        cam_tokens_per_min: tokensPerMin,
+        cam_started_at: now,
+        cam_viewers: 0,
+      }).eq("id", listing.id)
+
+      setLivekitToken(data.token)
+      setLivekitWsUrl(data.wsUrl)
+      setIsLive(true)
+      setStreamStart(new Date(now))
+      setViewerCount(0)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to go live")
+    } finally {
+      setGoingLive(false)
+    }
   }
 
   const handleEndStream = async () => {
@@ -103,6 +155,7 @@ export default function GoLivePage() {
       cam_started_at: null,
     }).eq("id", listing.id)
     setIsLive(false)
+    setLivekitToken(null)
     setStreamStart(null)
     setElapsed("00:00")
   }
@@ -118,159 +171,81 @@ export default function GoLivePage() {
     )
   }
 
-  if (!listing) {
-    return (
-      <DashboardLayout>
-        <div style={{ textAlign: "center", padding: "80px 20px" }}>
-          <Radio size={40} color="#ccc" style={{ margin: "0 auto 16px", display: "block" }} />
-          <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 8px" }}>No active profile</h2>
-          <p style={{ fontSize: 14, color: "#888" }}>You need an active profile to go live.</p>
-        </div>
-      </DashboardLayout>
-    )
-  }
-
   return (
     <DashboardLayout>
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0 }}>
-            RedLight<span style={{ color: "#DC2626" }}>Cam</span>
-            <span style={{ fontSize: 16, fontWeight: 500, color: "#888", marginLeft: 8 }}>— Go Live</span>
-          </h1>
-        </div>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 16px" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>
+          {isLive ? "🔴 You are live" : "Go Live"}
+        </h1>
 
-        {/* Camera preview */}
-        <div style={{
-          width: "100%", aspectRatio: "16/9", borderRadius: 12, overflow: "hidden",
-          background: "#0A0A0A", marginBottom: 24, position: "relative",
-        }}>
-          {cameraError ? (
-            <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-              <Video size={36} color="#555" />
-              <p style={{ color: "#555", fontSize: 14, marginTop: 12 }}>Camera not available</p>
-            </div>
-          ) : (
-            <video ref={videoRef} autoPlay muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
-          )}
-          {isLive && (
-            <div style={{ position: "absolute", top: 12, left: 12, display: "flex", alignItems: "center", gap: 6, background: "rgba(220,38,38,0.9)", padding: "4px 10px", borderRadius: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite" }} />
-              <span style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>LIVE</span>
-            </div>
-          )}
-        </div>
+        {/* Live stream */}
+        {isLive && livekitToken ? (
+          <div style={{ marginBottom: 24 }}>
+            <LiveKitRoom
+              serverUrl={livekitWsUrl}
+              token={livekitToken}
+              connect={true}
+              video={true}
+              audio={true}
+              style={{ borderRadius: 12, overflow: "hidden" }}
+            >
+              <BroadcastControls onViewerCount={setViewerCount} />
+            </LiveKitRoom>
 
-        {/* Settings */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 24 }}>
-          <div>
-            <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Stream title</label>
-            <input
-              value={camTitle}
-              onChange={e => setCamTitle(e.target.value)}
-              placeholder="What's your stream about?"
-              disabled={isLive}
-              style={{
-                width: "100%", padding: "10px 14px", borderRadius: 10,
-                border: "1px solid #E5E5E5", fontSize: 14, outline: "none",
-                background: isLive ? "#F5F5F5" : "#fff", color: "#111",
-              }}
-            />
+            {/* Stats bar */}
+            <div style={{ display: "flex", gap: 16, marginTop: 12, padding: "12px 16px", background: "#F9FAFB", borderRadius: 8 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
+                <Users size={15} /> {viewerCount} viewers
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
+                <Clock size={15} /> {elapsed}
+              </span>
+              <span style={{ fontSize: 13, color: "#DC2626", fontWeight: 600 }}>● LIVE</span>
+            </div>
+
+            <button onClick={handleEndStream}
+              style={{ marginTop: 16, width: "100%", padding: "12px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <Square size={16} /> End stream
+            </button>
           </div>
-
-          <div style={{ display: "flex", gap: 16 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Category</label>
-              <select
-                value={camCategory}
-                onChange={e => setCamCategory(e.target.value)}
-                disabled={isLive}
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: 10,
-                  border: "1px solid #E5E5E5", fontSize: 14, outline: "none",
-                  background: isLive ? "#F5F5F5" : "#fff", color: "#111",
-                  cursor: isLive ? "default" : "pointer",
-                }}>
-                <option value="public">Public</option>
-                <option value="private">Private</option>
-                <option value="vip">VIP</option>
-              </select>
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Tokens/min (private)</label>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="number"
-                  value={tokensPerMin}
-                  onChange={e => setTokensPerMin(Number(e.target.value))}
-                  disabled={isLive}
-                  min={1}
-                  style={{
-                    width: "100%", padding: "10px 14px", borderRadius: 10,
-                    border: "1px solid #E5E5E5", fontSize: 14, outline: "none",
-                    background: isLive ? "#F5F5F5" : "#fff", color: "#111",
-                  }}
-                />
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#888", whiteSpace: "nowrap" }}>RC</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* GO LIVE / END buttons */}
-        {!isLive ? (
-          <button onClick={handleGoLive}
-            style={{
-              width: "100%", padding: "16px", borderRadius: 12, border: "none",
-              background: "#DC2626", color: "#fff", fontSize: 18, fontWeight: 800,
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#B91C1C" }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#DC2626" }}>
-            <Radio size={20} /> GO LIVE
-          </button>
         ) : (
-          <button onClick={handleEndStream}
-            style={{
-              width: "100%", padding: "16px", borderRadius: 12, border: "none",
-              background: "#333", color: "#fff", fontSize: 18, fontWeight: 800,
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#444" }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#333" }}>
-            <Square size={18} /> END STREAM
-          </button>
-        )}
+          /* Pre-live setup */
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>STREAM TITLE</label>
+              <input value={camTitle} onChange={e => setCamTitle(e.target.value)}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}
+                placeholder="What are you doing today?" />
+            </div>
 
-        {/* Stats */}
-        {isLive && (
-          <div style={{
-            display: "flex", gap: 24, justifyContent: "center", marginTop: 20,
-            padding: "16px", background: "#F8F8F8", borderRadius: 10,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#555" }}>
-              <Users size={16} />
-              <span style={{ fontSize: 14, fontWeight: 600 }}>{viewerCount} viewers</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>TYPE</label>
+                <select value={camCategory} onChange={e => setCamCategory(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}>
+                  <option value="public">Public (free)</option>
+                  <option value="private">Private (tokens/min)</option>
+                </select>
+              </div>
+              {camCategory === "private" && (
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>TOKENS / MIN</label>
+                  <input type="number" value={tokensPerMin} onChange={e => setTokensPerMin(parseInt(e.target.value))}
+                    style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}
+                    min={5} max={500} />
+                </div>
+              )}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#555" }}>
-              <Clock size={16} />
-              <span style={{ fontSize: 14, fontWeight: 600 }}>{elapsed} live</span>
-            </div>
+
+            {error && <p style={{ color: "#DC2626", fontSize: 13 }}>{error}</p>}
+
+            <button onClick={handleGoLive} disabled={goingLive}
+              style={{ padding: "14px", background: goingLive ? "#9CA3AF" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: goingLive ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <Radio size={18} /> {goingLive ? "Starting..." : "Go Live"}
+            </button>
           </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </DashboardLayout>
   )
 }
