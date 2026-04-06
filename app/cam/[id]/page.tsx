@@ -25,7 +25,7 @@ interface Listing {
   age: number | null
   city: string | null
   country: string | null
-  description: string | null
+  bio: string | null
   cam_live: boolean
   cam_title: string | null
   cam_viewers: number
@@ -123,7 +123,7 @@ export default function CamRoomPage() {
     const load = async () => {
       const { data } = await supabase
         .from("listings")
-        .select("id, title, display_name, profile_image, age, city, country, description, cam_live, cam_title, cam_viewers, cam_category, cam_tokens_per_min")
+        .select("id, title, display_name, profile_image, age, city, country, bio, cam_live, cam_title, cam_viewers, cam_category, cam_tokens_per_min")
         .eq("id", id)
         .single()
       setListing(data)
@@ -289,8 +289,8 @@ export default function CamRoomPage() {
                       <span style={{ color: "#D1D5DB" }}>{value}</span>
                     </div>
                   ))}
-                  {listing.description && (
-                    <div style={{ marginTop: 8, fontSize: 13, color: "#9CA3AF", lineHeight: 1.6 }}>{listing.description}</div>
+                  {listing.bio && (
+                    <div style={{ marginTop: 8, fontSize: 13, color: "#9CA3AF", lineHeight: 1.6 }}>{listing.bio}</div>
                   )}
                 </div>
               ) : (
