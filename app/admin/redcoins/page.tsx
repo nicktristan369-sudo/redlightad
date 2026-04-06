@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import AdminLayout from "@/components/AdminLayout";
-import { Coins, TrendingUp, ShoppingBag, ArrowDownToLine } from "lucide-react";
+import { Coins, TrendingUp, ShoppingBag, ArrowDownToLine, Gift, Search } from "lucide-react";
 import { COIN_SELL_RATE } from "@/lib/coinPackages";
 
 interface CoinPurchase {
@@ -38,6 +38,133 @@ interface MarketplacePurchase {
 
 type ActiveTab = "purchases" | "content" | "marketplace";
 const PAGE_SIZE = 25;
+
+// ── Give Free Coins Panel ────────────────────────────────────────────────────
+function GiveCoinPanel() {
+  const [search, setSearch] = useState("")
+  const [results, setResults] = useState<{ id: string; email: string; balance: number }[]>([])
+  const [selected, setSelected] = useState<{ id: string; email: string; balance: number } | null>(null)
+  const [coins, setCoins] = useState(1000)
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState("")
+
+  const doSearch = async () => {
+    if (!search.trim()) return
+    const supabase = createClient()
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .ilike("email", `%${search.trim()}%`)
+      .limit(5)
+    if (!data) return
+
+    // Get balances
+    const ids = data.map(u => u.id)
+    const { data: wallets } = await supabase.from("wallets").select("user_id, balance").in("user_id", ids)
+    const walletMap = Object.fromEntries((wallets || []).map(w => [w.user_id, w.balance]))
+    setResults(data.map(u => ({ id: u.id, email: u.email, balance: walletMap[u.id] ?? 0 })))
+  }
+
+  const giveCoins = async () => {
+    if (!selected || coins <= 0) return
+    setLoading(true)
+    setMsg("")
+    try {
+      const res = await fetch("/api/admin/give-coins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selected.id, coins }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error)
+      setMsg(`✅ ${coins} RedCoins added. New balance: ${d.newBalance.toLocaleString()}`)
+      setSelected(prev => prev ? { ...prev, balance: d.newBalance } : null)
+    } catch (e: unknown) {
+      setMsg(`❌ ${e instanceof Error ? e.message : "Error"}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const PRESETS = [500, 1000, 5000, 10000]
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: 12, padding: 20, marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <Gift size={18} color="#DC2626" />
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "#111" }}>Give Free RedCoins</h2>
+        <span style={{ fontSize: 11, background: "#FEF2F2", color: "#DC2626", padding: "2px 8px", borderRadius: 4, fontWeight: 600 }}>ADMIN</span>
+      </div>
+
+      {/* Search */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div style={{ flex: 1, position: "relative" }}>
+          <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF" }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && doSearch()}
+            placeholder="Search by email..."
+            style={{ width: "100%", padding: "9px 12px 9px 32px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 13, outline: "none" }}
+          />
+        </div>
+        <button onClick={doSearch} style={{ padding: "9px 16px", background: "#111", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
+          Search
+        </button>
+      </div>
+
+      {/* Results */}
+      {results.length > 0 && !selected && (
+        <div style={{ border: "1px solid #E5E5E5", borderRadius: 8, overflow: "hidden", marginBottom: 12 }}>
+          {results.map(u => (
+            <button key={u.id} onClick={() => setSelected(u)}
+              style={{ width: "100%", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "none", borderBottom: "1px solid #F3F4F6", background: "transparent", cursor: "pointer", fontSize: 13, textAlign: "left" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#F9FAFB")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+              <span style={{ color: "#374151" }}>{u.email}</span>
+              <span style={{ color: "#DC2626", fontWeight: 600 }}>🪙 {u.balance.toLocaleString()}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Selected user */}
+      {selected && (
+        <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "12px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>{selected.email}</p>
+            <p style={{ fontSize: 12, color: "#9CA3AF" }}>Current balance: <b style={{ color: "#DC2626" }}>{selected.balance.toLocaleString()} RC</b></p>
+          </div>
+          <button onClick={() => { setSelected(null); setMsg(""); setResults([]) }}
+            style={{ fontSize: 12, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer" }}>✕ Change</button>
+        </div>
+      )}
+
+      {/* Amount */}
+      {selected && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {PRESETS.map(p => (
+            <button key={p} onClick={() => setCoins(p)}
+              style={{ padding: "6px 12px", border: `1px solid ${coins === p ? "#DC2626" : "#E5E5E5"}`, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", background: coins === p ? "#FEF2F2" : "#fff", color: coins === p ? "#DC2626" : "#374151" }}>
+              +{p.toLocaleString()}
+            </button>
+          ))}
+          <input type="number" value={coins} onChange={e => setCoins(parseInt(e.target.value) || 0)}
+            style={{ width: 90, padding: "6px 10px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 13, outline: "none" }}
+            min={1} />
+          <button onClick={giveCoins} disabled={loading}
+            style={{ padding: "8px 20px", background: loading ? "#9CA3AF" : "#DC2626", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer" }}>
+            {loading ? "Adding..." : "Give Coins 🎁"}
+          </button>
+        </div>
+      )}
+
+      {msg && (
+        <p style={{ marginTop: 10, fontSize: 13, color: msg.startsWith("✅") ? "#16A34A" : "#DC2626", fontWeight: 500 }}>{msg}</p>
+      )}
+    </div>
+  )
+}
 
 export default function AdminRedCoinsPage() {
   const [coinPurchases, setCoinPurchases] = useState<CoinPurchase[]>([]);
@@ -118,6 +245,9 @@ export default function AdminRedCoinsPage() {
         <h1 className="text-[22px] font-bold text-gray-900">RedCoins</h1>
         <p className="text-[13px] text-gray-400 mt-0.5">Coin economy overview</p>
       </div>
+
+      {/* Give Free Coins */}
+      <GiveCoinPanel />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
