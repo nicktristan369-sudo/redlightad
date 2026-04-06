@@ -451,7 +451,14 @@ export async function POST(req: NextRequest) {
       ...(profile.nationality ? { nationality: profile.nationality } : {}),
       ...(profile.available_for ? { available_for: profile.available_for } : {}),
       ...(profile.meeting_with ? { meeting_with: profile.meeting_with } : {}),
-      ...(profile.travel ? { travel: profile.travel } : {}),
+      ...(profile.travel ? { travel_availability: profile.travel } : {}),
+      // Messaging apps
+      ...(profile.telegram ? { telegram: profile.telegram } : {}),
+      ...(profile.whatsapp ? { whatsapp: profile.whatsapp } : {}),
+      ...(profile.signal ? { signal: profile.signal } : {}),
+      ...(profile.viber ? { viber: profile.viber } : {}),
+      ...(profile.wechat ? { wechat: profile.wechat } : {}),
+      ...(profile.line_app ? { line_app: profile.line_app } : {}),
       // Priser
       ...(profile.rate_1hour ? { rate_1hour: profile.rate_1hour } : {}),
       ...(profile.rate_2hours ? { rate_2hours: profile.rate_2hours } : {}),

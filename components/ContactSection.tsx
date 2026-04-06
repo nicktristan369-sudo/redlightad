@@ -11,6 +11,10 @@ interface ContactInfo {
   telegram?: string | null
   snapchat?: string | null
   email?: string | null
+  viber?: string | null
+  wechat?: string | null
+  line_app?: string | null
+  signal?: string | null
   profileImage?: string | null
   name?: string
 }
@@ -41,8 +45,12 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
   const hasTelegram = !!contact.telegram
   const hasEmail = !!contact.email
   const hasSnapchat = !!contact.snapchat
+  const hasViber = !!contact.viber
+  const hasWechat = !!contact.wechat
+  const hasLine = !!contact.line_app
+  const hasSignal = !!contact.signal
 
-  if (!hasPhone && !hasTelegram && !hasEmail && !hasSnapchat) return null
+  if (!hasPhone && !hasTelegram && !hasEmail && !hasSnapchat && !hasViber && !hasWechat && !hasLine && !hasSignal) return null
 
   return (
     <>
@@ -110,6 +118,66 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
                 {t.contact_show}
               </span>
             </button>
+          )}
+
+          {/* Viber */}
+          {hasViber && (
+            <a href={`viber://chat?number=${contact.viber}`}
+              className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#F3E8FF" }}>
+                <span style={{ fontSize: 16 }}>📳</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">Viber</p>
+                <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
+              </div>
+              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#7360F2" }}>
+                {t.contact_open}
+              </span>
+            </a>
+          )}
+
+          {/* WeChat */}
+          {hasWechat && (
+            <div className="flex items-center gap-3 px-5 py-3.5">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#E8F5E9" }}>
+                <span style={{ fontSize: 16 }}>💚</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">WeChat</p>
+                <p className="text-[14px] font-semibold text-gray-800 mt-0.5">{contact.wechat}</p>
+              </div>
+            </div>
+          )}
+
+          {/* LINE */}
+          {hasLine && (
+            <a href={`https://line.me/ti/p/${contact.line_app}`} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#E8F5E9" }}>
+                <span style={{ fontSize: 16 }}>🟢</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">LINE</p>
+                <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
+              </div>
+              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#00B900" }}>
+                {t.contact_open}
+              </span>
+            </a>
+          )}
+
+          {/* Signal */}
+          {hasSignal && (
+            <div className="flex items-center gap-3 px-5 py-3.5">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#E3F2FD" }}>
+                <span style={{ fontSize: 16 }}>🔒</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">Signal</p>
+                <p className="text-[14px] font-semibold text-gray-800 mt-0.5">{contact.signal}</p>
+              </div>
+            </div>
           )}
 
           {/* Email */}

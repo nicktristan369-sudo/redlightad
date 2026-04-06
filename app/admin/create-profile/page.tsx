@@ -116,6 +116,9 @@ type ProfileData = {
   telegram?: string;
   whatsapp?: string;
   signal?: string;
+  viber?: string;
+  wechat?: string;
+  line_app?: string;
   // Video URL (ekstern)
   video_url?: string;
   // Ekstra
@@ -136,20 +139,20 @@ type CreateResult = {
   smsStatus: string;
 };
 
-const ETHNICITY_OPTIONS = ["Europæisk", "Latinamerikansk", "Afrikansk", "Asiatisk", "Arabisk", "Blandet", "Andet"];
-const EYE_OPTIONS = ["Blå", "Grønne", "Brune", "Grå", "Hazel", "Sorte"];
-const HAIR_COLOR_OPTIONS = ["Blond", "Brunette", "Sort", "Rød", "Grå", "Hvid", "Farvet"];
-const HAIR_LENGTH_OPTIONS = ["Kort", "Mellemlang", "Lang", "Meget lang", "Skaldet"];
-const PUBIC_OPTIONS = ["Barberet", "Trimmet", "Naturlig", "Delvist barberet"];
-const BUST_SIZE_OPTIONS = ["A", "B", "C", "D", "DD", "DDD", "E", "F"];
-const BUST_TYPE_OPTIONS = ["Naturlige", "Silikonforøgede"];
-const ORIENTATION_OPTIONS = ["Heteroseksuel", "Biseksuel", "Homoseksuel", "Panseksuel"];
-const SMOKER_OPTIONS = ["Ryger ikke", "Ryger", "Ryger lejlighedsvis"];
-const TATTOO_OPTIONS = ["Ingen", "Et par", "Mange"];
-const PIERCING_OPTIONS = ["Ingen", "Et par", "Mange"];
-const AVAILABLE_FOR_OPTIONS = ["GFE", "Massage", "Dinner date", "Ledsager", "Striptease", "Fetish", "BDSM", "Anal", "Oral", "Rollespil"];
-const MEETING_WITH_OPTIONS = ["Mænd", "Kvinder", "Par", "Grupper", "Alle"];
-const TRAVEL_OPTIONS = ["Kan rejse", "Kan ikke rejse"];
+const ETHNICITY_OPTIONS = ["Asian", "Ebony (black)", "Caucasian (white)", "Hispanic", "Indian", "Latin", "Mixed race", "Middle Eastern", "Other"];
+const EYE_OPTIONS = ["Blue", "Blue-green", "Brown", "Green", "Grey", "Hazel", "Black"];
+const HAIR_COLOR_OPTIONS = ["Blonde", "Brown", "Black", "Red", "Grey/Silver", "Other"];
+const HAIR_LENGTH_OPTIONS = ["Short", "Medium long", "Long"];
+const PUBIC_OPTIONS = ["Shaved", "Trimmed", "Natural", "Landing strip", "Other"];
+const BUST_SIZE_OPTIONS = ["A", "B", "C", "D", "E", "F", "G", "H+"];
+const BUST_TYPE_OPTIONS = ["Natural", "Silicon"];
+const ORIENTATION_OPTIONS = ["Straight", "Bisexual", "Lesbian", "Homosexual"];
+const SMOKER_OPTIONS = ["Yes", "No", "Sometimes"];
+const TATTOO_OPTIONS = ["Yes", "No"];
+const PIERCING_OPTIONS = ["No", "Belly", "Eyebrow", "Genitals", "Mouth area", "Nose", "Nipples", "Tongue", "Multiple"];
+const AVAILABLE_FOR_OPTIONS = ["Outcall", "Incall", "Outcall + Incall"];
+const MEETING_WITH_OPTIONS = ["Man", "Woman", "Couple", "Multiple men", "Everyone"];
+const TRAVEL_OPTIONS = ["No", "Countrywide", "Europe", "Worldwide"];
 
 export default function CreateProfilePage() {
   const [step, setStep] = useState(1);
@@ -908,6 +911,21 @@ export default function CreateProfilePage() {
                   <label style={labelStyle}>Signal</label>
                   <input type="text" value={profile.signal || ""} onChange={e => p("signal", e.target.value)}
                     placeholder="+45 XX XX XX XX" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Viber</label>
+                  <input type="text" value={profile.viber || ""} onChange={e => p("viber", e.target.value)}
+                    placeholder="+45 XX XX XX XX" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>WeChat ID</label>
+                  <input type="text" value={profile.wechat || ""} onChange={e => p("wechat", e.target.value)}
+                    placeholder="WeChat ID" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>LINE App ID</label>
+                  <input type="text" value={profile.line_app || ""} onChange={e => p("line_app", e.target.value)}
+                    placeholder="LINE ID" style={inputStyle} />
                 </div>
                 <div>
                   <label style={labelStyle}>Video URL (mp4)</label>

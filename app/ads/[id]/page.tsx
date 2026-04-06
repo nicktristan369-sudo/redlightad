@@ -52,6 +52,10 @@ interface Listing {
   telegram: string | null;
   snapchat: string | null;
   email: string | null;
+  viber?: string | null;
+  wechat?: string | null;
+  line_app?: string | null;
+  signal?: string | null;
   voice_message_url: string | null;
   video_url: string | null;
   premium_tier: string | null;
@@ -373,6 +377,10 @@ export default function AdDetailPage() {
                   telegram: ad.telegram,
                   snapchat: ad.snapchat,
                   email: ad.email,
+                  viber: ad.viber,
+                  wechat: ad.wechat,
+                  line_app: ad.line_app,
+                  signal: ad.signal,
                   profileImage: ad.profile_image,
                   name: ad.title,
                 }} />
