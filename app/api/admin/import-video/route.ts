@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
 
     // Download via VPS proxy
     const vpsProxy = process.env.VPS_VIDPROXY_URL || "http://76.13.154.9:3001"
-    const proxyUrl = `${vpsProxy}/download?url=${encodeURIComponent(downloadTarget)}`
+    const profileParam = sourcePageUrl ? `&profile=${encodeURIComponent(sourcePageUrl)}` : ""
+    const proxyUrl = `${vpsProxy}/download?url=${encodeURIComponent(url)}${profileParam}`
 
     let buffer: Buffer | null = null
 
