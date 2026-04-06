@@ -16,8 +16,10 @@ import { SUPPORTED_COUNTRIES } from "@/lib/countries";
 const SUPPORTED_COUNTRIES_SORTED = [...SUPPORTED_COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
 import { GENDERS } from "@/lib/constants/genders";
 import {
-  BODY_BUILD_OPTIONS, HAIR_COLOR_OPTIONS, EYE_COLOR_OPTIONS,
-  GROOMING_OPTIONS, BRA_SIZE_OPTIONS, NATIONALITY_OPTIONS,
+  BODY_BUILD_OPTIONS, HAIR_COLOR_OPTIONS, HAIR_LENGTH_OPTIONS, EYE_COLOR_OPTIONS,
+  GROOMING_OPTIONS, BRA_SIZE_OPTIONS, BUST_TYPE_OPTIONS, NATIONALITY_OPTIONS,
+  ETHNICITY_OPTIONS, ORIENTATION_OPTIONS, SMOKER_OPTIONS, TATTOO_OPTIONS,
+  PIERCING_OPTIONS, TRAVEL_OPTIONS, AVAILABLE_FOR_OPTIONS, MEETING_WITH_OPTIONS,
 } from "@/lib/listingOptions";
 
 const DAYS_OF_WEEK = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const;
@@ -104,21 +106,27 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
     about: "", services: [] as string[], languages: [] as string[],
     rate_1hour: "", rate_2hours: "", rate_overnight: "", rate_weekend: "",
     phone: "", whatsapp: "", telegram: "", snapchat: "", email: "",
-    height: "", weight: "", body_build: "", hair_color: "", eye_color: "",
-    grooming: "", bra_size: "", nationality: "",
+    height: "", weight: "", body_build: "", hair_color: "", hair_length: "",
+    eye_color: "", grooming: "", bra_size: "", bust_type: "",
+    nationality: "", ethnicity: "", orientation: "", smoker: "", tattoo: "",
+    piercing: [] as string[], travel_availability: "", available_for: "",
+    meeting_with: [] as string[],
     onlyfans_username: "", onlyfans_price_usd: "",
     outcall: false, handicap_friendly: false, has_own_place: false,
+    viber: "", wechat: "", line_app: "", signal: "",
+    contact_viber: false, contact_whatsapp: false, contact_wechat: false,
+    contact_telegram: false, contact_line: false, contact_signal: false,
   });
 
   const updateField = (field: string, value: string | boolean) =>
     setForm(prev => ({ ...prev, [field]: value }));
 
-  const toggleArray = (field: "services" | "languages", value: string) =>
+  const toggleArray = (field: "services" | "languages" | "piercing" | "meeting_with", value: string) =>
     setForm(prev => ({
       ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter((v: string) => v !== value)
-        : [...prev[field], value],
+      [field]: (prev[field] as string[]).includes(value)
+        ? (prev[field] as string[]).filter((v: string) => v !== value)
+        : [...(prev[field] as string[]), value],
     }));
 
   /* ── Travel helpers ── */
@@ -215,15 +223,35 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         weight: listing.weight ? String(listing.weight) : "",
         body_build: listing.body_build ?? "",
         hair_color: listing.hair_color ?? "",
+        hair_length: listing.hair_length ?? "",
         eye_color: listing.eye_color ?? "",
         grooming: listing.grooming ?? "",
         bra_size: listing.bra_size ?? "",
+        bust_type: listing.bust_type ?? "",
         nationality: listing.nationality ?? "",
+        ethnicity: listing.ethnicity ?? "",
+        orientation: listing.orientation ?? "",
+        smoker: listing.smoker ?? "",
+        tattoo: listing.tattoo ?? "",
+        piercing: listing.piercing ?? [],
+        travel_availability: listing.travel_availability ?? "",
+        available_for: listing.available_for ?? "",
+        meeting_with: listing.meeting_with ?? [],
         onlyfans_username: listing.onlyfans_username ?? "",
         onlyfans_price_usd: listing.onlyfans_price_usd ? String(listing.onlyfans_price_usd) : "",
         outcall: listing.outcall ?? false,
         handicap_friendly: listing.handicap_friendly ?? false,
         has_own_place: listing.has_own_place ?? false,
+        viber: listing.viber ?? "",
+        wechat: listing.wechat ?? "",
+        line_app: listing.line_app ?? "",
+        signal: listing.signal ?? "",
+        contact_viber: listing.contact_viber ?? false,
+        contact_whatsapp: listing.contact_whatsapp ?? false,
+        contact_wechat: listing.contact_wechat ?? false,
+        contact_telegram: listing.contact_telegram ?? false,
+        contact_line: listing.contact_line ?? false,
+        contact_signal: listing.contact_signal ?? false,
       });
 
       if (listing.images?.length) setExistingImages(listing.images);
@@ -313,13 +341,33 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         weight:          form.weight ? parseInt(form.weight) : null,
         body_build:      form.body_build || null,
         hair_color:      form.hair_color || null,
+        hair_length:     form.hair_length || null,
         eye_color:       form.eye_color || null,
         grooming:        form.grooming || null,
         bra_size:        form.bra_size || null,
+        bust_type:       form.bust_type || null,
         nationality:     form.nationality || null,
+        ethnicity:       form.ethnicity || null,
+        orientation:     form.orientation || null,
+        smoker:          form.smoker || null,
+        tattoo:          form.tattoo || null,
+        piercing:        form.piercing.length > 0 ? form.piercing : null,
+        travel_availability: form.travel_availability || null,
+        available_for:   form.available_for || null,
+        meeting_with:    form.meeting_with.length > 0 ? form.meeting_with : null,
         outcall:         form.outcall,
         handicap_friendly: form.handicap_friendly,
         has_own_place:   form.has_own_place,
+        viber:           form.viber || null,
+        wechat:          form.wechat || null,
+        line_app:        form.line_app || null,
+        signal:          form.signal || null,
+        contact_viber:   form.contact_viber,
+        contact_whatsapp: form.contact_whatsapp,
+        contact_wechat:  form.contact_wechat,
+        contact_telegram: form.contact_telegram,
+        contact_line:    form.contact_line,
+        contact_signal:  form.contact_signal,
         opening_hours:   openingHours,
         timezone:        timezone,
         voice_message_url: voiceMessageUrl || null,
@@ -643,45 +691,107 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     {[
-                      { field: "body_build", label: "Kropsbygning", opts: BODY_BUILD_OPTIONS },
-                      { field: "hair_color", label: "Hårfarve", opts: HAIR_COLOR_OPTIONS },
-                      { field: "eye_color", label: "Øjenfarve", opts: EYE_COLOR_OPTIONS },
-                      { field: "grooming", label: "Intiimbelshåring", opts: GROOMING_OPTIONS },
+                      { field: "body_build", label: "Body build", opts: BODY_BUILD_OPTIONS },
+                      { field: "hair_color", label: "Hair color", opts: HAIR_COLOR_OPTIONS },
+                      { field: "hair_length", label: "Hair length", opts: HAIR_LENGTH_OPTIONS },
+                      { field: "eye_color", label: "Eye color", opts: EYE_COLOR_OPTIONS },
+                      { field: "grooming", label: "Pubic hair", opts: GROOMING_OPTIONS },
+                      { field: "ethnicity", label: "Ethnicity", opts: ETHNICITY_OPTIONS },
+                      { field: "orientation", label: "Orientation", opts: ORIENTATION_OPTIONS },
+                      { field: "nationality", label: "Nationality", opts: NATIONALITY_OPTIONS },
                     ].map(s => (
                       <div key={s.field}>
                         <span className="mb-1 block text-[11px] text-gray-400">{s.label}</span>
                         <select value={form[s.field as keyof typeof form] as string}
                           onChange={e => updateField(s.field, e.target.value)}
                           className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
-                          <option value="">Vælg</option>
+                          <option value="">Select</option>
                           {s.opts.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                     ))}
                   </div>
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-3 gap-3 mb-3">
                     <div>
-                      <span className="mb-1 block text-[11px] text-gray-400">BH-størrelse</span>
+                      <span className="mb-1 block text-[11px] text-gray-400">Bust size</span>
                       <select value={form.bra_size} onChange={e => updateField("bra_size", e.target.value)}
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
-                        <option value="">Vælg</option>
+                        <option value="">Select</option>
                         {BRA_SIZE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
                     <div>
-                      <span className="mb-1 block text-[11px] text-gray-400">Nationalitet</span>
-                      <select value={form.nationality} onChange={e => updateField("nationality", e.target.value)}
+                      <span className="mb-1 block text-[11px] text-gray-400">Bust type</span>
+                      <select value={form.bust_type} onChange={e => updateField("bust_type", e.target.value)}
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
-                        <option value="">Vælg</option>
-                        {NATIONALITY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        <option value="">Select</option>
+                        {BUST_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-[11px] text-gray-400">Smoker</span>
+                      <select value={form.smoker} onChange={e => updateField("smoker", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
+                        <option value="">Select</option>
+                        {SMOKER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-[11px] text-gray-400">Tattoo</span>
+                      <select value={form.tattoo} onChange={e => updateField("tattoo", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
+                        <option value="">Select</option>
+                        {TATTOO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-[11px] text-gray-400">Travel</span>
+                      <select value={form.travel_availability} onChange={e => updateField("travel_availability", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
+                        <option value="">Select</option>
+                        {TRAVEL_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-[11px] text-gray-400">Available for</span>
+                      <select value={form.available_for} onChange={e => updateField("available_for", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
+                        <option value="">Select</option>
+                        {AVAILABLE_FOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  {/* Piercing */}
+                  <div className="mb-3">
+                    <span className="mb-2 block text-[11px] text-gray-400">Piercing</span>
+                    <div className="flex flex-wrap gap-2">
+                      {PIERCING_OPTIONS.map(p => (
+                        <button key={p} type="button" onClick={() => toggleArray("piercing", p)}
+                          className="px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors"
+                          style={{ borderColor: form.piercing.includes(p) ? "#000" : "#E5E7EB", background: form.piercing.includes(p) ? "#000" : "#fff", color: form.piercing.includes(p) ? "#fff" : "#6B7280" }}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Meeting with */}
+                  <div className="mb-3">
+                    <span className="mb-2 block text-[11px] text-gray-400">Meeting with</span>
+                    <div className="flex flex-wrap gap-2">
+                      {["Man", "Woman", "Couple", "Multiple men", "Everyone"].map(m => (
+                        <button key={m} type="button" onClick={() => toggleArray("meeting_with", m)}
+                          className="px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors"
+                          style={{ borderColor: form.meeting_with.includes(m) ? "#000" : "#E5E7EB", background: form.meeting_with.includes(m) ? "#000" : "#fff", color: form.meeting_with.includes(m) ? "#fff" : "#6B7280" }}>
+                          {m}
+                        </button>
+                      ))}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-4">
                     {[
-                      { field: "outcall", label: "Kører escort" },
-                      { field: "handicap_friendly", label: "Modtager handicappede" },
-                      { field: "has_own_place", label: "Har eget sted" },
+                      { field: "outcall", label: "Outcall" },
+                      { field: "handicap_friendly", label: "Handicap friendly" },
+                      { field: "has_own_place", label: "Has own place" },
                     ].map(c => (
                       <label key={c.field} className="flex items-center gap-2 text-[13px] text-gray-700 cursor-pointer">
                         <input type="checkbox" checked={form[c.field as keyof typeof form] as boolean}
@@ -709,22 +819,52 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 {/* Kontakt */}
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Kontakt</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Contact</p>
                   <div className="space-y-2.5">
                     {[
-                      { label: "Telefon",  field: "phone" },
-                      { label: "WhatsApp", field: "whatsapp" },
-                      { label: "Telegram", field: "telegram" },
-                      { label: "Snapchat", field: "snapchat" },
-                      { label: "Email",    field: "email" },
+                      { label: "📞 Phone",    field: "phone" },
+                      { label: "📞 Phone 2",  field: "phone2" },
+                      { label: "Email",        field: "email" },
                     ].map(c => (
                       <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                        <span className="w-16 text-[12px] text-gray-400 flex-shrink-0">{c.label}</span>
+                        <span className="w-20 text-[12px] text-gray-400 flex-shrink-0">{c.label}</span>
                         <input type={c.field === "email" ? "email" : "text"}
                           value={form[c.field as keyof typeof form] as string}
                           onChange={e => updateField(c.field, e.target.value)}
                           placeholder={c.label}
                           className="flex-1 text-[13px] bg-transparent border-0 outline-none text-gray-900" />
+                      </div>
+                    ))}
+                  </div>
+                  {/* Messaging apps */}
+                  <p className="text-[12px] text-gray-500 mt-4 mb-2">Messaging apps</p>
+                  <div className="space-y-2">
+                    {[
+                      { app: "WhatsApp", field: "whatsapp", toggle: "contact_whatsapp", icon: "💬" },
+                      { app: "Telegram", field: "telegram", toggle: "contact_telegram", icon: "✈️" },
+                      { app: "Viber",    field: "viber",    toggle: "contact_viber",    icon: "📳" },
+                      { app: "WeChat",   field: "wechat",   toggle: "contact_wechat",   icon: "💚" },
+                      { app: "LINE",     field: "line_app", toggle: "contact_line",     icon: "🟢" },
+                      { app: "Signal",   field: "signal",   toggle: "contact_signal",   icon: "🔒" },
+                      { app: "Snapchat", field: "snapchat", toggle: "", icon: "👻" },
+                    ].map(c => (
+                      <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
+                        <span className="text-base">{c.icon}</span>
+                        <span className="w-16 text-[12px] text-gray-400 flex-shrink-0">{c.app}</span>
+                        <input type="text"
+                          value={form[c.field as keyof typeof form] as string}
+                          onChange={e => updateField(c.field, e.target.value)}
+                          placeholder={`${c.app} ID / number`}
+                          className="flex-1 text-[13px] bg-transparent border-0 outline-none text-gray-900" />
+                        {c.toggle && (
+                          <label className="flex items-center gap-1 text-[11px] text-gray-400 cursor-pointer flex-shrink-0">
+                            <input type="checkbox"
+                              checked={form[c.toggle as keyof typeof form] as boolean}
+                              onChange={e => updateField(c.toggle, e.target.checked)}
+                              className="rounded border-gray-300" />
+                            Show
+                          </label>
+                        )}
                       </div>
                     ))}
                   </div>
