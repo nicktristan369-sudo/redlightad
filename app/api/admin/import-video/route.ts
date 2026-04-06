@@ -12,13 +12,16 @@ export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json()
+    const { url, sourcePageUrl } = await req.json()
     if (!url) return NextResponse.json({ error: "No URL" }, { status: 400 })
 
-    // Download via VPS proxy (bypasser CDN hotlink protection)
+    // yt-dlp arbejder bedst fra profil-siden, ikke rå MP4 URL
+    // Hvis vi har profil-sidens URL, sender vi den til yt-dlp i stedet
+    const downloadTarget = sourcePageUrl || url
+
+    // Download via VPS proxy
     const vpsProxy = process.env.VPS_VIDPROXY_URL || "http://76.13.154.9:3001"
-    const referer = url.includes("eurogirlsescort") ? "https://www.eurogirlsescort.com/" : new URL(url).origin + "/"
-    const proxyUrl = `${vpsProxy}/download?url=${encodeURIComponent(url)}&referer=${encodeURIComponent(referer)}`
+    const proxyUrl = `${vpsProxy}/download?url=${encodeURIComponent(downloadTarget)}`
 
     let buffer: Buffer | null = null
 

@@ -921,7 +921,7 @@ export default function CreateProfilePage() {
                             const r = await fetch("/api/admin/import-video", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ url: profile.video_url }),
+                              body: JSON.stringify({ url: profile.video_url, sourcePageUrl: importUrl }),
                             });
                             const d = await r.json();
                             if (!r.ok) throw new Error(d.error);
