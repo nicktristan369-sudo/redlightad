@@ -951,7 +951,33 @@ export default function CreateProfilePage() {
                       </button>
                     )}
                   </div>
-                  {videoImportMsg && <p style={{ fontSize: 12, marginTop: 6, color: videoImportMsg.startsWith("✓") ? "#16A34A" : "#DC2626" }}>{videoImportMsg}</p>}
+                    {/* Video fil-upload */}
+                  <div style={{ marginTop: 8 }}>
+                    <label style={{ fontSize: 12, color: "#6B7280", display: "block", marginBottom: 4 }}>Eller upload video fil direkte:</label>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setVideoImportMsg("Uploader video...");
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        try {
+                          const r = await fetch("/api/admin/upload-video", { method: "POST", body: formData });
+                          const d = await r.json();
+                          if (!r.ok) throw new Error(d.error);
+                          p("video_url", d.url);
+                          p("videos", [...(profile.videos || []), d.url]);
+                          setVideoImportMsg("✓ Video uploadet — klik 'Fjern vandmærke' eller sæt som profil billede");
+                        } catch (err: unknown) {
+                          setVideoImportMsg(err instanceof Error ? err.message : "Upload fejlede");
+                        }
+                      }}
+                      style={{ fontSize: 12, color: "#374151" }}
+                    />
+                  </div>
+                {videoImportMsg && <p style={{ fontSize: 12, marginTop: 6, color: videoImportMsg.startsWith("✓") ? "#16A34A" : "#DC2626" }}>{videoImportMsg}</p>}
                   {profile.video_url && profile.video_url.includes("supabase") && (
                     <video src={profile.video_url} controls style={{ width: "100%", marginTop: 8, borderRadius: 8, maxHeight: 200 }} />
                   )}
