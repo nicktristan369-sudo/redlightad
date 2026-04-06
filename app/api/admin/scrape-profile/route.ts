@@ -117,14 +117,24 @@ export async function POST(req: NextRequest) {
 
 function parseEuroGirlsEscort($: CheerioDoc, url: string) {
   // ── Name ──────────────────────────────────────────────────────────────────
-  const name = $("h1").first().text().trim().split(",")[0].trim() ||
-    $("[class*=name]").first().text().trim()
+  // EGE title format: "Name escort type - City / Country" — extract just first name
+  let name = $("h1").first().text().trim() || $("[class*=name]").first().text().trim()
+  // Remove suffixes like "pornstar escort - Budapest / Hungary", "escort - City / Country"
+  name = name.replace(/\s*(pornstar|escort|massage|trans|couple|independent|agency).*$/i, "").trim()
+  name = name.split(",")[0].trim()
 
   // ── Description ──────────────────────────────────────────────────────────
+  // Skip EGE's legal disclaimer text (starts with "EuroGirlsEscort.com" or "18 years")
+  const legalKeywords = ["eurogirlsescort.com", "sexually explicit", "18 years", "must leave", "age of majority", "legal age"]
   let description = ""
-  $(".detail-profile p, [class*=description] p, p").each((_i, el) => {
+  $(".about-text, .profile-description, .bio, [class*=about] p, [class*=description] p, [class*=bio] p, p").each((_i, el) => {
     const txt = $(el).text().trim()
-    if (txt.length > 100 && !description) description = txt
+    if (txt.length > 80 && !description) {
+      const lower = txt.toLowerCase()
+      if (!legalKeywords.some(k => lower.includes(k))) {
+        description = txt
+      }
+    }
   })
   description = description.slice(0, 2000)
 

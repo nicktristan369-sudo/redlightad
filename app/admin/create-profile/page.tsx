@@ -1,47 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { SUPPORTED_COUNTRIES } from "@/lib/countries";
+import { SUPPORTED_COUNTRIES, COUNTRY_CITIES } from "@/lib/countries";
 
-// ── Landekoder til telefon ───────────────────────────────────────────────────
-const DIAL_CODES: Record<string, string> = {
-  dk: "+45", se: "+46", no: "+47", fi: "+358", de: "+49", nl: "+31",
-  gb: "+44", fr: "+33", es: "+34", it: "+39", ch: "+41", at: "+43",
-  be: "+32", pl: "+48", cz: "+420", hu: "+36", th: "+66", ae: "+971",
-  sg: "+65", jp: "+81", hk: "+852", my: "+60", ph: "+63", vn: "+84",
-  id: "+62", in: "+91", us: "+1", ca: "+1", mx: "+52", br: "+55",
-  ar: "+54", au: "+61", nz: "+64", za: "+27",
+// ── Searchable country dropdown with flat square flags ────────────────────────
+function CountryDropdown({ value, onChange }: { value: string; onChange: (name: string, code: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  const filtered = SUPPORTED_COUNTRIES.filter(c =>
+    !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase())
+  )
+  const selected = SUPPORTED_COUNTRIES.find(c => c.name === value)
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button type="button" onClick={() => setOpen(!open)}
+        style={{ width: "100%", height: 40, padding: "0 12px", border: "1px solid #E5E5E5", borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", textAlign: "left" }}>
+        {selected && <span className={`fi fi-${selected.code}`} style={{ width: 20, height: 14, flexShrink: 0, display: "inline-block", backgroundSize: "cover" }} />}
+        <span style={{ flex: 1 }}>{value || "Select country..."}</span>
+        <span style={{ color: "#9CA3AF", fontSize: 10 }}>▼</span>
+      </button>
+      {open && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 999, background: "#fff", border: "1px solid #E5E5E5", borderRadius: 8, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", maxHeight: 300, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "8px 10px", borderBottom: "1px solid #F3F4F6" }}>
+            <input autoFocus type="text" placeholder="Search country..." value={search} onChange={e => setSearch(e.target.value)}
+              style={{ width: "100%", border: "1px solid #E5E5E5", borderRadius: 6, padding: "6px 10px", fontSize: 13, outline: "none" }} />
+          </div>
+          <div style={{ overflowY: "auto", flex: 1 }}>
+            {filtered.map(c => (
+              <button key={c.code} type="button" onClick={() => { onChange(c.name, c.code); setOpen(false); setSearch("") }}
+                style={{ width: "100%", padding: "8px 12px", display: "flex", alignItems: "center", gap: 10, fontSize: 13, cursor: "pointer", background: c.name === value ? "#FEF2F2" : "transparent", border: "none", textAlign: "left" }}
+                onMouseEnter={e => { if (c.name !== value) (e.currentTarget as HTMLElement).style.background = "#F9FAFB" }}
+                onMouseLeave={e => { if (c.name !== value) (e.currentTarget as HTMLElement).style.background = "transparent" }}>
+                <span className={`fi fi-${c.code}`} style={{ width: 20, height: 14, flexShrink: 0, display: "inline-block", backgroundSize: "cover" }} />
+                <span>{c.name}</span>
+                <span style={{ marginLeft: "auto", fontSize: 11, color: "#9CA3AF" }}>{DIAL_CODES[c.code] || ""}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
-// ── Byer per land ────────────────────────────────────────────────────────────
-const CITIES_BY_COUNTRY: Record<string, string[]> = {
-  Denmark: ["København","Aarhus","Odense","Aalborg","Esbjerg","Randers","Kolding","Horsens","Vejle","Roskilde","Helsingør","Herning","Silkeborg","Næstved","Fredericia","Viborg","Køge","Holstebro","Taastrup","Slagelse","Hillerød","Svendborg","Frederiksberg","Gentofte"],
-  Sweden: ["Stockholm","Göteborg","Malmö","Uppsala","Västerås","Örebro","Linköping","Helsingborg","Jönköping","Norrköping","Lund","Umeå","Gävle","Borås","Sundsvall","Södertälje","Karlstad","Eskilstuna","Halmstad","Växjö"],
-  Norway: ["Oslo","Bergen","Trondheim","Stavanger","Drammen","Fredrikstad","Kristiansand","Sandnes","Tromsø","Sarpsborg","Skien","Ålesund","Sandefjord","Haugesund","Tønsberg","Moss","Porsgrunn","Bodø","Arendal","Hamar"],
-  Finland: ["Helsinki","Espoo","Tampere","Vantaa","Oulu","Turku","Jyväskylä","Lahti","Kuopio","Kouvola","Pori","Joensuu","Lappeenranta","Hämeenlinna","Vaasa","Rovaniemi","Seinäjoki","Mikkeli","Kotka","Salo"],
-  Germany: ["Berlin","Hamburg","München","Köln","Frankfurt","Stuttgart","Düsseldorf","Leipzig","Dortmund","Essen","Bremen","Dresden","Hannover","Nürnberg","Duisburg","Bochum","Wuppertal","Bielefeld","Bonn","Münster"],
-  Netherlands: ["Amsterdam","Rotterdam","Den Haag","Utrecht","Eindhoven","Tilburg","Groningen","Almere","Breda","Nijmegen","Enschede","Apeldoorn","Haarlem","Arnhem","Zaanstad","Amersfoort","Haarlemmermeer","'s-Hertogenbosch","Zwolle","Zoetermeer"],
-  "United Kingdom": ["London","Birmingham","Leeds","Glasgow","Sheffield","Bradford","Manchester","Edinburgh","Liverpool","Bristol","Cardiff","Leicester","Coventry","Nottingham","Newcastle","Belfast","Brighton","Hull","Plymouth","Derby"],
-  France: ["Paris","Marseille","Lyon","Toulouse","Nice","Nantes","Strasbourg","Montpellier","Bordeaux","Lille","Rennes","Reims","Le Havre","Saint-Étienne","Toulon","Grenoble","Dijon","Angers","Nîmes","Villeurbanne"],
-  Spain: ["Madrid","Barcelona","Valencia","Seville","Zaragoza","Málaga","Murcia","Palma","Las Palmas","Bilbao","Alicante","Córdoba","Valladolid","Vigo","Gijón","Granada","Hospitalet","La Coruña","Vitoria","Elche"],
-  Italy: ["Roma","Milano","Napoli","Torino","Palermo","Genova","Bologna","Firenze","Bari","Catania","Venezia","Verona","Messina","Padova","Trieste","Taranto","Brescia","Reggio Calabria","Prato","Modena"],
-  Switzerland: ["Zürich","Genf","Basel","Bern","Lausanne","Winterthur","Luzern","St. Gallen","Lugano","Biel","Thun","Köniz","La Chaux-de-Fonds","Fribourg","Schaffhausen","Chur","Vernier","Uster","Sion","Emmen"],
-  Austria: ["Wien","Graz","Linz","Salzburg","Innsbruck","Klagenfurt","Villach","Wels","Sankt Pölten","Dornbirn","Steyr","Wiener Neustadt","Feldkirch","Bregenz","Leonding","Klosterneuburg","Leoben","Krems","Traun","Amstetten"],
-  Belgium: ["Bruxelles","Antwerpen","Gent","Charleroi","Liège","Brugge","Namur","Leuven","Mons","Aalst","Mechelen","La Louvière","Kortrijk","Hasselt","Oostende","Sint-Niklaas","Tournai","Genk","Seraing","Roeselare"],
-  Poland: ["Warszawa","Kraków","Łódź","Wrocław","Poznań","Gdańsk","Szczecin","Bydgoszcz","Lublin","Katowice","Białystok","Gdynia","Częstochowa","Radom","Sosnowiec","Toruń","Kielce","Rzeszów","Gliwice","Zabrze"],
-  "Czech Republic": ["Praha","Brno","Ostrava","Plzeň","Liberec","Olomouc","Ústí nad Labem","České Budějovice","Hradec Králové","Pardubice","Zlín","Havířov","Kladno","Most","Opava","Frýdek-Místek","Karviná","Jihlava","Teplice","Děčín"],
-  Hungary: ["Budapest","Debrecen","Miskolc","Szeged","Pécs","Győr","Nyíregyháza","Kecskemét","Székesfehérvár","Szombathely","Érd","Tatabánya","Kaposvár","Veszprém","Eger","Sopron","Zalaegerszeg","Szolnok","Dunaújváros","Ózd"],
-  Thailand: ["Bangkok","Chiang Mai","Pattaya","Phuket","Hua Hin","Koh Samui","Udon Thani","Nakhon Ratchasima","Chon Buri","Hat Yai","Lampang","Nakhon Si Thammarat","Ubon Ratchathani","Rayong","Khon Kaen","Nonthaburi","Pak Kret","Samut Prakan","Mueang Nakhon Sawan","Pak Chong"],
-  UAE: ["Dubai","Abu Dhabi","Sharjah","Al Ain","Ajman","Ras Al Khaimah","Fujairah","Umm Al Quwain","Khor Fakkan","Kalba"],
-  Singapore: ["Singapore"],
-  Japan: ["Tokyo","Osaka","Yokohama","Nagoya","Sapporo","Fukuoka","Kobe","Kyoto","Kawasaki","Saitama","Hiroshima","Sendai","Kitakyushu","Chiba","Sakai","Kumamoto","Okayama","Shizuoka","Hamamatsu","Niigata"],
-  "Hong Kong": ["Hong Kong","Kowloon","New Territories","Lantau Island"],
-  Malaysia: ["Kuala Lumpur","George Town","Ipoh","Shah Alam","Petaling Jaya","Kota Kinabalu","Kuching","Johor Bahru","Malacca","Miri"],
-  Philippines: ["Manila","Quezon City","Davao","Cebu","Makati","Mandaluyong","Pasig","Taguig","Cagayan de Oro","Zamboanga"],
-  USA: ["New York","Los Angeles","Chicago","Houston","Phoenix","Philadelphia","San Antonio","San Diego","Dallas","San Jose","Austin","Jacksonville","Fort Worth","Columbus","Charlotte","Indianapolis","San Francisco","Seattle","Denver","Nashville"],
-  Canada: ["Toronto","Montreal","Vancouver","Calgary","Edmonton","Ottawa","Mississauga","Winnipeg","Quebec City","Hamilton"],
-  Australia: ["Sydney","Melbourne","Brisbane","Perth","Adelaide","Gold Coast","Newcastle","Canberra","Sunshine Coast","Wollongong"],
+// ── Dial codes for all countries ─────────────────────────────────────────────
+const DIAL_CODES: Record<string, string> = {
+  af: "+93", al: "+355", ad: "+376", ao: "+244", ar: "+54", am: "+374",
+  au: "+61", at: "+43", az: "+994", bh: "+973", bd: "+880", by: "+375",
+  be: "+32", bj: "+229", bn: "+673", bo: "+591", ba: "+387", br: "+55",
+  bf: "+226", bg: "+359", kh: "+855", cm: "+237", ca: "+1", cv: "+238",
+  cb: "+1", cl: "+56", cn: "+86", co: "+57", cg: "+242", cd: "+243",
+  cr: "+506", hr: "+385", cy: "+357", cz: "+420", dk: "+45", ec: "+593",
+  eg: "+20", ee: "+372", et: "+251", fi: "+358", fr: "+33", gm: "+220",
+  ge: "+995", de: "+49", gh: "+233", gr: "+30", gt: "+502", hk: "+852",
+  hu: "+36", is: "+354", in: "+91", id: "+62", ir: "+98", iq: "+964",
+  ie: "+353", il: "+972", it: "+39", jm: "+1", jp: "+81", jo: "+962",
+  kz: "+7", ke: "+254", xk: "+383", kw: "+965", kg: "+996", la: "+856",
+  lv: "+371", lb: "+961", li: "+423", lt: "+370", lu: "+352", my: "+60",
+  mv: "+960", ml: "+223", mt: "+356", md: "+373", mc: "+377", mn: "+976",
+  me: "+382", ma: "+212", mz: "+258", mu: "+230", nl: "+31", nz: "+64",
+  ni: "+505", ng: "+234", mk: "+389", no: "+47", om: "+968", pk: "+92",
+  pa: "+507", py: "+595", pe: "+51", ph: "+63", pl: "+48", pt: "+351",
+  qa: "+974", ro: "+40", ru: "+7", sa: "+966", sn: "+221", rs: "+381",
+  sc: "+248", sg: "+65", sk: "+421", si: "+386", za: "+27", kr: "+82",
+  es: "+34", lk: "+94", se: "+46", ch: "+41", tw: "+886", tz: "+255",
+  th: "+66", tg: "+228", tn: "+216", tr: "+90", gb: "+44", uk: "+44",
+  ua: "+380", ae: "+971", ug: "+256", us: "+1", uy: "+598", uz: "+998",
+  ve: "+58", vn: "+84", zm: "+260",
+}
+
+// ── Cities by country code — use from lib/countries.ts ──────────────────────
+// Build lookup: country name → cities (via SUPPORTED_COUNTRIES + COUNTRY_CITIES)
+function getCitiesForCountry(countryName: string): string[] {
+  const code = SUPPORTED_COUNTRIES.find(c => c.name === countryName)?.code ?? ""
+  return (COUNTRY_CITIES as Record<string, string[]>)[code] ?? []
 }
 
 // ── Kategorier — matcher navbar ──────────────────────────────────────────────
@@ -494,46 +536,37 @@ export default function CreateProfilePage() {
                 )}
               </div>
 
-              {/* Navn */}
+              {/* Name */}
               <div>
-                <label style={labelStyle}>Navn *</label>
+                <label style={labelStyle}>Name *</label>
                 <input type="text" value={profile.display_name} onChange={e => p("display_name", e.target.value)} style={inputStyle} placeholder="Display name" />
               </div>
 
-                            {/* Arbejdsland — styrer by-liste + landekode */}
+              {/* Working country */}
               <div>
-                <label style={labelStyle}>Arbejdsland <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(land escorten arbejder i)</span></label>
-                <select
+                <label style={labelStyle}>Working country <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(country escort works in)</span></label>
+                <CountryDropdown
                   value={profile.country}
-                  onChange={e => {
-                    const countryName = e.target.value;
-                    const code = SUPPORTED_COUNTRIES.find(c => c.name === countryName)?.code ?? "dk";
+                  onChange={(countryName, code) => {
                     const dial = DIAL_CODES[code] ?? "+45";
                     setProfile(prev => ({ ...prev, country: countryName, city: "", phoneDialCode: dial }));
                   }}
-                  style={selectStyle}
-                >
-                  {SUPPORTED_COUNTRIES.map(c => (
-                    <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
-                  ))}
-                </select>
+                />
               </div>
 
-              {/* Telefon + By */}
+              {/* Phone + City */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label style={labelStyle}>Telefon</label>
+                  <label style={labelStyle}>Phone</label>
                   <div style={{ display: "flex", gap: 0, border: "1px solid #E5E5E5", borderRadius: 8, overflow: "hidden", background: "#fff" }}>
                     <select
                       value={profile.phoneDialCode}
                       onChange={e => p("phoneDialCode", e.target.value)}
-                      style={{ padding: "10px 6px", fontSize: 13, border: "none", borderRight: "1px solid #E5E5E5", background: "#F9FAFB", outline: "none", flexShrink: 0, minWidth: 80 }}
+                      style={{ padding: "10px 6px", fontSize: 13, border: "none", borderRight: "1px solid #E5E5E5", background: "#F9FAFB", outline: "none", flexShrink: 0, minWidth: 75 }}
                     >
-                      {SUPPORTED_COUNTRIES.map(c => {
-                        const dial = DIAL_CODES[c.code]
-                        if (!dial) return null
-                        return <option key={c.code} value={dial}>{c.flag} {dial}</option>
-                      })}
+                      {SUPPORTED_COUNTRIES.filter(c => DIAL_CODES[c.code]).map(c => (
+                        <option key={c.code} value={DIAL_CODES[c.code]}>{c.code.toUpperCase()} {DIAL_CODES[c.code]}</option>
+                      ))}
                     </select>
                     <input
                       type="tel"
@@ -545,11 +578,11 @@ export default function CreateProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label style={labelStyle}>By</label>
+                  <label style={labelStyle}>City</label>
                   <select value={profile.city} onChange={e => p("city", e.target.value)} style={selectStyle}>
-                    <option value="">Vælg by...</option>
-                    {(CITIES_BY_COUNTRY[profile.country] ?? []).map(by => (
-                      <option key={by} value={by}>{by}</option>
+                    <option value="">Select city...</option>
+                    {getCitiesForCountry(profile.country).map(city => (
+                      <option key={city} value={city}>{city}</option>
                     ))}
                   </select>
                 </div>
@@ -604,19 +637,19 @@ export default function CreateProfilePage() {
                   <label style={labelStyle}>Alder</label>
                   <select value={profile.age ?? 25} onChange={e => p("age", parseInt(e.target.value))} style={selectStyle}>
                     {Array.from({ length: 63 }, (_, i) => i + 18).map(a => (
-                      <option key={a} value={a}>{a} år</option>
+                      <option key={a} value={a}>{a}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Email (valgfri)</label>
-                  <input type="email" value={profile.email} onChange={e => p("email", e.target.value)} style={inputStyle} placeholder="Genereres automatisk hvis tom" />
+                  <label style={labelStyle}>Email (optional)</label>
+                  <input type="email" value={profile.email} onChange={e => p("email", e.target.value)} style={inputStyle} placeholder="Auto-generated if empty" />
                 </div>
               </div>
 
-              {/* Beskrivelse */}
+              {/* Description */}
               <div>
-                <label style={labelStyle}>Beskrivelse</label>
+                <label style={labelStyle}>Description</label>
                 <textarea value={profile.description} onChange={e => p("description", e.target.value)}
                   rows={4} style={{ ...inputStyle, resize: "vertical" as const }} placeholder="Profiltekst..." />
               </div>
@@ -626,179 +659,179 @@ export default function CreateProfilePage() {
                 <button onClick={() => setShowExtra(!showExtra)}
                   className="flex items-center gap-2 text-[13px] font-semibold text-gray-700 w-full text-left">
                   <span style={{ fontSize: 16, transform: showExtra ? "rotate(90deg)" : "none", display: "inline-block", transition: "transform 0.15s" }}>▶</span>
-                  Ekstra profil oplysninger
-                  <span className="text-[11px] font-normal text-gray-400 ml-1">(valgfrit)</span>
+                  Extra profile info
+                  <span className="text-[11px] font-normal text-gray-400 ml-1">(optional)</span>
                 </button>
 
                 {showExtra && (
                   <div className="space-y-4 mt-4">
-                    {/* Nationalitet */}
+                    {/* Nationality */}
                     <div>
-                      <label style={labelStyle}>Nationalitet</label>
-                      <input type="text" value={profile.nationality || ""} onChange={e => p("nationality", e.target.value)} style={inputStyle} placeholder="f.eks. Dansk, Russisk, Brasiliansk..." />
+                      <label style={labelStyle}>Nationality</label>
+                      <input type="text" value={profile.nationality || ""} onChange={e => p("nationality", e.target.value)} style={inputStyle} placeholder="e.g. Finnish, Russian, Brazilian..." />
                     </div>
 
-                    {/* Højde + Vægt */}
+                    {/* Height + Weight */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label style={labelStyle}>Højde (cm)</label>
+                        <label style={labelStyle}>Height (cm)</label>
                         <input type="number" value={profile.height_cm || ""} onChange={e => p("height_cm", e.target.value ? parseInt(e.target.value) : null)}
                           style={inputStyle} placeholder="165" min={140} max={210} />
                       </div>
                       <div>
-                        <label style={labelStyle}>Vægt (kg)</label>
+                        <label style={labelStyle}>Weight (kg)</label>
                         <input type="number" value={profile.weight_kg || ""} onChange={e => p("weight_kg", e.target.value ? parseInt(e.target.value) : null)}
                           style={inputStyle} placeholder="55" min={40} max={150} />
                       </div>
                     </div>
 
-                    {/* Etnicitet + Orientering */}
+                    {/* Ethnicity + Orientation */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label style={labelStyle}>Etnicitet</label>
+                        <label style={labelStyle}>Ethnicity</label>
                         <select value={profile.ethnicity || ""} onChange={e => p("ethnicity", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {ETHNICITY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={labelStyle}>Orientering</label>
+                        <label style={labelStyle}>Orientation</label>
                         <select value={profile.orientation || ""} onChange={e => p("orientation", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {ORIENTATION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                     </div>
 
-                    {/* Øjenfarve + Hårfarve */}
+                    {/* Eyes + Hair color */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label style={labelStyle}>Øjenfarve</label>
+                        <label style={labelStyle}>Eyes</label>
                         <select value={profile.eye_color || ""} onChange={e => p("eye_color", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {EYE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={labelStyle}>Hårfarve</label>
+                        <label style={labelStyle}>Hair color</label>
                         <select value={profile.hair_color || ""} onChange={e => p("hair_color", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {HAIR_COLOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                     </div>
 
-                    {/* Hårlængde + Skambehåring */}
+                    {/* Hair length + Pubic hair */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label style={labelStyle}>Hårlængde</label>
+                        <label style={labelStyle}>Hair length</label>
                         <select value={profile.hair_length || ""} onChange={e => p("hair_length", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {HAIR_LENGTH_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={labelStyle}>Skambehåring</label>
+                        <label style={labelStyle}>Pubic hair</label>
                         <select value={profile.pubic_hair || ""} onChange={e => p("pubic_hair", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {PUBIC_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                     </div>
 
-                    {/* Bryststørrelse + Brysttype */}
+                    {/* Bust size + Bust type */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label style={labelStyle}>Bryststørrelse</label>
+                        <label style={labelStyle}>Bust size</label>
                         <select value={profile.bust_size || ""} onChange={e => p("bust_size", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {BUST_SIZE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={labelStyle}>Brysttype</label>
+                        <label style={labelStyle}>Bust type</label>
                         <select value={profile.bust_type || ""} onChange={e => p("bust_type", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {BUST_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                     </div>
 
-                    {/* Ryger + Tatoveringer + Piercinger */}
+                    {/* Smoker + Tattoo + Piercing */}
                     <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <label style={labelStyle}>Ryger</label>
+                        <label style={labelStyle}>Smoker</label>
                         <select value={profile.smoker || ""} onChange={e => p("smoker", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {SMOKER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={labelStyle}>Tatoveringer</label>
+                        <label style={labelStyle}>Tattoo</label>
                         <select value={profile.tattoo || ""} onChange={e => p("tattoo", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {TATTOO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={labelStyle}>Piercinger</label>
+                        <label style={labelStyle}>Piercing</label>
                         <select value={profile.piercing || ""} onChange={e => p("piercing", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {PIERCING_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                     </div>
 
-                    {/* Tilgængelig for */}
+                    {/* Available for */}
                     <div>
-                      <label style={labelStyle}>Tilgængelig for</label>
+                      <label style={labelStyle}>Available for</label>
                       <select value={profile.available_for || ""} onChange={e => p("available_for", e.target.value)} style={selectStyle}>
-                        <option value="">Vælg...</option>
+                        <option value="">Select...</option>
                         {AVAILABLE_FOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
 
-                    {/* Mødes med + Rejser */}
+                    {/* Meeting with + Travel */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label style={labelStyle}>Mødes med</label>
+                        <label style={labelStyle}>Meeting with</label>
                         <select value={profile.meeting_with || ""} onChange={e => p("meeting_with", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {MEETING_WITH_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={labelStyle}>Rejser</label>
+                        <label style={labelStyle}>Travel</label>
                         <select value={profile.travel || ""} onChange={e => p("travel", e.target.value)} style={selectStyle}>
-                          <option value="">Vælg...</option>
+                          <option value="">Select...</option>
                           {TRAVEL_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                     </div>
 
-                    {/* ── Priser ── */}
+                    {/* ── Rates ── */}
                     <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 16 }}>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 12 }}>💰 Priser (DKK)</p>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 12 }}>💰 Rates</p>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label style={labelStyle}>1 time</label>
+                          <label style={labelStyle}>1 hour</label>
                           <input type="number" value={profile.rate_1hour || ""} onChange={e => p("rate_1hour", e.target.value ? parseInt(e.target.value) : null)}
-                            style={inputStyle} placeholder="f.eks. 1200" min={0} />
+                            style={inputStyle} placeholder="e.g. 500" min={0} />
                         </div>
                         <div>
-                          <label style={labelStyle}>2 timer</label>
+                          <label style={labelStyle}>2 hours</label>
                           <input type="number" value={profile.rate_2hours || ""} onChange={e => p("rate_2hours", e.target.value ? parseInt(e.target.value) : null)}
-                            style={inputStyle} placeholder="f.eks. 2000" min={0} />
+                            style={inputStyle} placeholder="e.g. 850" min={0} />
                         </div>
                         <div>
-                          <label style={labelStyle}>Overnatning</label>
+                          <label style={labelStyle}>Overnight</label>
                           <input type="number" value={profile.rate_overnight || ""} onChange={e => p("rate_overnight", e.target.value ? parseInt(e.target.value) : null)}
-                            style={inputStyle} placeholder="f.eks. 5000" min={0} />
+                            style={inputStyle} placeholder="e.g. 2000" min={0} />
                         </div>
                         <div>
                           <label style={labelStyle}>Weekend</label>
                           <input type="number" value={profile.rate_weekend || ""} onChange={e => p("rate_weekend", e.target.value ? parseInt(e.target.value) : null)}
-                            style={inputStyle} placeholder="f.eks. 8000" min={0} />
+                            style={inputStyle} placeholder="e.g. 4000" min={0} />
                         </div>
                       </div>
                     </div>
@@ -806,18 +839,18 @@ export default function CreateProfilePage() {
                 )}
               </div>
 
-              {/* Kilde URL */}
+              {/* Source URL */}
               {profile.source_url && (
                 <div>
-                  <label style={labelStyle}>Kilde URL</label>
+                  <label style={labelStyle}>Source URL</label>
                   <input type="text" value={profile.source_url} readOnly style={{ ...inputStyle, background: "#F9FAFB", color: "#6B7280" }} />
                 </div>
               )}
 
-              {/* Billeder */}
+              {/* Images */}
               {profile.images.length > 0 && (
                 <div>
-                  <label style={labelStyle}>Billeder ({profile.images.length})</label>
+                  <label style={labelStyle}>Images ({profile.images.length})</label>
                   <div className="flex gap-2 flex-wrap">
                     {profile.images.map((src, i) => (
                       <img key={i} src={src} alt="" className="rounded-lg object-cover" style={{ width: 80, height: 80, border: "1px solid #E5E5E5" }} />
