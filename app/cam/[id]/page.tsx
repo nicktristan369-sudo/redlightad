@@ -161,8 +161,14 @@ export default function CamRoomPage() {
         payload => setMessages(prev => [...prev.slice(-149), payload.new as CamMessage]))
       .subscribe()
 
-    supabase.from("cam_messages").select("*").eq("room_id", id).order("created_at").limit(80)
-      .then(({ data }) => { if (data) setMessages(data) })
+    // Only load messages from current stream session (cam_started_at)
+    supabase.from("listings").select("cam_started_at").eq("id", id).single()
+      .then(({ data: l }) => {
+        const since = l?.cam_started_at || new Date(Date.now() - 3600000).toISOString()
+        supabase.from("cam_messages").select("*").eq("room_id", id)
+          .gte("created_at", since).order("created_at").limit(80)
+          .then(({ data }) => { if (data) setMessages(data) })
+      })
 
     return () => { supabase.removeChannel(channel) }
   }, [id])
