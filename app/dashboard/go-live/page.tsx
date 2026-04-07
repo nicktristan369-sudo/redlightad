@@ -180,33 +180,35 @@ export default function GoLivePage() {
 
         {/* Live stream */}
         {isLive && livekitToken ? (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 50, display: "flex", flexDirection: "column" }}>
             <LiveKitRoom
               serverUrl={livekitWsUrl}
               token={livekitToken}
               connect={true}
               video={true}
               audio={true}
-              style={{ borderRadius: 12, overflow: "hidden" }}
+              style={{ flex: 1, position: "relative" }}
             >
               <BroadcastControls onViewerCount={setViewerCount} />
             </LiveKitRoom>
 
-            {/* Stats bar */}
-            <div style={{ display: "flex", gap: 16, marginTop: 12, padding: "12px 16px", background: "#F9FAFB", borderRadius: 8 }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
-                <Users size={15} /> {viewerCount} viewers
+            {/* Overlay stats + end button */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "48px 16px 12px", background: "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)", display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ background: "#DC2626", color: "#fff", fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 4, letterSpacing: "0.05em" }}>● LIVE</span>
+              <span style={{ color: "#fff", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+                <Users size={13} /> {viewerCount}
               </span>
-              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151" }}>
-                <Clock size={15} /> {elapsed}
+              <span style={{ color: "#fff", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+                <Clock size={13} /> {elapsed}
               </span>
-              <span style={{ fontSize: 13, color: "#DC2626", fontWeight: 600 }}>● LIVE</span>
             </div>
 
-            <button onClick={handleEndStream}
-              style={{ marginTop: 16, width: "100%", padding: "12px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <Square size={16} /> End stream
-            </button>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 16px 32px", background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)" }}>
+              <button onClick={handleEndStream}
+                style={{ width: "100%", padding: "14px", background: "rgba(220,38,38,0.9)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, backdropFilter: "blur(8px)" }}>
+                <Square size={16} /> End stream
+              </button>
+            </div>
           </div>
         ) : (
           /* Pre-live setup */
