@@ -107,28 +107,36 @@ export default function GoLivePage() {
     return () => clearInterval(t)
   }, [isLive, streamStart])
 
-  // Chat subscription — lives in useEffect so it persists
+  // Chat — polling every 3s (most reliable across devices)
   useEffect(() => {
     if (!isLive || !listing?.id) return
     const supabase = createClient()
     const listingId = listing.id
+    let lastTimestamp = new Date().toISOString()
 
-    // Load recent messages
+    // Load existing messages
     supabase.from("cam_messages").select("*").eq("room_id", listingId)
-      .order("created_at").limit(50)
-      .then(({ data }) => { if (data) setMessages(data as typeof messages) })
-
-    // Realtime subscription
-    const channel = supabase.channel(`broadcaster-chat-${listingId}`)
-      .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "cam_messages",
-        filter: `room_id=eq.${listingId}`
-      }, payload => {
-        setMessages(prev => [...prev.slice(-99), payload.new as typeof prev[0]])
+      .order("created_at").limit(60)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setMessages(data as typeof messages)
+          lastTimestamp = data[data.length - 1].created_at
+        }
       })
-      .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    // Poll for new messages every 2.5s
+    const interval = setInterval(async () => {
+      const { data } = await supabase.from("cam_messages")
+        .select("*").eq("room_id", listingId)
+        .gt("created_at", lastTimestamp)
+        .order("created_at")
+      if (data && data.length > 0) {
+        lastTimestamp = data[data.length - 1].created_at
+        setMessages(prev => [...prev.slice(-99), ...(data as typeof prev)])
+      }
+    }, 2500)
+
+    return () => clearInterval(interval)
   }, [isLive, listing?.id])
 
   const handleGoLive = async () => {
