@@ -107,6 +107,30 @@ export default function GoLivePage() {
     return () => clearInterval(t)
   }, [isLive, streamStart])
 
+  // Chat subscription — lives in useEffect so it persists
+  useEffect(() => {
+    if (!isLive || !listing?.id) return
+    const supabase = createClient()
+    const listingId = listing.id
+
+    // Load recent messages
+    supabase.from("cam_messages").select("*").eq("room_id", listingId)
+      .order("created_at").limit(50)
+      .then(({ data }) => { if (data) setMessages(data as typeof messages) })
+
+    // Realtime subscription
+    const channel = supabase.channel(`broadcaster-chat-${listingId}`)
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "cam_messages",
+        filter: `room_id=eq.${listingId}`
+      }, payload => {
+        setMessages(prev => [...prev.slice(-99), payload.new as typeof prev[0]])
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [isLive, listing?.id])
+
   const handleGoLive = async () => {
     if (!listing) return
     setGoingLive(true)
@@ -143,14 +167,7 @@ export default function GoLivePage() {
       setStreamStart(new Date(now))
       setViewerCount(0)
 
-      // Subscribe to chat messages (reuse supabase from above)
-      const listingId = listing.id
-      supabase.from("cam_messages").select("*").eq("room_id", listingId).order("created_at").limit(50)
-        .then(({ data: msgs }) => { if (msgs) setMessages(msgs as typeof messages) })
-      supabase.channel(`golive-chat-${listingId}`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "cam_messages", filter: `room_id=eq.${listingId}` },
-          payload => setMessages(prev => [...prev.slice(-99), payload.new as typeof prev[0]]))
-        .subscribe()
+
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to go live")
     } finally {
