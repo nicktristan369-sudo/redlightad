@@ -123,7 +123,7 @@ export default function CamRoomPage() {
     const load = async () => {
       const { data } = await supabase
         .from("listings")
-        .select("id, title, display_name, profile_image, age, city, country, bio, cam_live, cam_title, cam_viewers, cam_category, cam_tokens_per_min")
+        .select("*")
         .eq("id", id)
         .single()
       setListing(data)
