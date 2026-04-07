@@ -17,6 +17,7 @@ import {
 } from "@livekit/components-react"
 import { Track } from "livekit-client"
 import "@livekit/components-styles"
+import { createClient } from "@/lib/supabase"
 
 // ── Inner broadcaster component (inside LiveKitRoom) ─────────────────────────
 function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => void }) {
@@ -68,6 +69,9 @@ export default function GoLivePage() {
   const [livekitWsUrl, setLivekitWsUrl] = useState<string>("ws://76.13.154.9:7880")
   const [goingLive, setGoingLive] = useState(false)
   const [error, setError] = useState("")
+  const [messages, setMessages] = useState<{ id: string; username: string; message: string; is_tip: boolean; tip_amount: number | null }[]>([])
+  const [showChat, setShowChat] = useState(true)
+  const chatRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -139,6 +143,16 @@ export default function GoLivePage() {
       setIsLive(true)
       setStreamStart(new Date(now))
       setViewerCount(0)
+
+      // Subscribe to chat messages
+      const supabase = createClient()
+      const listingId = listing.id
+      supabase.from("cam_messages").select("*").eq("room_id", listingId).order("created_at").limit(50)
+        .then(({ data: msgs }) => { if (msgs) setMessages(msgs) })
+      supabase.channel(`golive-chat-${listingId}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "cam_messages", filter: `room_id=eq.${listingId}` },
+          payload => setMessages(prev => [...prev.slice(-99), payload.new as typeof prev[0]]))
+        .subscribe()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to go live")
     } finally {
@@ -192,20 +206,47 @@ export default function GoLivePage() {
               <BroadcastControls onViewerCount={setViewerCount} />
             </LiveKitRoom>
 
-            {/* Overlay stats + end button */}
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "48px 16px 12px", background: "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)", display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ background: "#DC2626", color: "#fff", fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 4, letterSpacing: "0.05em" }}>● LIVE</span>
+            {/* Top bar: stats */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "48px 16px 12px", background: "linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)", display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ background: "#DC2626", color: "#fff", fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 4 }}>● LIVE</span>
               <span style={{ color: "#fff", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
                 <Users size={13} /> {viewerCount}
               </span>
               <span style={{ color: "#fff", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
                 <Clock size={13} /> {elapsed}
               </span>
+              <button onClick={() => setShowChat(!showChat)}
+                style={{ marginLeft: "auto", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "4px 10px", color: "#fff", fontSize: 12, cursor: "pointer" }}>
+                {showChat ? "Hide chat" : "Show chat"}
+              </button>
             </div>
 
+            {/* Chat overlay (bottom left) */}
+            {showChat && (
+              <div style={{ position: "absolute", bottom: 80, left: 12, width: "65%", maxWidth: 320, pointerEvents: "none" }}>
+                <div ref={chatRef} style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 200, overflowY: "hidden", justifyContent: "flex-end" }}>
+                  {messages.slice(-8).map(m => (
+                    <div key={m.id} style={{ fontSize: 13, lineHeight: 1.4, pointerEvents: "none" }}>
+                      {m.is_tip ? (
+                        <span style={{ background: "rgba(220,38,38,0.85)", padding: "3px 8px", borderRadius: 6, color: "#fff", fontWeight: 700, fontSize: 12 }}>
+                          💰 {m.username} tipped {m.tip_amount} RC
+                        </span>
+                      ) : (
+                        <span style={{ background: "rgba(0,0,0,0.6)", padding: "3px 8px", borderRadius: 6, backdropFilter: "blur(4px)" }}>
+                          <b style={{ color: "#DC2626" }}>{m.username}</b>
+                          <span style={{ color: "#fff" }}>: {m.message}</span>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bottom: end button */}
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 16px 32px", background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)" }}>
               <button onClick={handleEndStream}
-                style={{ width: "100%", padding: "14px", background: "rgba(220,38,38,0.9)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, backdropFilter: "blur(8px)" }}>
+                style={{ width: "100%", padding: "14px", background: "rgba(220,38,38,0.9)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 <Square size={16} /> End stream
               </button>
             </div>
