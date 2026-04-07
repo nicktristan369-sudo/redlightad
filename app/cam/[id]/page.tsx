@@ -310,8 +310,16 @@ export default function CamRoomPage() {
     }
     setMessages(prev => [...prev.slice(-149), optimistic])
 
-    // Persist
+    // Deduct from viewer
     await supabase.from("customer_profiles").update({ redcoins: userBalance - amount }).eq("user_id", currentUser.id)
+
+    // Credit model wallet (via admin API to avoid RLS)
+    await fetch("/api/cam/tip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingId: id, amount }),
+    })
+
     await supabase.from("cam_messages").insert({
       room_id: id, user_id: currentUser.id, username,
       message: `tipped ${amount} RedCoins`, is_tip: true, tip_amount: amount,
