@@ -170,6 +170,20 @@ export default function CamRoomPage() {
   const sendMessage = async (text?: string) => {
     const msg = text || newMessage.trim()
     if (!msg || !currentUser) return
+    if (!text) setNewMessage("")
+
+    // Optimistic update — show instantly
+    const optimistic: CamMessage = {
+      id: `opt-${Date.now()}`,
+      user_id: currentUser.id,
+      username: currentUser.email?.split("@")[0] || "Anonymous",
+      message: msg,
+      is_tip: false,
+      tip_amount: null,
+      created_at: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev.slice(-149), optimistic])
+
     const supabase = createClient()
     await supabase.from("cam_messages").insert({
       room_id: id,
@@ -178,23 +192,31 @@ export default function CamRoomPage() {
       message: msg,
       is_tip: false,
     })
-    if (!text) setNewMessage("")
   }
 
   const sendTip = async (amount: number) => {
     if (!currentUser || amount > userBalance) return
     const supabase = createClient()
-    // Deduct from balance
-    await supabase.from("customer_profiles").update({ redcoins: userBalance - amount }).eq("user_id", currentUser.id)
+    const username = currentUser.email?.split("@")[0] || "Anonymous"
+
+    // Optimistic update
     setUserBalance(prev => prev - amount)
-    // Post tip message
-    await supabase.from("cam_messages").insert({
-      room_id: id,
+    const optimistic: CamMessage = {
+      id: `opt-tip-${Date.now()}`,
       user_id: currentUser.id,
-      username: currentUser.email?.split("@")[0] || "Anonymous",
+      username,
       message: `tipped ${amount} RedCoins`,
       is_tip: true,
       tip_amount: amount,
+      created_at: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev.slice(-149), optimistic])
+
+    // Persist
+    await supabase.from("customer_profiles").update({ redcoins: userBalance - amount }).eq("user_id", currentUser.id)
+    await supabase.from("cam_messages").insert({
+      room_id: id, user_id: currentUser.id, username,
+      message: `tipped ${amount} RedCoins`, is_tip: true, tip_amount: amount,
     })
   }
 
