@@ -22,21 +22,38 @@ import "@livekit/components-styles"
 function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => void }) {
   const { localParticipant } = useLocalParticipant()
   const tracks = useTracks([Track.Source.Camera, Track.Source.Microphone])
-  const [camEnabled, setCamEnabled] = useState(false)
+  const [camReady, setCamReady] = useState(false)
+  const [camError, setCamError] = useState(false)
+  const retryRef = useRef(0)
+
+  const startCamera = useCallback(async () => {
+    if (!localParticipant) return
+    setCamError(false)
+    try {
+      await localParticipant.setCameraEnabled(true)
+      await localParticipant.setMicrophoneEnabled(true)
+      setCamReady(true)
+    } catch {
+      setCamError(true)
+    }
+  }, [localParticipant])
 
   useEffect(() => {
     if (!localParticipant) return
-    // Small delay to ensure connection is ready
-    const t = setTimeout(async () => {
-      try {
-        await localParticipant.setCameraEnabled(true)
-        await localParticipant.setMicrophoneEnabled(true)
-        setCamEnabled(true)
-      } catch {
-        // Camera permission denied or unavailable
+    // Auto-start with retries (mobile needs user gesture sometimes)
+    const tryStart = async () => {
+      for (let i = 0; i < 3; i++) {
+        await new Promise(r => setTimeout(r, 800 + i * 600))
+        try {
+          await localParticipant.setCameraEnabled(true)
+          await localParticipant.setMicrophoneEnabled(true)
+          setCamReady(true)
+          return
+        } catch { /* retry */ }
       }
-    }, 500)
-    return () => clearTimeout(t)
+      setCamError(true) // show manual button after 3 fails
+    }
+    tryStart()
   }, [localParticipant])
 
   const camTrack = tracks.find(t => t.source === Track.Source.Camera)
@@ -46,22 +63,38 @@ function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => vo
       {camTrack ? (
         <VideoTrack trackRef={camTrack} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
-        <div style={{ width: "100%", height: "100%", background: "#0A0A0A", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
-          <VideoOff color="#333" size={48} />
-          <p style={{ color: "#555", fontSize: 13 }}>
-            {camEnabled ? "Kamera ikke tilgængeligt" : "Starter kamera..."}
-          </p>
+        <div style={{ width: "100%", height: "100%", background: "#0A0A0A", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+          {camError ? (
+            <>
+              <VideoOff color="#DC2626" size={48} />
+              <p style={{ color: "#9CA3AF", fontSize: 14, textAlign: "center", padding: "0 20px" }}>
+                Kamera kunne ikke startes automatisk
+              </p>
+              <button onClick={startCamera}
+                style={{ padding: "12px 28px", background: "#DC2626", border: "none", borderRadius: 10, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                <Video size={16} /> Start kamera
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ width: 32, height: 32, border: "3px solid #DC2626", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <p style={{ color: "#555", fontSize: 13 }}>Starter kamera...</p>
+              <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+            </>
+          )}
         </div>
       )}
-      {/* Camera/Mic toggle buttons */}
-      <div style={{ position: "absolute", bottom: 90, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 10 }}>
-        <TrackToggle source={Track.Source.Camera} style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-          <Video size={15} /> Kamera
-        </TrackToggle>
-        <TrackToggle source={Track.Source.Microphone} style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-          <Mic size={15} /> Mikrofon
-        </TrackToggle>
-      </div>
+      {/* Camera/Mic toggle buttons — only when camera is active */}
+      {camTrack && (
+        <div style={{ position: "absolute", bottom: 90, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 10 }}>
+          <TrackToggle source={Track.Source.Camera} style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+            <Video size={15} /> Kamera
+          </TrackToggle>
+          <TrackToggle source={Track.Source.Microphone} style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+            <Mic size={15} /> Mikrofon
+          </TrackToggle>
+        </div>
+      )}
       <RoomAudioRenderer />
     </div>
   )
