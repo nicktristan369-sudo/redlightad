@@ -22,29 +22,44 @@ import "@livekit/components-styles"
 function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => void }) {
   const { localParticipant } = useLocalParticipant()
   const tracks = useTracks([Track.Source.Camera, Track.Source.Microphone])
+  const [camEnabled, setCamEnabled] = useState(false)
 
   useEffect(() => {
-    localParticipant?.setCameraEnabled(true)
-    localParticipant?.setMicrophoneEnabled(true)
+    if (!localParticipant) return
+    // Small delay to ensure connection is ready
+    const t = setTimeout(async () => {
+      try {
+        await localParticipant.setCameraEnabled(true)
+        await localParticipant.setMicrophoneEnabled(true)
+        setCamEnabled(true)
+      } catch {
+        // Camera permission denied or unavailable
+      }
+    }, 500)
+    return () => clearTimeout(t)
   }, [localParticipant])
 
   const camTrack = tracks.find(t => t.source === Track.Source.Camera)
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", width: "100%", height: "100%", background: "#000" }}>
       {camTrack ? (
-        <VideoTrack trackRef={camTrack} style={{ width: "100%", borderRadius: 12, background: "#000" }} />
+        <VideoTrack trackRef={camTrack} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
-        <div style={{ width: "100%", aspectRatio: "16/9", background: "#111", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <VideoOff color="#666" size={40} />
+        <div style={{ width: "100%", height: "100%", background: "#0A0A0A", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <VideoOff color="#333" size={48} />
+          <p style={{ color: "#555", fontSize: 13 }}>
+            {camEnabled ? "Kamera ikke tilgængeligt" : "Starter kamera..."}
+          </p>
         </div>
       )}
-      <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 12 }}>
-        <TrackToggle source={Track.Source.Camera} style={{ background: "rgba(0,0,0,0.7)", border: "none", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-          <Video size={16} /> Camera
+      {/* Camera/Mic toggle buttons */}
+      <div style={{ position: "absolute", bottom: 90, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 10 }}>
+        <TrackToggle source={Track.Source.Camera} style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+          <Video size={15} /> Kamera
         </TrackToggle>
-        <TrackToggle source={Track.Source.Microphone} style={{ background: "rgba(0,0,0,0.7)", border: "none", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-          <Mic size={16} /> Mic
+        <TrackToggle source={Track.Source.Microphone} style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 14px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+          <Mic size={15} /> Mikrofon
         </TrackToggle>
       </div>
       <RoomAudioRenderer />
@@ -184,17 +199,12 @@ export default function GoLivePage() {
     const listingId = listing.id
     let lastTimestamp = new Date().toISOString()
 
-    // Load existing messages
-    supabase.from("cam_messages").select("*").eq("room_id", listingId)
-      .order("created_at").limit(60)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setMessages(data as typeof messages)
-          lastTimestamp = data[data.length - 1].created_at
-        }
-      })
+    // Only show messages from THIS stream session
+    const streamBegin = new Date(Date.now() - 5000).toISOString() // 5s buffer
+    let lastTimestamp = streamBegin
+    setMessages([]) // clear old messages
 
-    // Poll for new messages every 2.5s
+    // Poll for new messages every 2.5s — only from current session
     const interval = setInterval(async () => {
       const { data } = await supabase.from("cam_messages")
         .select("*").eq("room_id", listingId)
@@ -202,7 +212,6 @@ export default function GoLivePage() {
         .order("created_at")
       if (data && data.length > 0) {
         lastTimestamp = data[data.length - 1].created_at
-        // Play sound for tips
         const hasTip = data.some((m: { is_tip: boolean }) => m.is_tip)
         if (hasTip) playTipSound()
         setMessages(prev => [...prev.slice(-99), ...(data as typeof prev)])
