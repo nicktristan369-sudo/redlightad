@@ -197,10 +197,9 @@ export default function GoLivePage() {
     if (!isLive || !listing?.id) return
     const supabase = createClient()
     const listingId = listing.id
-    let lastTimestamp = new Date().toISOString()
 
     // Only show messages from THIS stream session
-    const streamBegin = new Date(Date.now() - 5000).toISOString() // 5s buffer
+    const streamBegin = new Date(Date.now() - 5000).toISOString()
     let lastTimestamp = streamBegin
     setMessages([]) // clear old messages
 
