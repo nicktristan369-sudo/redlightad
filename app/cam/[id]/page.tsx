@@ -194,12 +194,30 @@ export default function CamRoomPage() {
     })
   }
 
+  const playTipSound = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+      const notes = [880, 1100, 1320]
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain); gain.connect(ctx.destination)
+        osc.type = "sine"; osc.frequency.value = freq
+        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.12)
+        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i * 0.12 + 0.01)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.25)
+        osc.start(ctx.currentTime + i * 0.12); osc.stop(ctx.currentTime + i * 0.12 + 0.25)
+      })
+    } catch { /* ignore */ }
+  }
+
   const sendTip = async (amount: number) => {
     if (!currentUser || amount > userBalance) return
     const supabase = createClient()
     const username = currentUser.email?.split("@")[0] || "Anonymous"
 
-    // Optimistic update
+    // Play sound + optimistic update
+    playTipSound()
     setUserBalance(prev => prev - amount)
     const optimistic: CamMessage = {
       id: `opt-tip-${Date.now()}`,

@@ -71,6 +71,27 @@ export default function GoLivePage() {
   const [messages, setMessages] = useState<{ id: string; username: string; message: string; is_tip: boolean; tip_amount: number | null }[]>([])
   const [showChat, setShowChat] = useState(true)
   const chatRef = useRef<HTMLDivElement>(null)
+  const prevMsgCount = useRef(0)
+
+  const playTipSound = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+      const notes = [880, 1100, 1320]
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.type = "sine"
+        osc.frequency.value = freq
+        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.12)
+        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i * 0.12 + 0.01)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.25)
+        osc.start(ctx.currentTime + i * 0.12)
+        osc.stop(ctx.currentTime + i * 0.12 + 0.25)
+      })
+    } catch { /* ignore AudioContext errors */ }
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -132,6 +153,9 @@ export default function GoLivePage() {
         .order("created_at")
       if (data && data.length > 0) {
         lastTimestamp = data[data.length - 1].created_at
+        // Play sound for tips
+        const hasTip = data.some((m: { is_tip: boolean }) => m.is_tip)
+        if (hasTip) playTipSound()
         setMessages(prev => [...prev.slice(-99), ...(data as typeof prev)])
       }
     }, 2500)
