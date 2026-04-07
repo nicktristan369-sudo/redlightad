@@ -114,6 +114,10 @@ export default function CamRoomPage() {
   const [activeTab, setActiveTab] = useState<"chat" | "users">("chat")
   const [infoTab, setInfoTab] = useState<"bio" | "media">("bio")
   const [followed, setFollowed] = useState(false)
+  const [privateRequest, setPrivateRequest] = useState<{ id: string; status: string; roomName: string; tokensPerMin: number } | null>(null)
+  const [privateToken, setPrivateToken] = useState<string | null>(null)
+  const [showPrivateConfirm, setShowPrivateConfirm] = useState(false)
+  const [privateBilling, setPrivateBilling] = useState(false)
   const chatRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -211,6 +215,82 @@ export default function CamRoomPage() {
     } catch { /* ignore */ }
   }
 
+  const requestPrivateShow = async () => {
+    if (!currentUser || !listing) return
+    setShowPrivateConfirm(false)
+    const res = await fetch("/api/cam/private", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "request",
+        listingId: listing.id,
+        viewerId: currentUser.id,
+        viewerUsername: currentUser.email?.split("@")[0] || "viewer",
+        tokensPerMin: listing.cam_tokens_per_min || 20,
+      }),
+    })
+    const data = await res.json()
+    if (res.ok) setPrivateRequest({ id: data.request.id, status: "pending", roomName: data.request.room_name, tokensPerMin: listing.cam_tokens_per_min || 20 })
+  }
+
+  // Poll for private request status
+  useEffect(() => {
+    if (!privateRequest || privateRequest.status === "ended" || privateRequest.status === "declined") return
+    const supabase = createClient()
+    const interval = setInterval(async () => {
+      const { data } = await supabase.from("cam_private_requests").select("*").eq("id", privateRequest.id).single()
+      if (!data) return
+      if (data.status === "accepted" && privateRequest.status !== "accepted") {
+        setPrivateRequest(prev => prev ? { ...prev, status: "accepted" } : null)
+        // Get LiveKit token for private room
+        const res = await fetch("/api/cam/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roomName: privateRequest.roomName, participantName: currentUser?.email?.split("@")[0] || "viewer", isHost: false }),
+        })
+        const tokenData = await res.json()
+        if (res.ok) setPrivateToken(tokenData.token)
+      } else if (data.status === "ended" || data.status === "declined") {
+        setPrivateRequest(prev => prev ? { ...prev, status: data.status } : null)
+        setPrivateToken(null)
+        clearInterval(interval)
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [privateRequest?.id, privateRequest?.status, currentUser])
+
+  // Per-minute billing for private show
+  useEffect(() => {
+    if (!privateRequest || privateRequest.status !== "accepted" || !currentUser) return
+    const billInterval = setInterval(async () => {
+      const res = await fetch("/api/cam/private", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "bill", requestId: privateRequest.id }),
+      })
+      const data = await res.json()
+      if (data.ended) {
+        setPrivateRequest(prev => prev ? { ...prev, status: "ended" } : null)
+        setPrivateToken(null)
+        clearInterval(billInterval)
+      } else if (data.remaining !== undefined) {
+        setUserBalance(data.remaining)
+      }
+    }, 60000)
+    return () => clearInterval(billInterval)
+  }, [privateRequest?.id, privateRequest?.status])
+
+  const endPrivateShow = async () => {
+    if (!privateRequest) return
+    await fetch("/api/cam/private", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "end", requestId: privateRequest.id }),
+    })
+    setPrivateRequest(prev => prev ? { ...prev, status: "ended" } : null)
+    setPrivateToken(null)
+  }
+
   const sendTip = async (amount: number) => {
     if (!currentUser || amount > userBalance) return
     const supabase = createClient()
@@ -296,15 +376,62 @@ export default function CamRoomPage() {
           </div>
 
           {/* Tip bar */}
-          <div style={{ padding: "10px 16px", background: "#111", borderTop: "1px solid #1E1E1E", borderBottom: "1px solid #1E1E1E", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, color: "#6B7280" }}>
+          <div style={{ padding: "10px 16px", background: "#111", borderTop: "1px solid #1E1E1E", borderBottom: "1px solid #1E1E1E", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 12, color: "#6B7280", flex: 1 }}>
               {listing.cam_category === "private" ? `Private: ${listing.cam_tokens_per_min} RC/min` : "Free public show"}
             </span>
+            {/* Private show button */}
+            {currentUser && listing.cam_live && !privateRequest && (
+              <button onClick={() => setShowPrivateConfirm(true)}
+                style={{ padding: "7px 16px", background: "transparent", border: "1px solid #DC2626", borderRadius: 8, color: "#DC2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                🔒 Private Show
+              </button>
+            )}
+            {privateRequest && privateRequest.status === "pending" && (
+              <span style={{ fontSize: 12, color: "#F59E0B", fontWeight: 600 }}>⏳ Waiting for response...</span>
+            )}
+            {privateRequest && privateRequest.status === "declined" && (
+              <span style={{ fontSize: 12, color: "#EF4444" }}>❌ Request declined</span>
+            )}
+            {privateRequest && privateRequest.status === "accepted" && (
+              <button onClick={endPrivateShow}
+                style={{ padding: "7px 14px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                🔒 End Private ({privateRequest.tokensPerMin} RC/min)
+              </button>
+            )}
             <button onClick={() => currentUser ? setShowTip(true) : null}
               style={{ padding: "7px 20px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
               <Gift size={14} /> Send Tip
             </button>
           </div>
+
+          {/* Private show confirm modal */}
+          {showPrivateConfirm && (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 16, padding: 28, width: 320 }}>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 8 }}>🔒 Request Private Show</h3>
+                <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 6 }}>
+                  Cost: <b style={{ color: "#DC2626" }}>{listing.cam_tokens_per_min || 20} RC/min</b>
+                </p>
+                <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>
+                  Your balance: <b style={{ color: "#fff" }}>{userBalance.toLocaleString()} RC</b>
+                </p>
+                <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 20 }}>
+                  The model must accept your request. Coins are deducted every minute automatically.
+                </p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setShowPrivateConfirm(false)}
+                    style={{ flex: 1, padding: 11, background: "transparent", border: "1px solid #2A2A2A", borderRadius: 8, color: "#9CA3AF", fontSize: 14, cursor: "pointer" }}>
+                    Cancel
+                  </button>
+                  <button onClick={requestPrivateShow}
+                    style={{ flex: 2, padding: 11, background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                    Send Request
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Bio tabs */}
           <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", background: "#0D0D0D" }}>

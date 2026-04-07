@@ -68,6 +68,7 @@ export default function GoLivePage() {
   const [livekitWsUrl, setLivekitWsUrl] = useState<string>("ws://76.13.154.9:7880")
   const [goingLive, setGoingLive] = useState(false)
   const [error, setError] = useState("")
+  const [privateRequests, setPrivateRequests] = useState<{ id: string; viewer_username: string; tokens_per_min: number; room_name: string }[]>([])
   const [messages, setMessages] = useState<{ id: string; username: string; message: string; is_tip: boolean; tip_amount: number | null }[]>([])
   const [showChat, setShowChat] = useState(true)
   const chatRef = useRef<HTMLDivElement>(null)
@@ -127,6 +128,41 @@ export default function GoLivePage() {
     }, 1000)
     return () => clearInterval(t)
   }, [isLive, streamStart])
+
+  // Poll for private show requests
+  useEffect(() => {
+    if (!isLive || !listing?.id) return
+    const supabase = createClient()
+    const interval = setInterval(async () => {
+      const { data } = await supabase.from("cam_private_requests")
+        .select("*").eq("listing_id", listing.id).eq("status", "pending")
+      if (data && data.length > 0) {
+        setPrivateRequests(data.map(r => ({ id: r.id, viewer_username: r.viewer_username, tokens_per_min: r.tokens_per_min, room_name: r.room_name })))
+        playTipSound()
+      } else {
+        setPrivateRequests([])
+      }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [isLive, listing?.id])
+
+  const acceptPrivate = async (requestId: string, roomName: string) => {
+    await fetch("/api/cam/private", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "accept", requestId }),
+    })
+    setPrivateRequests(prev => prev.filter(r => r.id !== requestId))
+  }
+
+  const declinePrivate = async (requestId: string) => {
+    await fetch("/api/cam/private", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "decline", requestId }),
+    })
+    setPrivateRequests(prev => prev.filter(r => r.id !== requestId))
+  }
 
   // Chat — polling every 3s (most reliable across devices)
   useEffect(() => {
@@ -267,6 +303,26 @@ export default function GoLivePage() {
                 {showChat ? "Hide chat" : "Show chat"}
               </button>
             </div>
+
+            {/* Private show requests */}
+            {privateRequests.map(req => (
+              <div key={req.id} style={{ position: "absolute", top: 70, left: "50%", transform: "translateX(-50%)", background: "rgba(220,38,38,0.95)", borderRadius: 12, padding: "14px 20px", zIndex: 60, minWidth: 280, textAlign: "center", backdropFilter: "blur(8px)" }}>
+                <p style={{ fontSize: 13, color: "#fff", fontWeight: 700, marginBottom: 4 }}>🔒 Private Show Request</p>
+                <p style={{ fontSize: 12, color: "#FCA5A5", marginBottom: 12 }}>
+                  <b>{req.viewer_username}</b> wants a private show · {req.tokens_per_min} RC/min
+                </p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => declinePrivate(req.id)}
+                    style={{ flex: 1, padding: "8px", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
+                    Decline
+                  </button>
+                  <button onClick={() => acceptPrivate(req.id, req.room_name)}
+                    style={{ flex: 2, padding: "8px", background: "#fff", border: "none", borderRadius: 8, color: "#DC2626", fontSize: 13, cursor: "pointer", fontWeight: 800 }}>
+                    ✓ Accept
+                  </button>
+                </div>
+              </div>
+            ))}
 
             {/* Chat overlay (bottom left) */}
             {showChat && (
