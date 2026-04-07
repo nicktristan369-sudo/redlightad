@@ -17,7 +17,6 @@ import {
 } from "@livekit/components-react"
 import { Track } from "livekit-client"
 import "@livekit/components-styles"
-import { createClient } from "@/lib/supabase"
 
 // ── Inner broadcaster component (inside LiveKitRoom) ─────────────────────────
 function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => void }) {
