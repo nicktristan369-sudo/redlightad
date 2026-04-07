@@ -317,7 +317,7 @@ export default function CamRoomPage() {
     await fetch("/api/cam/tip", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listingId: id, amount }),
+      body: JSON.stringify({ listingId: id, amount, viewerUsername: username }),
     })
 
     await supabase.from("cam_messages").insert({
