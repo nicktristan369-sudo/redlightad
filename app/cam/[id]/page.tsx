@@ -118,7 +118,9 @@ export default function CamRoomPage() {
   const [privateToken, setPrivateToken] = useState<string | null>(null)
   const [showPrivateConfirm, setShowPrivateConfirm] = useState(false)
   const [privateBilling, setPrivateBilling] = useState(false)
+  const [tipError, setTipError] = useState<string | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
+  const audioUnlocked = useRef(false)
 
   useEffect(() => {
     if (!id) return
@@ -297,16 +299,30 @@ export default function CamRoomPage() {
     setPrivateToken(null)
   }
 
+  // Unlock AudioContext on first user interaction (browser requirement)
+  useEffect(() => {
+    const unlock = () => {
+      if (audioUnlocked.current) return
+      try {
+        const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+        ctx.resume()
+        audioUnlocked.current = true
+      } catch { /* ignore */ }
+    }
+    document.addEventListener("click", unlock, { once: true })
+    return () => document.removeEventListener("click", unlock)
+  }, [])
+
   const sendTip = async (amount: number) => {
-    if (!currentUser || amount > userBalance) return
-    const supabase = createClient()
+    if (!currentUser || amount <= 0 || amount > userBalance) return
     const username = currentUser.email?.split("@")[0] || "Anonymous"
 
-    // Play sound + optimistic update
-    playTipSound()
+    // Optimistic UI update
+    const prevBalance = userBalance
     setUserBalance(prev => prev - amount)
+    const optimisticId = `opt-tip-${Date.now()}`
     const optimistic: CamMessage = {
-      id: `opt-tip-${Date.now()}`,
+      id: optimisticId,
       user_id: currentUser.id,
       username,
       message: `tipped ${amount} RedCoins`,
@@ -315,21 +331,37 @@ export default function CamRoomPage() {
       created_at: new Date().toISOString(),
     }
     setMessages(prev => [...prev.slice(-149), optimistic])
+    setTipError(null)
 
-    // Deduct from viewer
-    await supabase.from("customer_profiles").update({ redcoins: userBalance - amount }).eq("user_id", currentUser.id)
+    try {
+      // Single server-side call: deduct viewer + credit streamer + insert chat message
+      const res = await fetch("/api/cam/tip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: id, amount, viewerUsername: username }),
+      })
+      const data = await res.json()
 
-    // Credit model wallet (via admin API to avoid RLS)
-    await fetch("/api/cam/tip", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listingId: id, amount, viewerUsername: username }),
-    })
+      if (!res.ok) {
+        // Rollback optimistic updates
+        setUserBalance(prevBalance)
+        setMessages(prev => prev.filter(m => m.id !== optimisticId))
+        setTipError(data.error || "Tip fejlede. Prøv igen.")
+        setTimeout(() => setTipError(null), 4000)
+        return
+      }
 
-    await supabase.from("cam_messages").insert({
-      room_id: id, user_id: currentUser.id, username,
-      message: `tipped ${amount} RedCoins`, is_tip: true, tip_amount: amount,
-    })
+      // Confirm with server balance
+      setUserBalance(data.new_balance)
+      playTipSound()
+
+    } catch {
+      // Network error — rollback
+      setUserBalance(prevBalance)
+      setMessages(prev => prev.filter(m => m.id !== optimisticId))
+      setTipError("Netværksfejl. Prøv igen.")
+      setTimeout(() => setTipError(null), 4000)
+    }
   }
 
   if (loading) return (
@@ -344,6 +376,13 @@ export default function CamRoomPage() {
   return (
     <div style={{ height: "100vh", overflow: "hidden", background: "#0D0D0D", color: "#fff", display: "flex", flexDirection: "column", fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
       {showTip && <TipModal onClose={() => setShowTip(false)} onSend={sendTip} balance={userBalance} />}
+
+      {/* Tip error toast */}
+      {tipError && (
+        <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", background: "#7F1D1D", border: "1px solid #DC2626", color: "#FCA5A5", padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, zIndex: 999, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+          ❌ {tipError}
+        </div>
+      )}
 
       {/* ── Top bar ── */}
       <div style={{ height: 48, borderBottom: "1px solid #1E1E1E", display: "flex", alignItems: "center", padding: "0 16px", gap: 12, flexShrink: 0, background: "#111" }}>
