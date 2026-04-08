@@ -139,8 +139,9 @@ export default function CamRoomPage() {
       setCurrentUser(user)
 
       if (user) {
-        const { data: cp } = await supabase.from("customer_profiles").select("redcoins").eq("user_id", user.id).maybeSingle()
-        setUserBalance(cp?.redcoins || 0)
+        // Use wallets table (source of truth — same as navbar)
+        const { data: wallet } = await supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle()
+        setUserBalance(wallet?.balance || 0)
       }
 
       if (data?.cam_live) {

@@ -23,23 +23,27 @@ export async function POST(req: NextRequest) {
     .from("listings").select("user_id").eq("id", listingId).single()
   if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 })
 
-  // Get viewer balance
-  const { data: cp } = await supabaseAdmin
-    .from("customer_profiles").select("redcoins").eq("user_id", user.id).maybeSingle()
-  const currentBalance = cp?.redcoins ?? 0
+  // Get viewer balance from wallets (source of truth — same as navbar)
+  const { data: viewerWallet } = await supabaseAdmin
+    .from("wallets").select("balance").eq("user_id", user.id).maybeSingle()
+  const currentBalance = viewerWallet?.balance ?? 0
 
   if (currentBalance < amount) {
     return NextResponse.json({ error: "Ikke nok RC", new_balance: currentBalance }, { status: 400 })
   }
 
-  // Deduct from viewer (server-side, bypasses RLS)
+  // Deduct from viewer wallet (server-side, bypasses RLS)
   const newBalance = currentBalance - amount
-  const { error: deductErr } = await supabaseAdmin
-    .from("customer_profiles")
-    .update({ redcoins: newBalance })
-    .eq("user_id", user.id)
-  if (deductErr) {
-    return NextResponse.json({ error: "Kunne ikke trække RC" }, { status: 500 })
+  if (viewerWallet) {
+    const { error: deductErr } = await supabaseAdmin
+      .from("wallets")
+      .update({ balance: newBalance })
+      .eq("user_id", user.id)
+    if (deductErr) {
+      return NextResponse.json({ error: "Kunne ikke trække RC" }, { status: 500 })
+    }
+  } else {
+    return NextResponse.json({ error: "Ingen wallet fundet" }, { status: 400 })
   }
 
   // Credit streamer wallet
