@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { createServerClient } from "@/lib/supabaseServer"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,10 +7,12 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  // Authenticate user via session
-  const supabaseUser = createServerClient()
-  const { data: { user } } = await supabaseUser.auth.getUser()
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // Authenticate via Bearer token (same pattern as other API routes)
+  const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "").trim()
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token)
+  if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { listingId, amount, viewerUsername } = await req.json()
   if (!listingId || !amount || amount < 1) {
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     .from("listings").select("user_id").eq("id", listingId).single()
   if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 })
 
-  // Get viewer balance from wallets (source of truth — same as navbar)
+  // Get viewer wallet balance (source of truth)
   const { data: viewerWallet } = await supabaseAdmin
     .from("wallets").select("balance").eq("user_id", user.id).maybeSingle()
   const currentBalance = viewerWallet?.balance ?? 0
@@ -32,33 +33,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ikke nok RC", new_balance: currentBalance }, { status: 400 })
   }
 
-  // Deduct from viewer wallet (server-side, bypasses RLS)
+  // Deduct from viewer
   const newBalance = currentBalance - amount
   if (viewerWallet) {
     const { error: deductErr } = await supabaseAdmin
-      .from("wallets")
-      .update({ balance: newBalance })
-      .eq("user_id", user.id)
-    if (deductErr) {
-      return NextResponse.json({ error: "Kunne ikke trække RC" }, { status: 500 })
-    }
+      .from("wallets").update({ balance: newBalance }).eq("user_id", user.id)
+    if (deductErr) return NextResponse.json({ error: "Kunne ikke trække RC" }, { status: 500 })
   } else {
     return NextResponse.json({ error: "Ingen wallet fundet" }, { status: 400 })
   }
 
   // Credit streamer wallet
-  const { data: wallet } = await supabaseAdmin
+  const { data: streamerWallet } = await supabaseAdmin
     .from("wallets").select("balance, total_earned").eq("user_id", listing.user_id).maybeSingle()
-  if (wallet) {
+  if (streamerWallet) {
     await supabaseAdmin.from("wallets")
-      .update({ balance: wallet.balance + amount, total_earned: (wallet.total_earned || 0) + amount })
+      .update({ balance: streamerWallet.balance + amount, total_earned: (streamerWallet.total_earned || 0) + amount })
       .eq("user_id", listing.user_id)
   } else {
     await supabaseAdmin.from("wallets")
       .insert({ user_id: listing.user_id, balance: amount, total_earned: amount })
   }
 
-  // Log wallet transaction
+  // Log wallet transaction for streamer
   await supabaseAdmin.from("wallet_transactions").insert({
     user_id: listing.user_id,
     type: "tip",
@@ -67,7 +64,7 @@ export async function POST(req: NextRequest) {
     note: "Tip modtaget fra live show",
   })
 
-  // Insert chat message (realtime vil broadcaste til alle)
+  // Insert chat message — realtime broadcaster til alle inkl. go-live
   await supabaseAdmin.from("cam_messages").insert({
     room_id: listingId,
     user_id: user.id,

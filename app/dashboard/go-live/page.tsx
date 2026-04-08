@@ -120,6 +120,7 @@ export default function GoLivePage() {
   const [activePrivate, setActivePrivate] = useState<{ id: string; viewer_username: string; tokens_per_min: number } | null>(null)
   const [messages, setMessages] = useState<{ id: string; username: string; message: string; is_tip: boolean; tip_amount: number | null }[]>([])
   const [showChat, setShowChat] = useState(true)
+  const [sessionEarnings, setSessionEarnings] = useState(0)
   const chatRef = useRef<HTMLDivElement>(null)
   const prevMsgCount = useRef(0)
 
@@ -244,8 +245,12 @@ export default function GoLivePage() {
         .order("created_at")
       if (data && data.length > 0) {
         lastTimestamp = data[data.length - 1].created_at
-        const hasTip = data.some((m: { is_tip: boolean }) => m.is_tip)
-        if (hasTip) playTipSound()
+        const tipMessages = data.filter((m: { is_tip: boolean; tip_amount: number | null }) => m.is_tip && m.tip_amount)
+        if (tipMessages.length > 0) {
+          playTipSound()
+          const earned = tipMessages.reduce((sum: number, m: { tip_amount: number | null }) => sum + (m.tip_amount || 0), 0)
+          setSessionEarnings(prev => prev + earned)
+        }
         setMessages(prev => [...prev.slice(-99), ...(data as typeof prev)])
       }
     }, 2500)
@@ -309,6 +314,7 @@ export default function GoLivePage() {
     setLivekitToken(null)
     setStreamStart(null)
     setElapsed("00:00")
+    setSessionEarnings(0)
   }
 
   if (loading) {
@@ -356,6 +362,11 @@ export default function GoLivePage() {
               <span style={{ color: "#fff", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
                 <Clock size={13} /> {elapsed}
               </span>
+              {sessionEarnings > 0 && (
+                <span style={{ color: "#4ADE80", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                  💰 +{sessionEarnings} RC
+                </span>
+              )}
               {activePrivate && (
                 <span style={{ color: "#C4B5FD", fontSize: 12, fontWeight: 600 }}>
                   {activePrivate.viewer_username} · {activePrivate.tokens_per_min} RC/min

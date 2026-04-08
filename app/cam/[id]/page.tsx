@@ -260,9 +260,11 @@ export default function CamRoomPage() {
         const tokenData = await res.json()
         if (res.ok) setPrivateToken(tokenData.token)
       } else if (data.status === "ended" || data.status === "declined") {
-        setPrivateRequest(prev => prev ? { ...prev, status: data.status } : null)
         setPrivateToken(null)
         clearInterval(interval)
+        // Show message briefly then reset so "Private Show" button reappears
+        setPrivateRequest(prev => prev ? { ...prev, status: data.status } : null)
+        setTimeout(() => setPrivateRequest(null), 3000)
       }
     }, 2000)
     return () => clearInterval(interval)
@@ -279,9 +281,10 @@ export default function CamRoomPage() {
       })
       const data = await res.json()
       if (data.ended) {
-        setPrivateRequest(prev => prev ? { ...prev, status: "ended" } : null)
         setPrivateToken(null)
         clearInterval(billInterval)
+        setPrivateRequest(prev => prev ? { ...prev, status: "ended" } : null)
+        setTimeout(() => setPrivateRequest(null), 3000)
       } else if (data.remaining !== undefined) {
         setUserBalance(data.remaining)
       }
@@ -335,10 +338,18 @@ export default function CamRoomPage() {
     setTipError(null)
 
     try {
+      // Get auth token for API call
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token || ""
+
       // Single server-side call: deduct viewer + credit streamer + insert chat message
       const res = await fetch("/api/cam/tip", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({ listingId: id, amount, viewerUsername: username }),
       })
       const data = await res.json()
