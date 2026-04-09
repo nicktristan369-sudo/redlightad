@@ -49,7 +49,7 @@ export default async function CityPage({ params }: Props) {
       <main className="bg-[#F5F5F7] min-h-screen">
         <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3">
           <div className="mx-auto max-w-7xl flex items-center gap-2">
-            <span style={{ fontSize: 20 }}>{flag}</span>
+            <span className={`fi fi-${code} fis`} style={{ width: 22, height: 22, display: "inline-block", borderRadius: 3, flexShrink: 0 }} />
             <div>
               <h1 className="text-base font-bold text-gray-900 leading-tight">
                 Escorts in {cityName}, {displayCountry}

@@ -382,7 +382,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
       <section className="py-8 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="text-center py-16 text-gray-400">
           <FileText size={40} color="#D1D5DB" className="mx-auto mb-4" />
-          <p className="text-lg">Ingen aktive annoncer endnu</p>
+          <p className="text-lg">No active listings yet</p>
         </div>
       </section>
     )

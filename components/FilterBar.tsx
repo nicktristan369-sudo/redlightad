@@ -384,7 +384,7 @@ function LocationMenu({
                     currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
                   }`}
                 >
-                  <span className={`fi fi-${c.code}`} style={{ width: 20, height: 14, display: "inline-block", flexShrink: 0 }} />{" "}{c.name}
+                  <span className={`fi fi-${c.code} fis`} style={{ width: 18, height: 18, display: "inline-block", flexShrink: 0, borderRadius: 2 }} />{" "}{c.name}
                 </button>
               ))}
             </>
@@ -403,7 +403,7 @@ function LocationMenu({
                     currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
                   }`}
                 >
-                  <span className={`fi fi-${c.code}`} style={{ width: 20, height: 14, display: "inline-block", flexShrink: 0 }} />{" "}{c.name}
+                  <span className={`fi fi-${c.code} fis`} style={{ width: 18, height: 18, display: "inline-block", flexShrink: 0, borderRadius: 2 }} />{" "}{c.name}
                 </button>
               ))}
             </>
@@ -426,7 +426,7 @@ function LocationMenu({
         onClick={() => { setStep("country"); setSearch("") }}
         className="flex-shrink-0 w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 border-b border-gray-200"
       >
-        <span>←</span> {selCode && <span className={`fi fi-${selCode}`} style={{ width: 20, height: 14, display: "inline-block" }} />} {selCountry}
+        <span>←</span> {selCode && <span className={`fi fi-${selCode} fis`} style={{ width: 18, height: 18, display: "inline-block", borderRadius: 2 }} />} {selCountry}
       </button>
       <div className="overflow-y-auto flex-1">
         <button
@@ -470,7 +470,7 @@ function Pill({
       onClick={onClick}
       className={`flex items-center justify-between gap-2 w-full px-3 py-2 text-sm font-medium border transition-colors ${
         active
-          ? "border-red-500 text-red-600 bg-red-50"
+          ? "border-gray-900 text-gray-900 bg-white font-semibold"
           : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
       }`}
       style={{ borderRadius: 0 }}
@@ -559,7 +559,7 @@ function FilterBarInner() {
     : currentCountryName || t.filter_location
 
   const locationIcon = countryCode
-    ? <span className={`fi fi-${countryCode}`} style={{ width: 16, height: 11, display: "inline-block", flexShrink: 0 }} />
+    ? <span className={`fi fi-${countryCode} fis`} style={{ width: 16, height: 16, display: "inline-block", flexShrink: 0, borderRadius: 2 }} />
     : <MapPin size={13} />
 
   const ageMin      = searchParams.get("age_min") ?? ""
@@ -738,7 +738,7 @@ function FilterBarInner() {
               <div className="relative">
                 <button
                   onClick={() => { router.push("/"); setQ("") }}
-                  className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-red-200 text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+                  className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 transition-colors"
                   style={{ borderRadius: 0 }}
                 >
                   <X size={13} /> {t.filter_clear}
