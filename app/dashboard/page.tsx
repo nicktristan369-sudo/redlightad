@@ -54,16 +54,48 @@ function DashboardContent() {
   const upgraded = searchParams.get("upgraded")
   const tier = searchParams.get("tier")
   const [listingId, setListingId] = useState<string | null>(null)
+  const [camStatus, setCamStatus] = useState<"offline"|"available"|"scheduled">("offline")
+  const [camAvailableUntil, setCamAvailableUntil] = useState<string|null>(null)
+  const [camScheduledAt, setCamScheduledAt] = useState<string|null>(null)
+  const [selectedDuration, setSelectedDuration] = useState<number>(2)
+  const [scheduledDateTime, setScheduledDateTime] = useState("")
+  const [camStatusSaving, setCamStatusSaving] = useState(false)
+  const supabase = createClient()
 
   useEffect(() => {
-    const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       const { data: listing } = await supabase
         .from("listings").select("id").eq("user_id", user.id).eq("status", "active").limit(1).single()
-      setListingId(listing?.id ?? null)
+      if (listing?.id) {
+        setListingId(listing.id)
+        // Fetch cam availability
+        const res = await fetch(`/api/cam/availability?listingId=${listing.id}`)
+        const d = await res.json()
+        if (d.cam_status) setCamStatus(d.cam_status)
+        if (d.cam_available_until) setCamAvailableUntil(d.cam_available_until)
+        if (d.cam_scheduled_at) setCamScheduledAt(d.cam_scheduled_at)
+      }
     })
   }, [])
+
+  const saveCamStatus = async (newStatus: "offline"|"available"|"scheduled") => {
+    setCamStatusSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const availableUntil = newStatus === "available"
+      ? new Date(Date.now() + selectedDuration * 3600000).toISOString()
+      : undefined
+    await fetch("/api/cam/availability", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ listingId, status: newStatus, availableUntil, scheduledAt: newStatus === "scheduled" ? scheduledDateTime : undefined }),
+    })
+    setCamStatus(newStatus)
+    if (availableUntil) setCamAvailableUntil(availableUntil)
+    if (newStatus === "scheduled" && scheduledDateTime) setCamScheduledAt(scheduledDateTime)
+    if (newStatus === "offline") { setCamAvailableUntil(null); setCamScheduledAt(null) }
+    setCamStatusSaving(false)
+  }
 
   return (
     <DashboardLayout>
@@ -138,6 +170,145 @@ function DashboardContent() {
             </div>
           )}
         </div>
+
+        {/* REDLIGHTCAM availability widget */}
+        {listingId !== null && (
+          <div style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
+            {/* Header */}
+            <div style={{ background: "#111", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: "-0.01em" }}>
+                <span style={{ color: "#DC2626" }}>RED</span>
+                <span style={{ color: "#fff" }}>LIGHT</span>
+                <span style={{ color: "#DC2626" }}>CAM</span>
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600 }}>
+                <span style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: camStatus === "available" ? "#22C55E" : camStatus === "scheduled" ? "#F59E0B" : "#6B7280",
+                  boxShadow: camStatus === "available" ? "0 0 6px #22C55E" : "none"
+                }} />
+                <span style={{ color: camStatus === "available" ? "#22C55E" : camStatus === "scheduled" ? "#F59E0B" : "#9CA3AF" }}>
+                  {camStatus === "available" ? "Available now" : camStatus === "scheduled" ? "Scheduled" : "Offline"}
+                </span>
+              </span>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: "16px 20px" }}>
+              {/* Go Live button */}
+              <Link href="/dashboard/go-live" style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "11px 0", background: "#DC2626", color: "#fff", borderRadius: 10,
+                fontSize: 14, fontWeight: 700, textDecoration: "none", marginBottom: 14
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                Go Live Now
+              </Link>
+
+              {/* Divider */}
+              <div style={{ borderTop: "1px solid #F3F4F6", marginBottom: 14 }} />
+
+              {/* Status options */}
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 10 }}>Set availability</p>
+
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <button
+                  onClick={() => setCamStatus(camStatus === "available" ? "offline" : "available")}
+                  style={{
+                    flex: 1, padding: "9px 0", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    border: camStatus === "available" ? "2px solid #22C55E" : "1px solid #E5E5E5",
+                    background: camStatus === "available" ? "#F0FDF4" : "#fff",
+                    color: camStatus === "available" ? "#16A34A" : "#374151"
+                  }}
+                >
+                  Ready now
+                </button>
+                <button
+                  onClick={() => setCamStatus(camStatus === "scheduled" ? "offline" : "scheduled")}
+                  style={{
+                    flex: 1, padding: "9px 0", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    border: camStatus === "scheduled" ? "2px solid #F59E0B" : "1px solid #E5E5E5",
+                    background: camStatus === "scheduled" ? "#FFFBEB" : "#fff",
+                    color: camStatus === "scheduled" ? "#D97706" : "#374151"
+                  }}
+                >
+                  Schedule
+                </button>
+                {camStatus !== "offline" && (
+                  <button
+                    onClick={() => saveCamStatus("offline")}
+                    style={{
+                      padding: "9px 14px", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      border: "1px solid #E5E5E5", background: "#fff", color: "#9CA3AF"
+                    }}
+                  >
+                    Offline
+                  </button>
+                )}
+              </div>
+
+              {/* Duration picker for "available" */}
+              {camStatus === "available" && (
+                <div style={{ marginBottom: 12 }}>
+                  <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 8 }}>Available for:</p>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                    {[1, 2, 4, 8].map(h => (
+                      <button key={h} onClick={() => setSelectedDuration(h)}
+                        style={{
+                          flex: 1, padding: "7px 0", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          border: selectedDuration === h ? "2px solid #22C55E" : "1px solid #E5E5E5",
+                          background: selectedDuration === h ? "#F0FDF4" : "#fff",
+                          color: selectedDuration === h ? "#16A34A" : "#6B7280"
+                        }}>
+                        {h}h
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => saveCamStatus("available")} disabled={camStatusSaving}
+                    style={{
+                      width: "100%", padding: "10px 0", borderRadius: 9, fontSize: 13, fontWeight: 700,
+                      background: "#111", color: "#fff", border: "none", cursor: "pointer",
+                      opacity: camStatusSaving ? 0.6 : 1
+                    }}>
+                    {camStatusSaving ? "Saving..." : "Set as Available"}
+                  </button>
+                </div>
+              )}
+
+              {/* Schedule picker */}
+              {camStatus === "scheduled" && (
+                <div style={{ marginBottom: 12 }}>
+                  <p style={{ fontSize: 12, color: "#6B7280", marginBottom: 8 }}>Go live at:</p>
+                  <input type="datetime-local" value={scheduledDateTime} onChange={e => setScheduledDateTime(e.target.value)}
+                    style={{
+                      width: "100%", padding: "9px 12px", borderRadius: 9, border: "1px solid #E5E5E5",
+                      fontSize: 13, marginBottom: 10, boxSizing: "border-box" as const, outline: "none"
+                    }} />
+                  <button onClick={() => saveCamStatus("scheduled")} disabled={!scheduledDateTime || camStatusSaving}
+                    style={{
+                      width: "100%", padding: "10px 0", borderRadius: 9, fontSize: 13, fontWeight: 700,
+                      background: "#111", color: "#fff", border: "none", cursor: "pointer",
+                      opacity: !scheduledDateTime || camStatusSaving ? 0.5 : 1
+                    }}>
+                    {camStatusSaving ? "Saving..." : "Set Schedule"}
+                  </button>
+                </div>
+              )}
+
+              {/* Current status info */}
+              {camStatus === "available" && camAvailableUntil && (
+                <p style={{ fontSize: 12, color: "#22C55E", textAlign: "center" }}>
+                  Available until {new Date(camAvailableUntil).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              )}
+              {camStatus === "scheduled" && camScheduledAt && (
+                <p style={{ fontSize: 12, color: "#F59E0B", textAlign: "center" }}>
+                  Scheduled for {new Date(camScheduledAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )

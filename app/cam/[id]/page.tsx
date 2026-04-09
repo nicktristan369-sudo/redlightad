@@ -42,6 +42,9 @@ interface Listing {
   cam_goal_target: number
   cam_goal_current: number
   cam_goal_active: boolean
+  cam_status?: "offline" | "available" | "scheduled"
+  cam_available_until?: string | null
+  cam_scheduled_at?: string | null
 }
 
 interface CamMessage {
@@ -133,6 +136,7 @@ export default function CamRoomPage() {
   const [tipMenu, setTipMenu] = useState<{id: string; action: string; rc_amount: number}[]>([])
   const [isNotifying, setIsNotifying] = useState(false)
   const [goalProgress, setGoalProgress] = useState(0)
+  const [countdown, setCountdown] = useState("")
   const chatRef = useRef<HTMLDivElement>(null)
   const audioUnlocked = useRef(false)
 
@@ -338,6 +342,21 @@ export default function CamRoomPage() {
     return () => document.removeEventListener("click", unlock)
   }, [])
 
+  // Countdown timer for scheduled cam
+  useEffect(() => {
+    if (listing?.cam_status === "scheduled" && listing?.cam_scheduled_at) {
+      const interval = setInterval(() => {
+        const diff = new Date(listing.cam_scheduled_at!).getTime() - Date.now()
+        if (diff <= 0) { setCountdown("Starting now!"); clearInterval(interval); return }
+        const h = Math.floor(diff / 3600000)
+        const m = Math.floor((diff % 3600000) / 60000)
+        const s = Math.floor((diff % 60000) / 1000)
+        setCountdown(`${h.toString().padStart(2,"0")}:${m.toString().padStart(2,"0")}:${s.toString().padStart(2,"0")}`)
+      }, 1000)
+      return () => clearInterval(interval)
+    }
+  }, [listing?.cam_status, listing?.cam_scheduled_at])
+
   const sendTip = async (amount: number) => {
     if (!currentUser || amount <= 0 || amount > userBalance) return
     const username = currentUser.email?.split("@")[0] || "Anonymous"
@@ -472,14 +491,55 @@ export default function CamRoomPage() {
                 <LiveViewer onViewerCount={setViewerCount} />
               </LiveKitRoom>
             ) : !listing.cam_live ? (
-              /* Offline state — profile display */
-              <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: "#0A0A0A", position: "relative" }}>
-                {(listing.profile_image || listing.photos?.[0]) && (
-                  <img src={listing.profile_image || listing.photos![0]} alt="" style={{ width: 100, height: 100, borderRadius: "50%", objectFit: "cover", border: "3px solid #2A2A2A" }} />
-                )}
-                <span style={{ background: "#1A1A1A", color: "#6B7280", fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 4, letterSpacing: "0.05em" }}>OFFLINE</span>
-                <p style={{ color: "#4B5563", fontSize: 13 }}>{listing.display_name} is not streaming right now</p>
-                {currentUser && (
+              /* Offline / Available / Scheduled state */
+              listing.cam_status === "available" ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 32, textAlign: "center", background: "#0A0A0A", width: "100%", height: "100%" }}>
+                  <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
+                  <div style={{ position: "relative", marginBottom: 20 }}>
+                    {listing.profile_image ? (
+                      <img src={listing.profile_image} alt="" style={{ width: 100, height: 100, borderRadius: "50%", objectFit: "cover", border: "3px solid #22C55E" }} />
+                    ) : (
+                      <div style={{ width: 100, height: 100, borderRadius: "50%", background: "#1E1E1E", display: "flex", alignItems: "center", justifyContent: "center", border: "3px solid #22C55E" }}>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                      </div>
+                    )}
+                    <span style={{ position: "absolute", bottom: 4, right: 4, width: 16, height: 16, background: "#22C55E", borderRadius: "50%", border: "2px solid #111", boxShadow: "0 0 8px #22C55E" }} />
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: "0 0 4px" }}>{listing.display_name}</h3>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#1A2E1A", border: "1px solid #22C55E44", borderRadius: 20, padding: "6px 14px", marginBottom: 20 }}>
+                    <span style={{ width: 6, height: 6, background: "#22C55E", borderRadius: "50%", animation: "pulse 2s infinite" }} />
+                    <span style={{ color: "#22C55E", fontSize: 13, fontWeight: 700 }}>Ready to chat</span>
+                  </div>
+                  <p style={{ color: "#9CA3AF", fontSize: 14, marginBottom: 24, maxWidth: 260 }}>
+                    {listing.display_name} is available now. Send a message to connect.
+                  </p>
+                  <Link href="/dashboard/beskeder" style={{
+                    padding: "13px 32px", background: "#22C55E", color: "#fff", borderRadius: 12,
+                    fontSize: 15, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Chat now
+                  </Link>
+                </div>
+              ) : listing.cam_status === "scheduled" && listing.cam_scheduled_at ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 32, textAlign: "center", background: "#0A0A0A", width: "100%", height: "100%" }}>
+                  <div style={{ position: "relative", marginBottom: 20 }}>
+                    {listing.profile_image ? (
+                      <img src={listing.profile_image} alt="" style={{ width: 100, height: 100, borderRadius: "50%", objectFit: "cover", border: "3px solid #F59E0B", filter: "grayscale(30%)" }} />
+                    ) : (
+                      <div style={{ width: 100, height: 100, borderRadius: "50%", background: "#1E1E1E", display: "flex", alignItems: "center", justifyContent: "center", border: "3px solid #F59E0B" }}>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                      </div>
+                    )}
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: "0 0 4px" }}>{listing.display_name}</h3>
+                  <p style={{ color: "#9CA3AF", fontSize: 13, marginBottom: 16 }}>Going live in</p>
+                  <div style={{ fontFamily: "monospace", fontSize: 40, fontWeight: 900, color: "#F59E0B", letterSpacing: "0.05em", marginBottom: 20, textShadow: "0 0 20px #F59E0B44" }}>
+                    {countdown || "00:00:00"}
+                  </div>
+                  <p style={{ color: "#6B7280", fontSize: 12, marginBottom: 24 }}>
+                    {listing.cam_scheduled_at ? new Date(listing.cam_scheduled_at).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+                  </p>
                   <button onClick={async () => {
                     const supabase = createClient()
                     const { data: { session } } = await supabase.auth.getSession()
@@ -490,11 +550,38 @@ export default function CamRoomPage() {
                     })
                     const d = await res.json()
                     if (d.notifying !== undefined) setIsNotifying(d.notifying)
-                  }} style={{ padding: "10px 24px", background: isNotifying ? "#1A1A1A" : "#DC2626", border: isNotifying ? "1px solid #DC2626" : "none", borderRadius: 8, color: isNotifying ? "#DC2626" : "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-                    🔔 {isNotifying ? "Notificering aktiv" : "Notificer mig når live"}
+                  }} style={{
+                    padding: "11px 28px", background: isNotifying ? "#1A1A1A" : "transparent", color: isNotifying ? "#F59E0B" : "#F59E0B",
+                    border: "1px solid #F59E0B44", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer"
+                  }}>
+                    {isNotifying ? "Notification active" : "Notify me when live"}
                   </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                /* Default offline state */
+                <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: "#0A0A0A", position: "relative" }}>
+                  {(listing.profile_image || listing.photos?.[0]) && (
+                    <img src={listing.profile_image || listing.photos![0]} alt="" style={{ width: 100, height: 100, borderRadius: "50%", objectFit: "cover", border: "3px solid #2A2A2A" }} />
+                  )}
+                  <span style={{ background: "#1A1A1A", color: "#6B7280", fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 4, letterSpacing: "0.05em" }}>OFFLINE</span>
+                  <p style={{ color: "#4B5563", fontSize: 13 }}>{listing.display_name} is not streaming right now</p>
+                  {currentUser && (
+                    <button onClick={async () => {
+                      const supabase = createClient()
+                      const { data: { session } } = await supabase.auth.getSession()
+                      const res = await fetch("/api/cam/notify", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token || ""}` },
+                        body: JSON.stringify({ listingId: id }),
+                      })
+                      const d = await res.json()
+                      if (d.notifying !== undefined) setIsNotifying(d.notifying)
+                    }} style={{ padding: "10px 24px", background: isNotifying ? "#1A1A1A" : "#DC2626", border: isNotifying ? "1px solid #DC2626" : "none", borderRadius: 8, color: isNotifying ? "#DC2626" : "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                      {isNotifying ? "Notification active" : "Notify me when live"}
+                    </button>
+                  )}
+                </div>
+              )
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
                 <Video color="#333" size={48} />
