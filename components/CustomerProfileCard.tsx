@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { X, ShieldCheck } from "lucide-react"
 
 interface CustomerProfile {
@@ -55,6 +56,12 @@ export default function CustomerProfileCard({ profile, onClose }: Props) {
   const tl = tattooLabel(profile.tattoo)
   const pl = penisLabel(profile.penis_size)
   const media = profile.media || []
+  const [lightbox, setLightbox] = useState<{ index: number } | null>(null)
+
+  const openLightbox = (index: number) => setLightbox({ index })
+  const closeLightbox = () => setLightbox(null)
+  const prevMedia = () => setLightbox(lb => lb ? { index: (lb.index - 1 + media.length) % media.length } : null)
+  const nextMedia = () => setLightbox(lb => lb ? { index: (lb.index + 1) % media.length } : null)
 
   const stats = [
     profile.height_cm ? { value: `${profile.height_cm}`, unit: "cm høj" } : null,
@@ -65,6 +72,54 @@ export default function CustomerProfileCard({ profile, onClose }: Props) {
   ].filter(Boolean) as { value: string; unit: string }[]
 
   return (
+    <>
+    {/* Lightbox */}
+    {lightbox !== null && media[lightbox.index] && (
+      <div onClick={closeLightbox}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {/* Close */}
+        <button onClick={closeLightbox}
+          style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
+          <X size={20} color="#fff" />
+        </button>
+        {/* Counter */}
+        <span style={{ position: "absolute", top: 20, left: 0, right: 0, textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>
+          {lightbox.index + 1} / {media.length}
+        </span>
+        {/* Prev */}
+        {media.length > 1 && (
+          <button onClick={e => { e.stopPropagation(); prevMedia() }}
+            style={{ position: "absolute", left: 12, background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%", width: 44, height: 44, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+        )}
+        {/* Media */}
+        <div onClick={e => e.stopPropagation()} style={{ maxWidth: "90vw", maxHeight: "85vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {media[lightbox.index].type === "video" ? (
+            <video
+              src={media[lightbox.index].url}
+              controls
+              autoPlay
+              style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 12, background: "#000" }}
+            />
+          ) : (
+            <img
+              src={media[lightbox.index].url}
+              alt=""
+              style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 12, objectFit: "contain" }}
+            />
+          )}
+        </div>
+        {/* Next */}
+        {media.length > 1 && (
+          <button onClick={e => { e.stopPropagation(); nextMedia() }}
+            style={{ position: "absolute", right: 12, background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%", width: 44, height: 44, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        )}
+      </div>
+    )}
+
     <div
       onClick={onClose}
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", overflowY: "auto" }}
@@ -178,7 +233,9 @@ export default function CustomerProfileCard({ profile, onClose }: Props) {
               <SectionLabel>Billeder & videoer</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 7 }}>
                 {media.slice(0, 6).map((m, i) => (
-                  <div key={i} style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden", background: "#111" }}>
+                  <div key={i}
+                    onClick={() => openLightbox(i)}
+                    style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden", background: "#111", cursor: "pointer" }}>
                     {m.type === "video"
                       ? <video src={`${m.url}#t=1`} style={{ width: "100%", height: "100%", objectFit: "cover" }} preload="metadata" />
                       : <img src={m.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
@@ -212,6 +269,7 @@ export default function CustomerProfileCard({ profile, onClose }: Props) {
         </div>
       </div>
     </div>
+    </>
   )
 }
 
