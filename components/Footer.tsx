@@ -30,7 +30,6 @@ export default function Footer() {
                 { label: "Fetish",       href: "/category/fetish" },
                 { label: "Transgender",  href: "/category/transgender" },
                 { label: "BDSM",         href: "/category/bdsm" },
-                { label: "Webcam",       href: "/category/webcam" },
                 { label: "Pornstar",     href: "/category/pornstar" },
               ].map((item) => (
                 <li key={item.href}>
