@@ -4,6 +4,11 @@ import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Check } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
+import {
+  BODY_BUILD_OPTIONS, HAIR_COLOR_OPTIONS,
+  NATIONALITY_OPTIONS, ETHNICITY_OPTIONS,
+  ORIENTATION_OPTIONS,
+} from "@/lib/listingOptions"
 import { GENDERS, GENDER_LABELS } from "@/lib/constants/genders"
 import { SUPPORTED_COUNTRIES, getCountryByName, slugify, COUNTRIES, getCountryEntryByCode, getCountryEntryByName, COUNTRY_CITIES } from "@/lib/countries"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
@@ -24,6 +29,18 @@ function FilterDrawer({
   const [premiumOnly, setPremiumOnly] = useState(initial.premium_only === "1")
   const [hasVideo, setHasVideo] = useState(initial.has_video === "1")
   const [sort, setSort] = useState(initial.sort ?? "premium")
+  const [nationality, setNationality] = useState(initial.nationality ?? "")
+  const [bodyBuild, setBodyBuild] = useState(initial.body_build ?? "")
+  const [hairColor, setHairColor] = useState(initial.hair_color ?? "")
+  const [ethnicity, setEthnicity] = useState(initial.ethnicity ?? "")
+  const [orientation, setOrientation] = useState(initial.orientation ?? "")
+  const [languages, setLanguages] = useState<string[]>(initial.languages ? initial.languages.split(",") : [])
+  const [heightMin, setHeightMin] = useState(initial.height_min ?? "")
+  const [heightMax, setHeightMax] = useState(initial.height_max ?? "")
+  const [outcall, setOutcall] = useState(initial.outcall === "1")
+  const [hasOwnPlace, setHasOwnPlace] = useState(initial.has_own_place === "1")
+  const [verified, setVerified] = useState(initial.verified === "1")
+  const [availableNow, setAvailableNow] = useState(initial.available_now === "1")
 
   const SORT_OPTIONS = [
     { value: "premium", label: t.filter_premium_first },
@@ -33,15 +50,30 @@ function FilterDrawer({
 
   const apply = () => {
     const f: Record<string, string> = { sort }
-    if (ageMin)       f.age_min       = ageMin
-    if (ageMax)       f.age_max       = ageMax
-    if (premiumOnly)  f.premium_only  = "1"
-    if (hasVideo)     f.has_video     = "1"
+    if (ageMin)        f.age_min        = ageMin
+    if (ageMax)        f.age_max        = ageMax
+    if (premiumOnly)   f.premium_only   = "1"
+    if (hasVideo)      f.has_video      = "1"
+    if (nationality)   f.nationality    = nationality
+    if (bodyBuild)     f.body_build     = bodyBuild
+    if (hairColor)     f.hair_color     = hairColor
+    if (ethnicity)     f.ethnicity      = ethnicity
+    if (orientation)   f.orientation    = orientation
+    if (languages.length > 0) f.languages = languages.join(",")
+    if (heightMin)     f.height_min     = heightMin
+    if (heightMax)     f.height_max     = heightMax
+    if (outcall)       f.outcall        = "1"
+    if (hasOwnPlace)   f.has_own_place  = "1"
+    if (verified)      f.verified       = "1"
+    if (availableNow)  f.available_now  = "1"
     onApply(f)
   }
 
   const reset = () => {
     setAgeMin(""); setAgeMax(""); setPremiumOnly(false); setHasVideo(false); setSort("premium")
+    setNationality(""); setBodyBuild(""); setHairColor(""); setEthnicity(""); setOrientation("")
+    setLanguages([]); setHeightMin(""); setHeightMax(""); setOutcall(false); setHasOwnPlace(false)
+    setVerified(false); setAvailableNow(false)
   }
 
   const Toggle = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
@@ -61,6 +93,22 @@ function FilterDrawer({
           transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", display: "block",
         }} />
       </button>
+    </div>
+  )
+
+  const SelectFilter = ({ label, value, onChange, options }: {
+    label: string; value: string; onChange: (v: string) => void; options: string[]
+  }) => (
+    <div className="mb-4">
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{label}</p>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{ width: "100%", border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0, background: "#fff", color: value ? "#111" : "#9CA3AF" }}
+      >
+        <option value="">All</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
     </div>
   )
 
@@ -131,11 +179,52 @@ function FilterDrawer({
             </div>
           </div>
 
+          {/* Height */}
+          <div className="mb-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">HEIGHT (CM)</p>
+            <div className="flex items-center gap-2">
+              <input type="number" min="140" max="210" placeholder="Min"
+                value={heightMin} onChange={e => setHeightMin(e.target.value)}
+                style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }} />
+              <span className="text-gray-400 text-sm">–</span>
+              <input type="number" min="140" max="210" placeholder="Max"
+                value={heightMax} onChange={e => setHeightMax(e.target.value)}
+                style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }} />
+            </div>
+          </div>
+
           {/* Toggles */}
           <div className="mb-4">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{t.filter_show_only}</p>
             <Toggle label={t.filter_premium_profiles} value={premiumOnly} onChange={setPremiumOnly} />
             <Toggle label={t.filter_has_video} value={hasVideo} onChange={setHasVideo} />
+            <Toggle label="Outcall available" value={outcall} onChange={setOutcall} />
+            <Toggle label="Has own place" value={hasOwnPlace} onChange={setHasOwnPlace} />
+            <Toggle label="Verified profiles only" value={verified} onChange={setVerified} />
+            <Toggle label="Available now (cam)" value={availableNow} onChange={setAvailableNow} />
+          </div>
+
+          <SelectFilter label="NATIONALITY" value={nationality} onChange={setNationality} options={NATIONALITY_OPTIONS} />
+          <SelectFilter label="BODY TYPE" value={bodyBuild} onChange={setBodyBuild} options={BODY_BUILD_OPTIONS} />
+          <SelectFilter label="HAIR COLOR" value={hairColor} onChange={setHairColor} options={HAIR_COLOR_OPTIONS} />
+          <SelectFilter label="ETHNICITY" value={ethnicity} onChange={setEthnicity} options={ETHNICITY_OPTIONS} />
+          <SelectFilter label="ORIENTATION" value={orientation} onChange={setOrientation} options={ORIENTATION_OPTIONS} />
+
+          {/* Languages */}
+          <div className="mb-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">LANGUAGES</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {["English","Danish","Swedish","Norwegian","German","French","Spanish","Russian","Arabic","Thai"].map(lang => (
+                <button key={lang}
+                  onClick={() => setLanguages(prev => prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang])}
+                  style={{
+                    padding: "5px 12px", fontSize: 12, fontWeight: 600, borderRadius: 20, cursor: "pointer", border: "1px solid",
+                    borderColor: languages.includes(lang) ? "#DC2626" : "#E5E7EB",
+                    background: languages.includes(lang) ? "#FEF2F2" : "#fff",
+                    color: languages.includes(lang) ? "#DC2626" : "#6B7280",
+                  }}>{lang}</button>
+              ))}
+            </div>
           </div>
 
         </div>
@@ -478,13 +567,25 @@ function FilterBarInner() {
   const premiumOnly = searchParams.get("premium_only") ?? ""
   const hasVideo    = searchParams.get("has_video") ?? ""
   const sort        = searchParams.get("sort") ?? ""
+  const nationality = searchParams.get("nationality") ?? ""
+  const bodyBuild   = searchParams.get("body_build") ?? ""
+  const hairColor   = searchParams.get("hair_color") ?? ""
+  const ethnicity   = searchParams.get("ethnicity") ?? ""
+  const orientation = searchParams.get("orientation") ?? ""
+  const languages   = searchParams.get("languages") ?? ""
+  const heightMin   = searchParams.get("height_min") ?? ""
+  const heightMax   = searchParams.get("height_max") ?? ""
+  const outcall     = searchParams.get("outcall") ?? ""
+  const hasOwnPlace = searchParams.get("has_own_place") ?? ""
+  const verifiedParam = searchParams.get("verified") ?? ""
+  const availableNow  = searchParams.get("available_now") ?? ""
 
-  const hasFilters = category || countryCode || citySlug || gender || q || ageMin || ageMax || premiumOnly || hasVideo || sort
+  const hasFilters = category || countryCode || citySlug || gender || q || ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow
 
   const applyDrawer = (filters: Record<string, string>) => {
     const p = new URLSearchParams(searchParams.toString())
     // Clear old drawer filters
-    ;["age_min","age_max","premium_only","has_video","sort"].forEach(k => p.delete(k))
+    ;["age_min","age_max","premium_only","has_video","sort","nationality","body_build","hair_color","ethnicity","orientation","languages","height_min","height_max","outcall","has_own_place","verified","available_now"].forEach(k => p.delete(k))
     // Set new ones
     Object.entries(filters).forEach(([k,v]) => v ? p.set(k,v) : p.delete(k))
     const qs = p.toString()
@@ -617,14 +718,14 @@ function FilterBarInner() {
                 className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border transition-colors"
                 style={{
                   borderRadius: 0,
-                  border: (ageMin || ageMax || premiumOnly || hasVideo || sort) ? "1px solid #DC2626" : "1px solid #E5E7EB",
-                  background: (ageMin || ageMax || premiumOnly || hasVideo || sort) ? "#FEF2F2" : "#fff",
-                  color: (ageMin || ageMax || premiumOnly || hasVideo || sort) ? "#DC2626" : "#374151",
+                  border: (ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) ? "1px solid #DC2626" : "1px solid #E5E7EB",
+                  background: (ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) ? "#FEF2F2" : "#fff",
+                  color: (ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) ? "#DC2626" : "#374151",
                 }}
               >
                 <SlidersHorizontal size={13} />
                 {t.filter_filters}
-                {(ageMin || ageMax || premiumOnly || hasVideo || sort) && (
+                {(ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) && (
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#DC2626", flexShrink: 0 }} />
                 )}
               </button>
@@ -656,6 +757,10 @@ function FilterBarInner() {
         initial={{
           age_min: ageMin, age_max: ageMax,
           premium_only: premiumOnly, has_video: hasVideo, sort,
+          nationality, body_build: bodyBuild, hair_color: hairColor,
+          ethnicity, orientation, languages, height_min: heightMin,
+          height_max: heightMax, outcall, has_own_place: hasOwnPlace,
+          verified: verifiedParam, available_now: availableNow,
         }}
       />
     )}

@@ -24,6 +24,18 @@ export async function GET(req: NextRequest) {
     const premiumOnly  = searchParams.get("premium_only") === "1";
     const hasVideo     = searchParams.get("has_video") === "1";
     const sortBy       = searchParams.get("sort") ?? "premium"; // premium | newest | oldest
+    const nationality  = searchParams.get("nationality");
+    const bodyBuild    = searchParams.get("body_build");
+    const hairColor    = searchParams.get("hair_color");
+    const ethnicity    = searchParams.get("ethnicity");
+    const orientation  = searchParams.get("orientation");
+    const languagesParam = searchParams.get("languages");
+    const heightMin    = searchParams.get("height_min");
+    const heightMax    = searchParams.get("height_max");
+    const outcall      = searchParams.get("outcall") === "1";
+    const hasOwnPlace  = searchParams.get("has_own_place") === "1";
+    const verified     = searchParams.get("verified") === "1";
+    const availableNow = searchParams.get("available_now") === "1";
 
     const supabase = getClient();
 
@@ -54,6 +66,18 @@ export async function GET(req: NextRequest) {
     if (ageMax)   query = query.lte("age", parseInt(ageMax));
     if (premiumOnly) query = query.in("premium_tier", ["vip", "featured", "basic"]);
     if (hasVideo)    query = query.not("video_url", "is", null);
+    if (nationality) query = query.eq("nationality", nationality);
+    if (bodyBuild)   query = query.eq("body_build", bodyBuild);
+    if (hairColor)   query = query.eq("hair_color", hairColor);
+    if (ethnicity)   query = query.eq("ethnicity", ethnicity);
+    if (orientation) query = query.eq("orientation", orientation);
+    if (languagesParam) query = query.contains("languages", languagesParam.split(","));
+    if (heightMin)   query = query.gte("height_cm", parseInt(heightMin));
+    if (heightMax)   query = query.lte("height_cm", parseInt(heightMax));
+    if (outcall)     query = query.eq("outcall", true);
+    if (hasOwnPlace) query = query.eq("has_own_place", true);
+    if (verified)    query = query.eq("verified", true);
+    if (availableNow) query = query.eq("cam_status", "available");
 
     // Sort
     if (sortBy === "newest")  query = query.order("created_at", { ascending: false });
