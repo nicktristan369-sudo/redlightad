@@ -446,10 +446,10 @@ export default function OpretAnnoncePage() {
                   <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wide">Who are you? *</label>
                   <div className="grid grid-cols-4 gap-2">
                     {[
-                      { gender: "female", category: "Escort",  label: GENDER_LABELS["female"]?.[locale] ?? "Woman",  emoji: "👩" },
-                      { gender: "male",   category: "Escort",  label: GENDER_LABELS["male"]?.[locale] ?? "Man",      emoji: "👨" },
-                      { gender: "trans",  category: "Escort",  label: GENDER_LABELS["trans"]?.[locale] ?? "Trans",    emoji: "⚧" },
-                      { gender: "female", category: "Couples", label: "Couple", emoji: "👫" },
+                      { gender: "female", category: "Escort",  label: GENDER_LABELS["female"]?.[locale] ?? "Woman" },
+                      { gender: "male",   category: "Escort",  label: GENDER_LABELS["male"]?.[locale] ?? "Man" },
+                      { gender: "trans",  category: "Escort",  label: GENDER_LABELS["trans"]?.[locale] ?? "Trans" },
+                      { gender: "female", category: "Couples", label: "Couple" },
                     ].map(opt => {
                       const selected = form.gender === opt.gender && form.category === opt.category
                       return (
@@ -457,13 +457,12 @@ export default function OpretAnnoncePage() {
                           key={opt.label}
                           type="button"
                           onClick={() => { updateField("gender", opt.gender); updateField("category", opt.category) }}
-                          className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-xs font-bold transition ${
+                          className={`flex items-center justify-center rounded-xl border py-3 px-2 text-sm font-semibold transition ${
                             selected
                               ? "border-red-600 bg-red-50 text-red-600 border-2"
-                              : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300"
+                              : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
                           }`}
                         >
-                          <span className="text-xl">{opt.emoji}</span>
                           {opt.label}
                         </button>
                       )
@@ -531,7 +530,7 @@ export default function OpretAnnoncePage() {
                 onClick={() => validateStep1() && setStep(2)}
                 className="mt-6 w-full rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
               >
-                Fortsæt →
+                Fortsæt
               </button>
             </div>
           )}
@@ -780,7 +779,7 @@ export default function OpretAnnoncePage() {
                   onClick={() => setStep(3)}
                   className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
                 >
-                  Fortsæt →
+                  Fortsæt
                 </button>
               </div>
             </div>
