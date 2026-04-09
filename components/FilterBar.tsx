@@ -596,8 +596,8 @@ function FilterBarInner() {
   return (
     <>
     <div ref={ref} className="bg-white border-b border-gray-200" style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
-      {/* Section tabs */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-2 pb-0">
+      {/* Section tabs — desktop only */}
+      <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-2 pb-0">
         <div style={{ display: "flex", gap: 0, overflowX: "auto", scrollbarWidth: "none", minHeight: 40, paddingBottom: 0, alignItems: "stretch" }}>
           {[
             { href: "/",            label: "Escorts",     cam: false, of: false },
