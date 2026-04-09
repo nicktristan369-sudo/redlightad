@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare, Home, Star, Zap, Play, ShoppingBag, Heart, Video, CircleDollarSign, LifeBuoy, ExternalLink } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
@@ -118,16 +118,16 @@ export default function Navbar() {
   const dashboardHref = user?.accountType === "customer" ? "/kunde" : "/dashboard";
 
   const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/premium", label: "Premium" },
-    { href: "/available-now", label: "Available Now" },
-    { href: "/videos", label: "Videos" },
-    { href: "/reviews", label: "Reviews" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/onlyfans", label: "OnlyFans" },
-    { href: "/cam", label: "RedLightCAM", isCam: true },
-    { href: "/dashboard/buy-coins", label: "🔴 Red Coins", isRedCoins: true },
-    { href: "/support", label: t.nav_support },
+    { href: "/", label: "Home", icon: Home },
+    { href: "/premium", label: "Premium", icon: Star },
+    { href: "/available-now", label: "Available Now", icon: Zap },
+    { href: "/videos", label: "Videos", icon: Play },
+    { href: "/reviews", label: "Reviews", icon: MessageSquare },
+    { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
+    { href: "/onlyfans", label: "OnlyFans", icon: ExternalLink },
+    { href: "/cam", label: "RedLightCAM", icon: Video, isCam: true },
+    { href: "/dashboard/buy-coins", label: "Red Coins", icon: CircleDollarSign, isRedCoins: true },
+    { href: "/support", label: t.nav_support, icon: LifeBuoy },
   ];
 
   // Avatar component
@@ -375,19 +375,36 @@ export default function Navbar() {
         {/* ── Nav links ── */}
         <div style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
           <nav>
-            {navLinks.map(({ href, label, isRedCoins, isCam }) => (
+            {navLinks.map(({ href, label, isRedCoins, isCam, icon: Icon }) => (
               <Link key={href} href={href} onClick={closeDrawer}
                 style={{
-                  display: "flex", alignItems: "center", gap: isCam ? 6 : 0,
-                  padding: "11px 20px", fontSize: 15,
-                  fontWeight: isRedCoins || isCam ? 700 : 450,
-                  color: isRedCoins || isCam ? "#DC2626" : "#1A1A1A",
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "10px 20px", fontSize: 15,
+                  fontWeight: isCam ? 800 : isRedCoins ? 700 : 450,
+                  color: "#1A1A1A",
                   textDecoration: "none", letterSpacing: "-0.01em",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#F7F7F7"; }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F5"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-                {isCam && <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#DC2626", animation: "camPulse 1.5s infinite" }} />}
-                {label}
+                {Icon && (
+                  <span style={{
+                    width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                    background: isCam ? "#DC2626" : isRedCoins ? "#FEF2F2" : "#F5F5F5",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <Icon size={16} strokeWidth={1.8}
+                      color={isCam ? "#fff" : isRedCoins ? "#DC2626" : "#555"} />
+                  </span>
+                )}
+                {isCam ? (
+                  <span>
+                    <span style={{ color: "#DC2626" }}>RED</span>
+                    <span>LIGHT</span>
+                    <span style={{ color: "#DC2626" }}>CAM</span>
+                  </span>
+                ) : isRedCoins ? (
+                  <span style={{ color: "#DC2626" }}>{label}</span>
+                ) : label}
               </Link>
             ))}
           </nav>
