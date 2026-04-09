@@ -26,7 +26,7 @@ export default function CountryNotAvailable({ countryCode }: Props) {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
-            href="/opret-annonce"
+            href="/create-profile"
             className="bg-gray-900 hover:bg-black text-white font-semibold px-6 py-3 rounded-xl text-sm transition-colors"
           >
             Post an Ad

@@ -149,7 +149,7 @@ export default function BoostPage() {
         ) : listings.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <p className="text-lg font-medium mb-2">No active listings</p>
-            <Link href="/opret-annonce" className="text-red-500 underline">Create a listing first</Link>
+            <Link href="/create-profile" className="text-red-500 underline">Create a listing first</Link>
           </div>
         ) : (
           <>

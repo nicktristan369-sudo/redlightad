@@ -158,7 +158,7 @@ function DashboardContent() {
           ) : (
             <div>
               <Link
-                href="/opret-annonce"
+                href="/create-profile"
                 className="px-8 py-4 rounded-lg text-[15px] font-semibold inline-block transition-colors duration-200"
                 style={{ background: "#CC0000", color: "#fff" }}
               >

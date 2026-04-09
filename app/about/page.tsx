@@ -167,7 +167,7 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/opret-annonce"
+              href="/create-profile"
               className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold text-[15px] px-8 py-3.5 rounded-full hover:bg-gray-100 transition-colors"
             >
               Post an Ad

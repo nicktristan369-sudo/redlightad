@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+  async redirects() {
+    return [
+      { source: '/opret-annonce', destination: '/create-profile', permanent: true },
+    ]
+  },
   images: {
     remotePatterns: [
       {

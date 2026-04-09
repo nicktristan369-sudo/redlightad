@@ -129,8 +129,8 @@ export default function BeskederPage() {
   return (
     <DashboardLayout>
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Beskeder</h1>
-        <p className="text-gray-500 text-sm mb-6">{conversations.length} samtale{conversations.length !== 1 ? "r" : ""}</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Messages</h1>
+        <p className="text-gray-500 text-sm mb-6">{conversations.length} conversation{conversations.length !== 1 ? "s" : ""}</p>
 
         {loading ? (
           <div className="flex justify-center py-20">
@@ -139,8 +139,8 @@ export default function BeskederPage() {
         ) : conversations.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 sm:p-16 text-center">
             <MessageSquare size={40} color="#D1D5DB" className="mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Ingen beskeder endnu</h2>
-            <p className="text-gray-500">Samtaler med brugere vises her</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No messages yet</h2>
+            <p className="text-gray-500">Conversations with users will appear here</p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-100">
@@ -187,7 +187,7 @@ export default function BeskederPage() {
                       <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{formatTime(conv.last_message_at)}</span>
                     </div>
                     <p className={`text-sm truncate ${unread > 0 ? "text-gray-700 font-medium" : "text-gray-400"}`}>
-                      {conv.last_message || "Ingen beskeder endnu"}
+                      {conv.last_message || "No messages yet"}
                     </p>
                   </Link>
 

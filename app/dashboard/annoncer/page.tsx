@@ -63,7 +63,7 @@ export default function MineAnnoncer() {
             <p className="text-gray-500 text-sm mt-1">{listings.length} listing{listings.length !== 1 ? "s" : ""} total</p>
           </div>
           <a
-            href="/opret-annonce"
+            href="/create-profile"
             className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors"
           >
             New Listing
@@ -80,7 +80,7 @@ export default function MineAnnoncer() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No listings yet</h2>
             <p className="text-gray-500 mb-6">Create your first listing and reach thousands of users</p>
             <a
-              href="/opret-annonce"
+              href="/create-profile"
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-medium text-sm transition-colors inline-block"
             >
               Create your first listing

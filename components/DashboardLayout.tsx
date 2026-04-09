@@ -117,7 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           { href: `/ads/${listingId}`, label: "Preview", icon: Eye, target: "_blank" as const },
         ]
       : [
-          { href: "/opret-annonce", label: "Create Profile", icon: Plus },
+          { href: "/create-profile", label: "Create Profile", icon: Plus },
         ]
     : []
 
@@ -158,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               ? pathname === item.href
               : item.href === "/admin"
               ? pathname.startsWith("/admin")
-              : pathname.startsWith(item.href) && item.href !== "/opret-annonce"
+              : pathname.startsWith(item.href) && item.href !== "/create-profile"
                 ? pathname.startsWith(item.href)
                 : pathname === item.href
             const Icon = item.icon

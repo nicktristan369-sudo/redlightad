@@ -54,7 +54,7 @@ export default async function CountryAdFeed({ country }: Props) {
             Be the first to advertise here and reach thousands of visitors
           </p>
           <Link
-            href="/opret-annonce"
+            href="/create-profile"
             className="btn-post-ad inline-block text-[13px] font-semibold text-white px-6 py-2.5 rounded-xl"
           >
             Post an Ad →
