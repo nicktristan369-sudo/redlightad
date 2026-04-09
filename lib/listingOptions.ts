@@ -1,4 +1,4 @@
-export const BODY_BUILD_OPTIONS = ["Slank", "Atletisk", "Normalvægtig", "Kurvet", "Kraftig"];
+export const BODY_BUILD_OPTIONS = ["Slim", "Athletic", "Average", "Curvy", "Full-figured"];
 export const HAIR_COLOR_OPTIONS = ["Blonde", "Brown", "Black", "Red", "Grey/Silver", "Other"];
 export const HAIR_LENGTH_OPTIONS = ["Short", "Medium long", "Long"];
 export const EYE_COLOR_OPTIONS = ["Blue", "Blue-green", "Brown", "Green", "Grey", "Hazel", "Black"];

@@ -45,7 +45,9 @@ import {
   GROOMING_OPTIONS,
   BRA_SIZE_OPTIONS,
   NATIONALITY_OPTIONS,
+  LANGUAGE_OPTIONS,
 } from "@/lib/listingOptions";
+import Link from "next/link";
 
 const SERVICE_OPTIONS = [
   "Dinner dates",
@@ -70,7 +72,6 @@ const GENDER_LABELS: Record<string, Record<string, string>> = {
   "trans":   { en:"Trans", da:"Trans", de:"Trans", fr:"Trans", es:"Trans", it:"Trans", pt:"Trans", nl:"Trans", sv:"Trans", no:"Trans", ar:"ترانس", th:"ทรานส์", ru:"Транс", pl:"Trans" },
 };
 
-const LANGUAGE_OPTIONS = ["Dansk", "Engelsk", "Tysk", "Fransk", "Spansk"];
 
 export default function OpretAnnoncePage() {
   const router = useRouter()
@@ -88,7 +89,7 @@ export default function OpretAnnoncePage() {
       const { data: listing } = await supabase
         .from("listings").select("id").eq("user_id", user.id).eq("status", "active").limit(1).single();
       if (listing?.id) {
-        alert("Du har allerede en profil. Rediger den her.");
+        alert("You already have a profile. Edit it here.");
         router.replace(`/dashboard/annoncer/${listing.id}/edit`);
         return;
       }
@@ -97,6 +98,13 @@ export default function OpretAnnoncePage() {
     checkExisting();
   }, [router]);
   const [success, setSuccess] = useState(false);
+  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [showVerifyInput, setShowVerifyInput] = useState(false);
+  const [verifySending, setVerifySending] = useState(false);
+  const [verifyChecking, setVerifyChecking] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
@@ -164,6 +172,7 @@ export default function OpretAnnoncePage() {
     outcall: false,
     handicap_friendly: false,
     has_own_place: false,
+    show_phone: false,
   });
 
   const updateField = (field: string, value: string | boolean) => {
@@ -181,20 +190,83 @@ export default function OpretAnnoncePage() {
 
   const validateStep1 = () => {
     if (!form.title || !form.category || !form.gender || !form.age || !form.country) {
-      setError("Udfyld venligst alle felter.");
+      setError("Please fill in all required fields.");
       return false;
     }
     if (parseInt(form.age) < 18) {
-      setError("Du skal være mindst 18 år.");
+      setError("You must be at least 18 years old.");
       return false;
     }
     setError("");
     return true;
   };
 
+  const sendPhoneVerification = async () => {
+    if (!form.phone || form.phone.trim().length < 8) {
+      setVerifyError("Enter a valid phone number first.")
+      return
+    }
+    setVerifySending(true)
+    setVerifyError("")
+    try {
+      const res = await fetch("/api/auth/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: form.phone }),
+      })
+      const d = await res.json()
+      if (d.success) { setShowVerifyInput(true) }
+      else { setVerifyError(d.error || "Failed to send code.") }
+    } catch { setVerifyError("Network error.") }
+    setVerifySending(false)
+  }
+
+  const confirmPhoneCode = async () => {
+    if (!verifyCode || verifyCode.length < 4) return
+    setVerifyChecking(true)
+    setVerifyError("")
+    try {
+      const res = await fetch("/api/auth/verify-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: form.phone, code: verifyCode }),
+      })
+      const d = await res.json()
+      if (d.success) {
+        setPhoneVerified(true)
+        setShowVerifyInput(false)
+        setVerifyError("")
+      } else { setVerifyError(d.error || "Incorrect code.") }
+    } catch { setVerifyError("Network error.") }
+    setVerifyChecking(false)
+  }
+
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
+
+    // Step 3 validations
+    if (imageFiles.length < 3) {
+      setError("Please upload at least 3 photos to continue.")
+      setLoading(false)
+      return
+    }
+    if (!form.phone || form.phone.trim().length < 8) {
+      setError("A valid phone number is required.")
+      setLoading(false)
+      return
+    }
+    if (!form.about || form.about.trim().length < 50) {
+      setError("Please write at least 50 characters in your bio (About me).")
+      setLoading(false)
+      return
+    }
+    if (form.show_phone && form.phone && !phoneVerified) {
+      setError("Please verify your phone number before publishing.")
+      setLoading(false)
+      return
+    }
+
     try {
       const supabase = createClient();
       const {
@@ -209,7 +281,7 @@ export default function OpretAnnoncePage() {
         imageUrls = await uploadImages(imageFiles);
       }
 
-      const { error } = await supabase.from("listings").insert({
+      const { data: insertedData, error } = await supabase.from("listings").insert({
         user_id: user.id,
         display_name: form.display_name,
         title: form.title,
@@ -251,11 +323,12 @@ export default function OpretAnnoncePage() {
         social_links: Object.keys(socialLinks).length > 0 ? socialLinks : null,
         payment_methods: paymentMethods,
         status: "pending",
-      });
+      }).select("id").single();
       if (error) throw error;
+      if (insertedData?.id) setCreatedListingId(insertedData.id);
       setSuccess(true);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Noget gik galt. Prøv igen.");
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -296,6 +369,7 @@ export default function OpretAnnoncePage() {
       outcall: false,
       handicap_friendly: false,
       has_own_place: false,
+      show_phone: false,
     });
     setImageFiles([]);
     setImagePreviews([]);
@@ -332,19 +406,11 @@ export default function OpretAnnoncePage() {
             <p className="mb-6 text-gray-500">
               Your listing has been submitted for review and will be visible within 24 hours.
             </p>
-            <div className="flex gap-3">
-              <a
-                href="/dashboard/annoncer"
-                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                View my listings
-              </a>
-              <button
-                onClick={resetForm}
-                className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-medium text-white hover:bg-red-700"
-              >
-                Create new listing
-              </button>
+            <div className="flex gap-3 justify-center">
+              <Link href={`/ads/${createdListingId || ""}`}
+                className="px-8 py-3 rounded-xl text-[14px] font-bold bg-gray-900 text-white hover:bg-black">
+                View my profile
+              </Link>
             </div>
           </div>
         </div>
@@ -488,19 +554,6 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Age</label>
-                  <input
-                    type="number"
-                    min={18}
-                    max={99}
-                    value={form.age}
-                    onChange={(e) => updateField("age", e.target.value)}
-                    placeholder="18"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                  />
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Location <span className="text-red-500">*</span>
                   </label>
@@ -530,7 +583,7 @@ export default function OpretAnnoncePage() {
                 onClick={() => validateStep1() && setStep(2)}
                 className="mt-6 w-full rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
               >
-                Fortsæt
+                Continue
               </button>
             </div>
           )}
@@ -599,7 +652,7 @@ export default function OpretAnnoncePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">1 time</span>
+                      <span className="mb-1 block text-xs text-gray-500">1 hour</span>
                       <input
                         type="text"
                         value={form.rate_1hour}
@@ -609,7 +662,7 @@ export default function OpretAnnoncePage() {
                       />
                     </div>
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">2 timer</span>
+                      <span className="mb-1 block text-xs text-gray-500">2 hours</span>
                       <input
                         type="text"
                         value={form.rate_2hours}
@@ -619,7 +672,7 @@ export default function OpretAnnoncePage() {
                       />
                     </div>
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">Overnat</span>
+                      <span className="mb-1 block text-xs text-gray-500">Overnight</span>
                       <input
                         type="text"
                         value={form.rate_overnight}
@@ -648,7 +701,7 @@ export default function OpretAnnoncePage() {
                   {/* Højde / Vægt */}
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">Højde (cm)</span>
+                      <span className="mb-1 block text-xs text-gray-500">Height (cm)</span>
                       <input
                         type="number"
                         min={100}
@@ -660,7 +713,7 @@ export default function OpretAnnoncePage() {
                       />
                     </div>
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">Vægt (kg)</span>
+                      <span className="mb-1 block text-xs text-gray-500">Weight (kg)</span>
                       <input
                         type="number"
                         min={30}
@@ -676,7 +729,7 @@ export default function OpretAnnoncePage() {
                   {/* 2x2 selects */}
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">Kropsbygning</span>
+                      <span className="mb-1 block text-xs text-gray-500">Body type</span>
                       <select
                         value={form.body_build}
                         onChange={(e) => updateField("body_build", e.target.value)}
@@ -687,7 +740,7 @@ export default function OpretAnnoncePage() {
                       </select>
                     </div>
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">Hårfarve</span>
+                      <span className="mb-1 block text-xs text-gray-500">Hair color</span>
                       <select
                         value={form.hair_color}
                         onChange={(e) => updateField("hair_color", e.target.value)}
@@ -698,7 +751,7 @@ export default function OpretAnnoncePage() {
                       </select>
                     </div>
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">Øjenfarve</span>
+                      <span className="mb-1 block text-xs text-gray-500">Eye color</span>
                       <select
                         value={form.eye_color}
                         onChange={(e) => updateField("eye_color", e.target.value)}
@@ -709,7 +762,7 @@ export default function OpretAnnoncePage() {
                       </select>
                     </div>
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">Intimbelshåring</span>
+                      <span className="mb-1 block text-xs text-gray-500">Intimate grooming</span>
                       <select
                         value={form.grooming}
                         onChange={(e) => updateField("grooming", e.target.value)}
@@ -723,7 +776,7 @@ export default function OpretAnnoncePage() {
 
                   {/* BH-størrelse */}
                   <div className="mb-3">
-                    <span className="mb-1 block text-xs text-gray-500">BH-størrelse</span>
+                    <span className="mb-1 block text-xs text-gray-500">Bra size</span>
                     <select
                       value={form.bra_size}
                       onChange={(e) => updateField("bra_size", e.target.value)}
@@ -736,7 +789,7 @@ export default function OpretAnnoncePage() {
 
                   {/* Nationalitet */}
                   <div className="mb-3">
-                    <span className="mb-1 block text-xs text-gray-500">Nationalitet</span>
+                    <span className="mb-1 block text-xs text-gray-500">Nationality</span>
                     <select
                       value={form.nationality}
                       onChange={(e) => updateField("nationality", e.target.value)}
@@ -773,13 +826,13 @@ export default function OpretAnnoncePage() {
                   onClick={() => setStep(1)}
                   className="flex-1 rounded-xl border border-gray-300 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  ← Tilbage
+                  ← Back
                 </button>
                 <button
                   onClick={() => setStep(3)}
                   className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
                 >
-                  Fortsæt
+                  Continue
                 </button>
               </div>
             </div>
@@ -795,8 +848,53 @@ export default function OpretAnnoncePage() {
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-700">Contact</label>
                   <div className="space-y-3">
+                    {/* Phone with show checkbox */}
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={form.show_phone}
+                        onChange={(e) => updateField("show_phone", e.target.checked)}
+                        className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                      />
+                      <span className="w-20 text-sm text-gray-500">Phone</span>
+                      <input
+                        type="text"
+                        value={form.phone}
+                        onChange={(e) => updateField("phone", e.target.value)}
+                        placeholder="Phone"
+                        className="flex-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-0"
+                      />
+                    </div>
+                    {/* Phone verification */}
+                    {form.show_phone && form.phone && !phoneVerified && (
+                      <div style={{ marginLeft: 32, marginTop: 6, marginBottom: 8 }}>
+                        {!showVerifyInput ? (
+                          <button type="button" onClick={sendPhoneVerification} disabled={verifySending}
+                            className="text-xs font-semibold text-red-600 border border-red-300 rounded-lg px-3 py-1.5 hover:bg-red-50 disabled:opacity-50">
+                            {verifySending ? "Sending..." : "Verify phone number →"}
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <input type="text" value={verifyCode} onChange={e => setVerifyCode(e.target.value)}
+                              placeholder="Enter 6-digit code" maxLength={6}
+                              className="w-36 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-red-500 focus:outline-none" />
+                            <button type="button" onClick={confirmPhoneCode} disabled={verifyChecking}
+                              className="text-xs font-semibold bg-gray-900 text-white rounded-lg px-3 py-1.5 disabled:opacity-50">
+                              {verifyChecking ? "Checking..." : "Confirm"}
+                            </button>
+                          </div>
+                        )}
+                        {verifyError && <p className="text-xs text-red-500 mt-1">{verifyError}</p>}
+                      </div>
+                    )}
+                    {phoneVerified && form.show_phone && (
+                      <div style={{ marginLeft: 32, marginTop: 4, marginBottom: 8 }} className="flex items-center gap-1.5 text-xs text-green-600 font-semibold">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        Phone verified
+                      </div>
+                    )}
+                    {/* Other contact fields */}
                     {[
-                      { label: "Phone",  field: "phone" },
                       { label: "WhatsApp", field: "whatsapp" },
                       { label: "Telegram", field: "telegram" },
                       { label: "Snapchat", field: "snapchat" },
@@ -849,7 +947,7 @@ export default function OpretAnnoncePage() {
                     <p className="text-base font-bold text-gray-900">{t.social_media_links}</p>
                     {!["basic", "featured", "vip"].includes(userTier || "") && (
                       <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                        Låsning kræver premium
+                        Premium required
                       </span>
                     )}
                   </div>
@@ -927,7 +1025,7 @@ export default function OpretAnnoncePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Photos <span className="text-gray-400">(max 20 &bull; JPG, PNG &bull; max 5MB/stk)</span>
+                    Photos <span className="text-gray-400">(max 20 &bull; JPG, PNG &bull; max 5MB each)</span>
                   </label>
 
                   {/* Drop zone */}
@@ -937,7 +1035,7 @@ export default function OpretAnnoncePage() {
                   >
                     <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     <p className="text-gray-500 text-sm font-medium">Click to upload photos</p>
-                    <p className="text-xs text-gray-400 mt-1">Første billede bruges som profilbillede</p>
+                    <p className="text-xs text-gray-400 mt-1">First photo will be used as profile picture</p>
                     <input
                       id="image-input"
                       type="file"
@@ -973,7 +1071,7 @@ export default function OpretAnnoncePage() {
                           />
                           {i === 0 && (
                             <span className="absolute top-1 left-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-md font-medium">
-                              Profil
+                              Profile
                             </span>
                           )}
                           <button
@@ -1003,13 +1101,13 @@ export default function OpretAnnoncePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <span className="text-sm font-medium text-gray-700">Forhåndsvisning</span>
+                    <span className="text-sm font-medium text-gray-700">Preview</span>
                   </div>
                   <div className="space-y-1 text-sm text-gray-600">
-                    <p><span className="font-medium">Titel:</span> {form.title || "–"}</p>
-                    <p><span className="font-medium">Kategori:</span> {form.category || "–"}</p>
-                    <p><span className="font-medium">Køn:</span> {(GENDER_LABELS[form.gender]?.[locale] ?? form.gender) || "–"}</p>
-                    <p><span className="font-medium">Alder:</span> {form.age || "–"}</p>
+                    <p><span className="font-medium">Title:</span> {form.title || "–"}</p>
+                    <p><span className="font-medium">Category:</span> {form.category || "–"}</p>
+                    <p><span className="font-medium">Gender:</span> {(GENDER_LABELS[form.gender]?.[locale] ?? form.gender) || "–"}</p>
+                    <p><span className="font-medium">Age:</span> {form.age || "–"}</p>
                     <p><span className="font-medium">Location:</span> {form.location || "–"}</p>
                     {form.about && (
                       <p>
@@ -1048,7 +1146,7 @@ export default function OpretAnnoncePage() {
                   />
                 ) : (
                   <div className="rounded-xl bg-gray-50 border border-dashed border-gray-200 p-4 text-center">
-                    <p className="text-sm text-gray-400">Opgrader til Premium for at tilføje en voice message til din profil</p>
+                    <p className="text-sm text-gray-400">Upgrade to Premium to add a voice message</p>
                   </div>
                 )}
               </div>
@@ -1058,7 +1156,7 @@ export default function OpretAnnoncePage() {
                   onClick={() => setStep(2)}
                   className="w-full sm:w-auto rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  ← Tilbage
+                  ← Back
                 </button>
                 <button
                   onClick={handleSubmit}
