@@ -26,7 +26,7 @@ import {
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
-const OnboardingPopup = dynamic(() => import("@/components/OnboardingPopup"), { ssr: false })
+// OnboardingPopup disabled
 
 const NAV_ITEMS = [
   { href: "/dashboard",                label: "Oversigt",            icon: LayoutDashboard },
@@ -240,7 +240,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </main>
 
-      <OnboardingPopup />
+      {/* OnboardingPopup disabled */}
     </div>
   )
 }
