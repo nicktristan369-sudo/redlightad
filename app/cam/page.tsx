@@ -55,11 +55,17 @@ export default function CamDirectoryPage() {
       {/* Header */}
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 16px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: "-0.02em" }}>
-              RedLight<span style={{ color: "#DC2626" }}>Cam</span>
-            </h1>
-            <div style={{ width: 48, height: 3, background: "#DC2626", borderRadius: 2, marginTop: 6 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <Link href="/" style={{ display: "flex", alignItems: "center", gap: 6, color: "#9CA3AF", fontSize: 13, fontWeight: 500, textDecoration: "none", padding: "6px 10px", borderRadius: 8, background: "rgba(255,255,255,0.05)" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              redlightad.com
+            </Link>
+            <div>
+              <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: "-0.02em" }}>
+                RedLight<span style={{ color: "#DC2626" }}>Cam</span>
+              </h1>
+              <div style={{ width: 48, height: 3, background: "#DC2626", borderRadius: 2, marginTop: 6 }} />
+            </div>
           </div>
           <Link href="/dashboard/go-live"
             style={{ padding: "10px 20px", background: "#DC2626", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}>
