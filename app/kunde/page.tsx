@@ -28,7 +28,7 @@ export default function KundeDashboard() {
     { href: "/kunde/beskeder", icon: MessageSquare, label: "Messages", value: stats.messages, color: "#3B82F6", desc: "Private conversations" },
     { href: "/kunde/feed",     icon: Heart,         label: "Feed",     value: stats.following, color: "#e91e8c", desc: "Profiles you follow" },
     { href: "/kunde/coins",    icon: Coins,         label: "RedCoins", value: stats.coins,    color: "#DC2626", desc: "Your balance" },
-    { href: "/kunde/verify",   icon: Shield,        label: "Verified", value: stats.verified ? "✓" : "–", color: "#16A34A", desc: stats.verified ? "Your account is verified" : "Verify your identity" },
+    { href: "/kunde/verify",   icon: Shield,        label: "Verified", value: stats.verified ? "✓" : "–", color: stats.verified ? "#16A34A" : "#9CA3AF", desc: stats.verified ? "ID verified" : "Not verified yet" },
   ]
 
   return (
@@ -47,6 +47,34 @@ export default function KundeDashboard() {
             <strong>Your profile is private.</strong> Other users cannot see or search for you. Only profiles you message can see your profile.
           </p>
         </div>
+
+        {/* Verification banner */}
+        {stats.verified ? (
+          <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 700, color: "#166534", margin: 0 }}>ID Verified</p>
+              <p style={{ fontSize: 12, color: "#22C55E", margin: "2px 0 0" }}>Your verification badge is visible to all profiles you contact</p>
+            </div>
+          </div>
+        ) : (
+          <Link href="/kunde/verify" style={{ textDecoration: "none", display: "block", marginBottom: 20 }}>
+            <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#FEF3C7")}
+              onMouseLeave={e => (e.currentTarget.style.background = "#FFFBEB")}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#F59E0B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Shield size={18} color="#fff" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#92400E", margin: 0 }}>Verify your identity</p>
+                <p style={{ fontSize: 12, color: "#B45309", margin: "2px 0 0" }}>Build trust with profiles — verified users get more responses</p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+          </Link>
+        )}
 
         {/* Stats tiles */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 28 }}>
@@ -75,7 +103,7 @@ export default function KundeDashboard() {
             { href: "/", label: "Browse profiles", icon: Search, desc: "Find and contact escort profiles" },
             { href: "/kunde/profil", label: "Update your profile", icon: User, desc: "Add photo, bio and age" },
             { href: "/kunde/coins", label: "Buy RedCoins", icon: Coins, desc: "Payment for locked content" },
-            { href: "/kunde/verify", label: "Verify yourself", icon: Shield, desc: "Build trust with profiles" },
+            ...(!stats.verified ? [{ href: "/kunde/verify", label: "Verify your identity", icon: Shield, desc: "Build trust — verified users get more responses" }] : []),
           ].map(({ href, label, icon: Icon, desc }) => (
             <Link key={href} href={href} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", textDecoration: "none", borderBottom: "1px solid #F9FAFB" }}
               onMouseEnter={e => (e.currentTarget.style.background = "#FAFAFA")}
