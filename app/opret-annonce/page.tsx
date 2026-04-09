@@ -200,7 +200,7 @@ export default function OpretAnnoncePage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("Du skal være logget ind for at oprette en annonce");
+      if (!user) throw new Error("You must be logged in to create a listing");
 
       // Upload images
       let imageUrls: string[] = [];
@@ -305,9 +305,9 @@ export default function OpretAnnoncePage() {
   };
 
   const steps = [
-    { num: 1, label: "Basis info" },
-    { num: 2, label: "Detaljer" },
-    { num: 3, label: "Kontakt & Billeder" },
+    { num: 1, label: "Basic Info" },
+    { num: 2, label: "Details" },
+    { num: 3, label: "Contact & Photos" },
   ];
 
   if (redirecting) {
@@ -328,22 +328,22 @@ export default function OpretAnnoncePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="mb-2 text-2xl font-bold text-gray-900">Din annonce er oprettet!</h2>
+            <h2 className="mb-2 text-2xl font-bold text-gray-900">Your listing has been created!</h2>
             <p className="mb-6 text-gray-500">
-              Din annonce er sendt til godkendelse og vil v&aelig;re synlig inden for 24 timer.
+              Your listing has been submitted for review and will be visible within 24 hours.
             </p>
             <div className="flex gap-3">
               <a
                 href="/dashboard/annoncer"
                 className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                Se mine annoncer
+                View my listings
               </a>
               <button
                 onClick={resetForm}
                 className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-medium text-white hover:bg-red-700"
               >
-                Opret ny annonce
+                Create new listing
               </button>
             </div>
           </div>
@@ -395,18 +395,18 @@ export default function OpretAnnoncePage() {
           {/* STEP 1 */}
           {step === 1 && (
             <div>
-              <h2 className="mb-6 text-xl font-bold text-gray-900">Trin 1: Basis information</h2>
+              <h2 className="mb-6 text-xl font-bold text-gray-900">Step 1: Basic information</h2>
 
               <div className="space-y-5">
                 {/* Navn */}
                 <div>
                   <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    Dit navn <span style={{ color: "#DC2626" }}>*</span>
+                    Your name <span style={{ color: "#DC2626" }}>*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Eks. Sofia, Anna, Maria..."
+                    placeholder="E.g. Sofia, Anna, Maria..."
                     value={form.display_name ?? ""}
                     onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
                     style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
@@ -416,7 +416,7 @@ export default function OpretAnnoncePage() {
                 {/* Alder */}
                 <div>
                   <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    Din alder <span style={{ color: "#DC2626" }}>*</span>
+                    Your age <span style={{ color: "#DC2626" }}>*</span>
                   </label>
                   <input
                     type="number"
@@ -431,12 +431,12 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Annonce titel</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Listing title</label>
                   <input
                     type="text"
                     value={form.title}
                     onChange={(e) => updateField("title", e.target.value)}
-                    placeholder="F.eks. Sofia - Diskret escort i København"
+                    placeholder="E.g. Sofia - Discreet escort in Copenhagen"
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
                 </div>
@@ -479,7 +479,7 @@ export default function OpretAnnoncePage() {
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   >
                     <option value="" disabled>
-                      Vælg type
+                      Select type
                     </option>
                     {CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -488,7 +488,7 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Alder</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Age</label>
                   <input
                     type="number"
                     min={18}
@@ -502,7 +502,7 @@ export default function OpretAnnoncePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lokation <span className="text-red-500">*</span>
+                    Location <span className="text-red-500">*</span>
                   </label>
                   <LocationSelector
                     value={{
@@ -538,16 +538,16 @@ export default function OpretAnnoncePage() {
           {/* STEP 2 */}
           {step === 2 && (
             <div>
-              <h2 className="mb-6 text-xl font-bold text-gray-900">Trin 2: Om dig og dine services</h2>
+              <h2 className="mb-6 text-xl font-bold text-gray-900">Step 2: About you and your services</h2>
 
               <div className="space-y-5">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Om mig</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">About me</label>
                   <textarea
                     rows={5}
                     value={form.about}
                     onChange={(e) => updateField("about", e.target.value)}
-                    placeholder="Beskriv dig selv og hvad du tilbyder..."
+                    placeholder="Describe yourself and what you offer..."
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
                 </div>
@@ -573,7 +573,7 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Sprog</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Languages</label>
                   <div className="flex flex-wrap gap-2">
                     {LANGUAGE_OPTIONS.map((l) => (
                       <button
@@ -594,7 +594,7 @@ export default function OpretAnnoncePage() {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-700">Priser</label>
+                    <label className="text-sm font-medium text-gray-700">Rates</label>
                     <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1">Enter in USD — visitors see local currency</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -641,9 +641,9 @@ export default function OpretAnnoncePage() {
                   </div>
                 </div>
 
-                {/* Udseende & Detaljer */}
+                {/* Appearance & Details */}
                 <div>
-                  <label className="mb-3 block text-sm font-semibold text-gray-900">Udseende & Detaljer</label>
+                  <label className="mb-3 block text-sm font-semibold text-gray-900">Appearance & Details</label>
 
                   {/* Højde / Vægt */}
                   <div className="grid grid-cols-2 gap-3 mb-3">
@@ -682,7 +682,7 @@ export default function OpretAnnoncePage() {
                         onChange={(e) => updateField("body_build", e.target.value)}
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
-                        <option value="">Vælg</option>
+                        <option value="">Select</option>
                         {BODY_BUILD_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
@@ -693,7 +693,7 @@ export default function OpretAnnoncePage() {
                         onChange={(e) => updateField("hair_color", e.target.value)}
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
-                        <option value="">Vælg</option>
+                        <option value="">Select</option>
                         {HAIR_COLOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
@@ -704,7 +704,7 @@ export default function OpretAnnoncePage() {
                         onChange={(e) => updateField("eye_color", e.target.value)}
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
-                        <option value="">Vælg</option>
+                        <option value="">Select</option>
                         {EYE_COLOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
@@ -715,7 +715,7 @@ export default function OpretAnnoncePage() {
                         onChange={(e) => updateField("grooming", e.target.value)}
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
-                        <option value="">Vælg</option>
+                        <option value="">Select</option>
                         {GROOMING_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
@@ -729,7 +729,7 @@ export default function OpretAnnoncePage() {
                       onChange={(e) => updateField("bra_size", e.target.value)}
                       className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                     >
-                      <option value="">Vælg</option>
+                      <option value="">Select</option>
                       {BRA_SIZE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                     </select>
                   </div>
@@ -742,7 +742,7 @@ export default function OpretAnnoncePage() {
                       onChange={(e) => updateField("nationality", e.target.value)}
                       className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                     >
-                      <option value="">Vælg</option>
+                      <option value="">Select</option>
                       {NATIONALITY_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                     </select>
                   </div>
@@ -750,9 +750,9 @@ export default function OpretAnnoncePage() {
                   {/* Checkboxes */}
                   <div className="flex flex-wrap gap-4 mt-2">
                     {[
-                      { field: "outcall", label: "Kører escort" },
-                      { field: "handicap_friendly", label: "Modtager handicappede" },
-                      { field: "has_own_place", label: "Har eget sted" },
+                      { field: "outcall", label: "Outcall" },
+                      { field: "handicap_friendly", label: "Disability friendly" },
+                      { field: "has_own_place", label: "Has own place" },
                     ].map((c) => (
                       <label key={c.field} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                         <input
@@ -788,15 +788,15 @@ export default function OpretAnnoncePage() {
           {/* STEP 3 */}
           {step === 3 && (
             <div>
-              <h2 className="mb-6 text-xl font-bold text-gray-900">Trin 3: Kontakt & billeder</h2>
+              <h2 className="mb-6 text-xl font-bold text-gray-900">Step 3: Contact & Photos</h2>
 
               <div className="space-y-5">
                 {/* Contact fields */}
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">Kontakt</label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">Contact</label>
                   <div className="space-y-3">
                     {[
-                      { label: "Telefon",  field: "phone" },
+                      { label: "Phone",  field: "phone" },
                       { label: "WhatsApp", field: "whatsapp" },
                       { label: "Telegram", field: "telegram" },
                       { label: "Snapchat", field: "snapchat" },
@@ -927,7 +927,7 @@ export default function OpretAnnoncePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Billeder <span className="text-gray-400">(max 20 &bull; JPG, PNG &bull; max 5MB/stk)</span>
+                    Photos <span className="text-gray-400">(max 20 &bull; JPG, PNG &bull; max 5MB/stk)</span>
                   </label>
 
                   {/* Drop zone */}
@@ -936,7 +936,7 @@ export default function OpretAnnoncePage() {
                     onClick={() => document.getElementById("image-input")?.click()}
                   >
                     <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    <p className="text-gray-500 text-sm font-medium">Klik for at uploade billeder</p>
+                    <p className="text-gray-500 text-sm font-medium">Click to upload photos</p>
                     <p className="text-xs text-gray-400 mt-1">Første billede bruges som profilbillede</p>
                     <input
                       id="image-input"
@@ -992,7 +992,7 @@ export default function OpretAnnoncePage() {
                   )}
 
                   {imageFiles.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-2">{imageFiles.length} billede{imageFiles.length !== 1 ? "r" : ""} valgt</p>
+                    <p className="text-xs text-gray-500 mt-2">{imageFiles.length} photo{imageFiles.length !== 1 ? "s" : ""} selected</p>
                   )}
                 </div>
 
@@ -1010,19 +1010,19 @@ export default function OpretAnnoncePage() {
                     <p><span className="font-medium">Kategori:</span> {form.category || "–"}</p>
                     <p><span className="font-medium">Køn:</span> {(GENDER_LABELS[form.gender]?.[locale] ?? form.gender) || "–"}</p>
                     <p><span className="font-medium">Alder:</span> {form.age || "–"}</p>
-                    <p><span className="font-medium">Lokation:</span> {form.location || "–"}</p>
+                    <p><span className="font-medium">Location:</span> {form.location || "–"}</p>
                     {form.about && (
                       <p>
-                        <span className="font-medium">Om mig:</span>{" "}
+                        <span className="font-medium">About me:</span>{" "}
                         {form.about.length > 100 ? form.about.slice(0, 100) + "..." : form.about}
                       </p>
                     )}
                     {form.services.length > 0 && (
-                      <p><span className="font-medium">Services:</span> {form.services.length} valgt</p>
+                      <p><span className="font-medium">Services:</span> {form.services.length} selected</p>
                     )}
                     {(form.rate_1hour || form.rate_2hours || form.rate_overnight || form.rate_weekend) && (
                       <p>
-                        <span className="font-medium">Priser:</span>{" "}
+                        <span className="font-medium">Rates:</span>{" "}
                         {[form.rate_1hour, form.rate_2hours, form.rate_overnight, form.rate_weekend]
                           .filter(Boolean)
                           .join(" / ")}
@@ -1071,7 +1071,7 @@ export default function OpretAnnoncePage() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                   )}
-                  Udgiv annonce
+                  Publish listing
                 </button>
               </div>
             </div>
