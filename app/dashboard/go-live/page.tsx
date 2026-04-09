@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Video, Radio, Square, Users, Clock, Mic, MicOff, VideoOff } from "lucide-react"
+import { Video, Radio, Square, Users, Clock, Mic, MicOff, VideoOff, Trash2, Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 
@@ -124,6 +124,16 @@ export default function GoLivePage() {
   const chatRef = useRef<HTMLDivElement>(null)
   const prevMsgCount = useRef(0)
 
+  // Tip menu state
+  const [tipMenuItems, setTipMenuItems] = useState<{id: string; action: string; rc_amount: number}[]>([])
+  const [newAction, setNewAction] = useState("")
+  const [newRcAmount, setNewRcAmount] = useState(25)
+
+  // Goal state
+  const [goalTitle, setGoalTitle] = useState("")
+  const [goalTarget, setGoalTarget] = useState(1000)
+  const [goalActive, setGoalActive] = useState(false)
+
   const playTipSound = useCallback(() => {
     try {
       const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
@@ -150,7 +160,7 @@ export default function GoLivePage() {
       if (!user) { router.replace("/login"); return }
       const { data } = await supabase
         .from("listings")
-        .select("id, display_name, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at")
+        .select("id, display_name, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at, cam_goal_title, cam_goal_target, cam_goal_active")
         .eq("user_id", user.id)
         .single()
       if (!data) { router.replace("/dashboard"); return }
@@ -163,6 +173,14 @@ export default function GoLivePage() {
         setViewerCount(data.cam_viewers || 0)
         if (data.cam_started_at) setStreamStart(new Date(data.cam_started_at))
       }
+      // Load goal state
+      setGoalTitle(data.cam_goal_title || "")
+      setGoalTarget(data.cam_goal_target || 1000)
+      setGoalActive(data.cam_goal_active || false)
+
+      // Load tip menu
+      fetch(`/api/cam/tip-menu?listingId=${data.id}`).then(r => r.json()).then(d => setTipMenuItems(d.items || []))
+
       setLoading(false)
     })
   }, [router])
@@ -317,6 +335,47 @@ export default function GoLivePage() {
     setSessionEarnings(0)
   }
 
+  const addTipMenuItem = async () => {
+    if (!listing || !newAction.trim()) return
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch("/api/cam/tip-menu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token || ""}` },
+      body: JSON.stringify({ listingId: listing.id, action: newAction.trim(), rc_amount: newRcAmount }),
+    })
+    const data = await res.json()
+    if (res.ok && data.item) {
+      setTipMenuItems(prev => [...prev, data.item])
+      setNewAction("")
+      setNewRcAmount(25)
+    }
+  }
+
+  const deleteTipMenuItem = async (itemId: string) => {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch("/api/cam/tip-menu", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token || ""}` },
+      body: JSON.stringify({ id: itemId }),
+    })
+    if (res.ok) {
+      setTipMenuItems(prev => prev.filter(i => i.id !== itemId))
+    }
+  }
+
+  const saveGoal = async () => {
+    if (!listing) return
+    const supabase = createClient()
+    await supabase.from("listings").update({
+      cam_goal_title: goalTitle,
+      cam_goal_target: goalTarget,
+      cam_goal_active: goalActive,
+      cam_goal_current: 0,
+    }).eq("id", listing.id)
+  }
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -437,39 +496,117 @@ export default function GoLivePage() {
           </div>
         ) : (
           /* Pre-live setup */
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>STREAM TITLE</label>
-              <input value={camTitle} onChange={e => setCamTitle(e.target.value)}
-                style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}
-                placeholder="What are you doing today?" />
-            </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>TYPE</label>
-                <select value={camCategory} onChange={e => setCamCategory(e.target.value)}
-                  style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}>
-                  <option value="public">Public (free)</option>
-                  <option value="private">Private (tokens/min)</option>
-                </select>
-              </div>
-              {camCategory === "private" && (
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>TOKENS / MIN</label>
-                  <input type="number" value={tokensPerMin} onChange={e => setTokensPerMin(parseInt(e.target.value))}
-                    style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}
-                    min={5} max={500} />
+            {/* ── CAM SETUP ── */}
+            <div style={{ background: "#F9FAFB", border: "1px solid #E5E5E5", borderRadius: 12, padding: 20 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 16, letterSpacing: "0.04em" }}>CAM SETUP</h2>
+
+              {/* Tip Menu Editor */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 8 }}>TIP MENU</label>
+
+                {/* Existing items */}
+                {tipMenuItems.length > 0 && (
+                  <div style={{ marginBottom: 10, border: "1px solid #E5E5E5", borderRadius: 8, overflow: "hidden" }}>
+                    {tipMenuItems.map(item => (
+                      <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", borderBottom: "1px solid #E5E5E5", background: "#fff" }}>
+                        <span style={{ fontSize: 13, color: "#374151" }}>{item.action}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#DC2626" }}>{item.rc_amount} RC</span>
+                          <button onClick={() => deleteTipMenuItem(item.id)}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "#9CA3AF", padding: 4 }}>
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add new item */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input value={newAction} onChange={e => setNewAction(e.target.value)}
+                    placeholder="Action (e.g. Flash, Dance...)"
+                    style={{ flex: 1, padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 13 }} />
+                  <input type="number" value={newRcAmount} onChange={e => setNewRcAmount(parseInt(e.target.value) || 0)}
+                    style={{ width: 70, padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 13, textAlign: "center" }}
+                    min={1} />
+                  <button onClick={addTipMenuItem} disabled={!newAction.trim()}
+                    style={{ padding: "8px 14px", background: newAction.trim() ? "#DC2626" : "#D1D5DB", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: newAction.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 4 }}>
+                    <Plus size={14} /> Tilføj
+                  </button>
                 </div>
-              )}
+              </div>
+
+              {/* Goal Editor */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 8 }}>TIP GOAL</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151", cursor: "pointer" }}>
+                      <input type="checkbox" checked={goalActive} onChange={e => setGoalActive(e.target.checked)}
+                        style={{ accentColor: "#DC2626" }} />
+                      Aktiv
+                    </label>
+                  </div>
+                  {goalActive && (
+                    <>
+                      <input value={goalTitle} onChange={e => setGoalTitle(e.target.value)}
+                        placeholder="Goal title (e.g. New lingerie set)"
+                        style={{ width: "100%", padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 13 }} />
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <label style={{ fontSize: 12, color: "#6B7280" }}>Target:</label>
+                        <input type="number" value={goalTarget} onChange={e => setGoalTarget(parseInt(e.target.value) || 0)}
+                          style={{ width: 100, padding: "8px 10px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 13, textAlign: "center" }}
+                          min={1} />
+                        <span style={{ fontSize: 12, color: "#6B7280" }}>RC</span>
+                      </div>
+                    </>
+                  )}
+                  <button onClick={saveGoal}
+                    style={{ padding: "8px 16px", background: "#111", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", alignSelf: "flex-start" }}>
+                    Gem goal
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {error && <p style={{ color: "#DC2626", fontSize: 13 }}>{error}</p>}
+            {/* ── STREAM SETTINGS ── */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>STREAM TITLE</label>
+                <input value={camTitle} onChange={e => setCamTitle(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}
+                  placeholder="What are you doing today?" />
+              </div>
 
-            <button onClick={handleGoLive} disabled={goingLive}
-              style={{ padding: "14px", background: goingLive ? "#9CA3AF" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: goingLive ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <Radio size={18} /> {goingLive ? "Starting..." : "Go Live"}
-            </button>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>TYPE</label>
+                  <select value={camCategory} onChange={e => setCamCategory(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}>
+                    <option value="public">Public (free)</option>
+                    <option value="private">Private (tokens/min)</option>
+                  </select>
+                </div>
+                {camCategory === "private" && (
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>TOKENS / MIN</label>
+                    <input type="number" value={tokensPerMin} onChange={e => setTokensPerMin(parseInt(e.target.value))}
+                      style={{ width: "100%", padding: "10px 12px", border: "1px solid #E5E5E5", borderRadius: 8, fontSize: 14 }}
+                      min={5} max={500} />
+                  </div>
+                )}
+              </div>
+
+              {error && <p style={{ color: "#DC2626", fontSize: 13 }}>{error}</p>}
+
+              <button onClick={handleGoLive} disabled={goingLive}
+                style={{ padding: "14px", background: goingLive ? "#9CA3AF" : "#DC2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: goingLive ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Radio size={18} /> {goingLive ? "Starting..." : "Go Live"}
+              </button>
+            </div>
           </div>
         )}
       </div>

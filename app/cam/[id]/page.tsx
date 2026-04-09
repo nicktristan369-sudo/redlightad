@@ -31,6 +31,17 @@ interface Listing {
   cam_viewers: number
   cam_category: string
   cam_tokens_per_min: number
+  photos: string[] | null
+  services: string[] | null
+  languages: string[] | null
+  hair_color: string | null
+  body_type: string | null
+  ethnicity: string | null
+  about: string | null
+  cam_goal_title: string | null
+  cam_goal_target: number
+  cam_goal_current: number
+  cam_goal_active: boolean
 }
 
 interface CamMessage {
@@ -111,7 +122,7 @@ export default function CamRoomPage() {
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null)
   const [userBalance, setUserBalance] = useState(0)
   const [showTip, setShowTip] = useState(false)
-  const [activeTab, setActiveTab] = useState<"chat" | "users">("chat")
+  const [activeTab, setActiveTab] = useState<"chat" | "profile" | "tips">("chat")
   const [infoTab, setInfoTab] = useState<"bio" | "media">("bio")
   const [followed, setFollowed] = useState(false)
   const [privateRequest, setPrivateRequest] = useState<{ id: string; status: string; roomName: string; tokensPerMin: number } | null>(null)
@@ -119,6 +130,9 @@ export default function CamRoomPage() {
   const [showPrivateConfirm, setShowPrivateConfirm] = useState(false)
   const [privateBilling, setPrivateBilling] = useState(false)
   const [tipError, setTipError] = useState<string | null>(null)
+  const [tipMenu, setTipMenu] = useState<{id: string; action: string; rc_amount: number}[]>([])
+  const [isNotifying, setIsNotifying] = useState(false)
+  const [goalProgress, setGoalProgress] = useState(0)
   const chatRef = useRef<HTMLDivElement>(null)
   const audioUnlocked = useRef(false)
 
@@ -134,6 +148,10 @@ export default function CamRoomPage() {
         .single()
       setListing(data)
       setLoading(false)
+
+      if (data) {
+        setGoalProgress(data.cam_goal_current || 0)
+      }
 
       const { data: { user } } = await supabase.auth.getUser()
       setCurrentUser(user)
@@ -157,6 +175,9 @@ export default function CamRoomPage() {
     }
 
     load()
+
+    // Load tip menu
+    fetch(`/api/cam/tip-menu?listingId=${id}`).then(r => r.json()).then(d => setTipMenu(d.items || []))
 
     // Realtime chat
     const channel = supabase.channel(`cam-${id}`)
@@ -365,7 +386,15 @@ export default function CamRoomPage() {
 
       // Confirm with server balance
       setUserBalance(data.new_balance)
+      setGoalProgress(prev => prev + amount)
       playTipSound()
+
+      // Update goal on server
+      fetch("/api/cam/goal", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: id, amount }),
+      })
 
     } catch {
       // Network error — rollback
@@ -384,6 +413,16 @@ export default function CamRoomPage() {
   )
 
   if (!listing) return <div style={{ padding: 40, textAlign: "center", color: "#fff", background: "#0A0A0A", minHeight: "100vh" }}>Stream not found</div>
+
+  // Knights — top 3 tippers
+  const knights = [...messages].filter(m => m.is_tip && m.tip_amount).reduce<{username: string; total: number}[]>((acc, m) => {
+    const ex = acc.find(k => k.username === m.username)
+    if (ex) ex.total += m.tip_amount || 0
+    else acc.push({ username: m.username, total: m.tip_amount || 0 })
+    return acc
+  }, []).sort((a, b) => b.total - a.total).slice(0, 3)
+
+  const knightColors = ["#FFD700", "#C0C0C0", "#CD7F32"]
 
   return (
     <div style={{ height: "100vh", overflow: "hidden", background: "#0D0D0D", color: "#fff", display: "flex", flexDirection: "column", fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif" }}>
@@ -432,13 +471,50 @@ export default function CamRoomPage() {
               <LiveKitRoom serverUrl={livekitWsUrl} token={livekitToken} connect={true} audio={true} video={false} style={{ width: "100%", height: "100%" }}>
                 <LiveViewer onViewerCount={setViewerCount} />
               </LiveKitRoom>
+            ) : !listing.cam_live ? (
+              /* Offline state — profile display */
+              <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: "#0A0A0A", position: "relative" }}>
+                {(listing.profile_image || listing.photos?.[0]) && (
+                  <img src={listing.profile_image || listing.photos![0]} alt="" style={{ width: 100, height: 100, borderRadius: "50%", objectFit: "cover", border: "3px solid #2A2A2A" }} />
+                )}
+                <span style={{ background: "#1A1A1A", color: "#6B7280", fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 4, letterSpacing: "0.05em" }}>OFFLINE</span>
+                <p style={{ color: "#4B5563", fontSize: 13 }}>{listing.display_name} is not streaming right now</p>
+                {currentUser && (
+                  <button onClick={async () => {
+                    const supabase = createClient()
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const res = await fetch("/api/cam/notify", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token || ""}` },
+                      body: JSON.stringify({ listingId: id }),
+                    })
+                    const d = await res.json()
+                    if (d.notifying !== undefined) setIsNotifying(d.notifying)
+                  }} style={{ padding: "10px 24px", background: isNotifying ? "#1A1A1A" : "#DC2626", border: isNotifying ? "1px solid #DC2626" : "none", borderRadius: 8, color: isNotifying ? "#DC2626" : "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                    🔔 {isNotifying ? "Notificering aktiv" : "Notificer mig når live"}
+                  </button>
+                )}
+              </div>
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
                 <Video color="#333" size={48} />
-                <p style={{ color: "#555", fontSize: 14 }}>{listing.cam_live ? "Connecting..." : `${listing.display_name} is offline`}</p>
+                <p style={{ color: "#555", fontSize: 14 }}>Connecting...</p>
               </div>
             )}
           </div>
+
+          {/* Tip Goal progress bar */}
+          {listing.cam_goal_active && listing.cam_goal_target > 0 && (
+            <div style={{ padding: "10px 16px", background: "#111", borderTop: "1px solid #1E1E1E" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}>
+                <span style={{ color: "#fff", fontWeight: 700 }}>🎯 {listing.cam_goal_title || "Session Goal"}</span>
+                <span style={{ color: "#6B7280" }}>{goalProgress} / {listing.cam_goal_target} RC ({Math.round(goalProgress / listing.cam_goal_target * 100)}%)</span>
+              </div>
+              <div style={{ height: 6, background: "#1E1E1E", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ height: "100%", background: "#DC2626", width: `${Math.min(100, Math.round(goalProgress / listing.cam_goal_target * 100))}%`, transition: "width 0.5s ease" }} />
+              </div>
+            </div>
+          )}
 
           {/* Tip bar */}
           <div style={{ padding: "10px 16px", background: "#111", borderTop: "1px solid #1E1E1E", borderBottom: "1px solid #1E1E1E", display: "flex", alignItems: "center", gap: 10 }}>
@@ -532,63 +608,199 @@ export default function CamRoomPage() {
           </div>
         </div>
 
-        {/* Right: chat */}
+        {/* Right: chat panel */}
         <div style={{ width: 320, borderLeft: "1px solid #1E1E1E", display: "flex", flexDirection: "column", background: "#111", flexShrink: 0 }}>
-          {/* Chat/Users tabs */}
+          {/* Chat/Profile/Tips tabs */}
           <div style={{ display: "flex", borderBottom: "1px solid #1E1E1E" }}>
-            {[["chat", "CHAT"], ["users", `USERS (${viewerCount})`]].map(([key, label]) => (
-              <button key={key} onClick={() => setActiveTab(key as "chat" | "users")}
+            {[["chat", "CHAT"], ["profile", "PROFILE"], ["tips", "TIPS"]].map(([key, label]) => (
+              <button key={key} onClick={() => setActiveTab(key as "chat" | "profile" | "tips")}
                 style={{ flex: 1, padding: "10px 0", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", border: "none", borderBottom: activeTab === key ? "2px solid #DC2626" : "2px solid transparent", background: "transparent", color: activeTab === key ? "#fff" : "#6B7280", cursor: "pointer" }}>
                 {label}
               </button>
             ))}
           </div>
 
-          {/* Messages */}
-          <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
-            {messages.length === 0 && (
-              <p style={{ fontSize: 12, color: "#333", textAlign: "center", marginTop: 24 }}>No messages yet. Say hello! 👋</p>
-            )}
-            {messages.map(m => (
-              <div key={m.id} style={{ fontSize: 13, lineHeight: 1.5, padding: "2px 0" }}>
-                {m.is_tip ? (
-                  <div style={{ background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6, padding: "5px 10px", margin: "3px 0" }}>
-                    <span style={{ color: "#DC2626", fontWeight: 700 }}>💰 {m.username}</span>
-                    <span style={{ color: "#FCA5A5" }}> tipped {m.tip_amount} RC</span>
+          {activeTab === "chat" && (
+            <>
+              {/* Messages */}
+              <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+                {messages.length === 0 && (
+                  <p style={{ fontSize: 12, color: "#333", textAlign: "center", marginTop: 24 }}>No messages yet. Say hello! 👋</p>
+                )}
+                {messages.map(m => (
+                  <div key={m.id} style={{ fontSize: 13, lineHeight: 1.5, padding: "2px 0" }}>
+                    {m.is_tip ? (
+                      <div style={{ background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6, padding: "5px 10px", margin: "3px 0" }}>
+                        <span style={{ color: "#DC2626", fontWeight: 700 }}>💰 {m.username}</span>
+                        <span style={{ color: "#FCA5A5" }}> tipped {m.tip_amount} RC</span>
+                      </div>
+                    ) : (
+                      <span>
+                        <b style={{ color: "#DC2626" }}>{m.username}</b>
+                        <span style={{ color: "#6B7280" }}>: </span>
+                        <span style={{ color: "#D1D5DB" }}>{m.message}</span>
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Message input */}
+              <div style={{ padding: "10px 12px", borderTop: "1px solid #1E1E1E" }}>
+                {!currentUser ? (
+                  <div style={{ textAlign: "center", padding: "8px 0" }}>
+                    <Link href="/login" style={{ fontSize: 13, color: "#DC2626", textDecoration: "none", fontWeight: 600 }}>Log in to chat</Link>
                   </div>
                 ) : (
-                  <span>
-                    <b style={{ color: "#DC2626" }}>{m.username}</b>
-                    <span style={{ color: "#6B7280" }}>: </span>
-                    <span style={{ color: "#D1D5DB" }}>{m.message}</span>
-                  </span>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                      value={newMessage}
+                      onChange={e => setNewMessage(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && sendMessage()}
+                      placeholder="Send a message..."
+                      style={{ flex: 1, background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13, outline: "none" }}
+                    />
+                    <button onClick={() => sendMessage()}
+                      style={{ padding: "8px 12px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                      SEND
+                    </button>
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
-          {/* Message input */}
-          <div style={{ padding: "10px 12px", borderTop: "1px solid #1E1E1E" }}>
-            {!currentUser ? (
-              <div style={{ textAlign: "center", padding: "8px 0" }}>
-                <Link href="/login" style={{ fontSize: 13, color: "#DC2626", textDecoration: "none", fontWeight: 600 }}>Log in to chat</Link>
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: 6 }}>
-                <input
-                  value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && sendMessage()}
-                  placeholder="Send a message..."
-                  style={{ flex: 1, background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13, outline: "none" }}
-                />
-                <button onClick={() => sendMessage()}
-                  style={{ padding: "8px 12px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                  SEND
+          {activeTab === "profile" && (
+            <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Profile header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {(listing.profile_image || listing.photos?.[0]) && (
+                  <img src={listing.profile_image || listing.photos![0]} alt="" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover", border: "2px solid #2A2A2A" }} />
+                )}
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{listing.display_name}</p>
+                </div>
+                <button onClick={() => setFollowed(!followed)}
+                  style={{ padding: "5px 12px", background: followed ? "rgba(220,38,38,0.15)" : "#DC2626", border: followed ? "1px solid #DC2626" : "none", borderRadius: 6, color: followed ? "#DC2626" : "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                  {followed ? "Following" : "Follow"}
                 </button>
               </div>
-            )}
-          </div>
+
+              {/* Info grid */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                  ["Age", listing.age ? `${listing.age}` : null],
+                  ["City", listing.city],
+                  ["Country", listing.country],
+                ].filter(([, v]) => v).map(([label, value]) => (
+                  <div key={label as string} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ color: "#6B7280" }}>{label}</span>
+                    <span style={{ color: "#D1D5DB" }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ height: 1, background: "#1E1E1E" }} />
+
+              {/* Languages */}
+              {listing.languages && listing.languages.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginBottom: 6, letterSpacing: "0.05em" }}>LANGUAGES</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {listing.languages.map(l => (
+                      <span key={l} style={{ background: "#1E1E1E", border: "1px solid #2A2A2A", borderRadius: 6, padding: "2px 8px", fontSize: 12, color: "#D1D5DB" }}>{l}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Bio / About */}
+              {(listing.bio || listing.about) && (
+                <div>
+                  <p style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginBottom: 6, letterSpacing: "0.05em" }}>ABOUT</p>
+                  <p style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.6 }}>{listing.about || listing.bio}</p>
+                </div>
+              )}
+
+              {/* Physical info */}
+              {(listing.hair_color || listing.body_type || listing.ethnicity) && (
+                <div>
+                  <p style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginBottom: 6, letterSpacing: "0.05em" }}>PHYSICAL</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {[
+                      ["Hair", listing.hair_color],
+                      ["Body", listing.body_type],
+                      ["Ethnicity", listing.ethnicity],
+                    ].filter(([, v]) => v).map(([label, value]) => (
+                      <div key={label as string} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                        <span style={{ color: "#6B7280" }}>{label}</span>
+                        <span style={{ color: "#D1D5DB" }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Services */}
+              {listing.services && listing.services.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginBottom: 6, letterSpacing: "0.05em" }}>SERVICES</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {listing.services.map(s => (
+                      <span key={s} style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6, padding: "2px 8px", fontSize: 12, color: "#FCA5A5" }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Private show info */}
+              <div style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 8, padding: "10px 12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, color: "#6B7280" }}>Private Show</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#DC2626" }}>{listing.cam_tokens_per_min} RC/min</span>
+                </div>
+              </div>
+
+              {/* Knights — top 3 tippers */}
+              {knights.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em" }}>👑 TOP TIPPERS</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {knights.map((k, i) => (
+                      <div key={k.username} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: knightColors[i], display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#000" }}>
+                          {k.username.charAt(0).toUpperCase()}
+                        </div>
+                        <span style={{ flex: 1, fontSize: 13, color: "#D1D5DB" }}>{k.username}</span>
+                        <span style={{ fontSize: 12, color: "#DC2626", fontWeight: 700 }}>{k.total} RC</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "tips" && (
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {tipMenu.length === 0 ? (
+                <p style={{ color: "#555", fontSize: 13, textAlign: "center", marginTop: 24 }}>Ingen tip menu endnu</p>
+              ) : (
+                tipMenu.map(item => (
+                  <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderBottom: "1px solid #1E1E1E" }}>
+                    <span style={{ color: "#D1D5DB", fontSize: 14 }}>{item.action}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ color: "#DC2626", fontWeight: 700, fontSize: 14 }}>{item.rc_amount} RC</span>
+                      <button onClick={() => sendTip(item.rc_amount)} disabled={!currentUser || item.rc_amount > userBalance}
+                        style={{ padding: "5px 12px", background: currentUser && item.rc_amount <= userBalance ? "#DC2626" : "#333", border: "none", borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        Tip
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
