@@ -347,8 +347,8 @@ function LocationMenu({
   if (step === "country") {
     return (
       <div
-        className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
-        style={{ width: "min(260px, calc(100vw - 32px))", maxHeight: "420px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+        className="absolute top-full mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
+        style={{ width: "min(280px, calc(100vw - 16px))", maxHeight: "420px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0, right: 0, left: "auto" }}
       >
         {/* Search */}
         <div className="p-2 border-b border-gray-100 flex-shrink-0">
@@ -419,8 +419,8 @@ function LocationMenu({
   // Step: city
   return (
     <div
-      className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
-      style={{ width: "min(260px, calc(100vw - 32px))", maxHeight: "360px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+      className="absolute top-full mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
+      style={{ width: "min(280px, calc(100vw - 16px))", maxHeight: "360px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0, right: 0, left: "auto" }}
     >
       <button
         onClick={() => { setStep("country"); setSearch("") }}
