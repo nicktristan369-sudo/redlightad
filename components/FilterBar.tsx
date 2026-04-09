@@ -598,32 +598,35 @@ function FilterBarInner() {
     <div ref={ref} className="bg-white border-b border-gray-200" style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
       {/* Section tabs */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-2 pb-0">
-        <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", minHeight: 36, paddingBottom: 8 }}>
+        <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", minHeight: 40, paddingBottom: 0, alignItems: "center" }}>
           {[
-            { href: "/",            label: "Escorts" },
-            { href: "/onlyfans",    label: "OnlyFans" },
-            { href: "/cam",         label: "RedLightCAM" },
-            { href: "/marketplace", label: "Marketplace" },
-            { href: "/reviews",     label: "Reviews" },
-            { href: "/videos",      label: "Videos" },
+            { href: "/",            label: "Escorts",      cam: false, of: false },
+            { href: "/onlyfans",    label: "OnlyFans",     cam: false, of: true  },
+            { href: "/cam",         label: "RedLightCAM",  cam: true,  of: false },
+            { href: "/marketplace", label: "Marketplace",  cam: false, of: false },
+            { href: "/reviews",     label: "Reviews",      cam: false, of: false },
+            { href: "/videos",      label: "Videos",       cam: false, of: false },
           ].map(tab => {
             const isActive = pathname === tab.href || (tab.href !== "/" && pathname.startsWith(tab.href))
             return (
               <a key={tab.href} href={tab.href} style={{
-                display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
-                padding: "6px 14px", borderRadius: 8,
-                fontSize: 13, fontWeight: 600,
-                background: isActive ? "#111" : "#F3F4F6",
-                color: isActive ? "#fff" : "#374151",
+                display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap",
+                padding: "5px 12px", borderRadius: 20,
+                fontSize: 13, fontWeight: isActive ? 700 : 500,
+                background: tab.cam && isActive ? "#DC2626" : isActive ? "transparent" : "transparent",
+                color: tab.cam && isActive ? "#fff" : isActive ? "#111" : "#6B7280",
                 textDecoration: "none",
+                borderBottom: !tab.cam && isActive ? "2px solid #111" : tab.cam && isActive ? "none" : "2px solid transparent",
                 transition: "all 0.15s", flexShrink: 0,
+                letterSpacing: "-0.01em",
               }}
-                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#E5E7EB" }}
-                onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#F3F4F6" }}
+                onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.color = "#111"; (e.currentTarget as HTMLElement).style.background = "#F5F5F7" } }}
+                onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.color = "#6B7280"; (e.currentTarget as HTMLElement).style.background = "transparent" } }}
               >
-                {tab.label === "OnlyFans" && <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 14, width: 80, objectFit: "contain", objectPosition: "left center", filter: isActive ? "brightness(0) invert(1)" : "none" }} />}
-                {tab.label === "RedLightCAM" && <span style={{ width: 7, height: 7, borderRadius: "50%", background: isActive ? "#fff" : "#DC2626", display: "inline-block", flexShrink: 0 }} />}
-                {tab.label !== "OnlyFans" && tab.label}
+                {tab.of && <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 13, width: 70, objectFit: "contain", objectPosition: "left center", filter: isActive ? "none" : "grayscale(1) opacity(0.5)" }} />}
+                {tab.cam && <span style={{ width: 6, height: 6, borderRadius: "50%", background: isActive ? "#fff" : "#DC2626", display: "inline-block", flexShrink: 0 }} />}
+                {tab.cam && <><span style={{ color: isActive ? "#fff" : "#DC2626", fontWeight: 800 }}>RED</span><span style={{ color: isActive ? "rgba(255,255,255,0.85)" : "#111", fontWeight: 700 }}>LIGHT</span><span style={{ color: isActive ? "#fff" : "#DC2626", fontWeight: 800 }}>CAM</span></>}
+                {!tab.of && !tab.cam && tab.label}
               </a>
             )
           })}
