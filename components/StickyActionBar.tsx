@@ -242,7 +242,7 @@ export default function StickyActionBar({ phone, whatsapp, listingId, listingTit
     <>
       {/* ── Sticky bar ── */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white"
         style={{ boxShadow: "0 -2px 10px rgba(0,0,0,0.08)" }}
       >
         <div className="flex items-stretch divide-x divide-gray-100">
