@@ -7,6 +7,9 @@ import { COIN_PACKAGES } from "@/lib/coinPackages"
 
 type PaymentTab = "card" | "crypto"
 
+// NOWPayments minimum transaction amount
+const CRYPTO_MIN_EUR = 20
+
 const FAQ_ITEMS = [
   {
     q: "Hvad er Red Coins?",
@@ -154,18 +157,33 @@ export default function BuyCoinsPage() {
           Kortbetaling via SegPay kommer snart. Betal nu med crypto — hurtigt og anonymt.
         </p>
 
+        {/* Crypto minimum notice */}
+        {tab === "crypto" && (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-sm text-amber-800">
+            <span className="text-base mt-0.5">⚠️</span>
+            <span>Crypto betalinger kræver minimum <strong>€{CRYPTO_MIN_EUR}</strong>. Pakker under dette beløb er ikke tilgængelige med crypto.</span>
+          </div>
+        )}
+
         {/* Package grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-          {COIN_PACKAGES.map((pkg) => (
+          {COIN_PACKAGES.map((pkg) => {
+            const cryptoDisabled = tab === "crypto" && pkg.price_eur < CRYPTO_MIN_EUR
+            return (
             <div
               key={pkg.id}
-              className={`relative bg-white rounded-2xl border p-6 flex flex-col items-center text-center shadow-sm transition-shadow hover:shadow-md ${
-                pkg.popular ? "border-red-500 ring-2 ring-red-500/20" : "border-gray-100"
-              }`}
+              className={`relative bg-white rounded-2xl border p-6 flex flex-col items-center text-center shadow-sm transition-shadow ${
+                cryptoDisabled ? "opacity-40 cursor-not-allowed" : "hover:shadow-md"
+              } ${pkg.popular && !cryptoDisabled ? "border-red-500 ring-2 ring-red-500/20" : "border-gray-100"}`}
             >
-              {pkg.popular && (
+              {pkg.popular && !cryptoDisabled && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[11px] font-bold uppercase tracking-wide px-3 py-1 rounded-full whitespace-nowrap">
                   Mest Populær
+                </span>
+              )}
+              {cryptoDisabled && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-400 text-white text-[11px] font-bold uppercase tracking-wide px-3 py-1 rounded-full whitespace-nowrap">
+                  Ikke tilgængelig med crypto
                 </span>
               )}
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -176,10 +194,12 @@ export default function BuyCoinsPage() {
               <div className="text-2xl font-bold text-gray-900 mb-1">€{pkg.price_eur}</div>
               <div className="text-xs text-gray-400 mb-5">€{pkg.per_coin.toFixed(3)} per coin</div>
               <button
-                onClick={() => handleBuy(pkg.id)}
-                disabled={loading === pkg.id}
+                onClick={() => !cryptoDisabled && handleBuy(pkg.id)}
+                disabled={loading === pkg.id || cryptoDisabled}
                 className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                  pkg.popular
+                  cryptoDisabled
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : pkg.popular
                     ? "bg-red-500 hover:bg-red-600 text-white"
                     : "bg-gray-900 hover:bg-black text-white"
                 } disabled:opacity-50`}
@@ -189,12 +209,15 @@ export default function BuyCoinsPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                   </svg>
+                ) : cryptoDisabled ? (
+                  "Kræver min. €" + CRYPTO_MIN_EUR
                 ) : (
                   "Køb nu"
                 )}
               </button>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Use cases */}
