@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Check } from "lucide-react"
+import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Check, Video } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
 import {
   BODY_BUILD_OPTIONS, HAIR_COLOR_OPTIONS,
@@ -623,8 +623,8 @@ function FilterBarInner() {
                 onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "#374151" }}
                 onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "#9CA3AF" }}
               >
-                {tab.of && <span style={{ color: isActive ? "#111" : "#9CA3AF", fontWeight: isActive ? 700 : 500 }}>OnlyFans</span>}
-                {tab.cam && <><span style={{ color: "#DC2626", fontWeight: 900, letterSpacing: "-0.02em" }}>RED</span><span style={{ color: "#111", fontWeight: 900, letterSpacing: "-0.02em" }}>LIGHT</span><span style={{ color: "#DC2626", fontWeight: 900, letterSpacing: "-0.02em" }}>CAM</span></>}
+                {tab.of && <><img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 12, width: 65, objectFit: "contain", objectPosition: "left center", opacity: isActive ? 1 : 0.5 }} /><span style={{ display: "none" }}>OnlyFans</span></>}
+                {tab.cam && <><Video size={12} strokeWidth={2} color="#DC2626" style={{ flexShrink: 0 }} /><span style={{ color: "#DC2626", fontWeight: 900, letterSpacing: "-0.02em", fontSize: 13 }}>RED</span><span style={{ color: "#111", fontWeight: 900, letterSpacing: "-0.02em", fontSize: 13 }}>LIGHT</span><span style={{ color: "#DC2626", fontWeight: 900, letterSpacing: "-0.02em", fontSize: 13 }}>CAM</span></>}
                 {!tab.of && !tab.cam && tab.label}
               </a>
             )
