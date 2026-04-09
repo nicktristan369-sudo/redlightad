@@ -613,19 +613,18 @@ function FilterBarInner() {
                 display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap",
                 padding: "5px 12px", borderRadius: 20,
                 fontSize: 13, fontWeight: isActive ? 700 : 500,
-                background: tab.cam && isActive ? "#DC2626" : isActive ? "transparent" : "transparent",
-                color: tab.cam && isActive ? "#fff" : isActive ? "#111" : "#6B7280",
+                background: "transparent",
+                color: isActive ? "#111" : "#6B7280",
                 textDecoration: "none",
-                borderBottom: !tab.cam && isActive ? "2px solid #111" : tab.cam && isActive ? "none" : "2px solid transparent",
+                borderBottom: isActive ? "2px solid #111" : "2px solid transparent",
                 transition: "all 0.15s", flexShrink: 0,
                 letterSpacing: "-0.01em",
               }}
                 onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.color = "#111"; (e.currentTarget as HTMLElement).style.background = "#F5F5F7" } }}
                 onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.color = "#6B7280"; (e.currentTarget as HTMLElement).style.background = "transparent" } }}
               >
-                {tab.of && <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 13, width: 70, objectFit: "contain", objectPosition: "left center", filter: isActive ? "none" : "grayscale(1) opacity(0.5)" }} />}
-                {tab.cam && <span style={{ width: 6, height: 6, borderRadius: "50%", background: isActive ? "#fff" : "#DC2626", display: "inline-block", flexShrink: 0 }} />}
-                {tab.cam && <><span style={{ color: isActive ? "#fff" : "#DC2626", fontWeight: 800 }}>RED</span><span style={{ color: isActive ? "rgba(255,255,255,0.85)" : "#111", fontWeight: 700 }}>LIGHT</span><span style={{ color: isActive ? "#fff" : "#DC2626", fontWeight: 800 }}>CAM</span></>}
+                {tab.of && <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 13, width: 70, objectFit: "contain", objectPosition: "left center" }} />}
+                {tab.cam && <><span style={{ color: "#DC2626", fontWeight: 900, letterSpacing: "-0.02em" }}>RED</span><span style={{ color: "#111", fontWeight: 900, letterSpacing: "-0.02em" }}>LIGHT</span><span style={{ color: "#DC2626", fontWeight: 900, letterSpacing: "-0.02em" }}>CAM</span></>}
                 {!tab.of && !tab.cam && tab.label}
               </a>
             )
