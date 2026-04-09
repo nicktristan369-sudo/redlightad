@@ -40,10 +40,10 @@ function txIcon(type: string) {
 
 function txLabel(type: string, username: string | null, note: string | null) {
   switch (type) {
-    case "tip": return username ? `Tip fra ${username}` : "Tip modtaget"
-    case "private_show": return username ? `Privat show med ${username}` : "Privat show"
-    case "content_sale": return "Indholdssalg"
-    case "payout": return "Udbetaling"
+    case "tip": return username ? `Tip from ${username}` : "Tip received"
+    case "private_show": return username ? `Private show with ${username}` : "Private show"
+    case "content_sale": return "Content sale"
+    case "payout": return "Payout"
     case "bonus": return note || "Bonus"
     default: return note || type
   }
@@ -51,10 +51,10 @@ function txLabel(type: string, username: string | null, note: string | null) {
 
 function statusBadge(status: string) {
   const s: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-    pending: { label: "Afventer", color: "#92400E", bg: "#FEF3C7", icon: <Clock size={12} /> },
-    processing: { label: "Behandles", color: "#1E40AF", bg: "#DBEAFE", icon: <AlertCircle size={12} /> },
-    paid: { label: "Udbetalt", color: "#065F46", bg: "#D1FAE5", icon: <CheckCircle size={12} /> },
-    rejected: { label: "Afvist", color: "#991B1B", bg: "#FEE2E2", icon: <XCircle size={12} /> },
+    pending: { label: "Pending", color: "#92400E", bg: "#FEF3C7", icon: <Clock size={12} /> },
+    processing: { label: "Processing", color: "#1E40AF", bg: "#DBEAFE", icon: <AlertCircle size={12} /> },
+    paid: { label: "Paid", color: "#065F46", bg: "#D1FAE5", icon: <CheckCircle size={12} /> },
+    rejected: { label: "Rejected", color: "#991B1B", bg: "#FEE2E2", icon: <XCircle size={12} /> },
   }
   const c = s[status] || s.pending
   return (
@@ -132,7 +132,7 @@ function WalletContent() {
       user_id: userId,
       type: "payout",
       amount: -coins,
-      note: `Udbetaling via ${payMethod}`,
+      note: `Payout via ${payMethod}`,
     })
     // Deduct balance
     await supabase.from("wallets").update({ balance: balance - coins }).eq("user_id", userId)
@@ -165,28 +165,28 @@ function WalletContent() {
         {coinsPurchased && (
           <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "14px 18px", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
             <CheckCircle size={18} color="#16A34A" />
-            <span style={{ fontSize: 14, color: "#15803D", fontWeight: 600 }}>Betaling gennemført! Coins tilføjet.</span>
+            <span style={{ fontSize: 14, color: "#15803D", fontWeight: 600 }}>Payment completed! Coins added.</span>
           </div>
         )}
 
         {payDone && (
           <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "14px 18px", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
             <CheckCircle size={18} color="#16A34A" />
-            <span style={{ fontSize: 14, color: "#15803D", fontWeight: 600 }}>Udbetalingsanmodning sendt! Vi behandler den inden for 3-5 hverdage.</span>
+            <span style={{ fontSize: 14, color: "#15803D", fontWeight: 600 }}>Payout request sent! We will process it within 3–5 business days.</span>
           </div>
         )}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111" }}>Min Wallet</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111" }}>My Wallet</h1>
           <div style={{ display: "flex", gap: 10 }}>
             <Link href="/dashboard/buy-coins"
               style={{ padding: "9px 18px", background: "#DC2626", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-              + Køb coins
+              + Buy Coins
             </Link>
             {balance >= MIN_PAYOUT && (
               <button onClick={() => { setShowPayout(true); setPayStep(1); setPayDone(false) }}
                 style={{ padding: "9px 18px", background: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 10, color: "#111", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                Anmod udbetaling
+                Request Payout
               </button>
             )}
           </div>
@@ -198,7 +198,7 @@ function WalletContent() {
           <div style={{ background: "linear-gradient(135deg, #1A1A2E 0%, #16213E 100%)", borderRadius: 16, padding: "20px 22px", color: "#fff" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <Wallet size={15} color="#9CA3AF" />
-              <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Tilgængeligt</span>
+              <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Available</span>
             </div>
             <p style={{ fontSize: 36, fontWeight: 900, color: "#DC2626", lineHeight: 1 }}>{balance.toLocaleString()}</p>
             <p style={{ fontSize: 12, color: "#6B7280", marginTop: 4 }}>≈ ${usdBalance} USD</p>
@@ -208,7 +208,7 @@ function WalletContent() {
           <div style={{ background: "#fff", border: "1.5px solid #F3F4F6", borderRadius: 16, padding: "20px 22px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <TrendingUp size={15} color="#6B7280" />
-              <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total tjent</span>
+              <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Earned</span>
             </div>
             <p style={{ fontSize: 28, fontWeight: 800, color: "#111", lineHeight: 1 }}>{totalEarned.toLocaleString()}</p>
             <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>≈ ${usdEarned} USD</p>
@@ -218,7 +218,7 @@ function WalletContent() {
           <div style={{ background: "#fff", border: "1.5px solid #F3F4F6", borderRadius: 16, padding: "20px 22px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <DollarSign size={15} color="#6B7280" />
-              <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Denne måned</span>
+              <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>This Month</span>
             </div>
             <p style={{ fontSize: 28, fontWeight: 800, color: "#111", lineHeight: 1 }}>{thisMonth.toLocaleString()}</p>
             <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>≈ ${usdMonth} USD</p>
@@ -229,7 +229,7 @@ function WalletContent() {
             <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 16, padding: "20px 22px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <Clock size={15} color="#92400E" />
-                <span style={{ fontSize: 11, color: "#92400E", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Afventer udbetaling</span>
+                <span style={{ fontSize: 11, color: "#92400E", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Pending Payout</span>
               </div>
               <p style={{ fontSize: 28, fontWeight: 800, color: "#92400E", lineHeight: 1 }}>{pendingPayout.toLocaleString()}</p>
               <p style={{ fontSize: 12, color: "#B45309", marginTop: 4 }}>≈ ${(pendingPayout * COIN_TO_USD).toFixed(2)} USD</p>
@@ -240,20 +240,20 @@ function WalletContent() {
         {/* Conversion info */}
         <div style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 12, padding: "12px 18px", marginBottom: 28, display: "flex", alignItems: "center", gap: 8 }}>
           <AlertCircle size={14} color="#6B7280" />
-          <span style={{ fontSize: 13, color: "#6B7280" }}>1 RedCoin = $0.08 USD · Minimum udbetaling: {MIN_PAYOUT} RC · Behandlingstid: 3-5 hverdage</span>
+          <span style={{ fontSize: 13, color: "#6B7280" }}>1 RedCoin = $0.08 USD · Minimum withdrawal: {MIN_PAYOUT} RC · Processing time: 3–5 business days</span>
         </div>
 
         {/* Transactions */}
         <div style={{ background: "#fff", border: "1.5px solid #F3F4F6", borderRadius: 16, marginBottom: 24, overflow: "hidden" }}>
           <div style={{ padding: "18px 22px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Transaktionshistorik</h2>
-            <span style={{ fontSize: 12, color: "#9CA3AF" }}>Seneste 50</span>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Transaction History</h2>
+            <span style={{ fontSize: 12, color: "#9CA3AF" }}>Last 50</span>
           </div>
           {transactions.length === 0 ? (
             <div style={{ textAlign: "center", padding: "48px 20px" }}>
               <Wallet size={32} color="#E5E7EB" style={{ margin: "0 auto 12px" }} />
-              <p style={{ color: "#9CA3AF", fontSize: 14 }}>Ingen transaktioner endnu</p>
-              <p style={{ color: "#D1D5DB", fontSize: 12, marginTop: 4 }}>Dine indtægter fra tips, shows og salg vises her</p>
+              <p style={{ color: "#9CA3AF", fontSize: 14 }}>No transactions yet</p>
+              <p style={{ color: "#D1D5DB", fontSize: 12, marginTop: 4 }}>Your earnings from tips, shows, and sales will appear here</p>
             </div>
           ) : (
             <div>
@@ -267,7 +267,7 @@ function WalletContent() {
                       {txLabel(tx.type, tx.source_username, tx.note)}
                     </p>
                     <p style={{ fontSize: 12, color: "#9CA3AF", margin: "2px 0 0" }}>
-                      {new Date(tx.created_at).toLocaleDateString("da-DK", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      {new Date(tx.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                   <span style={{ fontSize: 15, fontWeight: 800, color: tx.amount > 0 ? "#16A34A" : "#DC2626", whiteSpace: "nowrap" }}>
@@ -283,7 +283,7 @@ function WalletContent() {
         {payouts.length > 0 && (
           <div style={{ background: "#fff", border: "1.5px solid #F3F4F6", borderRadius: 16, overflow: "hidden" }}>
             <div style={{ padding: "18px 22px", borderBottom: "1px solid #F3F4F6" }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Udbetalingshistorik</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Payout History</h2>
             </div>
             {payouts.map((p, i) => (
               <div key={p.id} style={{ display: "flex", alignItems: "center", padding: "14px 22px", borderBottom: i < payouts.length - 1 ? "1px solid #F9FAFB" : "none", gap: 14 }}>
@@ -294,8 +294,8 @@ function WalletContent() {
                     {statusBadge(p.status)}
                   </div>
                   <p style={{ fontSize: 12, color: "#9CA3AF", margin: 0 }}>
-                    {p.payment_method === "bank" ? "Bankoverførsel" : p.payment_method === "payoneer" ? "Payoneer" : "USDT (Crypto)"} ·{" "}
-                    {new Date(p.created_at).toLocaleDateString("da-DK", { day: "numeric", month: "short", year: "numeric" })}
+                    {p.payment_method === "bank" ? "Bank transfer" : p.payment_method === "payoneer" ? "Payoneer" : "USDT (Crypto)"} ·{" "}
+                    {new Date(p.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
                   </p>
                 </div>
               </div>
@@ -317,10 +317,10 @@ function WalletContent() {
 
               {payStep === 1 && (
                 <>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>Anmod om udbetaling</h3>
-                  <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 24 }}>Tilgængeligt: <b style={{ color: "#111" }}>{balance.toLocaleString()} RC</b> (≈ ${usdBalance})</p>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>Request Payout</h3>
+                  <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 24 }}>Available: <b style={{ color: "#111" }}>{balance.toLocaleString()} RC</b> (≈ ${usdBalance})</p>
 
-                  <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Antal RedCoins</label>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Amount of RedCoins</label>
                   <input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)}
                     min={MIN_PAYOUT} max={balance}
                     style={{ width: "100%", padding: "12px 14px", border: "1.5px solid #E5E7EB", borderRadius: 10, fontSize: 16, fontWeight: 700, marginBottom: 8, boxSizing: "border-box" }}
@@ -328,7 +328,7 @@ function WalletContent() {
 
                   {payAmount && parseInt(payAmount) >= MIN_PAYOUT && (
                     <div style={{ background: "#F9FAFB", borderRadius: 10, padding: "12px 14px", marginBottom: 20 }}>
-                      <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>Du modtager ca.</p>
+                      <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>You will receive approx.</p>
                       <p style={{ fontSize: 22, fontWeight: 800, color: "#16A34A", margin: "2px 0 0" }}>${(parseInt(payAmount) * COIN_TO_USD).toFixed(2)} USD</p>
                     </div>
                   )}
@@ -336,12 +336,12 @@ function WalletContent() {
                   <div style={{ display: "flex", gap: 10 }}>
                     <button onClick={() => setShowPayout(false)}
                       style={{ flex: 1, padding: 13, background: "#F9FAFB", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#374151" }}>
-                      Annuller
+                      Cancel
                     </button>
                     <button onClick={() => setPayStep(2)}
                       disabled={!payAmount || parseInt(payAmount) < MIN_PAYOUT || parseInt(payAmount) > balance}
                       style={{ flex: 2, padding: 13, background: "#DC2626", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: (!payAmount || parseInt(payAmount) < MIN_PAYOUT || parseInt(payAmount) > balance) ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      Fortsæt <ChevronRight size={16} />
+                      Continue <ChevronRight size={16} />
                     </button>
                   </div>
                 </>
@@ -349,13 +349,13 @@ function WalletContent() {
 
               {payStep === 2 && (
                 <>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>Betalingsmetode</h3>
-                  <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>Vælg hvordan du vil have {payAmount} RC udbetalt</p>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>Payment Method</h3>
+                  <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>Choose how you want {payAmount} RC paid out</p>
 
                   {[
-                    { id: "bank", label: "Bankoverførsel (SEPA)", sub: "IBAN · 2-3 hverdage", icon: "🏦" },
-                    { id: "payoneer", label: "Payoneer", sub: "Til din Payoneer konto · 1-2 dage", icon: "💳" },
-                    { id: "usdt", label: "USDT (Crypto)", sub: "TRC20 eller ERC20 · Samme dag", icon: "🔗" },
+                    { id: "bank", label: "Bank Transfer (SEPA)", sub: "IBAN · 2–3 business days", icon: "🏦" },
+                    { id: "payoneer", label: "Payoneer", sub: "To your Payoneer account · 1–2 days", icon: "💳" },
+                    { id: "usdt", label: "USDT (Crypto)", sub: "TRC20 or ERC20 · Same day", icon: "🔗" },
                   ].map(m => (
                     <div key={m.id} onClick={() => setPayMethod(m.id)}
                       style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", border: `2px solid ${payMethod === m.id ? "#DC2626" : "#E5E7EB"}`, borderRadius: 12, marginBottom: 10, cursor: "pointer", background: payMethod === m.id ? "#FFF5F5" : "#fff", transition: "all 0.15s" }}>
@@ -371,11 +371,11 @@ function WalletContent() {
                   <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
                     <button onClick={() => setPayStep(1)}
                       style={{ flex: 1, padding: 13, background: "#F9FAFB", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#374151" }}>
-                      Tilbage
+                      Back
                     </button>
                     <button onClick={() => setPayStep(3)}
                       style={{ flex: 2, padding: 13, background: "#DC2626", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      Fortsæt <ChevronRight size={16} />
+                      Continue <ChevronRight size={16} />
                     </button>
                   </div>
                 </>
@@ -383,17 +383,17 @@ function WalletContent() {
 
               {payStep === 3 && (
                 <>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>Betalingsdetaljer</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>Payment Details</h3>
                   <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>
-                    {payMethod === "bank" ? "Indtast dit IBAN" : payMethod === "payoneer" ? "Indtast din Payoneer email" : "Indtast din USDT adresse"}
+                    {payMethod === "bank" ? "Enter your IBAN" : payMethod === "payoneer" ? "Enter your Payoneer email" : "Enter your USDT address"}
                   </p>
 
                   {payMethod === "bank" && (
                     <>
-                      <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Fulde navn (kontoindehaver)</label>
+                      <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Full name (account holder)</label>
                       <input value={payDetails.name || ""} onChange={e => setPayDetails(p => ({ ...p, name: e.target.value }))}
                         style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #E5E7EB", borderRadius: 10, fontSize: 14, marginBottom: 12, boxSizing: "border-box" }}
-                        placeholder="Navn som det fremgår på kontoen" />
+                        placeholder="Name as it appears on the account" />
                       <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>IBAN</label>
                       <input value={payDetails.iban || ""} onChange={e => setPayDetails(p => ({ ...p, iban: e.target.value }))}
                         style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #E5E7EB", borderRadius: 10, fontSize: 14, boxSizing: "border-box" }}
@@ -412,13 +412,13 @@ function WalletContent() {
 
                   {payMethod === "usdt" && (
                     <>
-                      <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Netværk</label>
+                      <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Network</label>
                       <select value={payDetails.network || "trc20"} onChange={e => setPayDetails(p => ({ ...p, network: e.target.value }))}
                         style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #E5E7EB", borderRadius: 10, fontSize: 14, marginBottom: 12, boxSizing: "border-box" }}>
-                        <option value="trc20">TRC20 (Tron) — anbefalet</option>
+                        <option value="trc20">TRC20 (Tron) — recommended</option>
                         <option value="erc20">ERC20 (Ethereum)</option>
                       </select>
-                      <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>USDT Wallet adresse</label>
+                      <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>USDT Wallet address</label>
                       <input value={payDetails.usdt_address || ""} onChange={e => setPayDetails(p => ({ ...p, usdt_address: e.target.value }))}
                         style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #E5E7EB", borderRadius: 10, fontSize: 14, boxSizing: "border-box" }}
                         placeholder="T..." />
@@ -428,11 +428,11 @@ function WalletContent() {
                   {/* Summary */}
                   <div style={{ background: "#F9FAFB", borderRadius: 12, padding: "14px 16px", marginTop: 16 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, color: "#6B7280" }}>Udbetaling</span>
+                      <span style={{ fontSize: 13, color: "#6B7280" }}>Payout</span>
                       <span style={{ fontSize: 13, fontWeight: 700 }}>{parseInt(payAmount).toLocaleString()} RC</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 13, color: "#6B7280" }}>Du modtager</span>
+                      <span style={{ fontSize: 13, color: "#6B7280" }}>You receive</span>
                       <span style={{ fontSize: 14, fontWeight: 800, color: "#16A34A" }}>${(parseInt(payAmount) * COIN_TO_USD).toFixed(2)} USD</span>
                     </div>
                   </div>
@@ -440,11 +440,11 @@ function WalletContent() {
                   <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
                     <button onClick={() => setPayStep(2)}
                       style={{ flex: 1, padding: 13, background: "#F9FAFB", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#374151" }}>
-                      Tilbage
+                      Back
                     </button>
                     <button onClick={handlePayout} disabled={payLoading}
                       style={{ flex: 2, padding: 13, background: "#DC2626", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: payLoading ? 0.6 : 1 }}>
-                      {payLoading ? "Sender..." : "Bekræft anmodning"}
+                      {payLoading ? "Sending..." : "Confirm request"}
                     </button>
                   </div>
                 </>

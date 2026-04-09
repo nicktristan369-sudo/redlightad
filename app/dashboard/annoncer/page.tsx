@@ -40,7 +40,7 @@ export default function MineAnnoncer() {
   }, [router])
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Er du sikker på at du vil slette denne annonce?")) return
+    if (!confirm("Are you sure you want to delete this listing?")) return
     setDeletingId(id)
     const supabase = createClient()
     await supabase.from("listings").delete().eq("id", id)
@@ -49,8 +49,8 @@ export default function MineAnnoncer() {
   }
 
   const statusLabel = (status: string) => {
-    if (status === "active") return { text: "Aktiv", cls: "bg-green-100 text-green-700" }
-    if (status === "draft") return { text: "Kladde", cls: "bg-yellow-100 text-yellow-700" }
+    if (status === "active") return { text: "Active", cls: "bg-green-100 text-green-700" }
+    if (status === "draft") return { text: "Draft", cls: "bg-yellow-100 text-yellow-700" }
     return { text: status, cls: "bg-gray-100 text-gray-600" }
   }
 
@@ -59,14 +59,14 @@ export default function MineAnnoncer() {
       <div>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mine annoncer</h1>
-            <p className="text-gray-500 text-sm mt-1">{listings.length} annonce{listings.length !== 1 ? "r" : ""} total</p>
+            <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
+            <p className="text-gray-500 text-sm mt-1">{listings.length} listing{listings.length !== 1 ? "s" : ""} total</p>
           </div>
           <a
             href="/opret-annonce"
             className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors"
           >
-            Ny annonce
+            New Listing
           </a>
         </div>
 
@@ -77,13 +77,13 @@ export default function MineAnnoncer() {
         ) : listings.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
             <FileText size={40} color="#D1D5DB" className="mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Ingen annoncer endnu</h2>
-            <p className="text-gray-500 mb-6">Opret din første annonce og nå tusindvis af brugere</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No listings yet</h2>
+            <p className="text-gray-500 mb-6">Create your first listing and reach thousands of users</p>
             <a
               href="/opret-annonce"
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-medium text-sm transition-colors inline-block"
             >
-              Opret din første annonce
+              Create your first listing
             </a>
           </div>
         ) : (
@@ -106,7 +106,7 @@ export default function MineAnnoncer() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 truncate">{listing.title}</h3>
                     <p className="text-sm text-gray-500">{listing.category} • {listing.location}</p>
-                    <p className="text-xs text-gray-400 mt-1">{new Date(listing.created_at).toLocaleDateString("da-DK")}</p>
+                    <p className="text-xs text-gray-400 mt-1">{new Date(listing.created_at).toLocaleDateString("en-US")}</p>
                   </div>
 
                   {/* Status badge */}
@@ -120,20 +120,20 @@ export default function MineAnnoncer() {
                       href={`/upgrade?listing=${listing.id}`}
                       className="px-4 py-2 rounded-xl text-sm font-medium bg-yellow-50 hover:bg-yellow-100 text-yellow-700 transition-colors"
                     >
-                      Opgrader
+                      Upgrade
                     </a>
                     <button
                       onClick={() => router.push(`/dashboard/annoncer/${listing.id}/edit`)}
                       className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
                     >
-                      Rediger
+                      Edit
                     </button>
                     <button
                       onClick={() => handleDelete(listing.id)}
                       disabled={deletingId === listing.id}
                       className="px-4 py-2 rounded-xl text-sm font-medium bg-red-50 hover:bg-red-100 text-red-600 transition-colors disabled:opacity-50"
                     >
-                      {deletingId === listing.id ? "..." : "Slet"}
+                      {deletingId === listing.id ? "..." : "Delete"}
                     </button>
                   </div>
                 </div>

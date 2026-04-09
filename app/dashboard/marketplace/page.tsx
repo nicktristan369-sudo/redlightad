@@ -213,7 +213,7 @@ export default function DashboardMarketplacePage() {
 
                 {/* Price — EUR input + live coins calculator */}
                 <div className="md:col-span-2">
-                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Pris *</label>
+                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Price *</label>
                   <div className="grid grid-cols-2 gap-3">
                     {/* EUR input */}
                     <div className="relative">
@@ -243,7 +243,7 @@ export default function DashboardMarketplacePage() {
                   </div>
                   {form.coin_price && (
                     <p className="mt-1.5 text-[12px] text-gray-400">
-                      Du modtager <strong>{Math.round(parseInt(form.coin_price) * 0.81)}</strong> coins efter 19% platform fee (≈ €{coinsToEur(Math.round(parseInt(form.coin_price) * 0.81))})
+                      You receive <strong>{Math.round(parseInt(form.coin_price) * 0.81)}</strong> coins after 19% platform fee (≈ €{coinsToEur(Math.round(parseInt(form.coin_price) * 0.81))})
                     </p>
                   )}
                 </div>
@@ -295,7 +295,7 @@ export default function DashboardMarketplacePage() {
                     <Upload size={18} />
                     {previewFile ? previewFile.name : "Upload teaser (video)"}
                   </button>
-                  <p className="mt-1 text-[11px] text-gray-400">Må ikke indeholde eksplicit indhold</p>
+                  <p className="mt-1 text-[11px] text-gray-400">Must not contain explicit content</p>
                 </div>
 
                 {/* Full content */}

@@ -78,8 +78,8 @@ export default function ProfilPage() {
   return (
     <DashboardLayout>
       <div className="max-w-xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Profil indstillinger</h1>
-        <p className="text-gray-500 mb-8">Administrer din konto</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Settings</h1>
+        <p className="text-gray-500 mb-8">Manage your account</p>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
           <div>
@@ -88,9 +88,9 @@ export default function ProfilPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kontotype</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Account type</label>
             <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-700 text-sm border border-gray-200 capitalize">
-              {accountType === "provider" ? "Udbyder" : accountType === "customer" ? "Kunde" : "—"}
+              {accountType === "provider" ? "Provider" : accountType === "customer" ? "Customer" : "—"}
             </div>
           </div>
 
@@ -124,21 +124,21 @@ export default function ProfilPage() {
                 disabled={paymentSaving}
                 className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
               >
-                {paymentSaving ? "Gemmer..." : "Gem betalingsmetoder"}
+                {paymentSaving ? "Saving..." : "Save payment methods"}
               </button>
-              {paymentSaved && <p className="text-green-600 text-sm mt-2">Betalingsmetoder gemt!</p>}
+              {paymentSaved && <p className="text-green-600 text-sm mt-2">Payment methods saved!</p>}
             </div>
           )}
 
           <div className="pt-2 border-t border-gray-100">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Adgangskode</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Password</h3>
             <button
               onClick={handlePasswordReset}
               className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-colors"
             >
-              Send nulstil adgangskode email
+              Send password reset email
             </button>
-            {saved && <p className="text-green-600 text-sm mt-2">Email sendt!</p>}
+            {saved && <p className="text-green-600 text-sm mt-2">Email sent!</p>}
           </div>
         </div>
       </div>

@@ -11,21 +11,21 @@ type PaymentTab = "card" | "crypto"
 const CRYPTO_MIN_EUR = 20
 
 const FAQ_ITEMS = [
-  { q: "Hvad er Red Coins?", a: "Red Coins er RedLightADs interne valuta. Du køber coins én gang og bruger dem på tværs af hele platformen — til indhold, tips og marketplace-køb." },
-  { q: "Hvad koster 1 Red Coin?", a: "1 Red Coin har en face value på €0.10. Du får rabat jo flere du køber — op til 38% rabat på den største pakke." },
-  { q: "Hvad vises på mit kontoudtog?", a: "Betalingen vises diskret på dit kontoudtog. Vi afslører aldrig platformens navn direkte." },
-  { q: "Udløber mine Red Coins?", a: "Nej. Dine Red Coins udløber aldrig og forbliver på din konto indtil du bruger dem." },
-  { q: "Kan jeg få refunderet mine coins?", a: "Red Coins er ikke-refunderbare efter køb. Vær sikker på at du vil bruge dem inden du køber." },
-  { q: "Hvad er crypto-betaling?", a: "Du kan betale med Bitcoin, Ethereum, USDC og andre kryptovalutaer. Betalingen er anonym og hurtig." },
-  { q: "Jeg er sælger — hvad får jeg?", a: "Som sælger modtager du 80% af Red Coin-værdien for alt hvad du sælger. Minimum udbetaling er 500 coins (€40)." },
-  { q: "Hvordan anmoder jeg om udbetaling?", a: "Gå til din wallet og anmod om udbetaling. Vi behandler udbetalinger indenfor 3-5 hverdage." },
+  { q: "What are Red Coins?", a: "Red Coins are RedLightAD's internal currency. You buy coins once and use them across the entire platform — for content, tips, and marketplace purchases." },
+  { q: "What does 1 Red Coin cost?", a: "1 Red Coin has a face value of €0.10. You get a discount the more you buy — up to 38% off on the largest package." },
+  { q: "What appears on my bank statement?", a: "The payment appears discreetly on your bank statement. We never reveal the platform's name directly." },
+  { q: "Do my Red Coins expire?", a: "No. Your Red Coins never expire and remain in your account until you use them." },
+  { q: "Can I get a refund on my coins?", a: "Red Coins are non-refundable after purchase. Make sure you want to use them before buying." },
+  { q: "What is crypto payment?", a: "You can pay with Bitcoin, Ethereum, USDC, and other cryptocurrencies. Payment is anonymous and fast." },
+  { q: "I'm a seller — what do I get?", a: "As a seller, you receive 80% of the Red Coin value for everything you sell. Minimum payout is 500 coins (€40)." },
+  { q: "How do I request a payout?", a: "Go to your wallet and request a payout. We process payouts within 3–5 business days." },
 ]
 
 const USE_CASES = [
-  { icon: ShoppingBag, title: "Marketplace", desc: "Køb fysiske og digitale varer fra sælgere" },
-  { icon: Lock,        title: "Eksklusivt indhold", desc: "Få adgang til premium og låst indhold" },
-  { icon: MessageSquare, title: "Tips", desc: "Send tips til dine favorit-annoncører" },
-  { icon: TrendingUp,  title: "Boost profil", desc: "Fremhæv dine annoncer øverst på platformen" },
+  { icon: ShoppingBag, title: "Marketplace", desc: "Buy physical and digital goods from sellers" },
+  { icon: Lock,        title: "Exclusive Content", desc: "Access premium and locked content" },
+  { icon: MessageSquare, title: "Tips", desc: "Send tips to your favorite advertisers" },
+  { icon: TrendingUp,  title: "Boost Profile", desc: "Highlight your listings at the top of the platform" },
 ]
 
 export default function BuyCoinsPage() {
@@ -61,9 +61,9 @@ export default function BuyCoinsPage() {
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url
-      else alert(data.error || "Fejl ved oprettelse af betaling")
+      else alert(data.error || "Error creating payment")
     } catch {
-      alert("Fejl ved oprettelse af betaling")
+      alert("Error creating payment")
     }
     setLoading(null)
   }
@@ -79,12 +79,12 @@ export default function BuyCoinsPage() {
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">RedLightAD</span>
           </div>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Red Coins</h1>
-          <p className="text-gray-400 text-base">Platformens officielle valuta — køb én gang, brug overalt</p>
+          <p className="text-gray-400 text-base">The platform's official currency — buy once, use everywhere</p>
           {balance !== null && (
             <div className="inline-flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-6 py-3 mt-5 shadow-sm">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
               <span className="text-2xl font-black text-gray-900">{balance.toLocaleString()}</span>
-              <span className="text-sm text-gray-400 font-medium">RC tilgængelige</span>
+              <span className="text-sm text-gray-400 font-medium">RC available</span>
             </div>
           )}
         </div>
@@ -92,17 +92,17 @@ export default function BuyCoinsPage() {
         {/* First purchase bonus */}
         {isFirstPurchase && (
           <div className="mb-8 rounded-2xl bg-gray-900 px-6 py-5 text-center border border-gray-800">
-            <div className="text-xs font-bold text-red-400 uppercase tracking-widest mb-1">Eksklusivt tilbud</div>
-            <p className="text-white text-lg font-bold mb-1">+25% ekstra coins på dit første køb</p>
-            <p className="text-gray-500 text-sm">Automatisk tilføjet — kun ved dit allerførste køb</p>
+            <div className="text-xs font-bold text-red-400 uppercase tracking-widest mb-1">Exclusive Offer</div>
+            <p className="text-white text-lg font-bold mb-1">+25% extra coins on your first purchase</p>
+            <p className="text-gray-500 text-sm">Automatically added — only on your very first purchase</p>
           </div>
         )}
 
         {/* Payment tabs */}
         <div className="flex gap-2 mb-3">
           <div className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gray-50 border border-gray-200 text-gray-300 text-center cursor-not-allowed flex items-center justify-center gap-2">
-            <span className="text-xs">KORT</span>
-            <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">Snart</span>
+            <span className="text-xs">CARD</span>
+            <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">Soon</span>
           </div>
           <button
             onClick={() => setTab("crypto")}
@@ -112,14 +112,14 @@ export default function BuyCoinsPage() {
           </button>
         </div>
         <p className="text-xs text-gray-400 text-center mb-6">
-          Betaling via SegPay kommer snart — betal nu med crypto anonymt og hurtigt
+          Payment via SegPay coming soon — pay now with crypto anonymously and fast
         </p>
 
         {/* Crypto minimum notice */}
         {tab === "crypto" && (
           <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6 text-sm text-gray-600">
             <AlertCircle size={15} className="text-gray-400 shrink-0" />
-            <span>Crypto kræver minimum <strong className="text-gray-900">€{CRYPTO_MIN_EUR}</strong> pr. transaktion. Pakker under dette beløb er ikke tilgængelige med crypto.</span>
+            <span>Crypto requires a minimum of <strong className="text-gray-900">€{CRYPTO_MIN_EUR}</strong> per transaction. Packages below this amount are not available with crypto.</span>
           </div>
         )}
 
@@ -137,10 +137,10 @@ export default function BuyCoinsPage() {
                 )}
                 <div className="p-6 w-full flex flex-col items-center">
                   {pkg.popular && !cryptoDisabled && (
-                    <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-3">Mest populær</span>
+                    <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-3">Most Popular</span>
                   )}
                   {cryptoDisabled && (
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ikke tilgængelig</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Not available</span>
                   )}
                   {!pkg.popular && !cryptoDisabled && <div className="mb-3 h-4" />}
                   <div className="text-xs font-semibold text-gray-300 uppercase tracking-widest mb-3">{pkg.label}</div>
@@ -162,7 +162,7 @@ export default function BuyCoinsPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
-                    ) : cryptoDisabled ? "Min. €" + CRYPTO_MIN_EUR : "Køb nu"}
+                    ) : cryptoDisabled ? "Min. €" + CRYPTO_MIN_EUR : "Buy now"}
                   </button>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default function BuyCoinsPage() {
 
         {/* Use cases */}
         <div className="mb-12">
-          <h2 className="text-lg font-bold text-gray-900 mb-6 text-center tracking-tight">Hvad kan du bruge Red Coins til?</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-6 text-center tracking-tight">What can you use Red Coins for?</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {USE_CASES.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="bg-white border border-gray-100 rounded-2xl p-5 text-center hover:border-gray-200 transition-colors">
@@ -188,7 +188,7 @@ export default function BuyCoinsPage() {
 
         {/* FAQ */}
         <div className="mb-12">
-          <h2 className="text-lg font-bold text-gray-900 mb-5 text-center tracking-tight">Ofte stillede spørgsmål</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-5 text-center tracking-tight">Frequently Asked Questions</h2>
           <div className="space-y-1">
             {FAQ_ITEMS.map((item, i) => (
               <div key={i} className="bg-white border border-gray-100 rounded-xl overflow-hidden">
@@ -212,7 +212,7 @@ export default function BuyCoinsPage() {
         {/* Discreet billing */}
         <div className="flex items-center justify-center gap-2.5 py-4 text-sm text-gray-400 mb-6">
           <Shield size={14} className="text-gray-300" strokeWidth={1.8} />
-          Diskret betaling — dit køb vises fortroligt på dit kontoudtog
+          Discreet billing — your purchase appears confidentially on your statement
         </div>
 
       </div>

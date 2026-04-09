@@ -113,8 +113,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const dynamicItems = listingChecked
     ? listingId
       ? [
-          { href: `/dashboard/annoncer/${listingId}/edit`, label: "Min profil", icon: FileText },
-          { href: `/ads/${listingId}`, label: "Forhåndsvisning", icon: Eye, target: "_blank" as const },
+          { href: `/dashboard/annoncer/${listingId}/edit`, label: "My Profile", icon: FileText },
+          { href: `/ads/${listingId}`, label: "Preview", icon: Eye, target: "_blank" as const },
         ]
       : [
           { href: "/opret-annonce", label: "Create Profile", icon: Plus },
@@ -202,7 +202,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#6B7280" }}
           >
             <LogOut size={15} style={{ flexShrink: 0 }} />
-            Log ud
+            Log out
           </button>
         </div>
       </aside>
