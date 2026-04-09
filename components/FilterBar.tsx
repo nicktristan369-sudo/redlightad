@@ -555,7 +555,7 @@ function FilterBarInner() {
   const toggle = (key: string) => setOpen(o => o === key ? null : key)
 
   const locationLabel = currentCityName
-    ? `📍 ${currentCityName}`
+    ? currentCityName
     : currentCountryName || t.filter_location
 
   const locationIcon = countryCode
@@ -738,10 +738,10 @@ function FilterBarInner() {
               <div className="relative">
                 <button
                   onClick={() => { router.push("/"); setQ("") }}
-                  className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 transition-colors"
-                  style={{ borderRadius: 0 }}
+                  className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium text-gray-400 bg-white hover:text-gray-700 transition-colors"
+                  style={{ borderRadius: 0, border: "none", borderLeft: "1px solid #E5E7EB" }}
                 >
-                  <X size={13} /> {t.filter_clear}
+                  <X size={12} /> Clear
                 </button>
               </div>
             )}
