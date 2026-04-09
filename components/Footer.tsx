@@ -1,6 +1,6 @@
 "use client"
 import Link from "next/link"
-import { Shield, AlertTriangle } from "lucide-react"
+import { Shield, AlertTriangle, Video, Coins } from "lucide-react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import Logo from "@/components/Logo"
 
@@ -9,55 +9,32 @@ export default function Footer() {
 
   return (
     <footer className="bg-black text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
 
         {/* Logo + tagline */}
         <div className="mb-10">
           <Logo variant="dark" height={28} />
-          <p className="text-gray-300 text-sm mt-2">{t.footer_tagline}</p>
+          <p className="text-gray-400 text-sm mt-2">{t.footer_tagline}</p>
         </div>
 
-        {/* 4 columns */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+        {/* 5 columns */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
 
+          {/* Categories */}
           <div>
-            <h3 className="text-xs font-semibold tracking-widest uppercase text-white mb-4">{t.footer_categories}</h3>
-            <ul className="space-y-2 text-sm">
-              {["Escort", "Massage", "Fetish", "Transgender", "BDSM", "Webcam"].map((cat) => (
-                <li key={cat}>
-                  <Link href={`/category/${cat.toLowerCase()}`} className="text-sm text-gray-300 hover:text-white transition-colors">
-                    {cat}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-semibold tracking-widest uppercase text-white mb-4">{t.footer_locations}</h3>
-            <ul className="space-y-2 text-sm">
-              {["Europe", "United Kingdom", "United States", "Australia", "Canada", "Asia"].map((loc) => (
-                <li key={loc}>
-                  <Link href={`/location/${loc.toLowerCase().replace(/ /g, "-")}`} className="text-sm text-gray-300 hover:text-white transition-colors">
-                    {loc}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-semibold tracking-widest uppercase text-white mb-4">{t.footer_support}</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Categories</h3>
+            <ul className="space-y-2.5">
               {[
-                { label: t.footer_faq, href: "/faq" },
-                { label: t.footer_contact, href: "/contact" },
-                { label: t.footer_safety, href: "/safety" },
-                { label: t.footer_terms, href: "/terms" },
-                { label: t.footer_report, href: "/report" },
+                { label: "Escort",       href: "/category/escort" },
+                { label: "Massage",      href: "/category/massage" },
+                { label: "Fetish",       href: "/category/fetish" },
+                { label: "Transgender",  href: "/category/transgender" },
+                { label: "BDSM",         href: "/category/bdsm" },
+                { label: "Webcam",       href: "/category/webcam" },
+                { label: "Pornstar",     href: "/category/pornstar" },
               ].map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-sm text-gray-300 hover:text-white transition-colors">
+                  <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
                     {item.label}
                   </Link>
                 </li>
@@ -65,19 +42,106 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Features */}
           <div>
-            <h3 className="text-xs font-semibold tracking-widest uppercase text-white mb-4">{t.footer_company}</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Features</h3>
+            <ul className="space-y-2.5">
+              <li>
+                <Link href="/cam" className="text-[13px] font-semibold flex items-center gap-1.5 hover:text-white transition-colors" style={{ color: "#ef4444" }}>
+                  <Video size={12} strokeWidth={2} />
+                  <span><span style={{ color: "#ef4444" }}>RED</span><span className="text-white">LIGHT</span><span style={{ color: "#ef4444" }}>CAM</span></span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/buy-coins" className="text-[13px] flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
+                  <Coins size={12} strokeWidth={2} />
+                  Red Coins
+                </Link>
+              </li>
+              <li>
+                <Link href="/premium" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  Premium
+                </Link>
+              </li>
+              <li>
+                <Link href="/reviews" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  Reviews
+                </Link>
+              </li>
+              <li>
+                <Link href="/marketplace" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  Marketplace
+                </Link>
+              </li>
+              <li>
+                <Link href="/videos" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  Videos
+                </Link>
+              </li>
+              <li>
+                <Link href="/onlyfans" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  OnlyFans
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Locations */}
+          <div>
+            <h3 className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Locations</h3>
+            <ul className="space-y-2.5">
               {[
-                { label: "Marketplace", href: "/marketplace" },
-                { label: t.footer_about, href: "/about" },
-                { label: t.footer_press, href: "/press" },
-                { label: t.footer_advertise, href: "/advertise" },
-                { label: t.footer_privacy, href: "/privacy" },
-                { label: t.footer_cookies, href: "/cookies" },
+                { label: "Europe",         href: "/location/europe" },
+                { label: "United Kingdom", href: "/location/united-kingdom" },
+                { label: "United States",  href: "/location/united-states" },
+                { label: "Australia",      href: "/location/australia" },
+                { label: "Canada",         href: "/location/canada" },
+                { label: "Asia",           href: "/location/asia" },
+                { label: "Scandinavia",    href: "/location/scandinavia" },
               ].map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-sm text-gray-300 hover:text-white transition-colors">
+                  <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Support */}
+          <div>
+            <h3 className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Support</h3>
+            <ul className="space-y-2.5">
+              {[
+                { label: "FAQ",           href: "/faq" },
+                { label: "Contact Us",    href: "/contact" },
+                { label: "Safety Tips",   href: "/safety" },
+                { label: "Terms & Rules", href: "/terms" },
+                { label: "Report Abuse",  href: "/report" },
+                { label: "Help Center",   href: "/help" },
+              ].map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h3 className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Company</h3>
+            <ul className="space-y-2.5">
+              {[
+                { label: "About Us",       href: "/about" },
+                { label: "Press",          href: "/press" },
+                { label: "Advertise",      href: "/advertise" },
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Cookie Policy",  href: "/cookies" },
+              ].map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
                     {item.label}
                   </Link>
                 </li>
@@ -86,18 +150,21 @@ export default function Footer() {
           </div>
 
         </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-800" />
 
         {/* Bottom bar */}
-        <div className="border-t border-gray-700 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
-          <p className="text-xs text-gray-300 text-center md:text-left">
-            {t.footer_copyright}
+        <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
+          <p className="text-[12px] text-gray-500 text-center md:text-left">
+            © 2026 RedLightAd.com — The World&apos;s Premier Adult Advertising Platform. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-xs text-gray-300">
+            <Link href="/privacy" className="flex items-center gap-1.5 text-[12px] text-gray-500 hover:text-gray-300 transition-colors">
               <Shield className="w-3.5 h-3.5" />
-              {t.footer_privacy}
-            </span>
-            <span className="flex items-center gap-1.5 text-xs font-medium text-white border border-gray-600 rounded-full px-3 py-1">
+              Privacy Policy
+            </Link>
+            <span className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-300 border border-gray-700 rounded-full px-3 py-1">
               <AlertTriangle className="w-3.5 h-3.5" />
               Adults Only 18+
             </span>
@@ -105,14 +172,14 @@ export default function Footer() {
         </div>
 
         {/* Legal disclaimer */}
-        <div className="border-t border-gray-700 mt-6 pt-6 text-center space-y-3">
-          <p className="text-xs text-gray-400 leading-relaxed max-w-4xl mx-auto">
+        <div className="border-t border-gray-800 mt-6 pt-6 text-center space-y-3">
+          <p className="text-[11px] text-gray-600 leading-relaxed max-w-4xl mx-auto">
             Copyright © redlightad.com, 2026. By using this site you agree to comply with our terms of use. All profiles listed on this site were 18 years of age or older at the time of listing. This website uses cookies to improve your experience.
           </p>
-          <p className="text-xs text-gray-400 leading-relaxed max-w-4xl mx-auto">
+          <p className="text-[11px] text-gray-600 leading-relaxed max-w-4xl mx-auto">
             All profiles listed on RedLightAd.com charge for their time and companionship only. Anything else that may occur is a matter of coincidence and choice between consenting adults. By using this site you accept that we do not support or advertise sexually based business activities in any form. You hereby declare that you offer your time and companionship only. We do not support any forms of sexual activity based business partnerships — every advertiser must be an independent individual.
           </p>
-          <p className="text-xs font-medium text-gray-300">
+          <p className="text-[12px] font-semibold text-gray-500 tracking-wide">
             Say NO to human trafficking.
           </p>
         </div>
