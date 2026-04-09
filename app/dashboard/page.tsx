@@ -8,9 +8,9 @@ import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
 
 const STATS = [
-  { label: "Aktive annoncer", value: "0", Icon: FileText },
-  { label: "Visninger i dag",  value: "0", Icon: Eye },
-  { label: "Nye beskeder",     value: "0", Icon: MessageSquare },
+  { label: "Active listings", value: "0", Icon: FileText },
+  { label: "Views today",     value: "0", Icon: Eye },
+  { label: "New messages",    value: "0", Icon: MessageSquare },
 ]
 
 function QuickBtn({
@@ -84,8 +84,8 @@ function DashboardContent() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-[24px] font-bold text-gray-900">Oversigt</h1>
-          <p className="text-[14px] text-gray-400 mt-0.5">Velkommen til dit dashboard</p>
+          <h1 className="text-[24px] font-bold text-gray-900">Overview</h1>
+          <p className="text-[14px] text-gray-400 mt-0.5">Welcome to your dashboard</p>
         </div>
 
         {/* Stats */}
@@ -103,10 +103,10 @@ function DashboardContent() {
         {/* Quick actions */}
         <div className="bg-white p-6 mb-6"
           style={{ border: "1px solid #E5E5E5", borderRadius: "12px" }}>
-          <h2 className="text-[15px] font-semibold text-gray-900 mb-4">Hurtige handlinger</h2>
+          <h2 className="text-[15px] font-semibold text-gray-900 mb-4">Quick actions</h2>
           {listingId !== null ? (
             <div className="flex flex-wrap gap-3">
-              <QuickBtn href={`/dashboard/annoncer/${listingId}/edit`} style="black">Rediger min profil</QuickBtn>
+              <QuickBtn href={`/dashboard/annoncer/${listingId}/edit`} style="black">Edit my profile</QuickBtn>
               <Link
                 href={`/ads/${listingId}`}
                 target="_blank"
@@ -114,7 +114,7 @@ function DashboardContent() {
                 className="px-5 py-2.5 rounded-lg text-[13px] font-semibold inline-block transition-colors duration-200"
                 style={{ background: "#fff", border: "1px solid #000", color: "#000" }}
               >
-                Forhåndsvisning
+                Preview
               </Link>
               <QuickBtn href="/dashboard/boost" style="gold">Premium &amp; Boost</QuickBtn>
               <QuickBtn href="/dashboard/stories" style="outline">{t.dash_stories}</QuickBtn>
@@ -130,10 +130,10 @@ function DashboardContent() {
                 className="px-8 py-4 rounded-lg text-[15px] font-semibold inline-block transition-colors duration-200"
                 style={{ background: "#CC0000", color: "#fff" }}
               >
-                Opret din profil
+                Create your profile
               </Link>
               <p className="text-[13px] text-gray-500 mt-3">
-                Du har endnu ikke oprettet din profil. Kom i gang nu!
+                You have not created your profile yet. Get started now!
               </p>
             </div>
           )}

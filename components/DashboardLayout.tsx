@@ -29,15 +29,15 @@ const NotificationBell = dynamic(() => import("@/components/NotificationBell"), 
 // OnboardingPopup disabled
 
 const NAV_ITEMS = [
-  { href: "/dashboard",                label: "Oversigt",            icon: LayoutDashboard },
-  { href: "/dashboard/beskeder",       label: "Beskeder",            icon: MessageSquare },
-  { href: "/dashboard/locked-content", label: "Eksklusivt indhold",  icon: Lock },
-  { href: "/dashboard/marketplace",    label: "Sælg på Marketplace", icon: Tag },
-  { href: "/dashboard/mine-kob",       label: "Mine køb",            icon: ShoppingBag },
+  { href: "/dashboard",                label: "Overview",            icon: LayoutDashboard },
+  { href: "/dashboard/beskeder",       label: "Messages",            icon: MessageSquare },
+  { href: "/dashboard/locked-content", label: "Exclusive Content",   icon: Lock },
+  { href: "/dashboard/marketplace",    label: "Marketplace",         icon: Tag },
+  { href: "/dashboard/mine-kob",       label: "My Purchases",        icon: ShoppingBag },
   { href: "/dashboard/wallet",         label: "Wallet",              icon: Wallet },
-  { href: "/dashboard/buy-coins",      label: "Køb coins",           icon: Coins },
+  { href: "/dashboard/buy-coins",      label: "Buy Coins",           icon: Coins },
   { href: "/dashboard/boost",          label: "Premium & Boost",     icon: Zap },
-  { href: "/dashboard/profil",         label: "Profil indstillinger", icon: Settings },
+  { href: "/dashboard/profil",         label: "Profile Settings",    icon: Settings },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -117,7 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           { href: `/ads/${listingId}`, label: "Forhåndsvisning", icon: Eye, target: "_blank" as const },
         ]
       : [
-          { href: "/opret-annonce", label: "Opret profil", icon: Plus },
+          { href: "/opret-annonce", label: "Create Profile", icon: Plus },
         ]
     : []
 

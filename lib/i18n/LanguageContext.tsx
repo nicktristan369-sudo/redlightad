@@ -19,9 +19,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (saved && translations[saved]) {
       setLocaleState(saved)
     } else {
-      const browserLang = navigator.language.slice(0, 2) as Locale
-      const supported: Locale[] = ["en","da","de","fr","es","it","pt","nl","sv","no","ar","th","ru","pl"]
-      if (supported.includes(browserLang)) setLocaleState(browserLang)
+      // Default to English — only use saved preference, not browser language
     }
   }, [])
 
