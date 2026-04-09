@@ -50,6 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [listingId, setListingId] = useState<string | null>(null)
   const [listingChecked, setListingChecked] = useState(false)
   const [isPremium, setIsPremium] = useState(false)
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -129,7 +130,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/onlyfans", label: "OnlyFans", icon: ExternalLink },
     ...(isAdmin ? [{ href: "/admin", label: "Admin panel", icon: Shield }] : []),
   ]
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const bottomNavItems = NAV_ITEMS.slice(0, 4)
 
   return (
