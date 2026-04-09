@@ -129,7 +129,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/onlyfans", label: "OnlyFans", icon: ExternalLink },
     ...(isAdmin ? [{ href: "/admin", label: "Admin panel", icon: Shield }] : []),
   ]
-  const bottomNavItems = NAV_ITEMS.slice(0, 5)
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const bottomNavItems = NAV_ITEMS.slice(0, 4)
 
   return (
     <div className="min-h-screen flex" style={{ background: "#F8F8F8" }}>
@@ -207,8 +208,75 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
+      {/* ── Mobile drawer overlay ── */}
+      {mobileDrawerOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMobileDrawerOpen(false)}
+          style={{ background: "rgba(0,0,0,0.4)" }} />
+      )}
+
+      {/* ── Mobile slide-up drawer ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white transition-transform duration-300"
+        style={{
+          borderRadius: "20px 20px 0 0",
+          boxShadow: "0 -4px 24px rgba(0,0,0,0.12)",
+          transform: mobileDrawerOpen ? "translateY(0)" : "translateY(100%)",
+          maxHeight: "80vh",
+          overflowY: "auto",
+        }}>
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-2">
+          <div style={{ width: 36, height: 4, background: "#E5E5E5", borderRadius: 2 }} />
+        </div>
+
+        {/* All nav items */}
+        <div className="px-4 pb-2">
+          {allNavItems.map((item) => {
+            const isActive = item.href === "/dashboard"
+              ? pathname === item.href
+              : pathname.startsWith(item.href) && item.href !== "/create-profile"
+                ? pathname.startsWith(item.href)
+                : pathname === item.href
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileDrawerOpen(false)}
+                className="flex items-center gap-3 px-3 py-3 rounded-xl transition-colors"
+                style={{
+                  background: isActive ? "#000" : "transparent",
+                  color: isActive ? "#fff" : "#374151",
+                  marginBottom: 2,
+                }}
+              >
+                <Icon size={18} style={{ color: isActive ? "#fff" : "#6B7280", flexShrink: 0 }} />
+                <span className="text-[14px] font-medium flex-1">{item.label}</span>
+                {item.href === "/dashboard/beskeder" && totalUnread > 0 && (
+                  <span className="text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: isActive ? "#fff" : "#000", color: isActive ? "#000" : "#fff" }}>
+                    {totalUnread > 9 ? "9+" : totalUnread}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
+
+          {/* Sign out in drawer */}
+          <div style={{ borderTop: "1px solid #F3F4F6", marginTop: 8, paddingTop: 8, marginBottom: 16 }}>
+            <button
+              onClick={() => { setMobileDrawerOpen(false); handleSignOut() }}
+              className="flex items-center gap-3 px-3 py-3 rounded-xl w-full text-[14px] font-medium"
+              style={{ color: "#9CA3AF" }}
+            >
+              <LogOut size={18} style={{ flexShrink: 0 }} />
+              Log out
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* ── Mobile bottom nav ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 flex md:hidden items-center justify-around bg-white py-2 px-1"
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex md:hidden items-center justify-around bg-white py-2 px-1"
         style={{ borderTop: "1px solid #E5E5E5" }}>
         {bottomNavItems.map((item) => {
           const isActive = item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href)
@@ -233,6 +301,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
           )
         })}
+
+        {/* More button */}
+        <button
+          onClick={() => setMobileDrawerOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={mobileDrawerOpen ? "#000" : "#9CA3AF"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          <span className="text-[10px] font-medium" style={{ color: mobileDrawerOpen ? "#000" : "#9CA3AF" }}>More</span>
+        </button>
       </nav>
 
       {/* ── Main content ── */}
