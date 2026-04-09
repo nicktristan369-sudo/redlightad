@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhoneControl</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg:      #0a0b0e;
+    --surface: #111318;
+    --panel:   #181c24;
+    --border:  #252a36;
+    --accent:  #00e5a0;
+    --accent2: #0084ff;
+    --warn:    #ff6b35;
+    --text:    #c8cdd8;
+    --dim:     #4a5060;
+    --mono:    'JetBrains Mono', monospace;
+    --sans:    'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow: hidden; }
+
+  /* ── Layout ── */
+  #app { display: grid; grid-template-rows: 48px 1fr; height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+  }
+  .logo { font-size: 15px; font-weight: 800; letter-spacing: -.3px; color: #fff; }
+  .logo span { color: var(--accent); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); margin-left: 4px; transition: background .3s; }
+  .status-dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .btn { 
+    padding: 5px 12px; border-radius: 6px; font-family: var(--mono); font-size: 11px; 
+    cursor: pointer; border: 1px solid var(--border); background: var(--panel);
+    color: var(--text); transition: all .15s; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .btn.primary:hover { background: #00ffb3; }
+  #device-count { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+
+  /* ── Main area ── */
+  main { display: grid; grid-template-columns: 220px 1fr; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  aside {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .aside-header {
+    padding: 12px 14px 8px;
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    color: var(--dim); letter-spacing: 1.2px; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  #device-list { flex: 1; overflow-y: auto; padding: 6px; }
+  #device-list::-webkit-scrollbar { width: 4px; }
+  #device-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .device-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer;
+    transition: background .15s; margin-bottom: 2px;
+    border: 1px solid transparent;
+  }
+  .device-item:hover { background: var(--panel); }
+  .device-item.active { background: var(--panel); border-color: var(--accent); }
+  .device-icon {
+    width: 20px; height: 32px; border-radius: 3px;
+    background: var(--border); border: 1px solid var(--dim);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; position: relative;
+  }
+  .device-icon::before {
+    content: ''; width: 6px; height: 2px; background: var(--dim);
+    border-radius: 1px; position: absolute; top: 3px;
+  }
+  .device-icon.online { border-color: var(--accent); }
+  .device-icon.online::after {
+    content: ''; width: 4px; height: 4px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 4px var(--accent);
+  }
+  .device-name { font-size: 12px; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .device-id { font-family: var(--mono); font-size: 9px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .device-offline { opacity: .4; }
+
+  .connect-box { padding: 10px; border-top: 1px solid var(--border); }
+  .connect-box input {
+    width: 100%; padding: 6px 10px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: var(--mono); font-size: 11px;
+    outline: none; transition: border-color .15s; margin-bottom: 6px;
+  }
+  .connect-box input:focus { border-color: var(--accent); }
+  .connect-box input::placeholder { color: var(--dim); }
+
+  /* ── Grid ── */
+  #grid-area {
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--bg);
+  }
+  .grid-toolbar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+    flex-shrink: 0;
+  }
+  .grid-toolbar label { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+  .layout-btn { 
+    width: 28px; height: 28px; border-radius: 5px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--panel);
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .layout-btn:hover, .layout-btn.active { border-color: var(--accent); }
+  .layout-btn svg { width: 14px; height: 14px; fill: none; stroke: var(--dim); }
+  .layout-btn.active svg, .layout-btn:hover svg { stroke: var(--accent); }
+
+  #phone-grid {
+    flex: 1; padding: 14px; overflow-y: auto; overflow-x: hidden;
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  #phone-grid.layout-2 { grid-template-columns: repeat(2, 1fr); }
+  #phone-grid.layout-3 { grid-template-columns: repeat(3, 1fr); }
+  #phone-grid.layout-4 { grid-template-columns: repeat(4, 1fr); }
+  #phone-grid.layout-5 { grid-template-columns: repeat(5, 1fr); }
+  #phone-grid::-webkit-scrollbar { width: 4px; }
+  #phone-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Phone card ── */
+  .phone-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .phone-card:hover { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,229,160,.06); }
+  .phone-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,229,160,.2); }
+
+  .card-header {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    background: var(--panel); border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .card-title { font-size: 11px; font-weight: 700; color: #fff; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-badge {
+    font-family: var(--mono); font-size: 8px; padding: 2px 5px;
+    border-radius: 3px; background: rgba(0,229,160,.12); color: var(--accent); border: 1px solid rgba(0,229,160,.2);
+  }
+  .card-badge.offline { background: rgba(74,80,96,.2); color: var(--dim); border-color: var(--border); }
+
+  .screen-wrap {
+    position: relative; cursor: crosshair;
+    background: #000;
+    aspect-ratio: 9/16;
+    overflow: hidden;
+  }
+  .screen-wrap img {
+    width: 100%; height: 100%; object-fit: contain; display: block;
+    pointer-events: none; /* clicks handled by wrapper */
+  }
+  .screen-wrap .offline-msg {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px; color: var(--dim);
+    font-family: var(--mono); font-size: 10px;
+  }
+  .screen-wrap .offline-msg svg { width: 28px; height: 28px; stroke: var(--dim); fill: none; opacity: .4; }
+  .tap-ripple {
+    position: absolute; width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(0,229,160,.4); transform: translate(-50%,-50%) scale(0);
+    pointer-events: none; animation: ripple .4s ease-out forwards;
+  }
+  @keyframes ripple { to { transform: translate(-50%,-50%) scale(1.8); opacity: 0; } }
+
+  .card-controls {
+    display: flex; align-items: center; gap: 4px; padding: 6px 8px;
+    border-top: 1px solid var(--border); background: var(--panel); flex-shrink: 0;
+  }
+  .key-btn {
+    flex: 1; padding: 4px; border-radius: 5px; font-family: var(--mono); font-size: 9px;
+    cursor: pointer; border: 1px solid var(--border); background: var(--surface);
+    color: var(--dim); transition: all .12s; text-align: center;
+  }
+  .key-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ── Input bar ── */
+  #input-bar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+  }
+  #input-bar label { font-family: var(--mono); font-size: 10px; color: var(--dim); white-space: nowrap; }
+  #text-input {
+    flex: 1; padding: 7px 12px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: #fff; font-family: var(--mono); font-size: 12px;
+    outline: none; transition: border-color .15s;
+  }
+  #text-input:focus { border-color: var(--accent); }
+  #target-select {
+    padding: 7px 10px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 11px;
+    outline: none; cursor: pointer;
+  }
+
+  /* ── Connect modal ── */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  #modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; width: 380px; max-width: 90vw;
+  }
+  .modal h2 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .modal p { font-size: 12px; color: var(--dim); margin-bottom: 20px; }
+  .modal label { display: block; font-family: var(--mono); font-size: 10px; color: var(--dim); margin-bottom: 4px; letter-spacing: .8px; }
+  .modal input {
+    width: 100%; padding: 9px 12px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: #fff; font-family: var(--mono); font-size: 13px;
+    outline: none; margin-bottom: 14px; transition: border-color .15s;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  #modal-status { font-family: var(--mono); font-size: 11px; color: var(--accent); min-height: 16px; margin-bottom: 8px; }
+
+  /* ── Empty state ── */
+  #empty-state {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; gap: 12px; color: var(--dim); font-family: var(--mono); font-size: 12px; text-align: center;
+  }
+  #empty-state svg { width: 48px; height: 48px; stroke: var(--dim); fill: none; opacity: .3; }
+
+  /* ── Fullscreen overlay ── */
+  #fullscreen-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.92);
+    z-index: 200; align-items: center; justify-content: center; gap: 16px;
+  }
+  #fullscreen-overlay.open { display: flex; }
+  #fullscreen-phone {
+    position: relative; height: 90vh; aspect-ratio: 9/16; border-radius: 14px; overflow: hidden;
+    border: 2px solid var(--accent); cursor: crosshair;
+  }
+  #fullscreen-phone img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  #fullscreen-close {
+    position: absolute; top: -40px; right: 0;
+    font-family: var(--mono); font-size: 11px; color: var(--dim); cursor: pointer;
+    background: none; border: none; padding: 4px 8px;
+  }
+  #fullscreen-close:hover { color: #fff; }
+  #fs-label { position: absolute; bottom: -28px; left: 0; font-family: var(--mono); font-size: 10px; color: var(--dim); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">Phone<span>Control</span></div>
+    <div class="status-dot" id="ws-dot"></div>
+    <span id="device-count" style="margin-left:8px">0 enheder</span>
+    <div class="header-right">
+      <button class="btn primary" onclick="openModal()">+ Tilslut telefon</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Sidebar -->
+    <aside>
+      <div class="aside-header">Tilsluttede enheder</div>
+      <div id="device-list"></div>
+    </aside>
+
+    <!-- Main grid area -->
+    <div id="grid-area">
+      <div class="grid-toolbar">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-right:4px">LAYOUT</span>
+        <div class="layout-btn active" data-cols="auto" onclick="setLayout(this)" title="Auto">
+          <svg viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
+        </div>
+        <div class="layout-btn" data-cols="2" onclick="setLayout(this)" title="2 kolonner">
+          <svg viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="12" rx="1"/><rect x="8" y="1" width="5" height="12" rx="1"/></svg>
+        </div>
+        <div class="layout-btn" data-cols="3" onclick="setLayout(this)" title="3 kolonner">
+          <svg viewBox="0 0 14 14"><rect x="0" y="1" width="3" height="12" rx="1"/><rect x="5" y="1" width="3" height="12" rx="1"/><rect x="10" y="1" width="3" height="12" rx="1"/></svg>
+        </div>
+        <div class="layout-btn" data-cols="5" onclick="setLayout(this)" title="5 kolonner">
+          <svg viewBox="0 0 14 14"><rect x="0" y="1" width="1.5" height="12" rx="0.5"/><rect x="3" y="1" width="1.5" height="12" rx="0.5"/><rect x="6" y="1" width="1.5" height="12" rx="0.5"/><rect x="9" y="1" width="1.5" height="12" rx="0.5"/><rect x="12" y="1" width="1.5" height="12" rx="0.5"/></svg>
+        </div>
+        <div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--dim)" id="selected-label">Klik en telefon for at vælge</div>
+      </div>
+
+      <div id="phone-grid"></div>
+
+      <div id="empty-state">
+        <svg viewBox="0 0 24 24" stroke-width="1"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+        <div>Ingen telefoner tilsluttet</div>
+        <div style="font-size:10px;margin-top:4px">Tryk "+ Tilslut telefon" for at komme i gang</div>
+      </div>
+
+      <!-- Input bar -->
+      <div id="input-bar">
+        <label>SEND TEKST →</label>
+        <select id="target-select">
+          <option value="all">Alle telefoner</option>
+        </select>
+        <input type="text" id="text-input" placeholder="Skriv her og tryk Enter..." autocomplete="off">
+        <button class="btn" onclick="sendText()">Send</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Connect modal -->
+<div id="modal-overlay">
+  <div class="modal">
+    <h2>Tilslut telefon</h2>
+    <p>Telefonen skal have ADB over netværk aktiveret (port 5555)</p>
+    <label>IP-ADRESSE</label>
+    <input type="text" id="conn-host" placeholder="192.168.1.100" autocomplete="off">
+    <label>PORT (standard: 5555)</label>
+    <input type="number" id="conn-port" value="5555">
+    <div id="modal-status"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Annuller</button>
+      <button class="btn primary" onclick="connectDevice()">Tilslut</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fullscreen overlay -->
+<div id="fullscreen-overlay" onclick="closeFullscreen(event)">
+  <div id="fullscreen-phone">
+    <button id="fullscreen-close" onclick="closeFullscreen()">✕ Luk</button>
+    <img id="fs-img" src="" alt="">
+    <div id="fs-label"></div>
+  </div>
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────
+// State
+// ────────────────────────────────────────────────────────────────
+let devices        = [];
+let selectedDevice = null;
+let fullscreenId   = null;
+let ws             = null;
+
+// ────────────────────────────────────────────────────────────────
+// WebSocket
+// ────────────────────────────────────────────────────────────────
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+
+  ws.onopen  = () => document.getElementById('ws-dot').classList.add('live');
+  ws.onclose = () => {
+    document.getElementById('ws-dot').classList.remove('live');
+    setTimeout(connectWS, 3000);
+  };
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'devices') { devices = msg.data; renderAll(); }
+  };
+}
+connectWS();
+
+// ────────────────────────────────────────────────────────────────
+// Render
+// ────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderSidebar();
+  renderGrid();
+  renderTargetSelect();
+  document.getElementById('device-count').textContent = `${devices.length} enhed${devices.length !== 1 ? 'er' : ''}`;
+}
+
+function renderSidebar() {
+  const list = document.getElementById('device-list');
+  if (!devices.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--dim)">Ingen enheder</div>';
+    return;
+  }
+  list.innerHTML = devices.map(d => `
+    <div class="device-item ${d.id === selectedDevice ? 'active' : ''} ${!d.connected ? 'device-offline' : ''}"
+         onclick="selectDevice('${d.id}')">
+      <div class="device-icon ${d.connected ? 'online' : ''}"></div>
+      <div style="overflow:hidden;min-width:0">
+        <div class="device-name">${esc(d.name)}</div>
+        <div class="device-id">${esc(d.id)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderGrid() {
+  const grid   = document.getElementById('phone-grid');
+  const empty  = document.getElementById('empty-state');
+
+  if (!devices.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Keep existing cards, add new, remove gone
+  const existing = new Set(Array.from(grid.querySelectorAll('.phone-card')).map(el => el.dataset.id));
+  const current  = new Set(devices.map(d => d.id));
+
+  // Remove stale
+  grid.querySelectorAll('.phone-card').forEach(el => {
+    if (!current.has(el.dataset.id)) el.remove();
+  });
+
+  // Add new
+  devices.forEach(d => {
+    if (!existing.has(d.id)) {
+      grid.insertAdjacentHTML('beforeend', phoneCardHTML(d));
+      const card = grid.querySelector(`[data-id="${d.id}"]`);
+      const img  = card.querySelector('img');
+      if (d.connected) img.src = `/stream/${d.id}?t=${Date.now()}`;
+      bindCardEvents(card, d);
+    } else {
+      // Update status badge
+      const card  = grid.querySelector(`[data-id="${d.id}"]`);
+      const badge = card.querySelector('.card-badge');
+      if (badge) {
+        badge.textContent  = d.connected ? 'LIVE' : 'OFFLINE';
+        badge.className    = 'card-badge' + (d.connected ? '' : ' offline');
+      }
+    }
+    const card = grid.querySelector(`[data-id="${d.id}"]`);
+    if (card) card.classList.toggle('selected', d.id === selectedDevice);
+  });
+}
+
+function phoneCardHTML(d) {
+  return `
+    <div class="phone-card" data-id="${d.id}">
+      <div class="card-header">
+        <div class="card-title">${esc(d.name)}</div>
+        <div class="card-badge ${d.connected ? '' : 'offline'}">${d.connected ? 'LIVE' : 'OFFLINE'}</div>
+      </div>
+      <div class="screen-wrap">
+        ${d.connected
+          ? `<img src="/stream/${d.id}" alt="skærm" draggable="false">`
+          : `<div class="offline-msg">
+               <svg viewBox="0 0 24 24" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="17" x2="12" y2="17.5" stroke-linecap="round" stroke-width="2"/></svg>
+               <span>Ikke tilsluttet</span>
+             </div>`
+        }
+      </div>
+      <div class="card-controls">
+        <button class="key-btn" data-key="KEYCODE_BACK">◄ BACK</button>
+        <button class="key-btn" data-key="KEYCODE_HOME">● HOME</button>
+        <button class="key-btn" data-key="KEYCODE_APP_SWITCH">■ RECENTS</button>
+        <button class="key-btn" style="color:var(--warn);border-color:var(--warn)" onclick="openFullscreen('${d.id}')">⛶</button>
+      </div>
+    </div>`;
+}
+
+function bindCardEvents(card, d) {
+  // Hardware-knapper
+  card.querySelectorAll('.key-btn[data-key]').forEach(btn => {
+    btn.onclick = e => { e.stopPropagation(); sendKey(d.id, btn.dataset.key); };
+  });
+
+  // Tap på skærm
+  const wrap = card.querySelector('.screen-wrap');
+  if (wrap) {
+    wrap.addEventListener('click', e => {
+      selectDevice(d.id);
+      if (!d.connected) return;
+      const rect  = wrap.getBoundingClientRect();
+      const relX  = (e.clientX - rect.left)  / rect.width;
+      const relY  = (e.clientY - rect.top)   / rect.height;
+      const phoneW = 1080, phoneH = 1920;
+      sendTap(d.id, Math.round(relX * phoneW), Math.round(relY * phoneH));
+
+      // Ripple
+      const rip = document.createElement('div');
+      rip.className = 'tap-ripple';
+      rip.style.left = (e.clientX - rect.left) + 'px';
+      rip.style.top  = (e.clientY - rect.top)  + 'px';
+      wrap.appendChild(rip);
+      setTimeout(() => rip.remove(), 500);
+    });
+  }
+}
+
+function renderTargetSelect() {
+  const sel = document.getElementById('target-select');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="all">Alle telefoner</option>' +
+    devices.filter(d => d.connected).map(d =>
+      `<option value="${d.id}">${esc(d.name)}</option>`
+    ).join('');
+  if (cur) sel.value = cur;
+}
+
+// ────────────────────────────────────────────────────────────────
+// Interaktion
+// ────────────────────────────────────────────────────────────────
+function selectDevice(id) {
+  selectedDevice = id;
+  renderAll();
+  const d = devices.find(x => x.id === id);
+  document.getElementById('selected-label').textContent = d ? `Valgt: ${d.name}` : 'Ingen valgt';
+  document.getElementById('target-select').value = id;
+}
+
+async function sendTap(deviceId, x, y) {
+  await fetch(`/input/${encodeURIComponent(deviceId)}/tap`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ x, y })
+  });
+}
+
+async function sendKey(deviceId, key) {
+  await fetch(`/input/${encodeURIComponent(deviceId)}/key`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key })
+  });
+}
+
+async function sendText() {
+  const text   = document.getElementById('text-input').value.trim();
+  const target = document.getElementById('target-select').value;
+  if (!text) return;
+
+  const targets = target === 'all'
+    ? devices.filter(d => d.connected).map(d => d.id)
+    : [target];
+
+  for (const id of targets) {
+    await fetch(`/input/${encodeURIComponent(id)}/text`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+  }
+  document.getElementById('text-input').value = '';
+}
+
+document.getElementById('text-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendText();
+});
+
+// ────────────────────────────────────────────────────────────────
+// Fuldskærm
+// ────────────────────────────────────────────────────────────────
+function openFullscreen(deviceId) {
+  const d = devices.find(x => x.id === deviceId);
+  if (!d || !d.connected) return;
+  fullscreenId = deviceId;
+  const overlay = document.getElementById('fullscreen-overlay');
+  const img     = document.getElementById('fs-img');
+  img.src       = `/stream/${deviceId}?t=${Date.now()}`;
+  document.getElementById('fs-label').textContent = d.name;
+
+  const phone = document.getElementById('fullscreen-phone');
+  phone.addEventListener('click', fsHandleTap);
+
+  overlay.classList.add('open');
+}
+
+function fsHandleTap(e) {
+  if (e.target.id === 'fullscreen-close') return;
+  const phone = document.getElementById('fullscreen-phone');
+  const rect  = phone.getBoundingClientRect();
+  const relX  = (e.clientX - rect.left) / rect.width;
+  const relY  = (e.clientY - rect.top)  / rect.height;
+  sendTap(fullscreenId, Math.round(relX * 1080), Math.round(relY * 1920));
+
+  const rip = document.createElement('div');
+  rip.className = 'tap-ripple';
+  rip.style.left = (e.clientX - rect.left) + 'px';
+  rip.style.top  = (e.clientY - rect.top)  + 'px';
+  phone.appendChild(rip);
+  setTimeout(() => rip.remove(), 500);
+}
+
+function closeFullscreen(e) {
+  if (e && e.target !== document.getElementById('fullscreen-overlay') &&
+           e.target !== document.getElementById('fullscreen-close')) return;
+  document.getElementById('fullscreen-overlay').classList.remove('open');
+  document.getElementById('fs-img').src = '';
+  document.getElementById('fullscreen-phone').removeEventListener('click', fsHandleTap);
+  fullscreenId = null;
+}
+
+// ────────────────────────────────────────────────────────────────
+// Modal
+// ────────────────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('conn-host').focus();
+  document.getElementById('modal-status').textContent = '';
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+async function connectDevice() {
+  const host   = document.getElementById('conn-host').value.trim();
+  const port   = document.getElementById('conn-port').value || 5555;
+  const status = document.getElementById('modal-status');
+  if (!host) { status.textContent = 'Indtast en IP-adresse'; return; }
+
+  status.textContent = 'Forbinder...';
+  try {
+    const r = await fetch('/api/connect', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host, port: Number(port) })
+    });
+    const data = await r.json();
+    if (data.error) { status.textContent = '✕ ' + data.error; status.style.color = 'var(--warn)'; return; }
+    status.textContent = '✓ ' + data.result;
+    status.style.color = 'var(--accent)';
+    setTimeout(closeModal, 1500);
+  } catch (e) {
+    status.textContent = '✕ Serverfejl';
+    status.style.color = 'var(--warn)';
+  }
+}
+
+document.getElementById('conn-host').addEventListener('keydown', e => { if (e.key === 'Enter') connectDevice(); });
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// ────────────────────────────────────────────────────────────────
+// Layout
+// ────────────────────────────────────────────────────────────────
+function setLayout(btn) {
+  document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const grid = document.getElementById('phone-grid');
+  grid.className = '';
+  grid.id = 'phone-grid';
+  const cols = btn.dataset.cols;
+  if (cols !== 'auto') grid.classList.add(`layout-${cols}`);
+}
+
+// ────────────────────────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+</script>
+</body>
+</html>
