@@ -158,12 +158,13 @@ export default function GoLivePage() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace("/login"); return }
-      const { data } = await supabase
+      const { data: rows } = await supabase
         .from("listings")
         .select("id, display_name, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at, cam_goal_title, cam_goal_target, cam_goal_active")
         .eq("user_id", user.id)
-        .single()
-      if (!data) { router.replace("/dashboard"); return }
+        .limit(1)
+      const data = rows?.[0] ?? null
+      if (!data) { setError("No profile found. Please create your profile first."); setLoading(false); return }
       setListing(data)
       if (data.cam_live) {
         setIsLive(true)
@@ -382,6 +383,26 @@ export default function GoLivePage() {
         <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
           <div style={{ width: 28, height: 28, border: "2px solid #000", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (error && !listing) {
+    return (
+      <DashboardLayout>
+        <div style={{ maxWidth: 480, margin: "80px auto", textAlign: "center", padding: "0 16px" }}>
+          <div style={{ width: 64, height: 64, borderRadius: 16, background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>No profile yet</h2>
+          <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>
+            You need to create your profile before you can go live. Set up your profile to start streaming.
+          </p>
+          <a href="/create-profile"
+            style={{ display: "inline-block", padding: "12px 32px", background: "#DC2626", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+            Create your profile
+          </a>
         </div>
       </DashboardLayout>
     )
