@@ -357,8 +357,8 @@ function LocationMenu({
             placeholder={t.filter_search_country}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full text-sm px-3 py-1.5 border border-gray-200 outline-none focus:border-gray-400"
-            style={{ borderRadius: 0 }}
+            className="w-full px-3 py-1.5 border border-gray-200 outline-none focus:border-gray-400"
+            style={{ borderRadius: 0, fontSize: 16 }}
           />
         </div>
         {/* All countries */}
@@ -644,8 +644,8 @@ function FilterBarInner() {
             onChange={e => setQ(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") update({ q }) }}
             onBlur={() => { if (q !== (searchParams.get("q") ?? "")) update({ q }) }}
-            className="w-full h-9 pl-8 pr-3 text-sm bg-white border border-gray-200 outline-none focus:border-gray-400"
-            style={{ borderRadius: 0 }}
+            className="w-full h-9 pl-8 pr-3 bg-white border border-gray-200 outline-none focus:border-gray-400"
+            style={{ borderRadius: 0, fontSize: 16 }}
           />
         </div>
 
@@ -662,8 +662,8 @@ function FilterBarInner() {
               onChange={e => setQ(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") update({ q }) }}
               onBlur={() => { if (q !== (searchParams.get("q") ?? "")) update({ q }) }}
-              className="h-9 w-44 pl-8 pr-3 text-sm bg-white border border-gray-200 outline-none focus:border-gray-400"
-              style={{ borderRadius: 0 }}
+              className="h-9 w-44 pl-8 pr-3 bg-white border border-gray-200 outline-none focus:border-gray-400"
+              style={{ borderRadius: 0, fontSize: 16 }}
             />
           </div>
 
