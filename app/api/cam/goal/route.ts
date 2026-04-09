@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const getAdmin = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+
 
 export async function GET(req: NextRequest) {
   const listingId = req.nextUrl.searchParams.get("listingId")
   if (!listingId) return NextResponse.json({ error: "Missing listingId" }, { status: 400 })
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getAdmin()
     .from("listings")
     .select("cam_goal_title, cam_goal_target, cam_goal_current, cam_goal_active")
     .eq("id", listingId)
@@ -22,17 +21,17 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "") ?? ""
-  const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+  const { data: { user } } = await getAdmin().auth.getUser(token)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { listingId, title, target, active } = await req.json()
   if (!listingId) return NextResponse.json({ error: "Missing listingId" }, { status: 400 })
 
   // Verify ownership
-  const { data: listing } = await supabaseAdmin.from("listings").select("user_id").eq("id", listingId).single()
+  const { data: listing } = await getAdmin().from("listings").select("user_id").eq("id", listingId).single()
   if (!listing || listing.user_id !== user.id) return NextResponse.json({ error: "Not your listing" }, { status: 403 })
 
-  const { error } = await supabaseAdmin.from("listings").update({
+  const { error } = await getAdmin().from("listings").update({
     cam_goal_title: title,
     cam_goal_target: target,
     cam_goal_active: active,
@@ -47,7 +46,7 @@ export async function PUT(req: NextRequest) {
   const { listingId, amount } = await req.json()
   if (!listingId || !amount) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
 
-  const { data: listing } = await supabaseAdmin
+  const { data: listing } = await getAdmin()
     .from("listings")
     .select("cam_goal_current")
     .eq("id", listingId)
@@ -55,7 +54,7 @@ export async function PUT(req: NextRequest) {
 
   if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const { error } = await supabaseAdmin.from("listings").update({
+  const { error } = await getAdmin().from("listings").update({
     cam_goal_current: (listing.cam_goal_current || 0) + amount,
   }).eq("id", listingId)
 

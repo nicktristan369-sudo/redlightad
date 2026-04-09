@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+
+const getAdmin = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 export async function GET(req: NextRequest) {
   const listingId = req.nextUrl.searchParams.get("listingId")
   if (!listingId) return NextResponse.json({ error: "Missing listingId" }, { status: 400 })
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getAdmin()
     .from("listings")
     .select("cam_status, cam_available_until, cam_scheduled_at")
     .eq("id", listingId)
@@ -26,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   // Verify user from token
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+  const { data: { user }, error: authError } = await getAdmin().auth.getUser(token)
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json()
@@ -38,7 +36,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify ownership
-  const { data: listing } = await supabaseAdmin
+  const { data: listing } = await getAdmin()
     .from("listings")
     .select("user_id")
     .eq("id", listingId)
@@ -49,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Update
-  const { error } = await supabaseAdmin
+  const { error } = await getAdmin()
     .from("listings")
     .update({
       cam_status: status,
