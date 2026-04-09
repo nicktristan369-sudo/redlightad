@@ -152,7 +152,7 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
                         padding: 3,
                         background: isViewed
                           ? "linear-gradient(135deg, #D1D5DB, #9CA3AF)"
-                          : "linear-gradient(135deg, #e91e8c, #f43f5e, #dc2626)",
+                          : "#DC2626",
                         boxShadow: isViewed ? "none" : "0 0 0 0 transparent",
                       }}>
                         {/* White gap ring */}
