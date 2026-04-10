@@ -142,6 +142,7 @@ export default function CamRoomPage() {
   const [countdown, setCountdown] = useState("")
   const [recordings, setRecordings] = useState<{ id: string; title: string; cloudinary_url: string; duration_seconds: number; created_at: string }[]>([])
   const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null)
+  const [showReplayChatHint, setShowReplayChatHint] = useState(false)
   const chatRef = useRef<HTMLDivElement>(null)
   const audioUnlocked = useRef(false)
   const seenMsgIds = useRef<Set<string>>(new Set())
@@ -585,17 +586,29 @@ export default function CamRoomPage() {
                   key={playingRecordingId}
                   src={(() => {
                     const url = recordings.find(r => r.id === playingRecordingId)?.cloudinary_url || ""
-                    // Convert to mp4 for cross-browser compatibility (Safari/iOS)
                     return url.replace("/upload/", "/upload/f_mp4,vc_h264/").replace(/\.(webm|ogg)$/, ".mp4")
                   })()}
                   controls
                   autoPlay
                   style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
                 />
-                <button onClick={() => setPlayingRecordingId(null)}
-                  style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,0.7)", border: "none", borderRadius: 6, padding: "5px 10px", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-                  ✕ Close
-                </button>
+                {/* REPLAY badge — top left */}
+                <div style={{ position: "absolute", top: 10, left: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "4px 10px", display: "flex", alignItems: "center", gap: 6 }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="#D1D5DB"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: "#D1D5DB", letterSpacing: "0.08em" }}>REPLAY</span>
+                  </div>
+                  <button onClick={() => setPlayingRecordingId(null)}
+                    style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", color: "#9CA3AF", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                    ✕
+                  </button>
+                </div>
+                {/* Stream ended notice at bottom */}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85), transparent)", padding: "20px 14px 10px" }}>
+                  <p style={{ fontSize: 12, color: "#9CA3AF", margin: 0 }}>
+                    This stream has ended — you&apos;re watching a recording from {new Date(recordings.find(r => r.id === playingRecordingId)?.created_at || "").toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                  </p>
+                </div>
               </div>
             ) : !listing.cam_live ? (
               /* Offline / Available / Scheduled state */
@@ -930,18 +943,36 @@ export default function CamRoomPage() {
                     <Link href="/login" style={{ fontSize: 13, color: "#DC2626", textDecoration: "none", fontWeight: 600 }}>Log in to chat</Link>
                   </div>
                 ) : (
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <input
-                      value={newMessage}
-                      onChange={e => setNewMessage(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && sendMessage()}
-                      placeholder="Send a message..."
-                      style={{ flex: 1, background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13, outline: "none" }}
-                    />
-                    <button onClick={() => sendMessage()}
-                      style={{ padding: "8px 12px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                      SEND
-                    </button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {/* Replay chat hint */}
+                    {playingRecordingId && showReplayChatHint && (
+                      <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 10, padding: "10px 12px" }}>
+                        <p style={{ fontSize: 12, color: "#F9A8D4", margin: "0 0 3px", fontWeight: 700 }}>
+                          😈 This stream has ended
+                        </p>
+                        <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 6px", lineHeight: 1.4 }}>
+                          {listing.display_name} isn&apos;t live right now — but she&apos;ll see your message when she returns 💋 A tip would make her very happy...
+                        </p>
+                        <button onClick={() => { setShowReplayChatHint(false); setShowTip(true) }}
+                          style={{ padding: "5px 14px", background: "#DC2626", border: "none", borderRadius: 6, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                          💝 Send her a tip
+                        </button>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        value={newMessage}
+                        onChange={e => setNewMessage(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && sendMessage()}
+                        onFocus={() => { if (playingRecordingId) setShowReplayChatHint(true) }}
+                        placeholder={playingRecordingId ? `Leave ${listing.display_name} a message... 💬` : "Send a message..."}
+                        style={{ flex: 1, background: "#1A1A1A", border: `1px solid ${playingRecordingId ? "rgba(220,38,38,0.3)" : "#2A2A2A"}`, borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 13, outline: "none" }}
+                      />
+                      <button onClick={() => sendMessage()}
+                        style={{ padding: "8px 12px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                        SEND
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
