@@ -113,7 +113,8 @@ export default function RegisterPage() {
     if (authError) { setError(authError.message); setLoading(false); return; }
     setUserId(data.user?.id ?? null);
     setLoading(false);
-    setStep(3);
+    // Skip phone step — go directly to success (phone verify is optional, done from dashboard)
+    setPhoneVerified(true);
   };
 
   const sendCode = async () => {
@@ -203,13 +204,13 @@ export default function RegisterPage() {
       {/* Step indicator */}
       <div className="w-full" style={{ maxWidth: "680px" }}>
         <div className="flex items-center justify-center gap-2 mb-6">
-          {[1, 2, 3].map(s => (
+          {[1, 2].map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold transition-colors"
                 style={{ background: step >= s ? "#000" : "#E5E5E5", color: step >= s ? "#fff" : "#9CA3AF" }}>
                 {s}
               </div>
-              {s < 3 && <div className="w-8 h-0.5" style={{ background: step > s ? "#000" : "#E5E5E5" }} />}
+              {s < 2 && <div className="w-8 h-0.5" style={{ background: step > s ? "#000" : "#E5E5E5" }} />}
             </div>
           ))}
         </div>
@@ -220,7 +221,7 @@ export default function RegisterPage() {
           {step === 1 && (
             <div className="p-8 sm:p-10">
               <div className="text-center mb-8">
-                <p className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3">{t.reg_step_of} 1/3</p>
+                <p className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3">{t.reg_step_of} 1/2</p>
                 <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">{t.reg_select_type}</h1>
                 <p className="text-base text-gray-500">{t.reg_choose_how}</p>
               </div>
@@ -290,7 +291,7 @@ export default function RegisterPage() {
                 <span className="inline-flex items-center rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "#000" }}>
                   {accountType === "provider" ? t.auth_provider : t.auth_customer}
                 </span>
-                <span className="text-[12px] text-gray-400 ml-auto">{t.reg_step_of} 2/3</span>
+                <span className="text-[12px] text-gray-400 ml-auto">{t.reg_step_of} 2/2</span>
               </div>
               <div className="flex justify-center mb-6"><Logo variant="light" height={28} /></div>
               <h1 className="text-[24px] font-bold text-center mb-1">{t.auth_register_title}</h1>
