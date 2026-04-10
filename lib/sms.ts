@@ -18,7 +18,12 @@ export async function sendSMS({ to, message, sender = process.env.GATEWAYAPI_SEN
   let phone = to.replace(/[\s\-\.\(\)]/g, '')
   if (phone.startsWith('+')) phone = phone.slice(1)
   if (phone.startsWith('00')) phone = phone.slice(2)
-  if (phone.length === 8) phone = '45' + phone
+  // Dansk 8-cifret nummer uden landekode
+  if (phone.length === 8 && /^[2-9]/.test(phone)) phone = '45' + phone
+  // Dansk nummer med ledende 0 (sjælden)
+  else if (phone.length === 9 && phone.startsWith('0')) phone = '45' + phone.slice(1)
+  // Thailandsk lokalt nummer (0XXXXXXXXX → 66XXXXXXXXX)
+  else if (phone.length === 10 && phone.startsWith('0')) phone = '66' + phone.slice(1)
 
   try {
     const response = await fetch('https://messaging.gatewayapi.com/mobile/single', {

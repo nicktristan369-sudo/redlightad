@@ -432,8 +432,27 @@ export default function AdminBrugerePage() {
                         <span className="flex items-center gap-1">
                           {u.phone}
                           {u.phone_verified
-                            ? <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#16A34A" }} title="Verificeret" />
-                            : <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#F59E0B" }} title="Ikke verificeret" />}
+                            ? <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#16A34A" }} title="Verified" />
+                            : (
+                              <button
+                                title="Manually verify phone"
+                                onClick={async () => {
+                                  if (!confirm(`Manually verify ${u.phone}?`)) return
+                                  const { createClient } = await import("@/lib/supabase")
+                  const { data: { session } } = await createClient().auth.getSession()
+                                  const res = await fetch("/api/admin/verify-phone", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
+                                    body: JSON.stringify({ phone: u.phone }),
+                                  })
+                                  if (res.ok) setProfiles(p => p.map(x => x.id === u.id ? { ...x, phone_verified: true } : x))
+                                  else alert("Failed")
+                                }}
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1 }}
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#F59E0B" }} title="Not verified — click to verify manually" />
+                              </button>
+                            )}
                         </span>
                       ) : "—"}
                     </td>
