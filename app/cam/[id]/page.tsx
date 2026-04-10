@@ -578,6 +578,25 @@ export default function CamRoomPage() {
               <LiveKitRoom serverUrl={livekitWsUrl} token={livekitToken} connect={true} audio={true} video={false} style={{ width: "100%", height: "100%" }}>
                 <LiveViewer onViewerCount={setViewerCount} />
               </LiveKitRoom>
+            ) : playingRecordingId ? (
+              /* ── Replay player — replaces offline state ── */
+              <div style={{ width: "100%", height: "100%", background: "#000", position: "relative" }}>
+                <video
+                  key={playingRecordingId}
+                  src={(() => {
+                    const url = recordings.find(r => r.id === playingRecordingId)?.cloudinary_url || ""
+                    // Convert to mp4 for cross-browser compatibility (Safari/iOS)
+                    return url.replace("/upload/", "/upload/f_mp4,vc_h264/").replace(/\.(webm|ogg)$/, ".mp4")
+                  })()}
+                  controls
+                  autoPlay
+                  style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                />
+                <button onClick={() => setPlayingRecordingId(null)}
+                  style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,0.7)", border: "none", borderRadius: 6, padding: "5px 10px", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                  ✕ Close
+                </button>
+              </div>
             ) : !listing.cam_live ? (
               /* Offline / Available / Scheduled state */
               listing.cam_status === "available" ? (
@@ -688,17 +707,7 @@ export default function CamRoomPage() {
                     </div>
                   )}
 
-                  {/* Inline video player for recording */}
-                  {playingRecordingId && (
-                    <div style={{ width: "100%", maxWidth: 420, borderRadius: 12, overflow: "hidden", background: "#000" }}>
-                      <video
-                        src={recordings.find(r => r.id === playingRecordingId)?.cloudinary_url}
-                        controls
-                        autoPlay
-                        style={{ width: "100%", maxHeight: 280, display: "block" }}
-                      />
-                    </div>
-                  )}
+
 
                   {currentUser && (
                     <button onClick={async () => {
@@ -860,7 +869,7 @@ export default function CamRoomPage() {
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
                             </button>
                             {playingRecordingId === rec.id && (
-                              <video src={rec.cloudinary_url} controls autoPlay
+                              <video src={rec.cloudinary_url.replace("/upload/", "/upload/f_mp4,vc_h264/").replace(/\.(webm|ogg)$/, ".mp4")} controls autoPlay
                                 style={{ width: "100%", borderRadius: 8, marginTop: 6, background: "#000", display: "block", maxHeight: 220 }} />
                             )}
                           </div>
