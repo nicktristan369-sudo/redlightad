@@ -16,6 +16,11 @@ const DIAL_CODES = [
   { code: "+47", iso: "NO", name: "Norway" },
   { code: "+358", iso: "FI", name: "Finland" },
   { code: "+44", iso: "GB", name: "United Kingdom" },
+  { code: "+66", iso: "TH", name: "Thailand" },
+  { code: "+63", iso: "PH", name: "Philippines" },
+  { code: "+60", iso: "MY", name: "Malaysia" },
+  { code: "+62", iso: "ID", name: "Indonesia" },
+  { code: "+84", iso: "VN", name: "Vietnam" },
   { code: "+49", iso: "DE", name: "Germany" },
   { code: "+33", iso: "FR", name: "France" },
   { code: "+31", iso: "NL", name: "Netherlands" },
@@ -23,8 +28,6 @@ const DIAL_CODES = [
   { code: "+39", iso: "IT", name: "Italy" },
   { code: "+1",  iso: "US", name: "USA / Canada" },
   { code: "+61", iso: "AU", name: "Australia" },
-  { code: "+66", iso: "TH", name: "Thailand" },
-  { code: "+63", iso: "PH", name: "Philippines" },
   { code: "+55", iso: "BR", name: "Brazil" },
   { code: "+52", iso: "MX", name: "Mexico" },
   { code: "+48", iso: "PL", name: "Poland" },
@@ -45,7 +48,6 @@ const DIAL_CODES = [
   { code: "+82", iso: "KR", name: "South Korea" },
   { code: "+86", iso: "CN", name: "China" },
   { code: "+91", iso: "IN", name: "India" },
-  { code: "+60", iso: "MY", name: "Malaysia" },
 ];
 
 const RESEND_DELAY = 30;

@@ -261,11 +261,7 @@ export default function OpretAnnoncePage() {
       setLoading(false)
       return
     }
-    if (form.show_phone && form.phone && !phoneVerified) {
-      setError("Please verify your phone number before publishing.")
-      setLoading(false)
-      return
-    }
+    // Phone verification is optional — do not block submission
 
     try {
       const supabase = createClient();
