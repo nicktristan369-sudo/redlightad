@@ -374,15 +374,21 @@ export default function PremiumCarousel({
                     staggerDelay={cardIdx * 800}
                   />
 
-                  {/* Ribbon badge */}
+                  {/* Tier badge */}
                   {(isVip || isFeatured) && (
-                    <div className="absolute top-0 left-0 overflow-hidden" style={{ width: "72px", height: "72px" }}>
-                      <div
-                        className={`absolute text-center text-[9px] font-black tracking-widest py-1 ${isVip ? "bg-yellow-500 text-black" : "bg-gray-700 text-gray-200"}`}
-                        style={{ width: "96px", top: "18px", left: "-24px", transform: "rotate(-45deg)" }}
-                      >
-                        {isVip ? "VIP" : "FEAT"}
-                      </div>
+                    <div style={{
+                      position: "absolute", top: 8, left: 8,
+                      fontSize: 9, fontWeight: 800, letterSpacing: "0.1em",
+                      padding: "3px 7px", borderRadius: 4,
+                      background: isVip
+                        ? "linear-gradient(135deg, #C9A84C, #F0D080, #C9A84C)"
+                        : "rgba(0,0,0,0.72)",
+                      color: isVip ? "#1a0f00" : "#E5E7EB",
+                      border: isVip ? "none" : "1px solid rgba(255,255,255,0.15)",
+                      backdropFilter: "blur(4px)",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                    }}>
+                      {isVip ? "VIP" : "TOP"}
                     </div>
                   )}
 
