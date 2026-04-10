@@ -49,13 +49,85 @@ import {
 } from "@/lib/listingOptions";
 import Link from "next/link";
 
-const SERVICE_OPTIONS = [
+// Comprehensive services list (alphabetically ordered)
+const ALL_SERVICES = [
+  "69 position",
+  "Anal sex",
+  "BDSM",
+  "Bondage",
+  "Casual photos",
+  "Classic vaginal sex",
+  "Couples",
+  "Cum in face",
+  "Cum in mouth",
+  "Cum on body",
+  "Cunnilingus",
+  "Deepthroat",
   "Dinner dates",
-  "Social events",
-  "Travel companion",
+  "Dirty talk",
+  "Domination",
+  "Double penetration anal",
+  "Double penetration vaginal",
+  "Duo with girl",
+  "Erotic massage",
+  "Erotic photos (during the meeting)",
+  "Extraball",
+  "Facesitting",
+  "Findom",
+  "Fingering",
+  "Fisting",
+  "Foot fetish",
+  "French kissing",
+  "Girlfriend experience (GFE)",
+  "Golden shower (give)",
+  "Golden shower (receive)",
+  "Group sex",
+  "Handjob",
+  "Kamasutra",
+  "Kissing",
+  "Massage",
+  "Masturbation",
+  "Oral sex",
+  "Oral sex (blowjob)",
+  "Oral without condom",
   "Private meetings",
+  "PSE (Porn star experience)",
+  "Role play",
+  "Social events",
+  "Squirting",
+  "Striptease",
+  "Submission",
+  "Swallowing",
+  "Tantric massage",
+  "Toys",
+  "Travel companion",
+  "Uniforms/Costumes",
+  "Video recording",
+  "Video recording (during meeting)",
   "Weekend getaways",
+  "With 2 men",
 ];
+
+const MOST_COMMON_SERVICES = [
+  "Oral sex",
+  "Classic vaginal sex",
+  "Anal sex",
+  "69 position",
+  "Kissing",
+  "Massage",
+  "Striptease",
+  "Girlfriend experience (GFE)",
+  "Casual photos",
+  "Dinner dates",
+  "Travel companion",
+  "Social events",
+  "Weekend getaways",
+  "Private meetings",
+];
+
+const OTHER_SERVICES = ALL_SERVICES.filter(s => !MOST_COMMON_SERVICES.includes(s));
+
+type ServiceEntry = { name: string; included: "" | "included" | "extra"; price: string };
 
 // Service label translations (key = English DB value)
 const SERVICE_LABELS: Record<string, Record<string, string>> = {
@@ -72,6 +144,26 @@ const GENDER_LABELS: Record<string, Record<string, string>> = {
   "trans":   { en:"Trans", da:"Trans", de:"Trans", fr:"Trans", es:"Trans", it:"Trans", pt:"Trans", nl:"Trans", sv:"Trans", no:"Trans", ar:"ترانس", th:"ทรานส์", ru:"Транс", pl:"Trans" },
 };
 
+// Helper: cm to feet/inches
+function cmToFt(cm: number): string {
+  const totalInches = Math.round(cm / 2.54);
+  return `${Math.floor(totalInches / 12)}'${totalInches % 12}"`;
+}
+
+// Helper: kg to lbs
+function kgToLbs(kg: number): number {
+  return Math.round(kg * 2.20462);
+}
+
+// Additional dropdowns data
+const ETHNICITY_OPTIONS = ["Asian", "Black", "Caucasian", "Indian", "Latin", "Middle Eastern", "Mixed", "Other"];
+const HAIR_LENGTH_OPTIONS = ["Bald", "Short", "Medium", "Long", "Very long"];
+const BREAST_TYPE_OPTIONS = ["Natural", "Silicone"];
+const ORIENTATION_OPTIONS = ["Straight", "Bisexual", "Lesbian", "Gay"];
+const PUBIC_HAIR_OPTIONS = ["Shaved completely", "Trimmed", "Natural", "Brazilian", "Landing strip"];
+const SMOKER_OPTIONS = ["No", "Yes - occasionally", "Yes - regularly"];
+const TATTOO_OPTIONS = ["No", "Small", "Large", "Multiple"];
+const PIERCING_OPTIONS = ["No", "Yes - discrete", "Yes - visible"];
 
 export default function OpretAnnoncePage() {
   const router = useRouter()
@@ -138,6 +230,18 @@ export default function OpretAnnoncePage() {
     };
     fetchTier();
   }, []);
+
+  const [serviceEntries, setServiceEntries] = useState<ServiceEntry[]>([]);
+
+  // Initialize service entries on mount
+  useEffect(() => {
+    const entries: ServiceEntry[] = [
+      ...MOST_COMMON_SERVICES.map(name => ({ name, included: "" as const, price: "" })),
+      ...OTHER_SERVICES.map(name => ({ name, included: "" as const, price: "" })),
+    ];
+    setServiceEntries(entries);
+  }, []);
+
   const [form, setForm] = useState({
     display_name: "",
     title: "",
@@ -152,25 +256,40 @@ export default function OpretAnnoncePage() {
     about: "",
     services: [] as string[],
     languages: [] as string[],
+    rate_30min: "",
     rate_1hour: "",
     rate_2hours: "",
-    rate_overnight: "",
-    rate_weekend: "",
+    rate_3hours: "",
+    rate_6hours: "",
+    rate_12hours: "",
+    rate_24hours: "",
+    rate_48hours: "",
     phone: "",
     whatsapp: "",
     telegram: "",
     snapchat: "",
     email: "",
-    height: "",
-    weight: "",
+    height_cm: "",
+    weight_kg: "",
     body_build: "",
     hair_color: "",
+    hair_length: "",
     eye_color: "",
     grooming: "",
     bra_size: "",
+    breast_type: "",
     nationality: "",
-    incall: false,
-    outcall: false,
+    ethnicity: "",
+    orientation: "",
+    pubic_hair: "",
+    smoker: "",
+    tattoo: "",
+    piercing: "",
+    available_for: "",
+    meeting_with: "",
+    travel: "",
+    pornstar: "No",
+    pornstar_verification: "",
     handicap_friendly: false,
     has_own_place: false,
     show_phone: false,
@@ -190,7 +309,7 @@ export default function OpretAnnoncePage() {
   };
 
   const validateStep1 = () => {
-    if (!form.title || !form.category || !form.gender || !form.age || !form.country) {
+    if (!form.display_name || !form.category || !form.gender || !form.age || !form.country || !form.languages[0] || !timezone) {
       setError("Please fill in all required fields.");
       return false;
     }
@@ -264,6 +383,11 @@ export default function OpretAnnoncePage() {
     }
     // Phone verification is optional — do not block submission
 
+    // Map serviceEntries to services array
+    const mappedServices = serviceEntries
+      .filter(s => s.included !== "")
+      .map(s => s.included === "included" ? s.name : `${s.name} (+€${s.price})`);
+
     try {
       const supabase = createClient();
       const {
@@ -290,12 +414,16 @@ export default function OpretAnnoncePage() {
         region: form.region,
         city: form.location,
         about: form.about,
-        services: form.services,
+        services: mappedServices,
         languages: form.languages,
-        rate_1hour: form.rate_1hour,
-        rate_2hours: form.rate_2hours,
-        rate_overnight: form.rate_overnight,
-        rate_weekend: form.rate_weekend,
+        rate_30min: form.rate_30min || null,
+        rate_1hour: form.rate_1hour || null,
+        rate_2hours: form.rate_2hours || null,
+        rate_3hours: form.rate_3hours || null,
+        rate_6hours: form.rate_6hours || null,
+        rate_12hours: form.rate_12hours || null,
+        rate_24hours: form.rate_24hours || null,
+        rate_48hours: form.rate_48hours || null,
         phone: form.phone,
         whatsapp: form.whatsapp,
         telegram: form.telegram,
@@ -303,16 +431,29 @@ export default function OpretAnnoncePage() {
         email: form.email,
         images: imageUrls,
         profile_image: imageUrls[0] || null,
-        height: form.height ? parseInt(form.height) : null,
-        weight: form.weight ? parseInt(form.weight) : null,
+        height: form.height_cm ? parseInt(form.height_cm) : null,
+        weight: form.weight_kg ? parseInt(form.weight_kg) : null,
         body_build: form.body_build || null,
         hair_color: form.hair_color || null,
+        hair_length: form.hair_length || null,
         eye_color: form.eye_color || null,
         grooming: form.grooming || null,
+        pubic_hair: form.pubic_hair || null,
         bra_size: form.bra_size || null,
+        breast_type: form.breast_type || null,
         nationality: form.nationality || null,
-        incall: form.incall,
-        outcall: form.outcall,
+        ethnicity: form.ethnicity || null,
+        orientation: form.orientation || null,
+        smoker: form.smoker || null,
+        tattoo: form.tattoo || null,
+        piercing: form.piercing || null,
+        available_for: form.available_for || null,
+        meeting_with: form.meeting_with || null,
+        travel: form.travel || null,
+        pornstar: form.pornstar === "Yes",
+        pornstar_verification: form.pornstar === "Yes" ? form.pornstar_verification : null,
+        incall: form.available_for === "Incall" || form.available_for === "Outcall + Incall",
+        outcall: form.available_for === "Outcall" || form.available_for === "Outcall + Incall",
         handicap_friendly: form.handicap_friendly,
         has_own_place: form.has_own_place,
         opening_hours: openingHours,
@@ -347,25 +488,40 @@ export default function OpretAnnoncePage() {
       about: "",
       services: [],
       languages: [],
+      rate_30min: "",
       rate_1hour: "",
       rate_2hours: "",
-      rate_overnight: "",
-      rate_weekend: "",
+      rate_3hours: "",
+      rate_6hours: "",
+      rate_12hours: "",
+      rate_24hours: "",
+      rate_48hours: "",
       phone: "",
       whatsapp: "",
       telegram: "",
       snapchat: "",
       email: "",
-      height: "",
-      weight: "",
+      height_cm: "",
+      weight_kg: "",
       body_build: "",
       hair_color: "",
+      hair_length: "",
       eye_color: "",
       grooming: "",
       bra_size: "",
+      breast_type: "",
       nationality: "",
-      incall: false,
-    outcall: false,
+      ethnicity: "",
+      orientation: "",
+      pubic_hair: "",
+      smoker: "",
+      tattoo: "",
+      piercing: "",
+      available_for: "",
+      meeting_with: "",
+      travel: "",
+      pornstar: "No",
+      pornstar_verification: "",
       handicap_friendly: false,
       has_own_place: false,
       show_phone: false,
@@ -474,24 +630,7 @@ export default function OpretAnnoncePage() {
                     placeholder="E.g. Sofia, Anna, Maria..."
                     value={form.display_name ?? ""}
                     onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
-                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
-                  />
-                </div>
-
-                {/* Alder */}
-                <div>
-                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    Your age <span style={{ color: "#DC2626" }}>*</span>
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={18}
-                    max={99}
-                    placeholder="18"
-                    value={form.age ?? ""}
-                    onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 8, fontSize: 16, outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
 
@@ -502,13 +641,16 @@ export default function OpretAnnoncePage() {
                     value={form.title}
                     onChange={(e) => updateField("title", e.target.value)}
                     placeholder="E.g. Sofia - Discreet escort in Copenhagen"
+                    style={{ fontSize: 16 }}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
                 </div>
 
                 {/* Who are you? */}
                 <div>
-                  <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wide">Who are you? *</label>
+                  <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wide">
+                    Who are you? <span style={{ color: "#DC2626" }}>*</span>
+                  </label>
                   <div className="grid grid-cols-4 gap-2">
                     {[
                       { gender: "female", category: "Escort",  label: GENDER_LABELS["female"]?.[locale] ?? "Woman" },
@@ -537,10 +679,13 @@ export default function OpretAnnoncePage() {
 
                 {/* Service type (category) */}
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Service type</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Service type <span style={{ color: "#DC2626" }}>*</span>
+                  </label>
                   <select
                     value={form.category}
                     onChange={(e) => updateField("category", e.target.value)}
+                    style={{ fontSize: 16 }}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   >
                     <option value="" disabled>
@@ -576,54 +721,8 @@ export default function OpretAnnoncePage() {
                     }}
                   />
                 </div>
-              </div>
 
-              <button
-                onClick={() => validateStep1() && setStep(2)}
-                className="mt-6 w-full rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
-              >
-                Continue
-              </button>
-            </div>
-          )}
-
-          {/* STEP 2 */}
-          {step === 2 && (
-            <div>
-              <h2 className="mb-6 text-xl font-bold text-gray-900">Step 2: About you and your services</h2>
-
-              <div className="space-y-5">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">About me</label>
-                  <textarea
-                    rows={5}
-                    value={form.about}
-                    onChange={(e) => updateField("about", e.target.value)}
-                    placeholder="Describe yourself and what you offer..."
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Services</label>
-                  <div className="flex flex-wrap gap-2">
-                    {SERVICE_OPTIONS.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => toggleArray("services", s)}
-                        className={`rounded-full border px-4 py-1.5 text-sm transition ${
-                          form.services.includes(s)
-                            ? "border-red-300 bg-red-100 text-red-700"
-                            : "border-gray-300 bg-white text-gray-600 hover:border-gray-400"
-                        }`}
-                      >
-                        {SERVICE_LABELS[s]?.[locale] ?? s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
+                {/* Languages */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
                     Languages <span className="text-red-500">*</span>
@@ -686,180 +785,595 @@ export default function OpretAnnoncePage() {
                   </div>
                 </div>
 
+                {/* Timezone */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-700">Rates</label>
-                    <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1">Enter in USD — visitors see local currency</span>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">
+                    Your timezone <span style={{ color: "#DC2626" }}>*</span>
+                  </label>
+                  <select
+                    value={timezone}
+                    onChange={e => setTimezone(e.target.value)}
+                    style={{ fontSize: 16 }}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 bg-white"
+                  >
+                    {TIMEZONE_OPTIONS.map(group => (
+                      <optgroup key={group.group} label={group.group}>
+                        {group.zones.map(tz => (
+                          <option key={tz} value={tz}>{tz.replace(/_/g, " ").replace(/\//g, " / ")}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={() => validateStep1() && setStep(2)}
+                className="mt-6 w-full rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Continue
+              </button>
+            </div>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <div>
+              <h2 className="mb-6 text-xl font-bold text-gray-900">Step 2: About you and your services</h2>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">About me</label>
+                  <textarea
+                    rows={5}
+                    value={form.about}
+                    onChange={(e) => updateField("about", e.target.value)}
+                    placeholder="Describe yourself and what you offer..."
+                    style={{ fontSize: 16 }}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  />
+                  <p style={{ fontSize: 11, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 6, padding: "6px 10px", marginTop: 6 }}>
+                    ⚠️ NOT ALLOWED in description: phone numbers, email addresses, website URLs, social media (FB, IG, TikTok) or OnlyFans links.
+                  </p>
+                </div>
+
+                {/* Services Table */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">Services</label>
+                  
+                  {/* Most Common Services */}
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Most Common Services</p>
+                    <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 8, overflow: "hidden" }}>
+                      {/* Header */}
+                      <div style={{ display: "grid", gridTemplateColumns: "30px 1fr 120px 120px", gap: 8, background: "#F9FAFB", padding: "10px 12px", borderBottom: "1px solid #E5E7EB", fontSize: 12, fontWeight: 600, color: "#6B7280" }}>
+                        <span></span>
+                        <span>Service</span>
+                        <span>Included</span>
+                        <span>Extra price</span>
+                      </div>
+                      {/* Rows */}
+                      {serviceEntries.filter(s => MOST_COMMON_SERVICES.includes(s.name)).map((service, idx) => {
+                        const isActive = service.included !== "";
+                        return (
+                          <div
+                            key={service.name}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "30px 1fr 120px 120px",
+                              gap: 8,
+                              padding: "8px 12px",
+                              alignItems: "center",
+                              borderBottom: "1px solid #F3F4F6",
+                              background: idx % 2 === 0 ? "#fff" : "#FAFAFA",
+                              opacity: isActive ? 1 : 0.5,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isActive}
+                              onChange={e => {
+                                setServiceEntries(prev => prev.map(s =>
+                                  s.name === service.name
+                                    ? { ...s, included: e.target.checked ? "included" : "", price: "" }
+                                    : s
+                                ))
+                              }}
+                              className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                            />
+                            <span style={{ fontSize: 14, color: "#374151" }}>{service.name}</span>
+                            <select
+                              disabled={!isActive}
+                              value={service.included}
+                              onChange={e => {
+                                setServiceEntries(prev => prev.map(s =>
+                                  s.name === service.name
+                                    ? { ...s, included: e.target.value as "" | "included" | "extra", price: e.target.value === "included" ? "" : s.price }
+                                    : s
+                                ))
+                              }}
+                              style={{ fontSize: 13, padding: "4px 8px", borderRadius: 6, border: "1px solid #D1D5DB" }}
+                              className="disabled:bg-gray-100 disabled:text-gray-400"
+                            >
+                              <option value="">Choose</option>
+                              <option value="included">Included</option>
+                              <option value="extra">Extra</option>
+                            </select>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <input
+                                type="text"
+                                disabled={!isActive || service.included !== "extra"}
+                                value={service.price}
+                                onChange={e => {
+                                  setServiceEntries(prev => prev.map(s =>
+                                    s.name === service.name ? { ...s, price: e.target.value } : s
+                                  ))
+                                }}
+                                placeholder="50"
+                                style={{ fontSize: 13, padding: "4px 8px", borderRadius: 6, border: "1px solid #D1D5DB", width: "100%" }}
+                                className="disabled:bg-gray-100 disabled:text-gray-400"
+                              />
+                              <span style={{ fontSize: 13, color: "#6B7280", whiteSpace: "nowrap" }}>EUR</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <span className="mb-1 block text-xs text-gray-500">1 hour</span>
-                      <input
-                        type="text"
-                        value={form.rate_1hour}
-                        onChange={(e) => updateField("rate_1hour", e.target.value)}
-                        placeholder="500 DKK"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                      />
-                    </div>
-                    <div>
-                      <span className="mb-1 block text-xs text-gray-500">2 hours</span>
-                      <input
-                        type="text"
-                        value={form.rate_2hours}
-                        onChange={(e) => updateField("rate_2hours", e.target.value)}
-                        placeholder="900 DKK"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                      />
-                    </div>
-                    <div>
-                      <span className="mb-1 block text-xs text-gray-500">Overnight</span>
-                      <input
-                        type="text"
-                        value={form.rate_overnight}
-                        onChange={(e) => updateField("rate_overnight", e.target.value)}
-                        placeholder="2.500 DKK"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                      />
-                    </div>
-                    <div>
-                      <span className="mb-1 block text-xs text-gray-500">Weekend</span>
-                      <input
-                        type="text"
-                        value={form.rate_weekend}
-                        onChange={(e) => updateField("rate_weekend", e.target.value)}
-                        placeholder="5.000 DKK"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                      />
+
+                  {/* Other Services */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Other Services</p>
+                    <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 8, overflow: "hidden" }}>
+                      {/* Header */}
+                      <div style={{ display: "grid", gridTemplateColumns: "30px 1fr 120px 120px", gap: 8, background: "#F9FAFB", padding: "10px 12px", borderBottom: "1px solid #E5E7EB", fontSize: 12, fontWeight: 600, color: "#6B7280" }}>
+                        <span></span>
+                        <span>Service</span>
+                        <span>Included</span>
+                        <span>Extra price</span>
+                      </div>
+                      {/* Rows */}
+                      {serviceEntries.filter(s => OTHER_SERVICES.includes(s.name)).map((service, idx) => {
+                        const isActive = service.included !== "";
+                        return (
+                          <div
+                            key={service.name}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "30px 1fr 120px 120px",
+                              gap: 8,
+                              padding: "8px 12px",
+                              alignItems: "center",
+                              borderBottom: "1px solid #F3F4F6",
+                              background: idx % 2 === 0 ? "#fff" : "#FAFAFA",
+                              opacity: isActive ? 1 : 0.5,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isActive}
+                              onChange={e => {
+                                setServiceEntries(prev => prev.map(s =>
+                                  s.name === service.name
+                                    ? { ...s, included: e.target.checked ? "included" : "", price: "" }
+                                    : s
+                                ))
+                              }}
+                              className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                            />
+                            <span style={{ fontSize: 14, color: "#374151" }}>{service.name}</span>
+                            <select
+                              disabled={!isActive}
+                              value={service.included}
+                              onChange={e => {
+                                setServiceEntries(prev => prev.map(s =>
+                                  s.name === service.name
+                                    ? { ...s, included: e.target.value as "" | "included" | "extra", price: e.target.value === "included" ? "" : s.price }
+                                    : s
+                                ))
+                              }}
+                              style={{ fontSize: 13, padding: "4px 8px", borderRadius: 6, border: "1px solid #D1D5DB" }}
+                              className="disabled:bg-gray-100 disabled:text-gray-400"
+                            >
+                              <option value="">Choose</option>
+                              <option value="included">Included</option>
+                              <option value="extra">Extra</option>
+                            </select>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <input
+                                type="text"
+                                disabled={!isActive || service.included !== "extra"}
+                                value={service.price}
+                                onChange={e => {
+                                  setServiceEntries(prev => prev.map(s =>
+                                    s.name === service.name ? { ...s, price: e.target.value } : s
+                                  ))
+                                }}
+                                placeholder="50"
+                                style={{ fontSize: 13, padding: "4px 8px", borderRadius: 6, border: "1px solid #D1D5DB", width: "100%" }}
+                                className="disabled:bg-gray-100 disabled:text-gray-400"
+                              />
+                              <span style={{ fontSize: 13, color: "#6B7280", whiteSpace: "nowrap" }}>EUR</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
 
-                {/* Appearance & Details */}
+                {/* Rates Table */}
                 <div>
-                  <label className="mb-3 block text-sm font-semibold text-gray-900">Appearance & Details</label>
-
-                  {/* Højde / Vægt */}
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <span className="mb-1 block text-xs text-gray-500">Height (cm)</span>
-                      <input
-                        type="number"
-                        min={100}
-                        max={250}
-                        value={form.height}
-                        onChange={(e) => updateField("height", e.target.value)}
-                        placeholder="170"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                      />
-                    </div>
-                    <div>
-                      <span className="mb-1 block text-xs text-gray-500">Weight (kg)</span>
-                      <input
-                        type="number"
-                        min={30}
-                        max={200}
-                        value={form.weight}
-                        onChange={(e) => updateField("weight", e.target.value)}
-                        placeholder="60"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                      />
-                    </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">Rates</label>
+                    <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1">Enter in EUR</span>
                   </div>
-
-                  {/* 2x2 selects */}
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <span className="mb-1 block text-xs text-gray-500">Body type</span>
-                      <select
-                        value={form.body_build}
-                        onChange={(e) => updateField("body_build", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 8, overflow: "hidden" }}>
+                    {/* Header */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, background: "#F9FAFB", padding: "10px 14px", borderBottom: "1px solid #E5E7EB", fontSize: 12, fontWeight: 600, color: "#6B7280" }}>
+                      <span>Time</span>
+                      <span>Rate (EUR)</span>
+                    </div>
+                    {/* Rows */}
+                    {[
+                      { label: "30 minutes", field: "rate_30min" },
+                      { label: "1 hour", field: "rate_1hour" },
+                      { label: "2 hours", field: "rate_2hours" },
+                      { label: "3 hours", field: "rate_3hours" },
+                      { label: "6 hours", field: "rate_6hours" },
+                      { label: "12 hours", field: "rate_12hours" },
+                      { label: "24 hours", field: "rate_24hours" },
+                      { label: "48 hours", field: "rate_48hours" },
+                    ].map((row, idx) => (
+                      <div
+                        key={row.field}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 12,
+                          padding: "8px 14px",
+                          alignItems: "center",
+                          borderBottom: idx < 7 ? "1px solid #F3F4F6" : "none",
+                          background: idx % 2 === 0 ? "#fff" : "#FAFAFA",
+                        }}
                       >
-                        <option value="">Select</option>
-                        {BODY_BUILD_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                        <span style={{ fontSize: 14, color: "#374151" }}>{row.label}</span>
+                        <input
+                          type="text"
+                          value={form[row.field as keyof typeof form] as string}
+                          onChange={e => updateField(row.field, e.target.value)}
+                          placeholder="e.g. 200"
+                          style={{ fontSize: 16, padding: "6px 10px", borderRadius: 6, border: "1px solid #D1D5DB", width: "100%" }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Physical Attributes */}
+                <div>
+                  <label className="mb-3 block text-sm font-semibold text-gray-900">Physical Attributes</label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Age */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">
+                        Age <span style={{ color: "#DC2626" }}>*</span>
+                      </span>
+                      <input
+                        type="number"
+                        required
+                        min={18}
+                        max={99}
+                        placeholder="18"
+                        value={form.age ?? ""}
+                        onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
+                        style={{ width: "100%", padding: "8px 12px", border: "1px solid #D1D5DB", borderRadius: 8, fontSize: 16, outline: "none" }}
+                      />
+                    </div>
+
+                    {/* Height */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">
+                        Height <span style={{ color: "#DC2626" }}>*</span>
+                      </span>
+                      <select
+                        value={form.height_cm}
+                        onChange={e => updateField("height_cm", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select height</option>
+                        {Array.from({ length: 66 }, (_, i) => 145 + i).map(cm => (
+                          <option key={cm} value={cm}>{cm} cm / {cmToFt(cm)}</option>
+                        ))}
                       </select>
                     </div>
+
+                    {/* Weight */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Weight</span>
+                      <select
+                        value={form.weight_kg}
+                        onChange={e => updateField("weight_kg", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select weight</option>
+                        {Array.from({ length: 81 }, (_, i) => 40 + i).map(kg => (
+                          <option key={kg} value={kg}>{kg} kg / {kgToLbs(kg)} lbs</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Ethnicity */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Ethnicity</span>
+                      <select
+                        value={form.ethnicity}
+                        onChange={e => updateField("ethnicity", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {ETHNICITY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Hair color */}
                     <div>
                       <span className="mb-1 block text-xs text-gray-500">Hair color</span>
                       <select
                         value={form.hair_color}
-                        onChange={(e) => updateField("hair_color", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        onChange={e => updateField("hair_color", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
                       >
                         <option value="">Select</option>
-                        {HAIR_COLOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                        {HAIR_COLOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
+
+                    {/* Hair length */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Hair length</span>
+                      <select
+                        value={form.hair_length}
+                        onChange={e => updateField("hair_length", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {HAIR_LENGTH_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Breast size */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Breast size</span>
+                      <select
+                        value={form.bra_size}
+                        onChange={e => updateField("bra_size", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {BRA_SIZE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Breast type */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Breast type</span>
+                      <select
+                        value={form.breast_type}
+                        onChange={e => updateField("breast_type", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {BREAST_TYPE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Nationality */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">
+                        Nationality <span style={{ color: "#DC2626" }}>*</span>
+                      </span>
+                      <select
+                        value={form.nationality}
+                        onChange={e => updateField("nationality", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {NATIONALITY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Eye color */}
                     <div>
                       <span className="mb-1 block text-xs text-gray-500">Eye color</span>
                       <select
                         value={form.eye_color}
-                        onChange={(e) => updateField("eye_color", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        onChange={e => updateField("eye_color", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
                       >
                         <option value="">Select</option>
-                        {EYE_COLOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                        {EYE_COLOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
+
+                    {/* Orientation */}
                     <div>
-                      <span className="mb-1 block text-xs text-gray-500">Intimate grooming</span>
+                      <span className="mb-1 block text-xs text-gray-500">Orientation</span>
                       <select
-                        value={form.grooming}
-                        onChange={(e) => updateField("grooming", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        value={form.orientation}
+                        onChange={e => updateField("orientation", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
                       >
                         <option value="">Select</option>
-                        {GROOMING_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                        {ORIENTATION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Pubic hair */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Pubic hair</span>
+                      <select
+                        value={form.pubic_hair}
+                        onChange={e => updateField("pubic_hair", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {PUBIC_HAIR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Smoker */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Smoker</span>
+                      <select
+                        value={form.smoker}
+                        onChange={e => updateField("smoker", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {SMOKER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Tattoo */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Tattoo</span>
+                      <select
+                        value={form.tattoo}
+                        onChange={e => updateField("tattoo", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {TATTOO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Piercing */}
+                    <div>
+                      <span className="mb-1 block text-xs text-gray-500">Piercing</span>
+                      <select
+                        value={form.piercing}
+                        onChange={e => updateField("piercing", e.target.value)}
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="">Select</option>
+                        {PIERCING_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
                   </div>
+                </div>
 
-                  {/* BH-størrelse */}
-                  <div className="mb-3">
-                    <span className="mb-1 block text-xs text-gray-500">Bra size</span>
-                    <select
-                      value={form.bra_size}
-                      onChange={(e) => updateField("bra_size", e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                    >
-                      <option value="">Select</option>
-                      {BRA_SIZE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </div>
+                {/* Available for */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Available for <span style={{ color: "#DC2626" }}>*</span>
+                  </label>
+                  <select
+                    value={form.available_for}
+                    onChange={e => updateField("available_for", e.target.value)}
+                    style={{ fontSize: 16 }}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  >
+                    <option value="">Choose</option>
+                    <option value="Outcall">Outcall</option>
+                    <option value="Incall">Incall</option>
+                    <option value="Outcall + Incall">Outcall + Incall</option>
+                  </select>
+                </div>
 
-                  {/* Nationalitet */}
-                  <div className="mb-3">
-                    <span className="mb-1 block text-xs text-gray-500">Nationality</span>
-                    <select
-                      value={form.nationality}
-                      onChange={(e) => updateField("nationality", e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                    >
-                      <option value="">Select</option>
-                      {NATIONALITY_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </div>
+                {/* Meeting with */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Meeting with</label>
+                  <select
+                    value={form.meeting_with}
+                    onChange={e => updateField("meeting_with", e.target.value)}
+                    style={{ fontSize: 16 }}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  >
+                    <option value="">Choose</option>
+                    <option value="Men">Men</option>
+                    <option value="Women">Women</option>
+                    <option value="Couples">Couples</option>
+                    <option value="Men + Women">Men + Women</option>
+                    <option value="All">All</option>
+                  </select>
+                </div>
 
-                  {/* Checkboxes */}
-                  <div className="flex flex-wrap gap-4 mt-2">
-                    {[
-                      { field: "incall", label: "Incall" },
-                      { field: "outcall", label: "Outcall" },
-                      { field: "handicap_friendly", label: "Disability friendly" },
-                      { field: "has_own_place", label: "Has own place" },
-                    ].map((c) => (
-                      <label key={c.field} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form[c.field as keyof typeof form] as boolean}
-                          onChange={(e) => updateField(c.field, e.target.checked)}
-                          className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                        />
-                        {c.label}
-                      </label>
-                    ))}
-                  </div>
+                {/* Travel */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Travel</label>
+                  <select
+                    value={form.travel}
+                    onChange={e => updateField("travel", e.target.value)}
+                    style={{ fontSize: 16 }}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  >
+                    <option value="">Choose</option>
+                    <option value="No">No</option>
+                    <option value="Countrywide">Countrywide</option>
+                    <option value="Europe">Europe</option>
+                    <option value="Worldwide">Worldwide</option>
+                  </select>
+                </div>
+
+                {/* Pornstar */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Are you a pornstar?</label>
+                  <select
+                    value={form.pornstar}
+                    onChange={e => updateField("pornstar", e.target.value)}
+                    style={{ fontSize: 16 }}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  >
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
+                  {form.pornstar === "Yes" && (
+                    <div className="mt-3">
+                      <span className="mb-1 block text-xs text-gray-500">Verify pornstar</span>
+                      <textarea
+                        rows={3}
+                        value={form.pornstar_verification}
+                        onChange={e => updateField("pornstar_verification", e.target.value)}
+                        placeholder="- professional name (stage name)&#10;- link to your videos"
+                        style={{ fontSize: 16 }}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Checkboxes */}
+                <div className="flex flex-wrap gap-4 mt-2">
+                  {[
+                    { field: "handicap_friendly", label: "Disability friendly" },
+                    { field: "has_own_place", label: "Has own place" },
+                  ].map((c) => (
+                    <label key={c.field} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form[c.field as keyof typeof form] as boolean}
+                        onChange={(e) => updateField(c.field, e.target.checked)}
+                        className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                      />
+                      {c.label}
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -904,6 +1418,7 @@ export default function OpretAnnoncePage() {
                         value={form.phone}
                         onChange={(e) => updateField("phone", e.target.value)}
                         placeholder="Phone"
+                        style={{ fontSize: 16 }}
                         className="flex-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-0"
                       />
                     </div>
@@ -919,6 +1434,7 @@ export default function OpretAnnoncePage() {
                           <div className="flex items-center gap-2">
                             <input type="text" value={verifyCode} onChange={e => setVerifyCode(e.target.value)}
                               placeholder="Enter 6-digit code" maxLength={6}
+                              style={{ fontSize: 16 }}
                               className="w-36 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-red-500 focus:outline-none" />
                             <button type="button" onClick={confirmPhoneCode} disabled={verifyChecking}
                               className="text-xs font-semibold bg-gray-900 text-white rounded-lg px-3 py-1.5 disabled:opacity-50">
@@ -950,6 +1466,7 @@ export default function OpretAnnoncePage() {
                           value={form[c.field as keyof typeof form] as string}
                           onChange={(e) => updateField(c.field, e.target.value)}
                           placeholder={c.label}
+                          style={{ fontSize: 16 }}
                           className="flex-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-0"
                         />
                       </div>
@@ -1000,28 +1517,9 @@ export default function OpretAnnoncePage() {
                   />
                 </div>
 
-                {/* Image upload area */}
                 {/* ── AVAILABILITY & OPENING HOURS ── */}
                 <div>
                   <p className="text-base font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">{t.availability_hours}</p>
-
-                  {/* Timezone */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 block mb-1">{t.your_timezone}</label>
-                    <select
-                      value={timezone}
-                      onChange={e => setTimezone(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 bg-white"
-                    >
-                      {TIMEZONE_OPTIONS.map(group => (
-                        <optgroup key={group.group} label={group.group}>
-                          {group.zones.map(tz => (
-                            <option key={tz} value={tz}>{tz.replace(/_/g, " ").replace(/\//g, " / ")}</option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
 
                   {/* Opening hours table */}
                   <div className="border border-gray-100 rounded-xl overflow-x-auto">
@@ -1037,6 +1535,7 @@ export default function OpretAnnoncePage() {
                             disabled={h.closed}
                             value={h.open}
                             onChange={e => setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], open: e.target.value } }))}
+                            style={{ fontSize: 16 }}
                             className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:border-red-400 disabled:bg-gray-100 disabled:text-gray-400"
                           >
                             {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
@@ -1045,6 +1544,7 @@ export default function OpretAnnoncePage() {
                             disabled={h.closed}
                             value={h.close}
                             onChange={e => setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], close: e.target.value } }))}
+                            style={{ fontSize: 16 }}
                             className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:border-red-400 disabled:bg-gray-100 disabled:text-gray-400"
                           >
                             {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
@@ -1062,6 +1562,7 @@ export default function OpretAnnoncePage() {
                       );
                     })}
                   </div>
+
                   <p className="text-xs text-gray-400 mt-2">Toggle switches on the right to mark a day as closed</p>
                 </div>
 
@@ -1069,6 +1570,16 @@ export default function OpretAnnoncePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Photos <span className="text-gray-400">(max 20 &bull; JPG, PNG &bull; max 5MB each)</span>
                   </label>
+
+                  {/* Photo upload guidelines */}
+                  <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderLeft: "3px solid #DC2626", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: "#991B1B", marginBottom: 6 }}>NOT ALLOWED:</p>
+                    {["Phone number, logo, watermark or text on photos", "Explicit nudity (nipples or genitals)", "Photos must show the advertiser only", "Low quality or blurry photos", "Duplicate photos"].map(r => (
+                      <div key={r} style={{ display: "flex", gap: 6, fontSize: 11, color: "#DC2626", marginBottom: 2 }}>
+                        <span>✕</span><span>{r}</span>
+                      </div>
+                    ))}
+                  </div>
 
                   {/* Drop zone */}
                   <div
@@ -1157,16 +1668,8 @@ export default function OpretAnnoncePage() {
                         {form.about.length > 100 ? form.about.slice(0, 100) + "..." : form.about}
                       </p>
                     )}
-                    {form.services.length > 0 && (
-                      <p><span className="font-medium">Services:</span> {form.services.length} selected</p>
-                    )}
-                    {(form.rate_1hour || form.rate_2hours || form.rate_overnight || form.rate_weekend) && (
-                      <p>
-                        <span className="font-medium">Rates:</span>{" "}
-                        {[form.rate_1hour, form.rate_2hours, form.rate_overnight, form.rate_weekend]
-                          .filter(Boolean)
-                          .join(" / ")}
-                      </p>
+                    {serviceEntries.filter(s => s.included !== "").length > 0 && (
+                      <p><span className="font-medium">Services:</span> {serviceEntries.filter(s => s.included !== "").length} selected</p>
                     )}
                   </div>
                 </div>
