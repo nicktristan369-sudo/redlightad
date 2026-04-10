@@ -835,7 +835,43 @@ export default function CamRoomPage() {
                   )}
                 </div>
               ) : (
-                <p style={{ fontSize: 13, color: "#555" }}>No media available</p>
+                /* Pics & Videos + Recordings */
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Past stream recordings */}
+                  {recordings.length > 0 && (
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#4B5563", letterSpacing: "0.06em", marginBottom: 8 }}>PAST STREAMS</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {recordings.slice(0, 3).map(rec => (
+                          <div key={rec.id}>
+                            <button
+                              onClick={() => setPlayingRecordingId(playingRecordingId === rec.id ? null : rec.id)}
+                              style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px", background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 10, cursor: "pointer", textAlign: "left" }}>
+                              <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0A0A0A", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #2A2A2A" }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#DC2626"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: 12, fontWeight: 600, color: "#E5E7EB", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rec.title}</p>
+                                <p style={{ fontSize: 11, color: "#4B5563", margin: "2px 0 0" }}>
+                                  {rec.duration_seconds > 0 ? `${Math.floor(rec.duration_seconds / 60)}m · ` : ""}
+                                  {new Date(rec.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                                </p>
+                              </div>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                            {playingRecordingId === rec.id && (
+                              <video src={rec.cloudinary_url} controls autoPlay
+                                style={{ width: "100%", borderRadius: 8, marginTop: 6, background: "#000", display: "block", maxHeight: 220 }} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {recordings.length === 0 && (
+                    <p style={{ fontSize: 13, color: "#555" }}>No media available</p>
+                  )}
+                </div>
               )}
             </div>
           </div>
