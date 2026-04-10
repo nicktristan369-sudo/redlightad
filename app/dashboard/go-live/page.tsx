@@ -671,15 +671,21 @@ export default function GoLivePage() {
               </button>
             </div>
 
-            {/* Goal progress bar (broadcaster view) */}
+            {/* Goal progress bar (broadcaster view) — compact single row above chat */}
             {goalActive && goalTarget > 0 && (
-              <div style={{ position: "absolute", top: 68, left: 0, right: 0, padding: "4px 16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                  <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>🎯 {goalTitle || "Goal"}</span>
-                  <span style={{ fontSize: 11, color: "#9CA3AF" }}>{goalCurrent} / {goalTarget} RC ({Math.min(100, Math.round(goalCurrent / goalTarget * 100))}%)</span>
-                </div>
-                <div style={{ height: 4, background: "rgba(255,255,255,0.15)", borderRadius: 2, overflow: "hidden" }}>
-                  <div style={{ height: "100%", background: "#DC2626", width: `${Math.min(100, Math.round(goalCurrent / goalTarget * 100))}%`, transition: "width 0.5s ease" }} />
+              <div style={{ position: "absolute", bottom: 120, left: 0, right: 0, padding: "0 12px" }}>
+                <div style={{ background: "rgba(0,0,0,0.65)", borderRadius: 8, padding: "6px 10px", backdropFilter: "blur(4px)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#fff", fontWeight: 600, flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      🎯 {goalTitle || "Goal"}
+                    </span>
+                    <span style={{ fontSize: 11, color: "#9CA3AF", flexShrink: 0 }}>
+                      {goalCurrent}/{goalTarget} RC · {Math.min(100, Math.round(goalCurrent / goalTarget * 100))}%
+                    </span>
+                  </div>
+                  <div style={{ height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ height: "100%", background: "#DC2626", width: `${Math.min(100, Math.round(goalCurrent / goalTarget * 100))}%`, transition: "width 0.5s ease" }} />
+                  </div>
                 </div>
               </div>
             )}
