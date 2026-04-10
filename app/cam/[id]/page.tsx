@@ -563,7 +563,7 @@ export default function CamRoomPage() {
       </div>
 
       {/* ── Main content ── */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }} className="cam-main">
 
         {/* Left: video + info */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
@@ -574,7 +574,7 @@ export default function CamRoomPage() {
           </div>
 
           {/* Video */}
-          <div style={{ flex: "0 0 auto", height: "55vh", background: "#000", position: "relative" }}>
+          <div style={{ flex: "0 0 auto", height: "55vh", background: "#000", position: "relative", overflowY: "auto" }} className="cam-video-area">
             {listing.cam_live && livekitToken ? (
               <LiveKitRoom serverUrl={livekitWsUrl} token={livekitToken} connect={true} audio={true} video={false} style={{ width: "100%", height: "100%" }}>
                 <LiveViewer onViewerCount={setViewerCount} />
@@ -900,7 +900,7 @@ export default function CamRoomPage() {
         </div>
 
         {/* Right: chat panel */}
-        <div style={{ width: 320, borderLeft: "1px solid #1E1E1E", display: "flex", flexDirection: "column", background: "#111", flexShrink: 0 }}>
+        <div style={{ width: 320, borderLeft: "1px solid #1E1E1E", display: "flex", flexDirection: "column", background: "#111", flexShrink: 0 }} className="cam-chat-panel">
           {/* Chat/Profile/Tips tabs */}
           <div style={{ display: "flex", borderBottom: "1px solid #1E1E1E" }}>
             {[["chat", "CHAT"], ["profile", "PROFILE"], ["tips", "TIPS"]].map(([key, label]) => (
@@ -1112,6 +1112,20 @@ export default function CamRoomPage() {
           )}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 767px) {
+          .cam-main { flex-direction: column !important; }
+          .cam-video-area { height: auto !important; min-height: 260px; max-height: 60vw; }
+          .cam-chat-panel {
+            width: 100% !important;
+            border-left: none !important;
+            border-top: 1px solid #1E1E1E;
+            height: 360px !important;
+            flex-shrink: 0 !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
