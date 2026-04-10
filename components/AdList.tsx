@@ -278,15 +278,36 @@ function Waveform() {
 
 function tierBadge(tier: string | null | undefined) {
   if (!tier) return null
-  const labels: Record<string, { label: string; style: string }> = {
-    vip:      { label: "VIP",      style: "bg-black text-yellow-400 border border-yellow-400/50" },
-    featured: { label: "FEATURED", style: "bg-black text-gray-300 border border-gray-500/50" },
-    basic:    { label: "PREMIUM",  style: "bg-black/80 text-yellow-500 border border-yellow-500/40" },
+  const labels: Record<string, { label: string; gold: boolean }> = {
+    vip:      { label: "VIP",     gold: true  },
+    featured: { label: "TOP",     gold: false },
+    basic:    { label: "PREMIUM", gold: true  },
   }
   const b = labels[tier]
   if (!b) return null
-  return (
-    <span className={`absolute top-2 left-2 text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded-none ${b.style}`}>
+  return b.gold ? (
+    <span style={{
+      position: "absolute", top: 10, left: 10,
+      fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
+      padding: "3px 7px",
+      background: "linear-gradient(135deg, #C9A84C, #F0D080, #C9A84C)",
+      color: "#1a0f00",
+      borderRadius: 4,
+      boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
+    }}>
+      {b.label}
+    </span>
+  ) : (
+    <span style={{
+      position: "absolute", top: 10, left: 10,
+      fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
+      padding: "3px 7px",
+      background: "rgba(0,0,0,0.75)",
+      color: "#E5E7EB",
+      borderRadius: 4,
+      border: "1px solid rgba(255,255,255,0.15)",
+      backdropFilter: "blur(4px)",
+    }}>
       {b.label}
     </span>
   )
@@ -495,9 +516,14 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       <div>
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
-                          <span className="flex-shrink-0 inline-flex items-center gap-1 bg-gray-900 text-white text-[10px] font-semibold px-2.5 py-1 rounded-none">
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          <span style={{
+                            flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 4,
+                            fontSize: 11, fontWeight: 600, color: "#16A34A",
+                            background: "#F0FDF4", border: "1px solid #BBF7D0",
+                            padding: "3px 9px", borderRadius: 20,
+                          }}>
+                            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             Verified
                           </span>
