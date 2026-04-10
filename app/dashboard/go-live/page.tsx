@@ -163,7 +163,8 @@ export default function GoLivePage() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rows: any[] | null = null
-      const listingSelect = "id, display_name, title, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at, cam_goal_title, cam_goal_target, cam_goal_active"
+      // Note: cam_goal_* columns added in migration 20260408 — only include when applied
+      const listingSelect = "id, display_name, title, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at"
 
       // Try user's own listings first
       const { data: userRows } = await supabase.from("listings").select(listingSelect).eq("user_id", user.id).limit(1)
