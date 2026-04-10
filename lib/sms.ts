@@ -10,6 +10,9 @@ interface SMSResult {
   error?: string
 }
 
+// European country codes that support alphanumeric sender IDs
+const EU_PREFIXES = ['45','46','47','358','44','49','33','31','34','39','48','43','32','41','420','36','40','30','351','380','7','90']
+
 export async function sendSMS({ to, message, sender = process.env.GATEWAYAPI_SENDER || 'REDLIGHTAD' }: SendSMSOptions): Promise<SMSResult> {
   const token = process.env.GATEWAYAPI_TOKEN
   if (!token) return { success: false, error: 'No GatewayAPI token' }
@@ -22,8 +25,12 @@ export async function sendSMS({ to, message, sender = process.env.GATEWAYAPI_SEN
   if (phone.length === 8 && /^[2-9]/.test(phone)) phone = '45' + phone
   // Dansk nummer med ledende 0 (sjælden)
   else if (phone.length === 9 && phone.startsWith('0')) phone = '45' + phone.slice(1)
-  // Thailandsk lokalt nummer (0XXXXXXXXX → 66XXXXXXXXX)
+  // Thailandsk/asiatisk lokalt nummer (0XXXXXXXXX → landekode+nummer)
   else if (phone.length === 10 && phone.startsWith('0')) phone = '66' + phone.slice(1)
+
+  // Use numeric sender for non-EU countries (many Asian/non-EU carriers block alpha sender IDs)
+  const isEU = EU_PREFIXES.some(prefix => phone.startsWith(prefix))
+  const effectiveSender = isEU ? sender : '1234'
 
   try {
     const response = await fetch('https://messaging.gatewayapi.com/mobile/single', {
@@ -33,7 +40,7 @@ export async function sendSMS({ to, message, sender = process.env.GATEWAYAPI_SEN
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        sender,
+        sender: effectiveSender,
         message,
         recipient: parseInt(phone),
       }),
