@@ -29,17 +29,29 @@ export default function VoiceRecorder({ onUpload, existingUrl }: VoiceRecorderPr
   const startRecording = async () => {
     setError("")
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mr = new MediaRecorder(stream, { mimeType: "audio/webm" })
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+
+      // Pick best supported format — don't force webm, let browser decide
+      const preferredTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+        "",  // browser default
+      ]
+      const mimeType = preferredTypes.find(t => t === "" || MediaRecorder.isTypeSupported(t)) ?? ""
+      const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
+
       chunksRef.current = []
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" })
+        const actualType = mr.mimeType || "audio/webm"
+        const blob = new Blob(chunksRef.current, { type: actualType })
         setAudioBlob(blob)
         setAudioUrl(URL.createObjectURL(blob))
         stream.getTracks().forEach(t => t.stop())
       }
-      mr.start()
+      mr.start(100) // collect data every 100ms for reliability
       mediaRecorderRef.current = mr
       setRecording(true)
       setSeconds(0)
@@ -50,7 +62,7 @@ export default function VoiceRecorder({ onUpload, existingUrl }: VoiceRecorderPr
         })
       }, 1000)
     } catch {
-      setError("Kunne ikke tilgå mikrofon. Giv adgang og prøv igen.")
+      setError("Microphone access denied. Please allow microphone access and try again.")
     }
   }
 
@@ -76,10 +88,17 @@ export default function VoiceRecorder({ onUpload, existingUrl }: VoiceRecorderPr
     try {
       const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "drxpitjyw"
       const preset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "redlightad_unsigned").trim()
+
+      // Determine file extension from blob type
+      const ext = audioBlob.type.includes("mp4") ? "mp4"
+                : audioBlob.type.includes("ogg") ? "ogg"
+                : "webm"
+
       const fd = new FormData()
-      fd.append("file", audioBlob, "voice_message.webm")
+      fd.append("file", audioBlob, `voice_message.${ext}`)
       fd.append("upload_preset", preset)
-      fd.append("resource_type", "video") // Cloudinary uses "video" for audio
+      fd.append("resource_type", "video") // Cloudinary uses "video" for audio files
+
       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
         method: "POST", body: fd,
       })
@@ -88,10 +107,12 @@ export default function VoiceRecorder({ onUpload, existingUrl }: VoiceRecorderPr
         onUpload(data.secure_url)
         setError("")
       } else {
-        throw new Error("Upload fejlede")
+        console.error("Cloudinary error:", data)
+        throw new Error(data.error?.message || "Upload failed")
       }
-    } catch {
-      setError("Upload fejlede. Prøv igen.")
+    } catch (err) {
+      setError("Upload failed. Please try again.")
+      console.error(err)
     } finally {
       setUploading(false)
     }
@@ -147,7 +168,8 @@ export default function VoiceRecorder({ onUpload, existingUrl }: VoiceRecorderPr
         </div>
       ) : (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <audio controls src={audioUrl} className="w-full h-8 mb-3" />
+          {/* Native player for preview — confirms audio is captured correctly before upload */}
+          <audio controls src={audioUrl ?? ""} className="w-full mb-3" style={{ height: 36 }} />
           <div className="flex gap-2">
             {audioBlob && (
               <button
