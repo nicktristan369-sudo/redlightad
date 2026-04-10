@@ -309,12 +309,8 @@ export default function OpretAnnoncePage() {
   };
 
   const validateStep1 = () => {
-    if (!form.display_name || !form.category || !form.gender || !form.age || !form.country || !form.languages[0] || !timezone) {
+    if (!form.display_name || !form.category || !form.gender || !form.country || !form.languages[0]) {
       setError("Please fill in all required fields.");
-      return false;
-    }
-    if (parseInt(form.age) < 18) {
-      setError("You must be at least 18 years old.");
       return false;
     }
     setError("");
@@ -1385,7 +1381,14 @@ export default function OpretAnnoncePage() {
                   ← Back
                 </button>
                 <button
-                  onClick={() => setStep(3)}
+                  onClick={() => {
+                    if (!form.age || parseInt(form.age) < 18) {
+                      setError("Please enter your age (minimum 18).");
+                      return;
+                    }
+                    setError("");
+                    setStep(3);
+                  }}
                   className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-medium text-white hover:bg-red-700"
                 >
                   Continue
