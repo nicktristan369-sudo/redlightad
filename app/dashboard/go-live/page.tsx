@@ -19,12 +19,13 @@ import { Track } from "livekit-client"
 import "@livekit/components-styles"
 
 // ── Inner broadcaster component (inside LiveKitRoom) ─────────────────────────
-function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => void }) {
+function BroadcastControls({ onViewerCount, onStreamReady }: { onViewerCount: (n: number) => void; onStreamReady?: (stream: MediaStream) => void }) {
   const { localParticipant } = useLocalParticipant()
   const tracks = useTracks([Track.Source.Camera, Track.Source.Microphone])
   const [camReady, setCamReady] = useState(false)
   const [camError, setCamError] = useState(false)
   const retryRef = useRef(0)
+  const streamStartedRef = useRef(false)
 
   const startCamera = useCallback(async () => {
     if (!localParticipant) return
@@ -57,6 +58,35 @@ function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => vo
   }, [localParticipant])
 
   const camTrack = tracks.find(t => t.source === Track.Source.Camera)
+
+  // When camera is ready, capture the MediaStream for recording
+  useEffect(() => {
+    if (!camTrack || streamStartedRef.current || !onStreamReady) return
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mediaStreamTrack = (camTrack.publication?.track as any)?.mediaStreamTrack
+      if (mediaStreamTrack) {
+        const stream = new MediaStream([mediaStreamTrack])
+        // Also grab audio if available
+        try {
+          navigator.mediaDevices.getUserMedia({ audio: true }).then(audioStream => {
+            audioStream.getAudioTracks().forEach(t => stream.addTrack(t))
+            streamStartedRef.current = true
+            onStreamReady(stream)
+          }).catch(() => {
+            streamStartedRef.current = true
+            onStreamReady(stream)
+          })
+        } catch {
+          streamStartedRef.current = true
+          onStreamReady(stream)
+        }
+      }
+    } catch (e) {
+      console.warn("Could not get stream for recording:", e)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camTrack?.publication?.trackSid])
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", background: "#000" }}>
@@ -125,6 +155,14 @@ export default function GoLivePage() {
   const [sessionEarnings, setSessionEarnings] = useState(0)
   const chatRef = useRef<HTMLDivElement>(null)
   const prevMsgCount = useRef(0)
+
+  // Recording state
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingUploading, setRecordingUploading] = useState(false)
+  const [recordingSaved, setRecordingSaved] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordingChunksRef = useRef<Blob[]>([])
+  const recordingStartRef = useRef<Date | null>(null)
 
   // Tip menu state
   const [tipMenuItems, setTipMenuItems] = useState<{id: string; action: string; rc_amount: number}[]>([])
@@ -358,8 +396,93 @@ export default function GoLivePage() {
     }
   }
 
+  const startRecording = (stream: MediaStream) => {
+    try {
+      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+        ? "video/webm;codecs=vp9,opus"
+        : MediaRecorder.isTypeSupported("video/webm")
+        ? "video/webm"
+        : "video/mp4"
+
+      const mr = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1_500_000 })
+      recordingChunksRef.current = []
+      recordingStartRef.current = new Date()
+
+      mr.ondataavailable = e => { if (e.data.size > 0) recordingChunksRef.current.push(e.data) }
+      mr.start(5000) // collect chunks every 5s
+      mediaRecorderRef.current = mr
+      setIsRecording(true)
+    } catch (e) {
+      console.warn("Recording not supported:", e)
+    }
+  }
+
+  const stopRecordingAndUpload = async () => {
+    const mr = mediaRecorderRef.current
+    if (!mr || mr.state === "inactive" || !listing) return
+
+    setRecordingUploading(true)
+    mr.stop()
+
+    await new Promise<void>(resolve => { mr.onstop = () => resolve() })
+
+    const chunks = recordingChunksRef.current
+    if (chunks.length === 0) { setRecordingUploading(false); return }
+
+    const ext = chunks[0].type.includes("mp4") ? "mp4" : "webm"
+    const blob = new Blob(chunks, { type: chunks[0].type })
+    const durationSeconds = recordingStartRef.current
+      ? Math.round((Date.now() - recordingStartRef.current.getTime()) / 1000)
+      : 0
+
+    try {
+      // Upload to Cloudinary
+      const formData = new FormData()
+      formData.append("file", blob, `stream.${ext}`)
+      formData.append("upload_preset", "redlightad_unsigned")
+      formData.append("folder", "redlightad/recordings")
+      formData.append("resource_type", "video")
+
+      const cloudName = "drxpitjyw"
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      const uploadData = await uploadRes.json()
+
+      if (uploadData.secure_url) {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+
+        await fetch("/api/cam/recordings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token || ""}` },
+          body: JSON.stringify({
+            listingId: listing.id,
+            cloudinaryUrl: uploadData.secure_url,
+            cloudinaryPublicId: uploadData.public_id,
+            durationSeconds,
+            fileSizeBytes: blob.size,
+          }),
+        })
+        setRecordingSaved(true)
+      }
+    } catch (e) {
+      console.error("Upload failed:", e)
+    } finally {
+      setIsRecording(false)
+      setRecordingUploading(false)
+      mediaRecorderRef.current = null
+      recordingChunksRef.current = []
+    }
+  }
+
   const handleEndStream = async () => {
     if (!listing) return
+
+    // Stop and upload recording
+    await stopRecordingAndUpload()
+
     const supabase = createClient()
     await supabase.from("listings").update({
       cam_live: false,
@@ -513,7 +636,7 @@ export default function GoLivePage() {
               audio={true}
               style={{ flex: 1, position: "relative" }}
             >
-              <BroadcastControls onViewerCount={setViewerCount} />
+              <BroadcastControls onViewerCount={setViewerCount} onStreamReady={startRecording} />
             </LiveKitRoom>
 
             {/* Top bar: stats */}
@@ -523,6 +646,9 @@ export default function GoLivePage() {
               ) : (
                 <span style={{ background: "#DC2626", color: "#fff", fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 4 }}>● LIVE</span>
               )}
+              {isRecording && <span style={{ background: "rgba(0,0,0,0.6)", color: "#EF4444", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>⏺ REC</span>}
+              {recordingUploading && <span style={{ background: "rgba(0,0,0,0.6)", color: "#F59E0B", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 4 }}>Uploading...</span>}
+              {recordingSaved && <span style={{ background: "rgba(0,0,0,0.6)", color: "#4ADE80", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 4 }}>✓ Saved</span>}
               <span style={{ color: "#fff", fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
                 <Users size={13} /> {viewerCount}
               </span>

@@ -23,6 +23,7 @@ import {
   Star,
   ExternalLink,
   Radio,
+  Film,
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
@@ -127,6 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ...dynamicItems,
     ...NAV_ITEMS.slice(1),
     { href: "/dashboard/go-live", label: "Go Live", icon: Radio },
+    { href: "/dashboard/recordings", label: "Recordings", icon: Film },
     { href: "/dashboard/onlyfans", label: "OnlyFans", icon: ExternalLink },
     ...(isAdmin ? [{ href: "/admin", label: "Admin panel", icon: Shield }] : []),
   ]

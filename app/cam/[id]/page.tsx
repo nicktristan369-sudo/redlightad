@@ -140,6 +140,8 @@ export default function CamRoomPage() {
   const [isNotifying, setIsNotifying] = useState(false)
   const [goalProgress, setGoalProgress] = useState(0)
   const [countdown, setCountdown] = useState("")
+  const [recordings, setRecordings] = useState<{ id: string; title: string; cloudinary_url: string; duration_seconds: number; created_at: string }[]>([])
+  const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const audioUnlocked = useRef(false)
   const seenMsgIds = useRef<Set<string>>(new Set())
@@ -391,6 +393,14 @@ export default function CamRoomPage() {
     document.addEventListener("click", unlock, { once: true })
     return () => document.removeEventListener("click", unlock)
   }, [])
+
+  // Fetch recordings for this listing
+  useEffect(() => {
+    fetch(`/api/cam/recordings?listingId=${id}`)
+      .then(r => r.json())
+      .then(d => setRecordings(d.recordings || []))
+      .catch(() => {})
+  }, [id])
 
   // Viewer count — poll from DB every 10s (fallback for when LiveKit participants count fails on mobile)
   useEffect(() => {
@@ -652,6 +662,43 @@ export default function CamRoomPage() {
                     </button>
                   )}
                   <p style={{ fontSize: 11, color: "#374151", textAlign: "center" }}>Tips are delivered even when {listing.display_name} is offline</p>
+
+                  {/* Replay recordings */}
+                  {recordings.length > 0 && (
+                    <div style={{ width: "100%", maxWidth: 340 }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "#6B7280", textAlign: "center", marginBottom: 8, letterSpacing: "0.05em" }}>PAST STREAMS</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {recordings.slice(0, 3).map(rec => (
+                          <button key={rec.id}
+                            onClick={() => setPlayingRecordingId(playingRecordingId === rec.id ? null : rec.id)}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, cursor: "pointer", textAlign: "left", width: "100%" }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 6, background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: 12, fontWeight: 600, color: "#E5E7EB", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{rec.title}</p>
+                              <p style={{ fontSize: 11, color: "#6B7280" }}>
+                                {rec.duration_seconds > 0 ? `${Math.floor(rec.duration_seconds / 60)}m` : ""}{" "}
+                                {new Date(rec.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Inline video player for recording */}
+                  {playingRecordingId && (
+                    <div style={{ width: "100%", maxWidth: 420, borderRadius: 12, overflow: "hidden", background: "#000" }}>
+                      <video
+                        src={recordings.find(r => r.id === playingRecordingId)?.cloudinary_url}
+                        controls
+                        autoPlay
+                        style={{ width: "100%", maxHeight: 280, display: "block" }}
+                      />
+                    </div>
+                  )}
 
                   {currentUser && (
                     <button onClick={async () => {
