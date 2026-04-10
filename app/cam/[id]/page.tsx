@@ -187,21 +187,57 @@ export default function CamRoomPage() {
     fetch(`/api/cam/tip-menu?listingId=${id}`).then(r => r.json()).then(d => setTipMenu(d.items || []))
 
     // Realtime chat
-    const channel = supabase.channel(`cam-${id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "cam_messages", filter: `room_id=eq.${id}` },
-        payload => setMessages(prev => [...prev.slice(-149), payload.new as CamMessage]))
-      .subscribe()
+    // Load initial messages from current session
+    let since = new Date(Date.now() - 3600000).toISOString()
+    let lastTimestamp = since
+    let seenIds = new Set<string>()
 
-    // Only load messages from current stream session (cam_started_at)
     supabase.from("listings").select("cam_started_at").eq("id", id).single()
       .then(({ data: l }) => {
-        const since = l?.cam_started_at || new Date(Date.now() - 3600000).toISOString()
+        since = l?.cam_started_at || since
+        lastTimestamp = since
         supabase.from("cam_messages").select("*").eq("room_id", id)
           .gte("created_at", since).order("created_at").limit(80)
-          .then(({ data }) => { if (data) setMessages(data) })
+          .then(({ data }) => {
+            if (data) {
+              data.forEach(m => seenIds.add(m.id))
+              setMessages(data)
+            }
+          })
       })
 
-    return () => { supabase.removeChannel(channel) }
+    // Realtime channel (primary — fast)
+    const channel = supabase.channel(`cam-${id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "cam_messages", filter: `room_id=eq.${id}` },
+        payload => {
+          const m = payload.new as CamMessage
+          if (seenIds.has(m.id)) return
+          seenIds.add(m.id)
+          lastTimestamp = m.created_at
+          setMessages(prev => [...prev.slice(-149), m])
+        })
+      .subscribe()
+
+    // Polling fallback (every 3s) — catches messages if WebSocket drops on desktop
+    const pollInterval = setInterval(async () => {
+      const { data } = await supabase.from("cam_messages")
+        .select("*").eq("room_id", id)
+        .gt("created_at", lastTimestamp)
+        .order("created_at").limit(20)
+      if (data && data.length > 0) {
+        const newMsgs = data.filter(m => !seenIds.has(m.id))
+        if (newMsgs.length > 0) {
+          newMsgs.forEach(m => seenIds.add(m.id))
+          lastTimestamp = data[data.length - 1].created_at
+          setMessages(prev => [...prev.slice(-149), ...newMsgs])
+        }
+      }
+    }, 3000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(pollInterval)
+    }
   }, [id])
 
   useEffect(() => {
