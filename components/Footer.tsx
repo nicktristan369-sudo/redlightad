@@ -3,9 +3,15 @@ import Link from "next/link"
 import { Shield, AlertTriangle, Video, Coins } from "lucide-react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import Logo from "@/components/Logo"
+import { usePathname } from "next/navigation"
 
 export default function Footer() {
   const { t } = useLanguage()
+  const pathname = usePathname()
+
+  // Hide footer on dashboard pages and cam stream pages
+  const hideOn = ["/dashboard", "/cam/", "/admin"]
+  if (hideOn.some(p => pathname.startsWith(p))) return null
 
   return (
     <footer className="bg-black text-white mt-auto">

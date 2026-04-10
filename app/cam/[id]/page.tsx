@@ -637,12 +637,22 @@ export default function CamRoomPage() {
                 </div>
               ) : (
                 /* Default offline state */
-                <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: "#0A0A0A", position: "relative" }}>
+                <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: "#0A0A0A", position: "relative", padding: "24px 16px" }}>
                   {(listing.profile_image || listing.photos?.[0]) && (
-                    <img src={listing.profile_image || listing.photos![0]} alt="" style={{ width: 100, height: 100, borderRadius: "50%", objectFit: "cover", border: "3px solid #2A2A2A" }} />
+                    <img src={listing.profile_image || listing.photos![0]} alt="" style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid #2A2A2A" }} />
                   )}
                   <span style={{ background: "#1A1A1A", color: "#6B7280", fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 4, letterSpacing: "0.05em" }}>OFFLINE</span>
-                  <p style={{ color: "#4B5563", fontSize: 13 }}>{listing.display_name} is not streaming right now</p>
+                  <p style={{ color: "#4B5563", fontSize: 13, textAlign: "center" }}>{listing.display_name} is not streaming right now</p>
+
+                  {/* Offline tip */}
+                  {currentUser && (
+                    <button onClick={() => setShowTip(true)}
+                      style={{ padding: "11px 28px", background: "#DC2626", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                      <Gift size={15} /> Send a Tip
+                    </button>
+                  )}
+                  <p style={{ fontSize: 11, color: "#374151", textAlign: "center" }}>Tips are delivered even when {listing.display_name} is offline</p>
+
                   {currentUser && (
                     <button onClick={async () => {
                       const supabase = createClient()
@@ -654,8 +664,8 @@ export default function CamRoomPage() {
                       })
                       const d = await res.json()
                       if (d.notifying !== undefined) setIsNotifying(d.notifying)
-                    }} style={{ padding: "10px 24px", background: isNotifying ? "#1A1A1A" : "#DC2626", border: isNotifying ? "1px solid #DC2626" : "none", borderRadius: 8, color: isNotifying ? "#DC2626" : "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-                      {isNotifying ? "Notification active" : "Notify me when live"}
+                    }} style={{ padding: "9px 20px", background: "transparent", border: `1px solid ${isNotifying ? "#DC2626" : "#2A2A2A"}`, borderRadius: 8, color: isNotifying ? "#DC2626" : "#6B7280", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
+                      {isNotifying ? "✓ Notify when live (active)" : "Notify me when live"}
                     </button>
                   )}
                 </div>
