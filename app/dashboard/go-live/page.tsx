@@ -161,21 +161,26 @@ export default function GoLivePage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace("/login"); return }
 
-      // Check if admin
-      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-      const isAdmin = profile?.role === "admin"
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rows: any[] | null = null
       const listingSelect = "id, display_name, title, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at, cam_goal_title, cam_goal_target, cam_goal_active"
 
-      if (isAdmin) {
+      // Try user's own listings first
+      const { data: userRows } = await supabase.from("listings").select(listingSelect).eq("user_id", user.id).limit(1)
+      rows = userRows
+
+      if (!rows || rows.length === 0) {
+        // No own listing — show all active listings as picker (works for admin + unlinked providers)
         const { data: allRows } = await supabase.from("listings").select(listingSelect).eq("status", "active").order("created_at", { ascending: false }).limit(100)
-        rows = allRows
-        if (rows && rows.length > 0) setAdminListings(rows)
-      } else {
-        const { data: userRows } = await supabase.from("listings").select(listingSelect).eq("user_id", user.id).limit(1)
-        rows = userRows
+        if (allRows && allRows.length > 0) {
+          setAdminListings(allRows)
+          setError("picker")
+          setLoading(false)
+          return
+        }
+        setError("No profile found. Please create your profile first.")
+        setLoading(false)
+        return
       }
 
       const data = rows?.[0] ?? null
@@ -403,15 +408,36 @@ export default function GoLivePage() {
     )
   }
 
+  if (!listing && adminListings.length > 0) {
+    return (
+      <DashboardLayout>
+        <div style={{ maxWidth: 520, margin: "60px auto", padding: "0 16px" }}>
+          <div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 6 }}>Go Live — Select Profile</h2>
+            <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>Select which profile you want to stream as:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {adminListings.map((l) => (
+                <button key={l.id} onClick={() => { setListing(l); setError("") }}
+                  style={{ padding: "12px 16px", background: "#fff", border: "1px solid #E5E7EB", borderRadius: 10, textAlign: "left", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
+                  {l.display_name || l.title || l.id}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   if (error && !listing) {
     return (
       <DashboardLayout>
         <div style={{ maxWidth: 520, margin: "60px auto", padding: "0 16px" }}>
-          {adminListings.length > 0 ? (
-            // Admin: show listing picker
+          {false ? (
+            // (kept for structure)
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 6 }}>Go Live — Select Profile</h2>
-              <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>As admin you can stream from any active profile:</p>
+              <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>Select which profile to stream as:</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {adminListings.map((l) => (
                   <button key={l.id} onClick={() => { setListing(l); setError("") }}
