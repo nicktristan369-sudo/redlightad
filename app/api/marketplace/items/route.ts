@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
+    const country = searchParams.get("country");
     const sort = searchParams.get("sort") ?? "newest";
 
     const supabase = getClient();
@@ -26,6 +27,18 @@ export async function GET(req: NextRequest) {
 
     if (category && category !== "all") {
       query = query.eq("category", category);
+    }
+
+    if (country && country !== "all") {
+      const { data: listings } = await supabase
+        .from("listings")
+        .select("id")
+        .eq("country", country);
+      const ids = (listings ?? []).map((l: { id: string }) => l.id).filter(Boolean);
+      if (ids.length === 0) {
+        return NextResponse.json({ items: [] });
+      }
+      query = query.in("listing_id", ids);
     }
 
     // Sort

@@ -12,7 +12,31 @@ import {
   type MarketplaceCategory,
   type SortOption,
 } from "@/lib/marketplace";
-import { Globe, SlidersHorizontal } from "lucide-react";
+import { Globe, SlidersHorizontal, MapPin } from "lucide-react";
+
+const COUNTRY_OPTIONS = [
+  { value: "all", label: "All Countries" },
+  { value: "Denmark", label: "Denmark" },
+  { value: "Sweden", label: "Sweden" },
+  { value: "Norway", label: "Norway" },
+  { value: "Finland", label: "Finland" },
+  { value: "Germany", label: "Germany" },
+  { value: "Netherlands", label: "Netherlands" },
+  { value: "Belgium", label: "Belgium" },
+  { value: "France", label: "France" },
+  { value: "Spain", label: "Spain" },
+  { value: "Italy", label: "Italy" },
+  { value: "United Kingdom", label: "United Kingdom" },
+  { value: "Switzerland", label: "Switzerland" },
+  { value: "Austria", label: "Austria" },
+  { value: "Poland", label: "Poland" },
+  { value: "Czech Republic", label: "Czech Republic" },
+  { value: "Romania", label: "Romania" },
+  { value: "Hungary", label: "Hungary" },
+  { value: "Bulgaria", label: "Bulgaria" },
+  { value: "Greece", label: "Greece" },
+  { value: "Portugal", label: "Portugal" },
+];
 
 function CoinBadge({ coins }: { coins: number }) {
   return (
@@ -131,19 +155,21 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<MarketplaceCategory | "all">("all");
   const [sort, setSort] = useState<SortOption>("newest");
+  const [country, setCountry] = useState("all");
 
   useEffect(() => {
     const fetchItems = async () => {
       setLoading(true);
       const params = new URLSearchParams({ sort });
       if (activeCategory !== "all") params.set("category", activeCategory);
+      if (country !== "all") params.set("country", country);
       const res = await fetch(`/api/marketplace/items?${params}`);
       const json = await res.json();
       setItems((json.items ?? []) as MarketplaceItem[]);
       setLoading(false);
     };
     fetchItems();
-  }, [activeCategory, sort]);
+  }, [activeCategory, sort, country]);
 
   return (
     <>
@@ -156,7 +182,7 @@ export default function MarketplacePage() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-[12px] font-medium text-gray-600">
-                    <Globe size={12} /> Global
+                    {country === "all" ? <><Globe size={12} /> Global</> : <><MapPin size={12} /> {country}</>}
                   </span>
                 </div>
                 <h1 className="text-[28px] font-black text-gray-900">Marketplace</h1>
@@ -197,6 +223,15 @@ export default function MarketplacePage() {
               </div>
 
               <div className="sm:ml-auto flex items-center gap-2">
+                <MapPin size={14} color="#6B7280" />
+                <select
+                  value={country}
+                  onChange={e => setCountry(e.target.value)}
+                  className="text-[13px] font-medium text-gray-700 bg-white border border-[#E5E5E5] px-3 py-2 outline-none"
+                  style={{ borderRadius: "8px" }}
+                >
+                  {COUNTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
                 <SlidersHorizontal size={14} color="#6B7280" />
                 <select
                   value={sort}
