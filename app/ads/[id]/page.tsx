@@ -84,6 +84,10 @@ interface Listing {
   payment_methods?: string[] | null;
   onlyfans_username?: string | null;
   profile_video_url?: string | null;
+  incall?: boolean | null;
+  outcall?: boolean | null;
+  handicap_friendly?: boolean | null;
+  has_own_place?: boolean | null;
   opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null;
   timezone?: string | null;
 }
@@ -284,6 +288,15 @@ export default function AdDetailPage() {
                       <span key={s} className="rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">{s}</span>
                     ))}
                   </div>
+                  {/* Incall / Outcall / Has own place */}
+                  {(ad.incall || ad.outcall || ad.has_own_place || ad.handicap_friendly) && (
+                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+                      {ad.incall && <span className="flex items-center gap-1.5 rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs font-600 text-green-700">✓ Incall</span>}
+                      {ad.outcall && <span className="flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-600 text-blue-700">✓ Outcall</span>}
+                      {ad.has_own_place && <span className="flex items-center gap-1.5 rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-xs font-600 text-gray-700">✓ Has own place</span>}
+                      {ad.handicap_friendly && <span className="flex items-center gap-1.5 rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-600 text-purple-700">♿ Disability friendly</span>}
+                    </div>
+                  )}
                 </div>
               )}
 

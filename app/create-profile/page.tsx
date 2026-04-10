@@ -169,6 +169,7 @@ export default function OpretAnnoncePage() {
     grooming: "",
     bra_size: "",
     nationality: "",
+    incall: false,
     outcall: false,
     handicap_friendly: false,
     has_own_place: false,
@@ -310,6 +311,7 @@ export default function OpretAnnoncePage() {
         grooming: form.grooming || null,
         bra_size: form.bra_size || null,
         nationality: form.nationality || null,
+        incall: form.incall,
         outcall: form.outcall,
         handicap_friendly: form.handicap_friendly,
         has_own_place: form.has_own_place,
@@ -362,7 +364,8 @@ export default function OpretAnnoncePage() {
       grooming: "",
       bra_size: "",
       nationality: "",
-      outcall: false,
+      incall: false,
+    outcall: false,
       handicap_friendly: false,
       has_own_place: false,
       show_phone: false,
@@ -841,6 +844,7 @@ export default function OpretAnnoncePage() {
                   {/* Checkboxes */}
                   <div className="flex flex-wrap gap-4 mt-2">
                     {[
+                      { field: "incall", label: "Incall" },
                       { field: "outcall", label: "Outcall" },
                       { field: "handicap_friendly", label: "Disability friendly" },
                       { field: "has_own_place", label: "Has own place" },
