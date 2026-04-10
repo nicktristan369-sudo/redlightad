@@ -640,7 +640,7 @@ export default function GoLivePage() {
             </LiveKitRoom>
 
             {/* Top bar: stats */}
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "48px 16px 12px", background: "linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "48px 12px 10px", background: "linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)", display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", overflow: "hidden" }}>
               {activePrivate ? (
                 <span style={{ background: "#7C3AED", color: "#fff", fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 4 }}>🔒 PRIVATE</span>
               ) : (
@@ -673,7 +673,7 @@ export default function GoLivePage() {
 
             {/* Goal progress bar (broadcaster view) */}
             {goalActive && goalTarget > 0 && (
-              <div style={{ position: "absolute", top: 56, left: 0, right: 0, padding: "4px 16px" }}>
+              <div style={{ position: "absolute", top: 68, left: 0, right: 0, padding: "4px 16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                   <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>🎯 {goalTitle || "Goal"}</span>
                   <span style={{ fontSize: 11, color: "#9CA3AF" }}>{goalCurrent} / {goalTarget} RC ({Math.min(100, Math.round(goalCurrent / goalTarget * 100))}%)</span>
