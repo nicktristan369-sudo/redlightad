@@ -156,6 +156,7 @@ export default function MarketplacePage() {
   const [activeCategory, setActiveCategory] = useState<MarketplaceCategory | "all">("all");
   const [sort, setSort] = useState<SortOption>("newest");
   const [country, setCountry] = useState("all");
+  const [gender, setGender] = useState("all");
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -163,13 +164,14 @@ export default function MarketplacePage() {
       const params = new URLSearchParams({ sort });
       if (activeCategory !== "all") params.set("category", activeCategory);
       if (country !== "all") params.set("country", country);
+      if (gender !== "all") params.set("gender", gender);
       const res = await fetch(`/api/marketplace/items?${params}`);
       const json = await res.json();
       setItems((json.items ?? []) as MarketplaceItem[]);
       setLoading(false);
     };
     fetchItems();
-  }, [activeCategory, sort, country]);
+  }, [activeCategory, sort, country, gender]);
 
   return (
     <>
@@ -231,6 +233,17 @@ export default function MarketplacePage() {
                   style={{ borderRadius: "8px" }}
                 >
                   {COUNTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <select
+                  value={gender}
+                  onChange={e => setGender(e.target.value)}
+                  className="text-[13px] font-medium text-gray-700 bg-white border border-[#E5E5E5] px-3 py-2 outline-none"
+                  style={{ borderRadius: "8px" }}
+                >
+                  <option value="all">Gender</option>
+                  <option value="Woman">Woman</option>
+                  <option value="Man">Man</option>
+                  <option value="Trans">Trans</option>
                 </select>
                 <SlidersHorizontal size={14} color="#6B7280" />
                 <select

@@ -1,320 +1,233 @@
 /**
- * PhoneControl Server
- * -------------------
- * Forbinder til Android-telefoner via ADB, streamer skærm som MJPEG,
- * og videresender touch/tastatur-input tilbage til telefonerne.
- *
- * Kræver installeret på serveren:
- *   - Node.js 18+
- *   - adb (Android Debug Bridge)
- *   - ffmpeg
+ * PhoneControl Server — file-based screenrecord stream
+ * Compatible with Samsung Galaxy / Android 15
+ * Stream: GET /stream/:deviceId  (multipart/x-mixed-replace MJPEG)
  */
 
-const express = require('express');
-const http    = require('http');
-const WebSocket = require('ws');
-const { spawn, exec, execSync } = require('child_process');
-const path    = require('path');
-const fs      = require('fs');
+const express = require("express")
+const { exec, execSync, spawn } = require("child_process")
+const fs = require("fs")
+const path = require("path")
+const cors = require("cors")
 
-const app    = express();
-const server = http.createServer(app);
-const wss    = new WebSocket.Server({ server });
+const app = express()
+app.use(cors())
+app.use(express.json())
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000
+const TMP_DIR = "/tmp/phonecontrol"
+const REMOTE_VIDEO = "/sdcard/sc_tmp.h264"
+const RECORD_DURATION = 3 // seconds per recording chunk
 
-// ────────────────────────────────────────────────────────────────
-// Tilstand
-// ────────────────────────────────────────────────────────────────
-const devices     = new Map();   // deviceId → { id, name, connected, streamClients }
-const streamProcs = new Map();   // deviceId → { adb, ffmpeg }
+if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true })
 
-// ────────────────────────────────────────────────────────────────
-// Middleware
-// ────────────────────────────────────────────────────────────────
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// ────────────────────────────────────────────────────────────────
-// ADB hjælpefunktioner
-// ────────────────────────────────────────────────────────────────
+function adb(deviceId, cmd) {
+  return `adb -s ${deviceId} ${cmd}`
+}
 
-function adbCmd(deviceId, args) {
+function run(cmd) {
   return new Promise((resolve, reject) => {
-    exec(`adb -s ${deviceId} ${args}`, (err, stdout, stderr) => {
-      if (err) reject(stderr || err.message);
-      else resolve(stdout.trim());
-    });
-  });
+    exec(cmd, { timeout: 10000 }, (err, stdout, stderr) => {
+      if (err) return reject(err)
+      resolve(stdout.trim())
+    })
+  })
 }
 
-function refreshDevices() {
-  exec('adb devices -l', (err, stdout) => {
-    if (err) return console.error('adb devices fejl:', err.message);
+function getDevices() {
+  try {
+    const out = execSync("adb devices", { timeout: 5000 }).toString()
+    return out
+      .split("\n")
+      .slice(1)
+      .filter(l => l.includes("\tdevice"))
+      .map(l => l.split("\t")[0].trim())
+  } catch { return [] }
+}
 
-    const lines = stdout.split('\n').slice(1).filter(l => l.trim());
-    const found = new Set();
+// ── On device connect: keep screen on ────────────────────────────────────────
 
-    lines.forEach(line => {
-      const parts = line.trim().split(/\s+/);
-      const id     = parts[0];
-      const status = parts[1];
+async function onDeviceConnect(deviceId) {
+  try {
+    await run(adb(deviceId, "shell svc power stayon true"))
+    console.log(`[${deviceId}] Screen stay-on enabled`)
+  } catch (e) {
+    console.warn(`[${deviceId}] Could not set stay-on: ${e.message}`)
+  }
+}
 
-      if (!id || status !== 'device') return;
-      found.add(id);
-
-      if (!devices.has(id)) {
-        // Hent model-navn
-        exec(`adb -s ${id} shell getprop ro.product.model`, (e, model) => {
-          devices.set(id, {
-            id,
-            name: model ? model.trim() : id,
-            connected: true,
-            streamClients: new Set(),
-          });
-          broadcastDeviceList();
-          console.log(`✅ Ny enhed: ${id} (${model ? model.trim() : 'ukendt'})`);
-        });
-      } else {
-        devices.get(id).connected = true;
-      }
-    });
-
-    // Marker frakobled enheder
-    for (const [id, dev] of devices) {
-      if (!found.has(id)) {
-        dev.connected = false;
-        stopStream(id);
-        broadcastDeviceList();
-      }
+// Poll for new devices every 5s and apply settings
+const knownDevices = new Set()
+setInterval(() => {
+  const devices = getDevices()
+  for (const d of devices) {
+    if (!knownDevices.has(d)) {
+      knownDevices.add(d)
+      console.log(`[connect] New device: ${d}`)
+      onDeviceConnect(d)
     }
-  });
+  }
+}, 5000)
+
+// ── Streaming state ───────────────────────────────────────────────────────────
+
+const streamSessions = {} // deviceId → { clients: Set, recording: bool, loopTimer }
+
+async function captureFrame(deviceId) {
+  const localVideo = path.join(TMP_DIR, `${deviceId}_sc.h264`)
+  const localFrame = path.join(TMP_DIR, `${deviceId}_frame.jpg`)
+
+  try {
+    // Kill any existing screenrecord for this device
+    await run(adb(deviceId, `shell pkill -f screenrecord`)).catch(() => {})
+    await new Promise(r => setTimeout(r, 200))
+
+    // Remove old file on device
+    await run(adb(deviceId, `shell rm -f ${REMOTE_VIDEO}`)).catch(() => {})
+
+    // Record a short clip
+    await run(adb(deviceId, `shell screenrecord --time-limit ${RECORD_DURATION} --output-format h264 ${REMOTE_VIDEO}`))
+
+    // Pull to local
+    await run(adb(deviceId, `pull ${REMOTE_VIDEO} ${localVideo}`))
+
+    // Extract first frame as JPEG using ffmpeg
+    await run(`ffmpeg -y -i ${localVideo} -vframes 1 -q:v 2 -vf "scale=720:-2" ${localFrame} 2>/dev/null`)
+
+    if (!fs.existsSync(localFrame)) return null
+    const data = fs.readFileSync(localFrame)
+    return data
+  } catch (e) {
+    console.warn(`[${deviceId}] captureFrame error: ${e.message}`)
+    return null
+  }
 }
 
-// Tilslut telefon over netværket (ADB over TCP/IP)
-app.post('/api/connect', (req, res) => {
-  const { host, port = 5555 } = req.body;
-  if (!host) return res.status(400).json({ error: 'host mangler' });
-
-  exec(`adb connect ${host}:${port}`, (err, stdout) => {
-    if (err) return res.status(500).json({ error: err.message });
-    refreshDevices();
-    setTimeout(() => broadcastDeviceList(), 1000);
-    res.json({ result: stdout.trim() });
-  });
-});
-
-// Frakobl en enhed
-app.post('/api/disconnect/:deviceId', (req, res) => {
-  const { deviceId } = req.params;
-  stopStream(deviceId);
-  exec(`adb disconnect ${deviceId}`, () => {
-    devices.delete(deviceId);
-    broadcastDeviceList();
-    res.json({ ok: true });
-  });
-});
-
-// Hent enhedsliste
-app.get('/api/devices', (req, res) => {
-  res.json(deviceListPayload());
-});
-
-// ────────────────────────────────────────────────────────────────
-// MJPEG streaming
-// ────────────────────────────────────────────────────────────────
-
-/*
- * Hvert kald til /stream/:deviceId starter en adb+ffmpeg pipeline:
- *   adb exec-out screenrecord --output-format=h264 -
- *     └─→ ffmpeg → MJPEG frames → HTTP multipart stream
- *
- * Browseren bruger: <img src="/stream/DEVICE_ID">
- */
-
-app.get('/stream/:deviceId', (req, res) => {
-  const { deviceId } = req.params;
-  const dev = devices.get(deviceId);
-
-  if (!dev || !dev.connected) {
-    return res.status(404).send('Enhed ikke fundet eller ikke tilsluttet');
+async function streamLoop(deviceId) {
+  const session = streamSessions[deviceId]
+  if (!session || session.clients.size === 0) {
+    if (session) session.recording = false
+    return
   }
 
-  res.setHeader('Content-Type',  'multipart/x-mixed-replace; boundary=mjpegframe');
-  res.setHeader('Cache-Control', 'no-cache, no-store');
-  res.setHeader('Connection',    'close');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  session.recording = true
 
-  // Start ADB screenrecord → H264
-  const adbProc = spawn('adb', [
-    '-s', deviceId,
-    'exec-out',
-    'screenrecord',
-    '--output-format=h264',
-    '--bit-rate', '2000000',
-    '--size', '720x1280',
-    '-',
-  ]);
+  const frame = await captureFrame(deviceId)
 
-  // Transcode H264 → MJPEG via ffmpeg
-  const ffProc = spawn('ffmpeg', [
-    '-loglevel', 'quiet',
-    '-i', 'pipe:0',
-    '-an',
-    '-f', 'image2pipe',
-    '-vf', 'scale=360:-1',
-    '-vcodec', 'mjpeg',
-    '-q:v', '6',
-    'pipe:1',
-  ]);
-
-  adbProc.stdout.pipe(ffProc.stdin);
-
-  let buf = Buffer.alloc(0);
-  const SOI = Buffer.from([0xff, 0xd8]);
-  const EOI = Buffer.from([0xff, 0xd9]);
-
-  ffProc.stdout.on('data', chunk => {
-    buf = Buffer.concat([buf, chunk]);
-
-    let start = buf.indexOf(SOI);
-    while (start !== -1) {
-      const end = buf.indexOf(EOI, start + 2);
-      if (end === -1) break;
-
-      const frame = buf.slice(start, end + 2);
-      const header =
-        '--mjpegframe\r\n' +
-        'Content-Type: image/jpeg\r\n' +
-        `Content-Length: ${frame.length}\r\n\r\n`;
-
+  if (frame && session.clients.size > 0) {
+    const boundary = "--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+    for (const res of session.clients) {
       try {
-        res.write(header);
-        res.write(frame);
-        res.write('\r\n');
-      } catch (_) {}
-
-      buf   = buf.slice(end + 2);
-      start = buf.indexOf(SOI);
+        res.write(Buffer.from(boundary))
+        res.write(frame)
+        res.write("\r\n")
+      } catch { session.clients.delete(res) }
     }
-  });
-
-  const cleanup = () => {
-    try { adbProc.kill('SIGKILL'); } catch (_) {}
-    try { ffProc.kill('SIGKILL');  } catch (_) {}
-  };
-
-  adbProc.on('close', cleanup);
-  ffProc.on('close', () => { try { res.end(); } catch (_) {} });
-  req.on('close', cleanup);
-});
-
-// ────────────────────────────────────────────────────────────────
-// Input-videresendelse
-// ────────────────────────────────────────────────────────────────
-
-// Touch (tap)
-app.post('/input/:deviceId/tap', async (req, res) => {
-  const { deviceId } = req.params;
-  const { x, y } = req.body;
-  try {
-    await adbCmd(deviceId, `shell input tap ${Math.round(x)} ${Math.round(y)}`);
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: e });
   }
-});
 
-// Swipe
-app.post('/input/:deviceId/swipe', async (req, res) => {
-  const { deviceId } = req.params;
-  const { x1, y1, x2, y2, duration = 300 } = req.body;
-  try {
-    await adbCmd(deviceId, `shell input swipe ${x1} ${y1} ${x2} ${y2} ${duration}`);
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: e });
-  }
-});
-
-// Tekst
-app.post('/input/:deviceId/text', async (req, res) => {
-  const { deviceId } = req.params;
-  const { text } = req.body;
-  // Escape special chars for adb
-  const safe = text.replace(/[^a-zA-Z0-9]/g, c => `%${c.charCodeAt(0).toString(16).padStart(2,'0')}`);
-  try {
-    await adbCmd(deviceId, `shell input text "${safe}"`);
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: e });
-  }
-});
-
-// Tryk på hardwareknap (HOME / BACK / RECENTS / POWER / VOLUME_UP / VOLUME_DOWN)
-app.post('/input/:deviceId/key', async (req, res) => {
-  const { deviceId } = req.params;
-  const { key } = req.body;
-  const allowed = ['KEYCODE_HOME','KEYCODE_BACK','KEYCODE_APP_SWITCH',
-                   'KEYCODE_POWER','KEYCODE_VOLUME_UP','KEYCODE_VOLUME_DOWN'];
-  if (!allowed.includes(key)) return res.status(400).json({ error: 'Ugyldig key' });
-  try {
-    await adbCmd(deviceId, `shell input keyevent ${key}`);
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: e });
-  }
-});
-
-// Screenshot (PNG)
-app.get('/screenshot/:deviceId', (req, res) => {
-  const { deviceId } = req.params;
-  const adb = spawn('adb', ['-s', deviceId, 'exec-out', 'screencap', '-p']);
-  res.setHeader('Content-Type', 'image/png');
-  adb.stdout.pipe(res);
-  adb.on('error', e => res.status(500).send(e.message));
-});
-
-// ────────────────────────────────────────────────────────────────
-// WebSocket (live enhedsliste-opdateringer)
-// ────────────────────────────────────────────────────────────────
-
-wss.on('connection', ws => {
-  ws.send(JSON.stringify({ type: 'devices', data: deviceListPayload() }));
-});
-
-function broadcastDeviceList() {
-  const msg = JSON.stringify({ type: 'devices', data: deviceListPayload() });
-  wss.clients.forEach(ws => {
-    if (ws.readyState === WebSocket.OPEN) ws.send(msg);
-  });
-}
-
-function deviceListPayload() {
-  return Array.from(devices.values()).map(d => ({
-    id:        d.id,
-    name:      d.name,
-    connected: d.connected,
-  }));
-}
-
-function stopStream(deviceId) {
-  const procs = streamProcs.get(deviceId);
-  if (procs) {
-    try { procs.adb.kill('SIGKILL');  } catch (_) {}
-    try { procs.ffmpeg.kill('SIGKILL'); } catch (_) {}
-    streamProcs.delete(deviceId);
+  if (session.clients.size > 0) {
+    session.loopTimer = setTimeout(() => streamLoop(deviceId), 500)
+  } else {
+    session.recording = false
   }
 }
 
-// ────────────────────────────────────────────────────────────────
-// Start
-// ────────────────────────────────────────────────────────────────
+// ── Stream endpoint ───────────────────────────────────────────────────────────
 
-refreshDevices();
-setInterval(refreshDevices, 5000);
+app.get("/stream/:deviceId", (req, res) => {
+  const { deviceId } = req.params
 
-server.listen(PORT, () => {
-  console.log(`\n📱 PhoneControl kører på http://localhost:${PORT}`);
-  console.log(`   Åbn browseren og tilslut dine telefoner.\n`);
-});
+  res.setHeader("Content-Type", "multipart/x-mixed-replace; boundary=frame")
+  res.setHeader("Cache-Control", "no-cache, no-store")
+  res.setHeader("Connection", "keep-alive")
+  res.setHeader("Access-Control-Allow-Origin", "*")
+  res.flushHeaders()
+
+  if (!streamSessions[deviceId]) {
+    streamSessions[deviceId] = { clients: new Set(), recording: false }
+  }
+
+  const session = streamSessions[deviceId]
+  session.clients.add(res)
+  console.log(`[${deviceId}] Client connected (total: ${session.clients.size})`)
+
+  if (!session.recording) {
+    streamLoop(deviceId)
+  }
+
+  req.on("close", () => {
+    session.clients.delete(res)
+    console.log(`[${deviceId}] Client disconnected (total: ${session.clients.size})`)
+  })
+})
+
+// ── Input endpoints ───────────────────────────────────────────────────────────
+
+// Tap: POST /tap/:deviceId  { x, y }
+app.post("/tap/:deviceId", async (req, res) => {
+  const { deviceId } = req.params
+  const { x, y } = req.body
+  try {
+    await run(adb(deviceId, `shell input tap ${x} ${y}`))
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Swipe: POST /swipe/:deviceId  { x1, y1, x2, y2, duration? }
+app.post("/swipe/:deviceId", async (req, res) => {
+  const { deviceId } = req.params
+  const { x1, y1, x2, y2, duration = 300 } = req.body
+  try {
+    await run(adb(deviceId, `shell input swipe ${x1} ${y1} ${x2} ${y2} ${duration}`))
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Text: POST /text/:deviceId  { text }
+app.post("/text/:deviceId", async (req, res) => {
+  const { deviceId } = req.params
+  const { text } = req.body
+  const escaped = text.replace(/(['"\\$`])/g, "\\$1").replace(/ /g, "%s")
+  try {
+    await run(adb(deviceId, `shell input text "${escaped}"`))
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Key: POST /key/:deviceId  { keycode }  e.g. KEYCODE_BACK, KEYCODE_HOME
+app.post("/key/:deviceId", async (req, res) => {
+  const { deviceId } = req.params
+  const { keycode } = req.body
+  try {
+    await run(adb(deviceId, `shell input keyevent ${keycode}`))
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Devices: GET /devices
+app.get("/devices", (req, res) => {
+  const devices = getDevices()
+  res.json({ devices })
+})
+
+// Health: GET /health
+app.get("/health", (req, res) => {
+  res.json({ ok: true, uptime: process.uptime() })
+})
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+
+app.listen(PORT, () => {
+  console.log(`PhoneControl server running on port ${PORT}`)
+  console.log(`Stream: GET http://localhost:${PORT}/stream/:deviceId`)
+})
