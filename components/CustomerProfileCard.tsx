@@ -196,7 +196,7 @@ export default function CustomerProfileCard({ profile, onClose }: Props) {
           {/* Sprog */}
           {profile.languages && profile.languages.length > 0 && (
             <div>
-              <SectionLabel>Taler</SectionLabel>
+              <SectionLabel>Speaks</SectionLabel>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 }}>
                 {profile.languages.map(l => (
                   <span key={l} style={{ fontSize: 12, fontWeight: 600, background: "#EFF6FF", color: "#2563EB", padding: "4px 10px", borderRadius: 20 }}>{l}</span>

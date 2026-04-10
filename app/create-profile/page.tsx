@@ -622,22 +622,64 @@ export default function OpretAnnoncePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Languages</label>
-                  <div className="flex flex-wrap gap-2">
-                    {LANGUAGE_OPTIONS.map((l) => (
-                      <button
-                        key={l}
-                        type="button"
-                        onClick={() => toggleArray("languages", l)}
-                        className={`rounded-full border px-4 py-1.5 text-sm transition ${
-                          form.languages.includes(l)
-                            ? "border-red-300 bg-red-100 text-red-700"
-                            : "border-gray-300 bg-white text-gray-600 hover:border-gray-400"
-                        }`}
-                      >
-                        {l}
-                      </button>
-                    ))}
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Languages <span className="text-red-500">*</span>
+                    <span className="ml-2 text-xs font-normal text-gray-400">Select up to 3</span>
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    {[0, 1, 2].map((idx) => {
+                      const selected = form.languages[idx] || ""
+                      const prevFilled = idx === 0 || !!form.languages[idx - 1]
+                      if (!prevFilled) return null
+                      const available = LANGUAGE_OPTIONS.filter(
+                        l => !form.languages.includes(l) || l === selected
+                      )
+                      return (
+                        <div key={idx} className="relative">
+                          <select
+                            value={selected}
+                            onChange={e => {
+                              const val = e.target.value
+                              setForm(prev => {
+                                const langs = [...prev.languages]
+                                if (val === "") {
+                                  langs.splice(idx, langs.length - idx)
+                                } else {
+                                  langs[idx] = val
+                                }
+                                return { ...prev, languages: langs.slice(0, 3) }
+                              })
+                            }}
+                            style={{ fontSize: 16 }}
+                            className={`w-full rounded-xl border px-4 py-2.5 text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-red-500 ${
+                              selected
+                                ? "border-red-300 bg-red-50 text-red-700 font-medium"
+                                : "border-gray-200 bg-white text-gray-500"
+                            }`}
+                          >
+                            <option value="">{idx === 0 ? "Select language (required)" : `Add language ${idx + 1} (optional)`}</option>
+                            {available.map(l => (
+                              <option key={l} value={l}>{l}</option>
+                            ))}
+                          </select>
+                          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                          </div>
+                          {selected && (
+                            <button
+                              type="button"
+                              onClick={() => setForm(prev => {
+                                const langs = [...prev.languages]
+                                langs.splice(idx, langs.length - idx)
+                                return { ...prev, languages: langs }
+                              })}
+                              className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-lg leading-none"
+                              title="Remove"
+                            >×</button>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
 
