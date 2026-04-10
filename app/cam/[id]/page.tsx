@@ -397,6 +397,21 @@ export default function CamRoomPage() {
     return () => document.removeEventListener("click", unlock)
   }, [])
 
+  // Goal progress — poll every 5s so all viewers see live updates
+  useEffect(() => {
+    if (!listing?.cam_goal_active || !listing?.cam_goal_target) return
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/cam/goal?listingId=${id}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (typeof data.cam_goal_current === "number") {
+          setGoalProgress(data.cam_goal_current)
+        }
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [id, listing?.cam_goal_active, listing?.cam_goal_target])
+
   // Countdown timer for scheduled cam
   useEffect(() => {
     if (listing?.cam_status === "scheduled" && listing?.cam_scheduled_at) {

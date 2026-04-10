@@ -137,6 +137,7 @@ export default function GoLivePage() {
   const [goalActive, setGoalActive] = useState(false)
   const [goalSaving, setGoalSaving] = useState(false)
   const [goalSaved, setGoalSaved] = useState(false)
+  const [goalCurrent, setGoalCurrent] = useState(0)
 
   const playTipSound = useCallback(() => {
     try {
@@ -165,7 +166,7 @@ export default function GoLivePage() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rows: any[] | null = null
-      const listingSelect = "id, display_name, title, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at, cam_goal_title, cam_goal_target, cam_goal_active"
+      const listingSelect = "id, display_name, title, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at, cam_goal_title, cam_goal_target, cam_goal_active, cam_goal_current"
 
       // Try user's own listings first
       const { data: userRows } = await supabase.from("listings").select(listingSelect).eq("user_id", user.id).limit(1)
@@ -200,6 +201,7 @@ export default function GoLivePage() {
       setGoalTitle(data.cam_goal_title || "")
       setGoalTarget(data.cam_goal_target || 1000)
       setGoalActive(data.cam_goal_active || false)
+      setGoalCurrent(data.cam_goal_current || 0)
 
       // Load tip menu
       fetch(`/api/cam/tip-menu?listingId=${data.id}`).then(r => r.json()).then(d => setTipMenuItems(d.items || []))
@@ -266,6 +268,19 @@ export default function GoLivePage() {
     })
     setPrivateRequests(prev => prev.filter(r => r.id !== requestId))
   }
+
+  // Goal progress — poll every 5s while live
+  useEffect(() => {
+    if (!isLive || !listing?.id || !goalActive) return
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/cam/goal?listingId=${listing.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (typeof data.cam_goal_current === "number") setGoalCurrent(data.cam_goal_current)
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [isLive, listing?.id, goalActive])
 
   // Chat — polling every 3s (most reliable across devices)
   useEffect(() => {
@@ -529,6 +544,19 @@ export default function GoLivePage() {
                 {showChat ? "Hide chat" : "Show chat"}
               </button>
             </div>
+
+            {/* Goal progress bar (broadcaster view) */}
+            {goalActive && goalTarget > 0 && (
+              <div style={{ position: "absolute", top: 56, left: 0, right: 0, padding: "4px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                  <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>🎯 {goalTitle || "Goal"}</span>
+                  <span style={{ fontSize: 11, color: "#9CA3AF" }}>{goalCurrent} / {goalTarget} RC ({Math.min(100, Math.round(goalCurrent / goalTarget * 100))}%)</span>
+                </div>
+                <div style={{ height: 4, background: "rgba(255,255,255,0.15)", borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ height: "100%", background: "#DC2626", width: `${Math.min(100, Math.round(goalCurrent / goalTarget * 100))}%`, transition: "width 0.5s ease" }} />
+                </div>
+              </div>
+            )}
 
             {/* Private show requests */}
             {privateRequests.map(req => (
