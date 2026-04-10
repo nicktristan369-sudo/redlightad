@@ -135,6 +135,8 @@ export default function GoLivePage() {
   const [goalTitle, setGoalTitle] = useState("")
   const [goalTarget, setGoalTarget] = useState(1000)
   const [goalActive, setGoalActive] = useState(false)
+  const [goalSaving, setGoalSaving] = useState(false)
+  const [goalSaved, setGoalSaved] = useState(false)
 
   const playTipSound = useCallback(() => {
     try {
@@ -388,13 +390,23 @@ export default function GoLivePage() {
 
   const saveGoal = async () => {
     if (!listing) return
+    setGoalSaving(true)
+    setGoalSaved(false)
     const supabase = createClient()
-    await supabase.from("listings").update({
+    const { error: updateErr } = await supabase.from("listings").update({
       cam_goal_title: goalTitle,
       cam_goal_target: goalTarget,
       cam_goal_active: goalActive,
       cam_goal_current: 0,
     }).eq("id", listing.id)
+    setGoalSaving(false)
+    if (updateErr) {
+      console.error("saveGoal error:", updateErr)
+      setError("Failed to save goal: " + updateErr.message)
+    } else {
+      setGoalSaved(true)
+      setTimeout(() => setGoalSaved(false), 3000)
+    }
   }
 
   if (loading) {
@@ -645,9 +657,9 @@ export default function GoLivePage() {
                       </div>
                     </>
                   )}
-                  <button onClick={saveGoal}
-                    style={{ padding: "8px 16px", background: "#111", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", alignSelf: "flex-start" }}>
-                    Gem goal
+                  <button onClick={saveGoal} disabled={goalSaving}
+                    style={{ padding: "8px 16px", background: goalSaved ? "#16A34A" : "#111", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: goalSaving ? "not-allowed" : "pointer", alignSelf: "flex-start", opacity: goalSaving ? 0.6 : 1, transition: "background 0.2s" }}>
+                    {goalSaving ? "Saving..." : goalSaved ? "✓ Saved" : "Save goal"}
                   </button>
                 </div>
               </div>
