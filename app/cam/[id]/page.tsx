@@ -132,6 +132,9 @@ export default function CamRoomPage() {
   const [privateToken, setPrivateToken] = useState<string | null>(null)
   const [showPrivateConfirm, setShowPrivateConfirm] = useState(false)
   const [privateBilling, setPrivateBilling] = useState(false)
+  const [privateMinutes, setPrivateMinutes] = useState(0)
+  const [privateRcSpent, setPrivateRcSpent] = useState(0)
+  const [privateSeconds, setPrivateSeconds] = useState(0)
   const [tipError, setTipError] = useState<string | null>(null)
   const [tipMenu, setTipMenu] = useState<{id: string; action: string; rc_amount: number}[]>([])
   const [isNotifying, setIsNotifying] = useState(false)
@@ -295,9 +298,21 @@ export default function CamRoomPage() {
     return () => clearInterval(interval)
   }, [privateRequest?.id, privateRequest?.status, currentUser])
 
-  // Per-minute billing for private show
+  // Per-minute billing + second counter for private show
   useEffect(() => {
     if (!privateRequest || privateRequest.status !== "accepted" || !currentUser) return
+
+    // Reset counters
+    setPrivateMinutes(0)
+    setPrivateRcSpent(0)
+    setPrivateSeconds(0)
+
+    // Second-by-second timer (for display)
+    const secInterval = setInterval(() => {
+      setPrivateSeconds(s => s + 1)
+    }, 1000)
+
+    // Per-minute billing
     const billInterval = setInterval(async () => {
       const res = await fetch("/api/cam/private", {
         method: "POST",
@@ -308,13 +323,17 @@ export default function CamRoomPage() {
       if (data.ended) {
         setPrivateToken(null)
         clearInterval(billInterval)
+        clearInterval(secInterval)
         setPrivateRequest(prev => prev ? { ...prev, status: "ended" } : null)
         setTimeout(() => setPrivateRequest(null), 3000)
       } else if (data.remaining !== undefined) {
         setUserBalance(data.remaining)
+        setPrivateMinutes(m => m + 1)
+        setPrivateRcSpent(s => s + (data.deducted || privateRequest.tokensPerMin))
       }
     }, 60000)
-    return () => clearInterval(billInterval)
+
+    return () => { clearInterval(billInterval); clearInterval(secInterval) }
   }, [privateRequest?.id, privateRequest?.status])
 
   const endPrivateShow = async () => {
@@ -622,10 +641,21 @@ export default function CamRoomPage() {
               <span style={{ fontSize: 12, color: "#EF4444" }}>❌ Request declined</span>
             )}
             {privateRequest && privateRequest.status === "accepted" && (
-              <button onClick={endPrivateShow}
-                style={{ padding: "7px 14px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                🔒 End Private ({privateRequest.tokensPerMin} RC/min)
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* RC/time counter */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                  <span style={{ fontSize: 11, color: "#F59E0B", fontWeight: 700, fontFamily: "monospace" }}>
+                    {String(Math.floor(privateSeconds / 60)).padStart(2,"0")}:{String(privateSeconds % 60).padStart(2,"0")}
+                    {" · "}
+                    <span style={{ color: "#DC2626" }}>{privateRcSpent} RC</span>
+                  </span>
+                  <span style={{ fontSize: 10, color: "#6B7280" }}>{privateRequest.tokensPerMin} RC/min</span>
+                </div>
+                <button onClick={endPrivateShow}
+                  style={{ padding: "7px 14px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  🔒 End Private
+                </button>
+              </div>
             )}
             <button onClick={() => currentUser ? setShowTip(true) : null}
               style={{ padding: "7px 20px", background: "#DC2626", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
