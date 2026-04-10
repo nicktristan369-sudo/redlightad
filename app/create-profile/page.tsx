@@ -10,6 +10,68 @@ import SocialLinksEditor from "@/components/SocialLinksEditor";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 import { CreditCard, Banknote, Coins, Zap } from "lucide-react";
 
+const DIAL_CODES = [
+  { code: "+45",  iso: "DK", name: "Denmark" },
+  { code: "+46",  iso: "SE", name: "Sweden" },
+  { code: "+47",  iso: "NO", name: "Norway" },
+  { code: "+358", iso: "FI", name: "Finland" },
+  { code: "+44",  iso: "GB", name: "United Kingdom" },
+  { code: "+66",  iso: "TH", name: "Thailand" },
+  { code: "+63",  iso: "PH", name: "Philippines" },
+  { code: "+60",  iso: "MY", name: "Malaysia" },
+  { code: "+62",  iso: "ID", name: "Indonesia" },
+  { code: "+84",  iso: "VN", name: "Vietnam" },
+  { code: "+856", iso: "LA", name: "Laos" },
+  { code: "+855", iso: "KH", name: "Cambodia" },
+  { code: "+95",  iso: "MM", name: "Myanmar" },
+  { code: "+49",  iso: "DE", name: "Germany" },
+  { code: "+33",  iso: "FR", name: "France" },
+  { code: "+31",  iso: "NL", name: "Netherlands" },
+  { code: "+34",  iso: "ES", name: "Spain" },
+  { code: "+39",  iso: "IT", name: "Italy" },
+  { code: "+48",  iso: "PL", name: "Poland" },
+  { code: "+43",  iso: "AT", name: "Austria" },
+  { code: "+32",  iso: "BE", name: "Belgium" },
+  { code: "+41",  iso: "CH", name: "Switzerland" },
+  { code: "+420", iso: "CZ", name: "Czech Republic" },
+  { code: "+36",  iso: "HU", name: "Hungary" },
+  { code: "+40",  iso: "RO", name: "Romania" },
+  { code: "+30",  iso: "GR", name: "Greece" },
+  { code: "+351", iso: "PT", name: "Portugal" },
+  { code: "+380", iso: "UA", name: "Ukraine" },
+  { code: "+7",   iso: "RU", name: "Russia" },
+  { code: "+90",  iso: "TR", name: "Turkey" },
+  { code: "+1",   iso: "US", name: "USA / Canada" },
+  { code: "+61",  iso: "AU", name: "Australia" },
+  { code: "+64",  iso: "NZ", name: "New Zealand" },
+  { code: "+55",  iso: "BR", name: "Brazil" },
+  { code: "+52",  iso: "MX", name: "Mexico" },
+  { code: "+54",  iso: "AR", name: "Argentina" },
+  { code: "+57",  iso: "CO", name: "Colombia" },
+  { code: "+971", iso: "AE", name: "UAE" },
+  { code: "+966", iso: "SA", name: "Saudi Arabia" },
+  { code: "+974", iso: "QA", name: "Qatar" },
+  { code: "+81",  iso: "JP", name: "Japan" },
+  { code: "+82",  iso: "KR", name: "South Korea" },
+  { code: "+86",  iso: "CN", name: "China" },
+  { code: "+91",  iso: "IN", name: "India" },
+  { code: "+92",  iso: "PK", name: "Pakistan" },
+  { code: "+27",  iso: "ZA", name: "South Africa" },
+  { code: "+20",  iso: "EG", name: "Egypt" },
+  { code: "+234", iso: "NG", name: "Nigeria" },
+  { code: "+254", iso: "KE", name: "Kenya" },
+  { code: "+353", iso: "IE", name: "Ireland" },
+  { code: "+372", iso: "EE", name: "Estonia" },
+  { code: "+371", iso: "LV", name: "Latvia" },
+  { code: "+370", iso: "LT", name: "Lithuania" },
+  { code: "+421", iso: "SK", name: "Slovakia" },
+  { code: "+386", iso: "SI", name: "Slovenia" },
+  { code: "+385", iso: "HR", name: "Croatia" },
+  { code: "+381", iso: "RS", name: "Serbia" },
+  { code: "+359", iso: "BG", name: "Bulgaria" },
+  { code: "+373", iso: "MD", name: "Moldova" },
+];
+
 const PAYMENT_OPTIONS = [
   { id: "revolut",   label: "Revolut",    icon: CreditCard },
   { id: "cash",      label: "Cash",       icon: Banknote },
@@ -197,6 +259,8 @@ export default function OpretAnnoncePage() {
   const [verifySending, setVerifySending] = useState(false);
   const [verifyChecking, setVerifyChecking] = useState(false);
   const [verifyError, setVerifyError] = useState("");
+  const [dialCode, setDialCode] = useState("+45");
+  const [phoneLocal, setPhoneLocal] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [voiceMessageUrl, setVoiceMessageUrl] = useState<string>("");
@@ -1407,51 +1471,118 @@ export default function OpretAnnoncePage() {
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-700">Contact</label>
                   <div className="space-y-3">
-                    {/* Phone with show checkbox */}
-                    <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={form.show_phone}
-                        onChange={(e) => updateField("show_phone", e.target.checked)}
-                        className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                      />
-                      <span className="w-20 text-sm text-gray-500">Phone</span>
-                      <input
-                        type="text"
-                        value={form.phone}
-                        onChange={(e) => updateField("phone", e.target.value)}
-                        placeholder="Phone"
-                        style={{ fontSize: 16 }}
-                        className="flex-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-0"
-                      />
+                    {/* Phone with country code picker */}
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-gray-500">Phone number</label>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {/* Country code dropdown */}
+                        <div style={{ position: "relative", flexShrink: 0 }}>
+                          <select
+                            value={dialCode}
+                            onChange={e => {
+                              setDialCode(e.target.value)
+                              const local = phoneLocal.replace(/\s/g, "")
+                              updateField("phone", e.target.value + local)
+                            }}
+                            style={{ fontSize: 16, padding: "10px 8px", border: "1px solid #D1D5DB", borderRadius: 10, background: "#F9FAFB", appearance: "none", paddingRight: 28, cursor: "pointer", minWidth: 90 }}
+                          >
+                            {DIAL_CODES.map(d => (
+                              <option key={d.iso} value={d.code}>
+                                {d.code} {d.name}
+                              </option>
+                            ))}
+                          </select>
+                          {/* Show selected flag */}
+                          <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                            <span className={`fi fi-${DIAL_CODES.find(d => d.code === dialCode)?.iso.toLowerCase() ?? "dk"} fis`} style={{ borderRadius: 3, width: 18, height: 14, display: "inline-block", flexShrink: 0 }} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "#111", marginLeft: 2 }}>{dialCode}</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                          </div>
+                          {/* Overlay to hide native select text (show our custom display) */}
+                          <select
+                            value={dialCode}
+                            onChange={e => {
+                              setDialCode(e.target.value)
+                              const local = phoneLocal.replace(/\s/g, "")
+                              updateField("phone", e.target.value + local)
+                            }}
+                            style={{ position: "absolute", inset: 0, opacity: 0, fontSize: 16, cursor: "pointer", width: "100%" }}
+                          >
+                            {DIAL_CODES.map(d => (
+                              <option key={d.iso} value={d.code}>
+                                {d.code} — {d.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        {/* Phone number input */}
+                        <input
+                          type="tel"
+                          value={phoneLocal}
+                          onChange={e => {
+                            const val = e.target.value.replace(/[^\d\s\-]/g, "")
+                            setPhoneLocal(val)
+                            updateField("phone", dialCode + val.replace(/\s/g, ""))
+                            setPhoneVerified(false)
+                            setShowVerifyInput(false)
+                          }}
+                          placeholder="12 34 56 78"
+                          style={{ flex: 1, fontSize: 16, padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 10 }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#6B7280", cursor: "pointer" }}>
+                          <input type="checkbox" checked={form.show_phone} onChange={e => updateField("show_phone", e.target.checked)}
+                            style={{ accentColor: "#DC2626" }} />
+                          Show phone number publicly on profile
+                        </label>
+                      </div>
                     </div>
-                    {/* Phone verification */}
-                    {form.show_phone && form.phone && !phoneVerified && (
-                      <div style={{ marginLeft: 32, marginTop: 6, marginBottom: 8 }}>
+
+                    {/* Phone verification block */}
+                    {form.phone && form.phone.length > 6 && !phoneVerified && (
+                      <div style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 10, padding: "14px 16px" }}>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 10 }}>
+                          Verify your phone number (optional — adds Verified badge)
+                        </p>
                         {!showVerifyInput ? (
                           <button type="button" onClick={sendPhoneVerification} disabled={verifySending}
-                            className="text-xs font-semibold text-red-600 border border-red-300 rounded-lg px-3 py-1.5 hover:bg-red-50 disabled:opacity-50">
-                            {verifySending ? "Sending..." : "Verify phone number →"}
+                            style={{ fontSize: 13, fontWeight: 600, color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, padding: "7px 14px", background: "#FEF2F2", cursor: "pointer", opacity: verifySending ? 0.6 : 1 }}>
+                            {verifySending ? "Sending code..." : "Send verification code →"}
                           </button>
                         ) : (
-                          <div className="flex items-center gap-2">
-                            <input type="text" value={verifyCode} onChange={e => setVerifyCode(e.target.value)}
-                              placeholder="Enter 6-digit code" maxLength={6}
-                              style={{ fontSize: 16 }}
-                              className="w-36 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-red-500 focus:outline-none" />
-                            <button type="button" onClick={confirmPhoneCode} disabled={verifyChecking}
-                              className="text-xs font-semibold bg-gray-900 text-white rounded-lg px-3 py-1.5 disabled:opacity-50">
-                              {verifyChecking ? "Checking..." : "Confirm"}
+                          <div>
+                            <p style={{ fontSize: 11, color: "#6B7280", marginBottom: 8 }}>
+                              Enter the 6-digit code sent to <strong>{form.phone}</strong>
+                            </p>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={verifyCode}
+                                onChange={e => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                placeholder="_ _ _ _ _ _"
+                                maxLength={6}
+                                style={{ fontSize: 20, letterSpacing: 6, fontWeight: 700, padding: "8px 14px", border: "2px solid #E5E7EB", borderRadius: 10, width: 160, textAlign: "center" }}
+                              />
+                              <button type="button" onClick={confirmPhoneCode} disabled={verifyChecking || verifyCode.length < 4}
+                                style={{ fontSize: 13, fontWeight: 700, background: "#111", color: "#fff", border: "none", borderRadius: 8, padding: "9px 16px", cursor: "pointer", opacity: (verifyChecking || verifyCode.length < 4) ? 0.5 : 1 }}>
+                                {verifyChecking ? "Checking..." : "Confirm"}
+                              </button>
+                            </div>
+                            <button type="button" onClick={() => { setShowVerifyInput(false); setVerifyCode(""); }}
+                              style={{ fontSize: 11, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer", marginTop: 6 }}>
+                              Resend code
                             </button>
                           </div>
                         )}
-                        {verifyError && <p className="text-xs text-red-500 mt-1">{verifyError}</p>}
+                        {verifyError && <p style={{ fontSize: 12, color: "#DC2626", marginTop: 8 }}>{verifyError}</p>}
                       </div>
                     )}
-                    {phoneVerified && form.show_phone && (
-                      <div style={{ marginLeft: 32, marginTop: 4, marginBottom: 8 }} className="flex items-center gap-1.5 text-xs text-green-600 font-semibold">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Phone verified
+                    {phoneVerified && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#16A34A", fontWeight: 600, padding: "8px 12px", background: "#F0FDF4", borderRadius: 8 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        Phone verified ✓
                       </div>
                     )}
                     {/* Other contact fields */}
