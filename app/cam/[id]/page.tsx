@@ -142,6 +142,7 @@ export default function CamRoomPage() {
   const [countdown, setCountdown] = useState("")
   const chatRef = useRef<HTMLDivElement>(null)
   const audioUnlocked = useRef(false)
+  const seenMsgIds = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (!id) return
@@ -190,7 +191,7 @@ export default function CamRoomPage() {
     // Load initial messages from current session
     let since = new Date(Date.now() - 3600000).toISOString()
     let lastTimestamp = since
-    let seenIds = new Set<string>()
+    seenMsgIds.current.clear()
 
     supabase.from("listings").select("cam_started_at").eq("id", id).single()
       .then(({ data: l }) => {
@@ -200,7 +201,7 @@ export default function CamRoomPage() {
           .gte("created_at", since).order("created_at").limit(80)
           .then(({ data }) => {
             if (data) {
-              data.forEach(m => seenIds.add(m.id))
+              data.forEach(m => seenMsgIds.current.add(m.id))
               setMessages(data)
             }
           })
@@ -211,8 +212,8 @@ export default function CamRoomPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "cam_messages", filter: `room_id=eq.${id}` },
         payload => {
           const m = payload.new as CamMessage
-          if (seenIds.has(m.id)) return
-          seenIds.add(m.id)
+          if (seenMsgIds.current.has(m.id)) return
+          seenMsgIds.current.add(m.id)
           lastTimestamp = m.created_at
           setMessages(prev => [...prev.slice(-149), m])
         })
@@ -225,9 +226,9 @@ export default function CamRoomPage() {
         .gt("created_at", lastTimestamp)
         .order("created_at").limit(20)
       if (data && data.length > 0) {
-        const newMsgs = data.filter(m => !seenIds.has(m.id))
+        const newMsgs = data.filter(m => !seenMsgIds.current.has(m.id))
         if (newMsgs.length > 0) {
-          newMsgs.forEach(m => seenIds.add(m.id))
+          newMsgs.forEach(m => seenMsgIds.current.add(m.id))
           lastTimestamp = data[data.length - 1].created_at
           setMessages(prev => [...prev.slice(-149), ...newMsgs])
         }
@@ -249,26 +250,20 @@ export default function CamRoomPage() {
     if (!msg || !currentUser) return
     if (!text) setNewMessage("")
 
-    // Optimistic update — show instantly
-    const optimistic: CamMessage = {
-      id: `opt-${Date.now()}`,
-      user_id: currentUser.id,
-      username: currentUser.email?.split("@")[0] || "Anonymous",
-      message: msg,
-      is_tip: false,
-      tip_amount: null,
-      created_at: new Date().toISOString(),
-    }
-    setMessages(prev => [...prev.slice(-149), optimistic])
-
     const supabase = createClient()
-    await supabase.from("cam_messages").insert({
+    const { data: inserted } = await supabase.from("cam_messages").insert({
       room_id: id,
       user_id: currentUser.id,
       username: currentUser.email?.split("@")[0] || "Anonymous",
       message: msg,
       is_tip: false,
-    })
+    }).select().single()
+
+    if (inserted) {
+      // Mark as seen BEFORE realtime/polling can pick it up → no duplicate
+      seenMsgIds.current.add(inserted.id)
+      setMessages(prev => [...prev.slice(-149), inserted as CamMessage])
+    }
   }
 
   const playTipSound = () => {
@@ -396,6 +391,19 @@ export default function CamRoomPage() {
     document.addEventListener("click", unlock, { once: true })
     return () => document.removeEventListener("click", unlock)
   }, [])
+
+  // Viewer count — poll from DB every 10s (fallback for when LiveKit participants count fails on mobile)
+  useEffect(() => {
+    if (!listing?.cam_live) return
+    const supabase = createClient()
+    const poll = async () => {
+      const { data } = await supabase.from("listings").select("cam_viewers").eq("id", id).single()
+      if (data?.cam_viewers !== undefined) setViewerCount(v => Math.max(v, data.cam_viewers || 0))
+    }
+    poll()
+    const interval = setInterval(poll, 10000)
+    return () => clearInterval(interval)
+  }, [id, listing?.cam_live])
 
   // Goal progress — poll every 5s so all viewers see live updates
   useEffect(() => {
