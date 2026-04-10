@@ -103,6 +103,8 @@ function BroadcastControls({ onViewerCount }: { onViewerCount: (n: number) => vo
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function GoLivePage() {
   const router = useRouter()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [adminListings, setAdminListings] = useState<any[]>([])
   const [listing, setListing] = useState<{ id: string; display_name?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
@@ -158,11 +160,24 @@ export default function GoLivePage() {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace("/login"); return }
-      const { data: rows } = await supabase
-        .from("listings")
-        .select("id, display_name, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at, cam_goal_title, cam_goal_target, cam_goal_active")
-        .eq("user_id", user.id)
-        .limit(1)
+
+      // Check if admin
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+      const isAdmin = profile?.role === "admin"
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let rows: any[] | null = null
+      const listingSelect = "id, display_name, title, cam_live, cam_title, cam_category, cam_tokens_per_min, cam_viewers, cam_started_at, cam_goal_title, cam_goal_target, cam_goal_active"
+
+      if (isAdmin) {
+        const { data: allRows } = await supabase.from("listings").select(listingSelect).eq("status", "active").order("created_at", { ascending: false }).limit(100)
+        rows = allRows
+        if (rows && rows.length > 0) setAdminListings(rows)
+      } else {
+        const { data: userRows } = await supabase.from("listings").select(listingSelect).eq("user_id", user.id).limit(1)
+        rows = userRows
+      }
+
       const data = rows?.[0] ?? null
       if (!data) { setError("No profile found. Please create your profile first."); setLoading(false); return }
       setListing(data)
@@ -391,18 +406,37 @@ export default function GoLivePage() {
   if (error && !listing) {
     return (
       <DashboardLayout>
-        <div style={{ maxWidth: 480, margin: "80px auto", textAlign: "center", padding: "0 16px" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 16, background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>No profile yet</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>
-            You need to create your profile before you can go live. Set up your profile to start streaming.
-          </p>
-          <a href="/create-profile"
-            style={{ display: "inline-block", padding: "12px 32px", background: "#DC2626", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
-            Create your profile
-          </a>
+        <div style={{ maxWidth: 520, margin: "60px auto", padding: "0 16px" }}>
+          {adminListings.length > 0 ? (
+            // Admin: show listing picker
+            <div>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 6 }}>Go Live — Select Profile</h2>
+              <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>As admin you can stream from any active profile:</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {adminListings.map((l) => (
+                  <button key={l.id} onClick={() => { setListing(l); setError("") }}
+                    style={{ padding: "12px 16px", background: "#fff", border: "1px solid #E5E7EB", borderRadius: 10, textAlign: "left", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
+                    {l.display_name || l.title || l.id}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            // Regular user: create profile prompt
+            <div style={{ textAlign: "center" }}>
+              <div style={{ width: 64, height: 64, borderRadius: 16, background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              </div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>No profile yet</h2>
+              <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 28, lineHeight: 1.6 }}>
+                You need to create your profile before you can go live. Set up your profile to start streaming.
+              </p>
+              <a href="/create-profile"
+                style={{ display: "inline-block", padding: "12px 32px", background: "#DC2626", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+                Create your profile
+              </a>
+            </div>
+          )}
         </div>
       </DashboardLayout>
     )
