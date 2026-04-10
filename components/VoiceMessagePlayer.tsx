@@ -7,8 +7,26 @@ interface VoiceMessagePlayerProps {
   compact?: boolean
 }
 
+// Convert Cloudinary webm/video URL to mp3 for universal browser support (incl. Safari)
+function toMp3Url(url: string): string {
+  if (!url) return url
+  // Cloudinary URL: insert f_mp3 transformation
+  // e.g. /video/upload/v123/file.webm → /video/upload/f_mp3/v123/file
+  try {
+    const u = new URL(url)
+    if (u.hostname.includes("cloudinary.com")) {
+      // Remove extension, add f_mp3 transformation
+      const withoutExt = u.pathname.replace(/\.(webm|ogg|opus|wav)$/i, "")
+      u.pathname = withoutExt.replace("/video/upload/", "/video/upload/f_mp3/")
+      return u.toString()
+    }
+  } catch {}
+  return url
+}
+
 export default function VoiceMessagePlayer({ url, compact = false }: VoiceMessagePlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
+  const mp3Url = toMp3Url(url)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -40,11 +58,20 @@ export default function VoiceMessagePlayer({ url, compact = false }: VoiceMessag
     }
   }, [])
 
-  const toggle = () => {
+  const toggle = async () => {
     const audio = audioRef.current
     if (!audio) return
-    if (playing) { audio.pause(); setPlaying(false) }
-    else { audio.play(); setPlaying(true) }
+    if (playing) {
+      audio.pause()
+      setPlaying(false)
+    } else {
+      try {
+        await audio.play()
+        setPlaying(true)
+      } catch (e) {
+        console.error("Audio play failed:", e)
+      }
+    }
   }
 
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -58,7 +85,10 @@ export default function VoiceMessagePlayer({ url, compact = false }: VoiceMessag
   if (compact) {
     return (
       <div className="flex items-center gap-2 mt-2">
-        <audio ref={audioRef} src={url} preload="metadata" />
+        <audio ref={audioRef} preload="metadata">
+          <source src={mp3Url} type="audio/mpeg" />
+          <source src={url} type="audio/webm" />
+        </audio>
         <button
           onClick={toggle}
           className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0 hover:bg-black transition-colors"
@@ -78,7 +108,10 @@ export default function VoiceMessagePlayer({ url, compact = false }: VoiceMessag
 
   return (
     <div className="rounded-xl bg-white p-5 shadow-sm border border-gray-100">
-      <audio ref={audioRef} src={url} preload="metadata" />
+      <audio ref={audioRef} preload="metadata">
+        <source src={mp3Url} type="audio/mpeg" />
+        <source src={url} type="audio/webm" />
+      </audio>
       <div className="mb-4 flex items-center gap-2">
         <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zM7 9.5A5 5 0 0 0 17 9.5v1a7 7 0 0 1-4 6.32V19h3v2H8v-2h3v-2.18A7 7 0 0 1 7 10.5v-1z"/></svg>
         <h3 className="font-semibold text-gray-900">Stemmebesked</h3>
