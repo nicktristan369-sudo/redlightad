@@ -123,9 +123,14 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // 3. Delete profile
+        // 3. Delete profile + listings
+        await supabase.from("listings").delete().eq("user_id", userId);
         const { error } = await supabase.from("profiles").delete().eq("id", userId);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+        // 4. Delete from auth.users so email can be re-used
+        await supabase.auth.admin.deleteUser(userId);
+
         return NextResponse.json({ success: true });
       }
 
