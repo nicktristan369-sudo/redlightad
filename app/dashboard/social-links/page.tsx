@@ -58,7 +58,7 @@ export default function SocialLinksPage() {
   const update = (platform: string, field: keyof LinkConfig, val: string | boolean | number) => {
     setLinks(prev => ({
       ...prev,
-      [platform]: { url: "", locked: false, price_coins: 0, ...prev[platform], [field]: val }
+      [platform]: { ...{ url: "", locked: false, price_coins: 0 }, ...prev[platform], [field]: val }
     }))
   }
 
