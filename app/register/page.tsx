@@ -106,9 +106,16 @@ export default function RegisterPage() {
     if (password !== confirmPassword) { setError(t.reg_password_mismatch); return; }
     setLoading(true);
     const supabase = createClient();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://redlightad.com";
+    const redirectTo = accountType === "provider"
+      ? `${siteUrl}/create-profile`
+      : `${siteUrl}/kunde`;
     const { data, error: authError } = await supabase.auth.signUp({
       email, password,
-      options: { data: { account_type: accountType } },
+      options: {
+        data: { account_type: accountType },
+        emailRedirectTo: redirectTo,
+      },
     });
     if (authError) { setError(authError.message); setLoading(false); return; }
     setUserId(data.user?.id ?? null);

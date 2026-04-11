@@ -78,8 +78,14 @@ function DashboardContent() {
         .limit(1)
         .single()
 
-      // If listing exists but no plan selected → send to choose-plan
-      if (listing && !listing.premium_tier) {
+      // No listing at all → send to create-profile
+      if (!listing) {
+        router.replace("/create-profile")
+        return
+      }
+
+      // Listing exists but no plan selected → send to choose-plan
+      if (!listing.premium_tier) {
         router.replace("/choose-plan")
         return
       }
