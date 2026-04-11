@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 const STATS = [
   { label: "Active listings", value: "0", Icon: FileText },
@@ -51,7 +52,10 @@ function QuickBtn({
 function DashboardContent() {
   const { t } = useLanguage()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const upgraded = searchParams.get("upgraded")
+  const planActivated = searchParams.get("plan_activated")
+  const plan = searchParams.get("plan")
   const tier = searchParams.get("tier")
   const [listingId, setListingId] = useState<string | null>(null)
   const [camStatus, setCamStatus] = useState<"offline"|"available"|"scheduled">("offline")
@@ -65,8 +69,21 @@ function DashboardContent() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
+
+      // Check if user has a listing and whether they have paid
       const { data: listing } = await supabase
-        .from("listings").select("id").eq("user_id", user.id).eq("status", "active").limit(1).single()
+        .from("listings")
+        .select("id, premium_tier, status")
+        .eq("user_id", user.id)
+        .limit(1)
+        .single()
+
+      // If listing exists but no plan selected → send to choose-plan
+      if (listing && !listing.premium_tier) {
+        router.replace("/choose-plan")
+        return
+      }
+
       if (listing?.id) {
         setListingId(listing.id)
         // Fetch cam availability
@@ -77,7 +94,7 @@ function DashboardContent() {
         if (d.cam_scheduled_at) setCamScheduledAt(d.cam_scheduled_at)
       }
     })
-  }, [])
+  }, [router])
 
   const saveCamStatus = async (newStatus: "offline"|"available"|"scheduled") => {
     setCamStatusSaving(true)
@@ -100,7 +117,31 @@ function DashboardContent() {
   return (
     <DashboardLayout>
       <div>
-        {/* Success banner */}
+        {/* Plan activated banner */}
+        {planActivated && (
+          <div className="mb-6 rounded-2xl overflow-hidden" style={{ border: "1px solid #BBF7D0" }}>
+            <div className="bg-green-600 px-5 py-4 flex items-center gap-3">
+              <CheckCircle size={22} color="#fff" className="flex-shrink-0" />
+              <div>
+                <p className="text-[15px] font-bold text-white">🎉 Your profile is now active!</p>
+                <p className="text-[13px] text-green-100">Payment confirmed — your {plan?.toUpperCase()} plan is live.</p>
+              </div>
+            </div>
+            <div className="bg-green-50 px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <p className="text-[13px] text-green-800 flex-1">Your profile is now visible on RedLightAD and clients can find you.</p>
+              {listingId && (
+                <a
+                  href={`/ads/${listingId}`}
+                  className="inline-flex items-center gap-2 bg-green-600 text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+                >
+                  <Eye size={14} /> View my profile
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Upgrade success banner */}
         {upgraded && (
           <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl"
             style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
