@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Phone, Mail, MessageCircle } from "lucide-react"
 import { ContactModal } from "@/components/ContactModal"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
@@ -15,28 +14,22 @@ interface ContactInfo {
   wechat?: string | null
   line_app?: string | null
   signal?: string | null
+  instagram?: string | null
+  x_twitter?: string | null
   profileImage?: string | null
   name?: string
 }
 
-// ── Brand icons ────────────────────────────────────────────────
-function WhatsAppIcon() {
+function AppLogo({ src, alt, radius = 12 }: { src: string; alt: string; radius?: number }) {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="#25D366">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-    </svg>
+    <img
+      src={src}
+      alt={alt}
+      style={{ width: 32, height: 32, borderRadius: radius, objectFit: "cover", flexShrink: 0 }}
+    />
   )
 }
 
-function TelegramIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="#0088CC">
-      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-    </svg>
-  )
-}
-
-// ── Main component ─────────────────────────────────────────────
 export default function ContactSection({ contact }: { contact: ContactInfo }) {
   const { t } = useLanguage()
   const [modalOpen, setModalOpen] = useState(false)
@@ -49,159 +42,174 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
   const hasWechat = !!contact.wechat
   const hasLine = !!contact.line_app
   const hasSignal = !!contact.signal
+  const hasInstagram = !!contact.instagram
+  const hasX = !!contact.x_twitter
 
-  if (!hasPhone && !hasTelegram && !hasEmail && !hasSnapchat && !hasViber && !hasWechat && !hasLine && !hasSignal) return null
+  if (!hasPhone && !hasTelegram && !hasEmail && !hasSnapchat && !hasViber && !hasWechat && !hasLine && !hasSignal && !hasInstagram && !hasX) return null
+
+  const rowStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", gap: 12, padding: "12px 20px",
+    borderBottom: "1px solid #F3F4F6", textDecoration: "none", cursor: "pointer",
+    background: "#fff", width: "100%", border: "none", textAlign: "left" as const,
+    transition: "background 0.15s",
+  }
+
+  const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF" }
+  const valueStyle: React.CSSProperties = { fontSize: 14, fontWeight: 600, color: "#374151", letterSpacing: "0.15em", marginTop: 2 }
+  const btnStyle = (bg: string, color = "#fff"): React.CSSProperties => ({
+    marginLeft: "auto", flexShrink: 0, fontSize: 12, fontWeight: 700,
+    padding: "7px 14px", borderRadius: 8, background: bg, color, border: "none", cursor: "pointer"
+  })
 
   return (
     <>
-      <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-[15px] font-bold text-gray-900">{t.contact_info}</h3>
+      <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #F3F4F6" }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#111", margin: 0 }}>{t.contact_info}</h3>
         </div>
 
-        <div className="divide-y divide-gray-50">
-          {/* Telefon / WhatsApp → åbner modal */}
-          {hasPhone && (
-            <button
-              onClick={() => setModalOpen(true)}
-              className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors text-left"
-            >
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#FEF2F2" }}>
-                <Phone size={15} color="#DC2626" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">{t.contact_phone}</p>
-                <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
-              </div>
-              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#DC2626" }}>
-                {t.contact_show}
-              </span>
-            </button>
-          )}
-
-          {/* Telegram */}
-          {hasTelegram && (
-            <a
-              href={`https://t.me/${contact.telegram}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#E3F2FD" }}>
-                <TelegramIcon />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">Telegram</p>
-                <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
-              </div>
-              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#0088CC" }}>
-                {t.contact_open}
-              </span>
-            </a>
-          )}
-
-          {/* WhatsApp — standalone hvis ingen telefon */}
-          {!hasPhone && contact.whatsapp && (
-            <button
-              onClick={() => setModalOpen(true)}
-              className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors text-left"
-            >
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#E8F5E9" }}>
-                <WhatsAppIcon />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">WhatsApp</p>
-                <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
-              </div>
-              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#25D366" }}>
-                {t.contact_show}
-              </span>
-            </button>
-          )}
-
-          {/* Viber */}
-          {hasViber && (
-            <a href={`viber://chat?number=${contact.viber}`}
-              className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#F3E8FF" }}>
-                <span style={{ fontSize: 16 }}>📳</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">Viber</p>
-                <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
-              </div>
-              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#7360F2" }}>
-                {t.contact_open}
-              </span>
-            </a>
-          )}
-
-          {/* WeChat */}
-          {hasWechat && (
-            <div className="flex items-center gap-3 px-5 py-3.5">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#E8F5E9" }}>
-                <span style={{ fontSize: 16 }}>💚</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">WeChat</p>
-                <p className="text-[14px] font-semibold text-gray-800 mt-0.5">{contact.wechat}</p>
-              </div>
+        {/* Phone / WhatsApp */}
+        {hasPhone && (
+          <button onClick={() => setModalOpen(true)} style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6", width: "100%" }}>
+            <AppLogo src="/logos/whatsapp.jpg" alt="Phone" radius={12} />
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>{t.contact_phone}</p>
+              <p style={valueStyle}>••••••••••</p>
             </div>
-          )}
+            <span style={btnStyle("#DC2626")}>{t.contact_show}</span>
+          </button>
+        )}
 
-          {/* LINE */}
-          {hasLine && (
-            <a href={`https://line.me/ti/p/${contact.line_app}`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#E8F5E9" }}>
-                <span style={{ fontSize: 16 }}>🟢</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">LINE</p>
-                <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
-              </div>
-              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-white min-h-[36px] flex items-center" style={{ background: "#00B900" }}>
-                {t.contact_open}
-              </span>
-            </a>
-          )}
-
-          {/* Signal */}
-          {hasSignal && (
-            <div className="flex items-center gap-3 px-5 py-3.5">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#E3F2FD" }}>
-                <span style={{ fontSize: 16 }}>🔒</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">Signal</p>
-                <p className="text-[14px] font-semibold text-gray-800 mt-0.5">{contact.signal}</p>
-              </div>
+        {/* Telegram */}
+        {hasTelegram && (
+          <a href={`https://t.me/${contact.telegram}`} target="_blank" rel="noopener noreferrer"
+            style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
+            <AppLogo src="/logos/telegram.jpg" alt="Telegram" radius={12} />
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>Telegram</p>
+              <p style={valueStyle}>••••••••••</p>
             </div>
-          )}
+            <span style={btnStyle("#0088CC")}>{t.contact_open}</span>
+          </a>
+        )}
 
-          {/* Email */}
-          {hasEmail && (
-            <a
-              href={`mailto:${contact.email}`}
-              className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#F3F4F6" }}>
-                <Mail size={15} color="#6B7280" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400">Email</p>
-                <p className="text-[14px] font-semibold text-gray-400 tracking-[0.2em] mt-0.5 select-none">••••••••••</p>
-              </div>
-              <span className="flex-shrink-0 text-[12px] font-bold px-3 py-2 rounded-lg text-gray-600 min-h-[36px] flex items-center" style={{ background: "#F3F4F6" }}>
-                {t.contact_open}
-              </span>
-            </a>
-          )}
-        </div>
+        {/* WhatsApp standalone */}
+        {!hasPhone && contact.whatsapp && (
+          <button onClick={() => setModalOpen(true)} style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6", width: "100%" }}>
+            <AppLogo src="/logos/whatsapp.jpg" alt="WhatsApp" radius={12} />
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>WhatsApp</p>
+              <p style={valueStyle}>••••••••••</p>
+            </div>
+            <span style={btnStyle("#25D366")}>{t.contact_show}</span>
+          </button>
+        )}
+
+        {/* Signal */}
+        {hasSignal && (
+          <div style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
+            <AppLogo src="/logos/signal.jpg" alt="Signal" radius={12} />
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>Signal</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginTop: 2 }}>{contact.signal}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Snapchat */}
+        {hasSnapchat && (
+          <div style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
+            <AppLogo src="/logos/snapchat.jpg" alt="Snapchat" radius={8} />
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>Snapchat</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginTop: 2 }}>{contact.snapchat}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Instagram */}
+        {hasInstagram && (
+          <a href={`https://instagram.com/${contact.instagram?.replace("@","")}`} target="_blank" rel="noopener noreferrer"
+            style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
+            <AppLogo src="/logos/instagram.jpg" alt="Instagram" radius={8} />
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>Instagram</p>
+              <p style={valueStyle}>••••••••••</p>
+            </div>
+            <span style={btnStyle("#E1306C")}>{t.contact_open}</span>
+          </a>
+        )}
+
+        {/* X / Twitter */}
+        {hasX && (
+          <a href={`https://x.com/${contact.x_twitter?.replace("@","")}`} target="_blank" rel="noopener noreferrer"
+            style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
+            <AppLogo src="/logos/x.jpg" alt="X" radius={12} />
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>X / Twitter</p>
+              <p style={valueStyle}>••••••••••</p>
+            </div>
+            <span style={btnStyle("#111")}>{t.contact_open}</span>
+          </a>
+        )}
+
+        {/* Viber */}
+        {hasViber && (
+          <a href={`viber://chat?number=${contact.viber}`}
+            style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 12, background: "#7360F2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ color: "#fff", fontSize: 16, fontWeight: 800 }}>V</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>Viber</p>
+              <p style={valueStyle}>••••••••••</p>
+            </div>
+            <span style={btnStyle("#7360F2")}>{t.contact_open}</span>
+          </a>
+        )}
+
+        {/* WeChat */}
+        {hasWechat && (
+          <div style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 12, background: "#07C160", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ color: "#fff", fontSize: 16, fontWeight: 800 }}>W</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>WeChat</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginTop: 2 }}>{contact.wechat}</p>
+            </div>
+          </div>
+        )}
+
+        {/* LINE */}
+        {hasLine && (
+          <a href={`https://line.me/ti/p/${contact.line_app}`} target="_blank" rel="noopener noreferrer"
+            style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#00B900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ color: "#fff", fontSize: 14, fontWeight: 900 }}>LINE</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>LINE</p>
+              <p style={valueStyle}>••••••••••</p>
+            </div>
+            <span style={btnStyle("#00B900")}>{t.contact_open}</span>
+          </a>
+        )}
+
+        {/* Email */}
+        {hasEmail && (
+          <a href={`mailto:${contact.email}`}
+            style={{ ...rowStyle }}>
+            <AppLogo src="/logos/email.jpg" alt="Email" radius={8} />
+            <div style={{ flex: 1 }}>
+              <p style={labelStyle}>Email</p>
+              <p style={valueStyle}>••••••••••</p>
+            </div>
+            <span style={btnStyle("#F3F4F6", "#374151")}>{t.contact_open}</span>
+          </a>
+        )}
       </div>
 
-      {/* Contact Modal — samme som mobil sticky bar */}
       {modalOpen && (
         <ContactModal
           phone={contact.phone ?? null}

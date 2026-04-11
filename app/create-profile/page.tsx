@@ -1585,23 +1585,26 @@ export default function OpretAnnoncePage() {
                         Phone verified ✓
                       </div>
                     )}
-                    {/* Other contact fields */}
+                    {/* Other contact fields with logos */}
                     {[
-                      { label: "WhatsApp", field: "whatsapp" },
-                      { label: "Telegram", field: "telegram" },
-                      { label: "Snapchat", field: "snapchat" },
-                      { label: "Email",    field: "email" },
+                      { label: "WhatsApp", field: "whatsapp", logo: "/logos/whatsapp.jpg", placeholder: "+45 12 34 56 78" },
+                      { label: "Telegram", field: "telegram", logo: "/logos/telegram.jpg", placeholder: "@username or +45..." },
+                      { label: "Signal",   field: "signal",   logo: "/logos/signal.jpg",   placeholder: "+45 12 34 56 78" },
+                      { label: "Snapchat", field: "snapchat", logo: "/logos/snapchat.jpg", placeholder: "Snapchat username" },
+                      { label: "Instagram",field: "instagram",logo: "/logos/instagram.jpg",placeholder: "@username" },
+                      { label: "X / Twitter", field: "x_twitter", logo: "/logos/x.jpg",   placeholder: "@username" },
+                      { label: "OnlyFans", field: "onlyfans_username", logo: "/logos/onlyfans.jpg", placeholder: "username" },
+                      { label: "Email",    field: "email",    logo: "/logos/email.jpg",    placeholder: "your@email.com" },
                     ].map((c) => (
-                      <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                        <span className="w-4 h-4 rounded-sm bg-gray-200 flex-shrink-0" />
-                        <span className="w-20 text-sm text-gray-500">{c.label}</span>
+                      <div key={c.field} style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid #E5E7EB", borderRadius: 10, padding: "10px 14px", background: "#fff" }}>
+                        <img src={c.logo} alt={c.label} style={{ width: 24, height: 24, borderRadius: c.field === "snapchat" || c.field === "instagram" ? 6 : 12, objectFit: "cover", flexShrink: 0 }} />
+                        <span style={{ width: 84, fontSize: 13, color: "#6B7280", flexShrink: 0 }}>{c.label}</span>
                         <input
                           type={c.field === "email" ? "email" : "text"}
-                          value={form[c.field as keyof typeof form] as string}
+                          value={(form[c.field as keyof typeof form] as string) ?? ""}
                           onChange={(e) => updateField(c.field, e.target.value)}
-                          placeholder={c.label}
-                          style={{ fontSize: 16 }}
-                          className="flex-1 border-0 bg-transparent text-sm focus:outline-none focus:ring-0"
+                          placeholder={c.placeholder}
+                          style={{ fontSize: 16, flex: 1, border: "none", outline: "none", background: "transparent", color: "#111" }}
                         />
                       </div>
                     ))}
