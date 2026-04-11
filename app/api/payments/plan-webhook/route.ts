@@ -68,14 +68,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Update listing with new plan
-    const { error: updateError } = await (supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from("listings")
-      .update({
-        premium_tier: planId,
-        status: "active",
-        updated_at: new Date().toISOString(),
-      } as any)
-      .eq("id", listing.id) as any);
+      .update({ premium_tier: planId, status: "active" })
+      .eq("id", listing.id);
 
     if (updateError) {
       console.error("Update listing error:", updateError);
