@@ -644,6 +644,7 @@ export default function OpretAnnoncePage() {
     { num: 1, label: "Basic Info" },
     { num: 2, label: "Details" },
     { num: 3, label: "Contact & Photos" },
+    { num: 4, label: "Choose Plan" },
   ];
 
   if (redirecting) {
@@ -664,14 +665,14 @@ export default function OpretAnnoncePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="mb-2 text-2xl font-bold text-gray-900">Your listing has been created!</h2>
+            <h2 className="mb-2 text-2xl font-bold text-gray-900">Your profile has been created!</h2>
             <p className="mb-6 text-gray-500">
-              Your listing has been submitted for review and will be visible within 24 hours.
+              Now choose your plan to activate your profile and start getting bookings.
             </p>
             <div className="flex gap-3 justify-center">
-              <Link href={`/ads/${createdListingId || ""}`}
-                className="px-8 py-3 rounded-xl text-[14px] font-bold bg-gray-900 text-white hover:bg-black">
-                View my profile
+              <Link href="/choose-plan"
+                className="px-8 py-3 rounded-xl text-[14px] font-bold bg-red-600 text-white hover:bg-red-700">
+                Choose your plan →
               </Link>
             </div>
           </div>
@@ -690,11 +691,13 @@ export default function OpretAnnoncePage() {
               <div className="flex flex-col items-center">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ${
-                    step > s.num
-                      ? "bg-red-100 text-red-600"
-                      : step === s.num
-                        ? "bg-red-600 text-white"
-                        : "bg-gray-200 text-gray-500"
+                    s.num === 4
+                      ? "bg-gray-200 text-gray-400"
+                      : step > s.num
+                        ? "bg-red-100 text-red-600"
+                        : step === s.num
+                          ? "bg-red-600 text-white"
+                          : "bg-gray-200 text-gray-500"
                   }`}
                 >
                   {step > s.num ? (
