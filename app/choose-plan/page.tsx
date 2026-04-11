@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
-import { Check, Zap, Shield, Star, Camera, Mic, TrendingUp, Video, MessageCircle, Globe } from "lucide-react";
+import { Check, Zap, Shield, Star, Camera, Mic, TrendingUp, Video, MessageCircle, Globe, Tag, X } from "lucide-react";
 
 // ── Plans ─────────────────────────────────────────────────────────────────────
 const PLANS = [
@@ -72,6 +72,16 @@ export default function ChoosePlanPage() {
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [selecting, setSelecting] = useState(false);
 
+  // Promo code
+  const [promoInput, setPromoInput] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoResult, setPromoResult] = useState<{
+    valid: boolean; code?: string; id?: string;
+    discount_type?: string; trial_days?: number;
+    discount_percent?: number; discount_fixed?: number;
+    description?: string; error?: string;
+  } | null>(null);
+
   useEffect(() => {
     createClient().auth.getUser().then(({ data: { user } }) => {
       if (!user) router.replace("/login");
@@ -82,7 +92,36 @@ export default function ChoosePlanPage() {
   const handleSelectPlan = (planId: string) => {
     setSelectedPlan(planId);
     setSelectedDuration(null);
+    setPromoResult(null);
+    setPromoInput("");
     setStep("duration");
+  };
+
+  const validatePromo = async () => {
+    if (!promoInput.trim()) return;
+    setPromoLoading(true);
+    setPromoResult(null);
+    const res = await fetch("/api/promo/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: promoInput, plan: selectedPlan, months: selectedDuration }),
+    });
+    const d = await res.json();
+    setPromoResult(d);
+    setPromoLoading(false);
+  };
+
+  const getFinalPrice = () => {
+    if (!selectedPlan || !selectedDuration || !selectedPrice) return selectedPrice;
+    if (!promoResult?.valid) return selectedPrice;
+    if (promoResult.discount_type === "percent" && promoResult.discount_percent) {
+      return Math.max(0, Math.round(selectedPrice * (1 - promoResult.discount_percent / 100)));
+    }
+    if (promoResult.discount_type === "fixed" && promoResult.discount_fixed) {
+      return Math.max(0, selectedPrice - promoResult.discount_fixed);
+    }
+    if (promoResult.discount_type === "trial") return 0;
+    return selectedPrice;
   };
 
   const handleProceed = async () => {
@@ -92,7 +131,14 @@ export default function ChoosePlanPage() {
       router.push("/dashboard");
       return;
     }
-    router.push(`/choose-plan/payment?plan=${selectedPlan}&months=${selectedDuration}`);
+    const finalPrice = getFinalPrice();
+    const promoCode = promoResult?.valid ? promoResult.code : "";
+    if (promoResult?.valid && promoResult.discount_type === "trial") {
+      // Free trial — activate directly
+      router.push(`/dashboard?plan_activated=true&plan=${selectedPlan}&promo=${promoCode}`);
+      return;
+    }
+    router.push(`/choose-plan/payment?plan=${selectedPlan}&months=${selectedDuration}&amount=${finalPrice}&promo=${promoCode || ""}`);
   };
 
   if (loading) {
@@ -337,6 +383,51 @@ export default function ChoosePlanPage() {
               </div>
             </div>
 
+            {/* Promo code */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 mb-4">
+              <p className="text-xs font-bold tracking-widest text-gray-400 mb-3">PROMO CODE</p>
+              <div className="flex gap-2">
+                <input
+                  value={promoInput}
+                  onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoResult(null); }}
+                  onKeyDown={e => e.key === "Enter" && validatePromo()}
+                  placeholder="Enter code (optional)"
+                  className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-red-500"
+                />
+                <button
+                  onClick={validatePromo}
+                  disabled={promoLoading || !promoInput.trim()}
+                  className="px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-black disabled:opacity-40 transition-colors"
+                >
+                  {promoLoading ? "..." : "Apply"}
+                </button>
+              </div>
+              {promoResult && (
+                <div className={`mt-3 flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium ${
+                  promoResult.valid
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-red-50 text-red-600 border border-red-200"
+                }`}>
+                  {promoResult.valid ? (
+                    <>
+                      <Check className="w-4 h-4 flex-shrink-0" />
+                      <span>
+                        Code applied: <strong>{promoResult.code}</strong>
+                        {promoResult.discount_type === "percent" && ` — ${promoResult.discount_percent}% discount`}
+                        {promoResult.discount_type === "fixed" && ` — €${promoResult.discount_fixed} off`}
+                        {promoResult.discount_type === "trial" && ` — Free trial activated!`}
+                      </span>
+                      <button onClick={() => { setPromoResult(null); setPromoInput(""); }} className="ml-auto">
+                        <X className="w-4 h-4 text-green-500" />
+                      </button>
+                    </>
+                  ) : (
+                    <><Tag className="w-4 h-4 flex-shrink-0" /><span>{promoResult.error}</span></>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* CTA */}
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <button
@@ -360,7 +451,11 @@ export default function ChoosePlanPage() {
                     Loading...
                   </span>
                 ) : selectedDuration && selectedPrice ? (
-                  `Pay €${selectedPrice} — ${selectedPlan === "vip" ? "VIP" : "Basic"} ${selectedDurationObj?.label} →`
+                  getFinalPrice() === 0
+                    ? `Activate Free Trial — ${selectedPlan === "vip" ? "VIP" : "Basic"} ${selectedDurationObj?.label} →`
+                    : getFinalPrice() !== selectedPrice
+                    ? `Pay €${getFinalPrice()} (was €${selectedPrice}) — ${selectedPlan === "vip" ? "VIP" : "Basic"} ${selectedDurationObj?.label} →`
+                    : `Pay €${selectedPrice} — ${selectedPlan === "vip" ? "VIP" : "Basic"} ${selectedDurationObj?.label} →`
                 ) : (
                   "Select a duration to continue"
                 )}
