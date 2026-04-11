@@ -381,7 +381,9 @@ export default function OpretAnnoncePage() {
     return true;
   };
 
-  const sendPhoneVerification = async () => {
+  const [verifyChannel, setVerifyChannel] = useState<"sms" | "whatsapp">("whatsapp")
+
+  const sendPhoneVerification = async (channel: "sms" | "whatsapp" = verifyChannel) => {
     if (!form.phone || form.phone.trim().length < 8) {
       setVerifyError("Enter a valid phone number first.")
       return
@@ -392,10 +394,10 @@ export default function OpretAnnoncePage() {
       const res = await fetch("/api/auth/send-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: form.phone }),
+        body: JSON.stringify({ phone: form.phone, channel }),
       })
       const d = await res.json()
-      if (d.success) { setShowVerifyInput(true) }
+      if (d.ok) { setShowVerifyInput(true) }
       else { setVerifyError(d.error || "Failed to send code.") }
     } catch { setVerifyError("Network error.") }
     setVerifySending(false)
@@ -1543,13 +1545,27 @@ export default function OpretAnnoncePage() {
                     {form.phone && form.phone.length > 6 && !phoneVerified && (
                       <div style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 10, padding: "14px 16px" }}>
                         <p style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 10 }}>
-                          Verify your phone number (optional — adds Verified badge)
+                          Verify your phone number <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(optional — adds ✓ Verified badge to profile)</span>
                         </p>
                         {!showVerifyInput ? (
-                          <button type="button" onClick={sendPhoneVerification} disabled={verifySending}
-                            style={{ fontSize: 13, fontWeight: 600, color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, padding: "7px 14px", background: "#FEF2F2", cursor: "pointer", opacity: verifySending ? 0.6 : 1 }}>
-                            {verifySending ? "Sending code..." : "Send verification code →"}
-                          </button>
+                          <div>
+                            {/* Channel picker */}
+                            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                              {(["whatsapp", "sms"] as const).map(ch => (
+                                <button key={ch} type="button"
+                                  onClick={() => setVerifyChannel(ch)}
+                                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${verifyChannel === ch ? (ch === "whatsapp" ? "#25D366" : "#3B82F6") : "#E5E7EB"}`, background: verifyChannel === ch ? (ch === "whatsapp" ? "#F0FDF4" : "#EFF6FF") : "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, color: verifyChannel === ch ? (ch === "whatsapp" ? "#16A34A" : "#1D4ED8") : "#9CA3AF" }}>
+                                  <img src={ch === "whatsapp" ? "/logos/whatsapp.jpg" : undefined} alt={ch} style={{ width: 16, height: 16, borderRadius: 4, display: ch === "whatsapp" ? "block" : "none" }} />
+                                  {ch === "sms" && <span style={{ fontSize: 14 }}>💬</span>}
+                                  {ch === "whatsapp" ? "WhatsApp" : "SMS"}
+                                </button>
+                              ))}
+                            </div>
+                            <button type="button" onClick={() => sendPhoneVerification(verifyChannel)} disabled={verifySending}
+                              style={{ fontSize: 13, fontWeight: 600, color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, padding: "7px 14px", background: "#FEF2F2", cursor: "pointer", opacity: verifySending ? 0.6 : 1 }}>
+                              {verifySending ? `Sending via ${verifyChannel}...` : `Send code via ${verifyChannel === "whatsapp" ? "WhatsApp" : "SMS"} →`}
+                            </button>
+                          </div>
                         ) : (
                           <div>
                             <p style={{ fontSize: 11, color: "#6B7280", marginBottom: 8 }}>
@@ -1570,10 +1586,16 @@ export default function OpretAnnoncePage() {
                                 {verifyChecking ? "Checking..." : "Confirm"}
                               </button>
                             </div>
-                            <button type="button" onClick={() => { setShowVerifyInput(false); setVerifyCode(""); }}
-                              style={{ fontSize: 11, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer", marginTop: 6 }}>
-                              Resend code
-                            </button>
+                            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                              <button type="button" onClick={() => sendPhoneVerification(verifyChannel)}
+                                style={{ fontSize: 11, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer" }}>
+                                Resend code
+                              </button>
+                              <button type="button" onClick={() => { setShowVerifyInput(false); setVerifyCode(""); }}
+                                style={{ fontSize: 11, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer" }}>
+                                Change number
+                              </button>
+                            </div>
                           </div>
                         )}
                         {verifyError && <p style={{ fontSize: 12, color: "#DC2626", marginTop: 8 }}>{verifyError}</p>}
