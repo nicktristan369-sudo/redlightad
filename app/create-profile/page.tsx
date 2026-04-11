@@ -468,7 +468,7 @@ export default function OpretAnnoncePage() {
         body: JSON.stringify({ phone: form.phone, code: verifyCode }),
       })
       const d = await res.json()
-      if (d.success) {
+      if (d.ok || d.verified) {
         setPhoneVerified(true)
         setShowVerifyInput(false)
         setVerifyError("")
