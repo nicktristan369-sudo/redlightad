@@ -1640,23 +1640,6 @@ export default function OpretAnnoncePage() {
                   </div>
                 </div>
 
-                {/* ── SOCIAL MEDIA LINKS ── */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-base font-bold text-gray-900">{t.social_media_links}</p>
-                    {!["basic", "featured", "vip"].includes(userTier || "") && (
-                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                        Premium required
-                      </span>
-                    )}
-                  </div>
-                  <SocialLinksEditor
-                    value={socialLinks}
-                    onChange={setSocialLinks}
-                    isPremium={["basic", "featured", "vip"].includes(userTier || "")}
-                  />
-                </div>
-
                 {/* ── AVAILABILITY & OPENING HOURS ── */}
                 <div>
                   <p className="text-base font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">{t.availability_hours}</p>
