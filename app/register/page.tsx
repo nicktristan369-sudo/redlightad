@@ -118,6 +118,20 @@ export default function RegisterPage() {
       },
     });
     if (authError) { setError(authError.message); setLoading(false); return; }
+
+    // TEST MODE: auto-confirm test@redlightad.com and redirect directly
+    if (email.toLowerCase() === "test@redlightad.com" && data.user?.id) {
+      await fetch("/api/admin/confirm-test-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: data.user.id }),
+      });
+      // Sign in immediately and go to create-profile
+      await supabase.auth.signInWithPassword({ email, password });
+      window.location.href = "/create-profile";
+      return;
+    }
+
     setUserId(data.user?.id ?? null);
     setLoading(false);
     // Skip phone step — go directly to success (phone verify is optional, done from dashboard)
