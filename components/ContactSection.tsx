@@ -20,13 +20,11 @@ interface ContactInfo {
   name?: string
 }
 
-function AppLogo({ src, alt, radius = 12 }: { src: string; alt: string; radius?: number }) {
+function AppLogo({ src, alt, bg, radius = 12 }: { src: string; alt: string; bg: string; radius?: number }) {
   return (
-    <img
-      src={src}
-      alt={alt}
-      style={{ width: 32, height: 32, borderRadius: radius, objectFit: "cover", flexShrink: 0 }}
-    />
+    <div style={{ width: 32, height: 32, borderRadius: radius, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <img src={src} alt={alt} style={{ width: 18, height: 18 }} />
+    </div>
   )
 }
 
@@ -71,7 +69,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         {/* Phone / WhatsApp */}
         {hasPhone && (
           <button onClick={() => setModalOpen(true)} style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6", width: "100%" }}>
-            <AppLogo src="/logos/whatsapp.jpg" alt="Phone" radius={12} />
+            <AppLogo src="https://cdn.simpleicons.org/whatsapp/ffffff" alt="Phone" bg="#25D366" radius={12} />
             <div style={{ flex: 1 }}>
               <p style={labelStyle}>{t.contact_phone}</p>
               <p style={valueStyle}>••••••••••</p>
@@ -84,7 +82,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         {hasTelegram && (
           <a href={`https://t.me/${contact.telegram}`} target="_blank" rel="noopener noreferrer"
             style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
-            <AppLogo src="/logos/telegram.jpg" alt="Telegram" radius={12} />
+            <AppLogo src="https://cdn.simpleicons.org/telegram/ffffff" alt="Telegram" bg="#26A5E4" radius={12} />
             <div style={{ flex: 1 }}>
               <p style={labelStyle}>Telegram</p>
               <p style={valueStyle}>••••••••••</p>
@@ -96,7 +94,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         {/* WhatsApp standalone */}
         {!hasPhone && contact.whatsapp && (
           <button onClick={() => setModalOpen(true)} style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6", width: "100%" }}>
-            <AppLogo src="/logos/whatsapp.jpg" alt="WhatsApp" radius={12} />
+            <AppLogo src="https://cdn.simpleicons.org/whatsapp/ffffff" alt="WhatsApp" bg="#25D366" radius={12} />
             <div style={{ flex: 1 }}>
               <p style={labelStyle}>WhatsApp</p>
               <p style={valueStyle}>••••••••••</p>
@@ -108,7 +106,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         {/* Signal */}
         {hasSignal && (
           <div style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
-            <AppLogo src="/logos/signal.jpg" alt="Signal" radius={12} />
+            <AppLogo src="https://cdn.simpleicons.org/signal/ffffff" alt="Signal" bg="#3A76F0" radius={12} />
             <div style={{ flex: 1 }}>
               <p style={labelStyle}>Signal</p>
               <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginTop: 2 }}>{contact.signal}</p>
@@ -119,7 +117,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         {/* Snapchat */}
         {hasSnapchat && (
           <div style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
-            <AppLogo src="/logos/snapchat.jpg" alt="Snapchat" radius={8} />
+            <AppLogo src="https://cdn.simpleicons.org/snapchat/000000" alt="Snapchat" bg="#FFFC00" radius={8} />
             <div style={{ flex: 1 }}>
               <p style={labelStyle}>Snapchat</p>
               <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginTop: 2 }}>{contact.snapchat}</p>
@@ -131,7 +129,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         {hasInstagram && (
           <a href={`https://instagram.com/${contact.instagram?.replace("@","")}`} target="_blank" rel="noopener noreferrer"
             style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
-            <AppLogo src="/logos/instagram.jpg" alt="Instagram" radius={8} />
+            <AppLogo src="https://cdn.simpleicons.org/instagram/ffffff" alt="Instagram" bg="#E1306C" radius={8} />
             <div style={{ flex: 1 }}>
               <p style={labelStyle}>Instagram</p>
               <p style={valueStyle}>••••••••••</p>
@@ -144,7 +142,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         {hasX && (
           <a href={`https://x.com/${contact.x_twitter?.replace("@","")}`} target="_blank" rel="noopener noreferrer"
             style={{ ...rowStyle, borderBottom: "1px solid #F3F4F6" }}>
-            <AppLogo src="/logos/x.jpg" alt="X" radius={12} />
+            <AppLogo src="https://cdn.simpleicons.org/x/ffffff" alt="X" bg="#000000" radius={12} />
             <div style={{ flex: 1 }}>
               <p style={labelStyle}>X / Twitter</p>
               <p style={valueStyle}>••••••••••</p>
@@ -200,7 +198,7 @@ export default function ContactSection({ contact }: { contact: ContactInfo }) {
         {hasEmail && (
           <a href={`mailto:${contact.email}`}
             style={{ ...rowStyle }}>
-            <AppLogo src="/logos/email.jpg" alt="Email" radius={8} />
+            <AppLogo src="https://cdn.simpleicons.org/gmail/ffffff" alt="Email" bg="#EA4335" radius={8} />
             <div style={{ flex: 1 }}>
               <p style={labelStyle}>Email</p>
               <p style={valueStyle}>••••••••••</p>

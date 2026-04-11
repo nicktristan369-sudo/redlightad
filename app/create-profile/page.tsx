@@ -1477,46 +1477,21 @@ export default function OpretAnnoncePage() {
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-gray-500">Phone number</label>
                       <div style={{ display: "flex", gap: 8 }}>
-                        {/* Country code dropdown */}
-                        <div style={{ position: "relative", flexShrink: 0 }}>
-                          <select
-                            value={dialCode}
-                            onChange={e => {
-                              setDialCode(e.target.value)
-                              const local = phoneLocal.replace(/\s/g, "")
-                              updateField("phone", e.target.value + local)
-                            }}
-                            style={{ fontSize: 16, padding: "10px 8px", border: "1px solid #D1D5DB", borderRadius: 10, background: "#F9FAFB", appearance: "none", paddingRight: 28, cursor: "pointer", minWidth: 90 }}
-                          >
-                            {DIAL_CODES.map(d => (
-                              <option key={d.iso} value={d.code}>
-                                {d.code} {d.name}
-                              </option>
-                            ))}
-                          </select>
-                          {/* Show selected flag */}
-                          <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                            <span className={`fi fi-${DIAL_CODES.find(d => d.code === dialCode)?.iso.toLowerCase() ?? "dk"} fis`} style={{ borderRadius: 3, width: 18, height: 14, display: "inline-block", flexShrink: 0 }} />
-                            <span style={{ fontSize: 13, fontWeight: 600, color: "#111", marginLeft: 2 }}>{dialCode}</span>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                          </div>
-                          {/* Overlay to hide native select text (show our custom display) */}
-                          <select
-                            value={dialCode}
-                            onChange={e => {
-                              setDialCode(e.target.value)
-                              const local = phoneLocal.replace(/\s/g, "")
-                              updateField("phone", e.target.value + local)
-                            }}
-                            style={{ position: "absolute", inset: 0, opacity: 0, fontSize: 16, cursor: "pointer", width: "100%" }}
-                          >
-                            {DIAL_CODES.map(d => (
-                              <option key={d.iso} value={d.code}>
-                                {d.code} — {d.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                        {/* Country code dropdown — simple single select */}
+                        <select
+                          value={dialCode}
+                          onChange={e => {
+                            setDialCode(e.target.value)
+                            updateField("phone", e.target.value + phoneLocal.replace(/\s/g, ""))
+                          }}
+                          style={{ fontSize: 16, padding: "10px 10px", border: "1px solid #D1D5DB", borderRadius: 10, background: "#F9FAFB", cursor: "pointer", flexShrink: 0, maxWidth: 140 }}
+                        >
+                          {DIAL_CODES.map(d => (
+                            <option key={d.iso} value={d.code}>
+                              {d.code} {d.name}
+                            </option>
+                          ))}
+                        </select>
                         {/* Phone number input */}
                         <input
                           type="tel"
@@ -1607,19 +1582,25 @@ export default function OpretAnnoncePage() {
                         Phone verified ✓
                       </div>
                     )}
-                    {/* Other contact fields with logos */}
+                    {/* Other contact fields with logos from Simple Icons CDN */}
                     {[
-                      { label: "WhatsApp", field: "whatsapp", logo: "/logos/whatsapp.jpg", placeholder: "+45 12 34 56 78" },
-                      { label: "Telegram", field: "telegram", logo: "/logos/telegram.jpg", placeholder: "@username or +45..." },
-                      { label: "Signal",   field: "signal",   logo: "/logos/signal.jpg",   placeholder: "+45 12 34 56 78" },
-                      { label: "Snapchat", field: "snapchat", logo: "/logos/snapchat.jpg", placeholder: "Snapchat username" },
-                      { label: "Instagram",field: "instagram",logo: "/logos/instagram.jpg",placeholder: "@username" },
-                      { label: "X / Twitter", field: "x_twitter", logo: "/logos/x.jpg",   placeholder: "@username" },
-                      { label: "OnlyFans", field: "onlyfans_username", logo: "/logos/onlyfans.jpg", placeholder: "username" },
-                      { label: "Email",    field: "email",    logo: "/logos/email.jpg",    placeholder: "your@email.com" },
+                      { label: "WhatsApp",   field: "whatsapp",          bg: "#25D366", icon: "https://cdn.simpleicons.org/whatsapp/ffffff",   radius: 12, placeholder: "+45 12 34 56 78" },
+                      { label: "Telegram",   field: "telegram",          bg: "#26A5E4", icon: "https://cdn.simpleicons.org/telegram/ffffff",   radius: 12, placeholder: "@username or +45..." },
+                      { label: "Signal",     field: "signal",            bg: "#3A76F0", icon: "https://cdn.simpleicons.org/signal/ffffff",     radius: 12, placeholder: "+45 12 34 56 78" },
+                      { label: "Snapchat",   field: "snapchat",          bg: "#FFFC00", icon: "https://cdn.simpleicons.org/snapchat/000000",   radius: 8,  placeholder: "Snapchat username" },
+                      { label: "Instagram",  field: "instagram",         bg: "#E1306C", icon: "https://cdn.simpleicons.org/instagram/ffffff",  radius: 8,  placeholder: "@username" },
+                      { label: "X / Twitter",field: "x_twitter",         bg: "#000000", icon: "https://cdn.simpleicons.org/x/ffffff",          radius: 12, placeholder: "@username" },
+                      { label: "OnlyFans",   field: "onlyfans_username", bg: "#00AFF0", icon: "https://cdn.simpleicons.org/onlyfans/ffffff",   radius: 8,  placeholder: "username" },
+                      { label: "Email",      field: "email",             bg: "#6B7280", icon: null,                                            radius: 8,  placeholder: "your@email.com" },
                     ].map((c) => (
                       <div key={c.field} style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid #E5E7EB", borderRadius: 10, padding: "10px 14px", background: "#fff" }}>
-                        <img src={c.logo} alt={c.label} style={{ width: 24, height: 24, borderRadius: c.field === "snapchat" || c.field === "instagram" ? 6 : 12, objectFit: "cover", flexShrink: 0 }} />
+                        <div style={{ width: 28, height: 28, borderRadius: c.radius, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          {c.icon ? (
+                            <img src={c.icon} alt={c.label} style={{ width: 16, height: 16 }} />
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+                          )}
+                        </div>
                         <span style={{ width: 84, fontSize: 13, color: "#6B7280", flexShrink: 0 }}>{c.label}</span>
                         <input
                           type={c.field === "email" ? "email" : "text"}
