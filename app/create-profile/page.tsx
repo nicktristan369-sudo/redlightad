@@ -72,6 +72,60 @@ const DIAL_CODES = [
   { code: "+373", iso: "MD", name: "Moldova" },
 ];
 
+// ── Custom dial code picker with square flags ──────────────────────────────
+function DialCodePicker({ value, onChange }: { value: string; onChange: (code: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const selected = DIAL_CODES.find(d => d.code === value) ?? DIAL_CODES[0]
+  const filtered = DIAL_CODES.filter(d =>
+    d.name.toLowerCase().includes(search.toLowerCase()) || d.code.includes(search)
+  )
+  return (
+    <div style={{ position: "relative", userSelect: "none" }}>
+      {/* Trigger button */}
+      <button type="button" onClick={() => setOpen(o => !o)}
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", border: "1px solid #D1D5DB", borderRadius: 10, background: "#F9FAFB", cursor: "pointer", width: "100%", fontSize: 15, fontWeight: 600, color: "#111" }}>
+        <span className={`fi fi-${selected.iso.toLowerCase()} fis`} style={{ borderRadius: 3, width: 20, height: 16, display: "inline-block", flexShrink: 0 }} />
+        <span>{selected.code}</span>
+        <span style={{ fontWeight: 400, color: "#6B7280", fontSize: 13 }}>{selected.name}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" style={{ marginLeft: "auto" }}><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 999, background: "#fff", border: "1px solid #E5E7EB", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden", maxHeight: 280 }}>
+          {/* Search */}
+          <div style={{ padding: "8px 10px", borderBottom: "1px solid #F3F4F6" }}>
+            <input
+              autoFocus
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search country..."
+              style={{ width: "100%", fontSize: 14, padding: "6px 10px", border: "1px solid #E5E7EB", borderRadius: 8, outline: "none", boxSizing: "border-box" }}
+            />
+          </div>
+          {/* Options */}
+          <div style={{ overflowY: "auto", maxHeight: 210 }}>
+            {filtered.map(d => (
+              <button key={d.iso} type="button"
+                onClick={() => { onChange(d.code); setOpen(false); setSearch(""); }}
+                style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 14px", border: "none", background: d.code === value ? "#FEF2F2" : "transparent", cursor: "pointer", fontSize: 14, color: "#111", textAlign: "left" }}>
+                <span className={`fi fi-${d.iso.toLowerCase()} fis`} style={{ borderRadius: 3, width: 20, height: 16, display: "inline-block", flexShrink: 0 }} />
+                <span style={{ fontWeight: 600, color: "#374151", minWidth: 40 }}>{d.code}</span>
+                <span style={{ color: "#6B7280" }}>{d.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Click-away */}
+      {open && <div style={{ position: "fixed", inset: 0, zIndex: 998 }} onClick={() => setOpen(false)} />}
+    </div>
+  )
+}
+
 const PAYMENT_OPTIONS = [
   { id: "revolut",   label: "Revolut",    icon: CreditCard },
   { id: "cash",      label: "Cash",       icon: Banknote },
@@ -1476,23 +1530,14 @@ export default function OpretAnnoncePage() {
                     {/* Phone with country code picker */}
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-gray-500">Phone number</label>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        {/* Country code dropdown — simple single select */}
-                        <select
-                          value={dialCode}
-                          onChange={e => {
-                            setDialCode(e.target.value)
-                            updateField("phone", e.target.value + phoneLocal.replace(/\s/g, ""))
-                          }}
-                          style={{ fontSize: 16, padding: "10px 10px", border: "1px solid #D1D5DB", borderRadius: 10, background: "#F9FAFB", cursor: "pointer", flexShrink: 0, maxWidth: 140 }}
-                        >
-                          {DIAL_CODES.map(d => (
-                            <option key={d.iso} value={d.code}>
-                              {d.code} {d.name}
-                            </option>
-                          ))}
-                        </select>
-                        {/* Phone number input */}
+                      <DialCodePicker
+                        value={dialCode}
+                        onChange={code => {
+                          setDialCode(code)
+                          updateField("phone", code + phoneLocal.replace(/\s/g, ""))
+                        }}
+                      />
+                      <div style={{ marginTop: 8 }}>
                         <input
                           type="tel"
                           value={phoneLocal}
@@ -1504,16 +1549,12 @@ export default function OpretAnnoncePage() {
                             setShowVerifyInput(false)
                           }}
                           placeholder="12 34 56 78"
-                          style={{ flex: 1, fontSize: 16, padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 10 }}
+                          style={{ width: "100%", fontSize: 16, padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 10, boxSizing: "border-box" }}
                         />
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#6B7280", cursor: "pointer" }}>
-                          <input type="checkbox" checked={form.show_phone} onChange={e => updateField("show_phone", e.target.checked)}
-                            style={{ accentColor: "#DC2626" }} />
-                          Show phone number publicly on profile
-                        </label>
-                      </div>
+                      <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 5 }}>
+                        Your number is always shown as ●●●●●●●● on your profile — visitors click "Show number" to reveal it.
+                      </p>
                     </div>
 
                     {/* Phone verification block */}
