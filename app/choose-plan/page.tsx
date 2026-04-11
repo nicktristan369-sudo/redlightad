@@ -4,94 +4,59 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
-import { Check, Zap, Shield, Star, Camera, Mic, Globe, TrendingUp, Video, MessageCircle } from "lucide-react";
+import { Check, Zap, Shield, Star, Camera, Mic, TrendingUp, Video, MessageCircle, Globe } from "lucide-react";
 
+// ── Plans ─────────────────────────────────────────────────────────────────────
 const PLANS = [
-  {
-    id: "standard",
-    name: "Standard",
-    price: 0,
-    priceLabel: "FREE",
-    billing: null,
-    badge: null,
-    badgeColor: null,
-    color: "gray",
-    buttonStyle: "outline",
-    description: "Get started and test the platform",
-    features: [
-      { icon: Check, text: "Profile visible on site" },
-      { icon: Camera, text: "Up to 5 photos" },
-      { icon: Check, text: "Standard placement in listings" },
-      { icon: Check, text: "Basic contact info" },
-    ],
-    notIncluded: [
-      "Featured badge",
-      "Priority placement",
-      "Videos",
-      "Voice messages",
-      "Live cam",
-      "Country blocking",
-      "Stories & animated pics",
-    ],
-    recommended: false,
-    cta: "Start for Free",
-  },
   {
     id: "basic",
     name: "Basic",
-    price: 29,
-    priceLabel: "€29",
-    billing: "/month",
     badge: "MOST POPULAR",
-    badgeColor: "red",
-    color: "red",
-    buttonStyle: "primary",
     description: "More visibility. More bookings.",
+    color: "red",
     features: [
-      { icon: Check, text: "Everything in Standard" },
-      { icon: Camera, text: "Up to 15 photos" },
-      { icon: Video, text: "1 video on your profile" },
-      { icon: Star, text: "Featured badge — stand out instantly" },
-      { icon: TrendingUp, text: "Priority placement — shown before free profiles" },
-      { icon: Globe, text: "Appear in search & category pages" },
+      "Up to 15 photos",
+      "1 video on your profile",
+      "Featured badge — stand out instantly",
+      "Priority placement",
+      "Appear in search & category pages",
     ],
-    notIncluded: [
-      "Unlimited photos + videos",
-      "Voice messages",
-      "Live cam",
-      "VIP gold badge",
-      "Top placement",
-    ],
-    recommended: true,
-    cta: "Get Basic — €29/mo",
   },
   {
     id: "vip",
     name: "VIP",
-    price: 79,
-    priceLabel: "€79",
-    billing: "/month",
     badge: "MAXIMUM EXPOSURE",
-    badgeColor: "black",
-    color: "black",
-    buttonStyle: "dark",
     description: "Dominate the platform. Be impossible to ignore.",
+    color: "dark",
     features: [
-      { icon: Check, text: "Everything in Basic" },
-      { icon: Camera, text: "Unlimited photos + videos" },
-      { icon: Star, text: "VIP gold badge — premium status" },
-      { icon: TrendingUp, text: "Top placement — always first" },
-      { icon: Mic, text: "Voice message — personal first impression" },
-      { icon: Video, text: "Live cam feature — real-time bookings" },
-      { icon: Shield, text: "Country blocking — control your visibility" },
-      { icon: MessageCircle, text: "Stories & animated pics — profile comes alive" },
-      { icon: Globe, text: "My Tour — appear internationally" },
+      "Everything in Basic",
+      "Unlimited photos + videos",
+      "VIP gold badge",
+      "Top placement — always first",
+      "Voice message",
+      "Live cam feature",
+      "Country blocking",
+      "Stories & animated pics",
+      "My Tour — appear internationally",
     ],
-    notIncluded: [],
-    recommended: false,
-    cta: "Get VIP — €79/mo",
   },
 ];
+
+// ── Durations ─────────────────────────────────────────────────────────────────
+const DURATIONS: Record<string, { label: string; months: number; prices: Record<string, number>; saving: string | null; popular: boolean }[]> = {
+  basic: [
+    { label: "1 Month",   months: 1,  prices: { basic: 29  }, saving: null,    popular: false },
+    { label: "3 Months",  months: 3,  prices: { basic: 69  }, saving: "21% off", popular: false },
+    { label: "6 Months",  months: 6,  prices: { basic: 119 }, saving: "32% off", popular: true  },
+    { label: "12 Months", months: 12, prices: { basic: 199 }, saving: "43% off", popular: false },
+  ],
+  vip: [
+    { label: "1 Month",   months: 1,  prices: { vip: 79  }, saving: null,    popular: false },
+    { label: "3 Months",  months: 3,  prices: { vip: 189 }, saving: "21% off", popular: false },
+    { label: "6 Months",  months: 6,  prices: { vip: 319 }, saving: "33% off", popular: true  },
+    { label: "12 Months", months: 12, prices: { vip: 529 }, saving: "44% off", popular: false },
+  ],
+};
 
 const STATS = [
   { value: "3x", label: "More profile views" },
@@ -102,28 +67,32 @@ const STATS = [
 export default function ChoosePlanPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [selecting, setSelecting] = useState<string | null>(null);
+  const [step, setStep] = useState<"plan" | "duration">("plan");
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
+  const [selecting, setSelecting] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-      setLoading(false);
-    };
-    checkAuth();
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      if (!user) router.replace("/login");
+      else setLoading(false);
+    });
   }, [router]);
 
-  const handleSelectPlan = async (planId: string) => {
-    setSelecting(planId);
-    if (planId === "standard") {
+  const handleSelectPlan = (planId: string) => {
+    setSelectedPlan(planId);
+    setSelectedDuration(null);
+    setStep("duration");
+  };
+
+  const handleProceed = async () => {
+    if (!selectedPlan || selectedDuration === null) return;
+    setSelecting(true);
+    if (selectedPlan === "standard") {
       router.push("/dashboard");
-    } else {
-      router.push(`/choose-plan/payment?plan=${planId}`);
+      return;
     }
+    router.push(`/choose-plan/payment?plan=${selectedPlan}&months=${selectedDuration}`);
   };
 
   if (loading) {
@@ -134,18 +103,20 @@ export default function ChoosePlanPage() {
     );
   }
 
+  const durations = selectedPlan ? DURATIONS[selectedPlan] ?? [] : [];
+  const selectedDurationObj = durations.find(d => d.months === selectedDuration);
+  const selectedPrice = selectedPlan && selectedDurationObj ? selectedDurationObj.prices[selectedPlan] : null;
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Progress bar */}
+      {/* Progress */}
       <div className="border-b border-gray-100 py-5">
         <div className="mx-auto max-w-4xl px-4">
           <div className="flex items-center justify-center gap-0">
             {["Basic Info", "Details", "Contact & Photos", "Choose Plan"].map((label, i) => (
               <div key={label} className="flex items-center">
                 <div className="flex flex-col items-center">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                    i < 3 ? "bg-red-600 text-white" : "bg-gray-900 text-white"
-                  }`}>
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i < 3 ? "bg-red-600 text-white" : "bg-gray-900 text-white"}`}>
                     {i < 3 ? <Check className="h-4 w-4" /> : "4"}
                   </div>
                   <span className={`mt-1 text-[11px] font-medium ${i === 3 ? "text-gray-900" : "text-gray-400"}`}>{label}</span>
@@ -158,153 +129,254 @@ export default function ChoosePlanPage() {
       </div>
 
       {/* Hero */}
-      <div className="bg-white py-14 text-center px-4">
+      <div className="bg-white pt-12 pb-8 text-center px-4">
         <div className="inline-flex items-center gap-1.5 bg-red-50 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
           <Zap className="h-3.5 w-3.5" />
-          ONE LAST STEP
+          {step === "plan" ? "STEP 1 — CHOOSE YOUR PLAN" : "STEP 2 — CHOOSE YOUR DURATION"}
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
-          Choose your visibility
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 tracking-tight">
+          {step === "plan" ? "Choose your visibility" : `${selectedPlan === "vip" ? "VIP" : "Basic"} — Choose your period`}
         </h1>
         <p className="text-gray-500 text-lg max-w-xl mx-auto">
-          Premium profiles receive dramatically more views and inquiries.
-          <br />Upgrade now — cancel anytime.
+          {step === "plan"
+            ? "Premium profiles receive dramatically more views. Upgrade now."
+            : "The longer you commit, the more you save. One-time payment — no subscription."}
         </p>
 
-        {/* Stats */}
-        <div className="flex items-center justify-center gap-10 mt-10">
-          {STATS.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-3xl font-black text-gray-900">{stat.value}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
-            </div>
-          ))}
-        </div>
+        {step === "plan" && (
+          <div className="flex items-center justify-center gap-10 mt-8">
+            {STATS.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-3xl font-black text-gray-900">{stat.value}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Plan cards */}
-      <div className="mx-auto max-w-6xl px-4 pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={`relative rounded-2xl border transition-all ${
-                plan.id === "vip"
-                  ? "bg-gray-950 border-gray-800 text-white shadow-2xl"
-                  : plan.recommended
-                  ? "bg-white border-red-500 shadow-2xl ring-1 ring-red-500"
-                  : "bg-white border-gray-200 shadow-sm"
-              }`}
-            >
-              {/* Badge */}
-              {plan.badge && (
-                <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-1 rounded-full text-[11px] font-black tracking-widest shadow-md ${
-                  plan.id === "vip"
-                    ? "bg-gray-900 text-yellow-400 border border-yellow-500/30"
-                    : "bg-red-600 text-white"
-                }`}>
-                  {plan.badge}
-                </div>
-              )}
+      <div className="mx-auto max-w-5xl px-4 pb-20">
 
-              <div className="p-8">
-                {/* Plan name & price */}
-                <div className="mb-6">
-                  <p className={`text-xs font-bold tracking-widest mb-2 ${
-                    plan.id === "vip" ? "text-gray-400" : "text-gray-400"
-                  }`}>{plan.name.toUpperCase()}</p>
-                  <div className="flex items-end gap-1 mb-1">
-                    <span className={`text-5xl font-black tracking-tight ${
-                      plan.id === "vip" ? "text-white" : plan.price === 0 ? "text-gray-900" : "text-red-600"
-                    }`}>{plan.priceLabel}</span>
-                    {plan.billing && (
-                      <span className={`text-base mb-1.5 ${plan.id === "vip" ? "text-gray-400" : "text-gray-400"}`}>
-                        {plan.billing}
-                      </span>
-                    )}
-                  </div>
-                  <p className={`text-sm ${plan.id === "vip" ? "text-gray-400" : "text-gray-500"}`}>
-                    {plan.description}
-                  </p>
-                </div>
-
-                {/* CTA button */}
+        {/* ── STEP 1: Plan selection ── */}
+        {step === "plan" && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+              {/* Standard free */}
+              <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+                <p className="text-xs font-bold tracking-widest text-gray-400 mb-2">STANDARD</p>
+                <div className="text-5xl font-black text-gray-900 mb-1">FREE</div>
+                <p className="text-sm text-gray-500 mb-6">Get started and test the platform</p>
                 <button
-                  onClick={() => handleSelectPlan(plan.id)}
-                  disabled={selecting !== null}
-                  className={`w-full rounded-xl py-3.5 text-sm font-bold transition-all mb-7 ${
-                    plan.id === "vip"
-                      ? "bg-white text-gray-900 hover:bg-gray-100"
-                      : plan.recommended
-                      ? "bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-600/30"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  } disabled:opacity-50`}
+                  onClick={() => { setSelectedPlan("standard"); router.push("/dashboard"); }}
+                  className="w-full rounded-xl py-3.5 text-sm font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors mb-7"
                 >
-                  {selecting === plan.id ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      Loading...
-                    </div>
-                  ) : plan.cta}
+                  Start for Free
                 </button>
-
-                {/* Divider */}
-                <div className={`border-t mb-6 ${plan.id === "vip" ? "border-gray-800" : "border-gray-100"}`} />
-
-                {/* Features */}
-                <ul className="space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <div className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center mt-0.5 ${
-                        plan.id === "vip" ? "text-yellow-400" : "text-red-600"
-                      }`}>
-                        <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                      </div>
-                      <span className={`text-sm ${plan.id === "vip" ? "text-gray-300" : "text-gray-700"}`}>
-                        {feature.text}
-                      </span>
-                    </li>
+                <div className="border-t border-gray-100 pt-6 space-y-3">
+                  {["Profile visible on site", "Up to 5 photos", "Standard placement", "Basic contact info"].map(f => (
+                    <div key={f} className="flex items-center gap-2.5 text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-gray-400 flex-shrink-0" strokeWidth={2.5} />
+                      {f}
+                    </div>
                   ))}
-                  {plan.notIncluded.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3 opacity-30">
-                      <div className="flex-shrink-0 w-4 h-4 mt-0.5 flex items-center justify-center">
-                        <div className={`w-3 h-px ${plan.id === "vip" ? "bg-gray-500" : "bg-gray-400"}`} />
-                      </div>
-                      <span className={`text-sm line-through ${plan.id === "vip" ? "text-gray-500" : "text-gray-400"}`}>
-                        {feature}
-                      </span>
-                    </li>
+                </div>
+              </div>
+
+              {/* Basic */}
+              <div className="relative rounded-2xl border-2 border-red-500 bg-white p-8 shadow-2xl ring-1 ring-red-500">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-1 rounded-full text-[11px] font-black tracking-widest bg-red-600 text-white shadow-md">
+                  MOST POPULAR
+                </div>
+                <p className="text-xs font-bold tracking-widest text-gray-400 mb-2">BASIC</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-5xl font-black text-red-600">€29</span>
+                  <span className="text-base text-gray-400 mb-1.5">/month</span>
+                </div>
+                <p className="text-sm text-gray-500 mb-6">More visibility. More bookings.</p>
+                <button
+                  onClick={() => handleSelectPlan("basic")}
+                  className="w-full rounded-xl py-3.5 text-sm font-bold bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-600/30 transition-colors mb-7"
+                >
+                  Get Basic →
+                </button>
+                <div className="border-t border-gray-100 pt-6 space-y-3">
+                  {PLANS[0].features.map(f => (
+                    <div key={f} className="flex items-center gap-2.5 text-sm text-gray-700">
+                      <Check className="w-4 h-4 text-red-600 flex-shrink-0" strokeWidth={2.5} />
+                      {f}
+                    </div>
                   ))}
-                </ul>
+                </div>
+              </div>
+
+              {/* VIP */}
+              <div className="relative rounded-2xl border border-gray-800 bg-gray-950 p-8 shadow-2xl">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-1 rounded-full text-[11px] font-black tracking-widest bg-gray-900 text-yellow-400 border border-yellow-500/30 shadow-md">
+                  MAXIMUM EXPOSURE
+                </div>
+                <p className="text-xs font-bold tracking-widest text-gray-400 mb-2">VIP</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-5xl font-black text-white">€79</span>
+                  <span className="text-base text-gray-400 mb-1.5">/month</span>
+                </div>
+                <p className="text-sm text-gray-400 mb-6">Dominate the platform.</p>
+                <button
+                  onClick={() => handleSelectPlan("vip")}
+                  className="w-full rounded-xl py-3.5 text-sm font-bold bg-white text-gray-900 hover:bg-gray-100 transition-colors mb-7"
+                >
+                  Get VIP →
+                </button>
+                <div className="border-t border-gray-800 pt-6 space-y-3">
+                  {PLANS[1].features.map(f => (
+                    <div key={f} className="flex items-center gap-2.5 text-sm text-gray-300">
+                      <Check className="w-4 h-4 text-yellow-400 flex-shrink-0" strokeWidth={2.5} />
+                      {f}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Trust bar */}
-        <div className="mt-12 flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-gray-400">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            <span>Cancel anytime — no contract</span>
-          </div>
-          <div className="hidden md:block w-px h-4 bg-gray-200" />
-          <div className="flex items-center gap-2">
-            <Check className="h-4 w-4" />
-            <span>Anonymous payment accepted</span>
-          </div>
-          <div className="hidden md:block w-px h-4 bg-gray-200" />
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            <span>Instant activation</span>
-          </div>
-        </div>
+            {/* Trust bar */}
+            <div className="mt-10 flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-gray-400">
+              <div className="flex items-center gap-2"><Shield className="h-4 w-4" /><span>One-time payment — no subscription</span></div>
+              <div className="hidden md:block w-px h-4 bg-gray-200" />
+              <div className="flex items-center gap-2"><Check className="h-4 w-4" /><span>Anonymous crypto payment accepted</span></div>
+              <div className="hidden md:block w-px h-4 bg-gray-200" />
+              <div className="flex items-center gap-2"><Zap className="h-4 w-4" /><span>Instant activation after payment</span></div>
+            </div>
 
-        {/* Skip */}
-        <div className="text-center mt-8">
-          <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors">
-            Skip for now and start with Standard (free)
-          </Link>
-        </div>
+            <div className="text-center mt-8">
+              <Link href="/dashboard" className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2">
+                Skip for now — start with Standard (free)
+              </Link>
+            </div>
+          </>
+        )}
+
+        {/* ── STEP 2: Duration selection ── */}
+        {step === "duration" && selectedPlan && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {durations.map((d) => {
+                const price = d.prices[selectedPlan];
+                const perMonth = Math.round(price / d.months);
+                const isSelected = selectedDuration === d.months;
+                return (
+                  <button
+                    key={d.months}
+                    onClick={() => setSelectedDuration(d.months)}
+                    className={`relative text-left rounded-2xl border-2 p-6 transition-all ${
+                      isSelected
+                        ? selectedPlan === "vip"
+                          ? "border-yellow-400 bg-gray-950 shadow-xl"
+                          : "border-red-500 bg-white shadow-xl ring-1 ring-red-500"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    {d.popular && (
+                      <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-black tracking-widest ${
+                        selectedPlan === "vip" ? "bg-yellow-400 text-gray-900" : "bg-red-600 text-white"
+                      }`}>
+                        BEST VALUE
+                      </div>
+                    )}
+                    <p className={`text-xs font-bold tracking-widest mb-3 ${isSelected && selectedPlan === "vip" ? "text-gray-400" : "text-gray-400"}`}>
+                      {d.label.toUpperCase()}
+                    </p>
+                    <div className={`text-4xl font-black mb-1 ${isSelected && selectedPlan === "vip" ? "text-white" : "text-gray-900"}`}>
+                      €{price}
+                    </div>
+                    <p className={`text-sm mb-3 ${isSelected && selectedPlan === "vip" ? "text-gray-400" : "text-gray-500"}`}>
+                      €{perMonth}/month
+                    </p>
+                    {d.saving ? (
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
+                        selectedPlan === "vip"
+                          ? "bg-yellow-400/20 text-yellow-400"
+                          : "bg-green-100 text-green-700"
+                      }`}>
+                        {d.saving}
+                      </span>
+                    ) : (
+                      <span className="inline-block text-xs text-gray-400">Standard price</span>
+                    )}
+                    {isSelected && (
+                      <div className={`absolute top-4 right-4 w-5 h-5 rounded-full flex items-center justify-center ${
+                        selectedPlan === "vip" ? "bg-yellow-400" : "bg-red-600"
+                      }`}>
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Savings table */}
+            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6 mb-8">
+              <p className="text-xs font-bold tracking-widest text-gray-400 mb-4">PRICE COMPARISON</p>
+              <div className="space-y-2">
+                {durations.map((d) => {
+                  const price = d.prices[selectedPlan];
+                  const perMonth = Math.round(price / d.months);
+                  const isSelected = selectedDuration === d.months;
+                  return (
+                    <div key={d.months} className={`flex items-center justify-between py-2 px-3 rounded-xl transition-colors ${isSelected ? "bg-white shadow-sm" : ""}`}>
+                      <span className={`text-sm font-medium ${isSelected ? "text-gray-900" : "text-gray-500"}`}>{d.label}</span>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-gray-400">€{perMonth}/mo</span>
+                        <span className={`text-sm font-bold ${isSelected ? "text-gray-900" : "text-gray-600"}`}>€{price} total</span>
+                        {d.saving && (
+                          <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{d.saving}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <button
+                onClick={() => setStep("plan")}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                ← Back to plans
+              </button>
+              <button
+                onClick={handleProceed}
+                disabled={selectedDuration === null || selecting}
+                className={`w-full sm:flex-1 py-4 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                  selectedPlan === "vip"
+                    ? "bg-gray-900 text-white hover:bg-black"
+                    : "bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-600/25"
+                }`}
+              >
+                {selecting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Loading...
+                  </span>
+                ) : selectedDuration && selectedPrice ? (
+                  `Pay €${selectedPrice} — ${selectedPlan === "vip" ? "VIP" : "Basic"} ${selectedDurationObj?.label} →`
+                ) : (
+                  "Select a duration to continue"
+                )}
+              </button>
+            </div>
+
+            {/* Trust */}
+            <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-gray-400">
+              <div className="flex items-center gap-2"><Shield className="h-4 w-4" /><span>One-time payment — no auto-renewal</span></div>
+              <div className="hidden md:block w-px h-4 bg-gray-200" />
+              <div className="flex items-center gap-2"><Check className="h-4 w-4" /><span>Crypto payment — anonymous & instant</span></div>
+              <div className="hidden md:block w-px h-4 bg-gray-200" />
+              <div className="flex items-center gap-2"><Zap className="h-4 w-4" /><span>Profile goes live immediately</span></div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

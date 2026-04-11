@@ -6,22 +6,27 @@ import { createClient } from "@/lib/supabase";
 import Link from "next/link";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 
-const PLAN_INFO: Record<string, { name: string; price: number; priceLabel: string }> = {
-  basic: { name: "Basic", price: 29, priceLabel: "€29/month" },
-  vip: { name: "VIP", price: 79, priceLabel: "€79/month" },
+const BASE_PRICES: Record<string, number> = { basic: 29, vip: 79 };
+const DURATION_PRICES: Record<string, Record<number, number>> = {
+  basic: { 1: 29, 3: 69, 6: 119, 12: 199 },
+  vip:   { 1: 79, 3: 189, 6: 319, 12: 529 },
 };
 
 function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") || "basic";
+  const months = parseInt(searchParams.get("months") || "1", 10);
   
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const planInfo = PLAN_INFO[plan];
+  const totalPrice = DURATION_PRICES[plan]?.[months] ?? BASE_PRICES[plan] ?? 29;
+  const planName = plan === "vip" ? "VIP" : "Basic";
+  const monthLabel = months === 1 ? "1 Month" : months === 3 ? "3 Months" : months === 6 ? "6 Months" : "12 Months";
+  const planInfo = { name: planName, price: totalPrice, priceLabel: `€${totalPrice} for ${monthLabel}` };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -51,7 +56,7 @@ function PaymentContent() {
       const res = await fetch("/api/payments/create-plan-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, userId: user.id }),
+        body: JSON.stringify({ plan, userId: user.id, months, amount: totalPrice }),
       });
 
       const data = await res.json();

@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PLANS: Record<string, number> = {
-  basic: 29,
-  vip: 79,
+const DURATION_PRICES: Record<string, Record<number, number>> = {
+  basic: { 1: 29, 3: 69, 6: 119, 12: 199 },
+  vip:   { 1: 79, 3: 189, 6: 319, 12: 529 },
 };
 
 export async function POST(req: NextRequest) {
   try {
-    const { plan, userId } = await req.json();
+    const { plan, userId, months = 1, amount } = await req.json();
 
     if (!plan || !userId) {
       return NextResponse.json({ error: "Missing plan or userId" }, { status: 400 });
     }
 
-    const priceEur = PLANS[plan];
+    const priceEur = amount || DURATION_PRICES[plan]?.[months] || DURATION_PRICES[plan]?.[1];
     if (!priceEur) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://redlightad.com";
     const orderId = `plan_${plan}_${userId}_${Date.now()}`;
-    const orderDescription = `RedLightAD ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan Subscription`;
+    const monthLabel = months === 1 ? "1 Month" : `${months} Months`;
+    const orderDescription = `RedLightAD ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan — ${monthLabel}`;
 
     const res = await fetch("https://api.nowpayments.io/v1/invoice", {
       method: "POST",
