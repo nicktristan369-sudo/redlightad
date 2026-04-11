@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import AdminLayout from "@/components/AdminLayout"
 
+const TEST_EMAIL = "test@redlightad.com"
+
 export default function AdminIndstillingerPage() {
   const [currentEmail, setCurrentEmail] = useState("")
   const [grantEmail, setGrantEmail] = useState("")
@@ -130,11 +132,74 @@ export default function AdminIndstillingerPage() {
     }
   }
 
+  // ── Test mode ────────────────────────────────────────────────────────────
+  const [testMsg, setTestMsg] = useState("")
+  const [testLoading, setTestLoading] = useState(false)
+
+  const resetTestUser = async () => {
+    setTestMsg("")
+    setTestLoading(true)
+    try {
+      const { data: { session } } = await createClient().auth.getSession()
+      // Find test user
+      const res = await fetch(`/api/admin/users?email=${encodeURIComponent(TEST_EMAIL)}`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      })
+      const d = await res.json()
+      const userId = d.users?.[0]?.id
+      if (!userId) {
+        setTestMsg("✅ Test-bruger eksisterer ikke — klar til ny test")
+        setTestLoading(false)
+        return
+      }
+      // Delete user
+      const delRes = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ userId, action: "delete" }),
+      })
+      if (!delRes.ok) throw new Error("Sletning fejlede")
+      setTestMsg(`✅ Test-bruger slettet — du kan nu teste igen med ${TEST_EMAIL}`)
+    } catch (err) {
+      setTestMsg(err instanceof Error ? `❌ ${err.message}` : "❌ Noget gik galt")
+    }
+    setTestLoading(false)
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   return (
     <AdminLayout>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Indstillinger</h1>
 
       <div className="space-y-6 max-w-xl">
+
+        {/* ── Test Mode ── */}
+        <div className="rounded-2xl bg-gray-950 p-6 border border-gray-800">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-base font-bold text-white mb-1">🧪 Test Mode</h2>
+              <p className="text-sm text-gray-400 mb-1">
+                Test email: <code className="bg-gray-800 text-green-400 px-2 py-0.5 rounded text-xs font-mono">{TEST_EMAIL}</code>
+              </p>
+              <p className="text-xs text-gray-500">
+                Brug denne email til at teste signup-flow. Klik "Nulstil" for at slette brugeren og starte forfra.
+              </p>
+              {testMsg && (
+                <p className="mt-3 text-sm font-medium" style={{ color: testMsg.startsWith("✅") ? "#4ade80" : "#f87171" }}>{testMsg}</p>
+              )}
+            </div>
+            <button
+              onClick={resetTestUser}
+              disabled={testLoading}
+              className="flex-shrink-0 rounded-xl px-4 py-2 text-sm font-bold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+            >
+              {testLoading ? "Sletter..." : "Nulstil test"}
+            </button>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-800">
+            <p className="text-xs text-gray-500 mb-2">Tip: Bekræftelsesmail sendes til test@redlightad.com — du finder bekræftelseslinket i <span className="text-gray-300">Resend dashboard → Emails</span></p>
+          </div>
+        </div>
 
         {/* ── Site lock toggle ── */}
         <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
