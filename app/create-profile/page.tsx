@@ -487,16 +487,7 @@ export default function OpretAnnoncePage() {
       setLoading(false)
       return
     }
-    if (!form.phone || form.phone.trim().length < 8) {
-      setError("A valid phone number is required.")
-      setLoading(false)
-      return
-    }
-    if (!form.about || form.about.trim().length < 50) {
-      setError("Please write at least 50 characters in your bio (About me).")
-      setLoading(false)
-      return
-    }
+    // Phone is optional
     // Phone verification is optional — do not block submission
 
     // Map serviceEntries to services array
@@ -1504,6 +1495,10 @@ export default function OpretAnnoncePage() {
                   onClick={() => {
                     if (!form.age || parseInt(form.age) < 18) {
                       setError("Please enter your age (minimum 18).");
+                      return;
+                    }
+                    if (!form.about || form.about.trim().length < 50) {
+                      setError("Please write at least 50 characters in your bio (About me).");
                       return;
                     }
                     setError("");
