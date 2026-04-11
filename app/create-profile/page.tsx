@@ -295,7 +295,7 @@ export default function OpretAnnoncePage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setRedirecting(false); return; }
       const { data: listing } = await supabase
-        .from("listings").select("id").eq("user_id", user.id).eq("status", "active").limit(1).single();
+        .from("listings").select("id").eq("user_id", user.id).neq("status", "deleted").limit(1).maybeSingle();
       if (listing?.id) {
         alert("You already have a profile. Edit it here.");
         router.replace(`/dashboard/annoncer/${listing.id}/edit`);

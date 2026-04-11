@@ -43,8 +43,16 @@ export default function MineAnnoncer() {
     if (!confirm("Are you sure you want to delete this listing?")) return
     setDeletingId(id)
     const supabase = createClient()
-    await supabase.from("listings").delete().eq("id", id)
-    setListings(prev => prev.filter(l => l.id !== id))
+    const token = (await supabase.auth.getSession()).data.session?.access_token
+    const res = await fetch(`/api/listings/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` },
+    })
+    if (res.ok) {
+      setListings(prev => prev.filter(l => l.id !== id))
+    } else {
+      alert("Failed to delete listing. Please try again.")
+    }
     setDeletingId(null)
   }
 
