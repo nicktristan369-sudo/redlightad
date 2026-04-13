@@ -159,30 +159,33 @@ export default function RegisterPage() {
       const profileImage = photoUrls[0];
       const images = photoUrls.slice(1);
 
-      // 3. Create listing
-      const { error: insertError } = await supabase.from("listings").insert({
-        user_id: authData.user.id,
-        title: displayName,
-        gender,
-        category,
-        age: parseInt(age),
-        nationality,
-        height: height ? parseInt(height) : null,
-        weight: weight ? parseInt(weight) : null,
-        about,
-        country,
-        city,
-        location: `${city}, ${country}`,
-        phone,
-        whatsapp: whatsapp || null,
-        telegram: telegram || null,
-        profile_image: profileImage,
-        images,
-        status: "pending",
-        premium_tier: null,
+      // 3. Create listing via API (uses service role to bypass RLS for unconfirmed users)
+      const res = await fetch("/api/listings/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: authData.user.id,
+          title: displayName,
+          display_name: displayName,
+          gender,
+          category,
+          age: parseInt(age),
+          nationality,
+          height_cm: height ? parseInt(height) : null,
+          weight_kg: weight ? parseInt(weight) : null,
+          about,
+          country,
+          city,
+          location: `${city}, ${country}`,
+          phone,
+          whatsapp: whatsapp || null,
+          telegram: telegram || null,
+          profile_image: profileImage,
+          images,
+        }),
       });
-
-      if (insertError) throw insertError;
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to create listing");
 
       // 4. Redirect to welcome page
       router.push("/welcome?new=1");
