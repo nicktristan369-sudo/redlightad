@@ -192,7 +192,7 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(result.error || "Failed to create listing");
 
       // 4. Redirect to welcome page
-      router.push("/welcome?new=1");
+      router.push(`/welcome?new=1&uid=${authData.user.id}`);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
       setLoading(false);

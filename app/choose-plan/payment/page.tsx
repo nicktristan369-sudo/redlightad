@@ -17,6 +17,7 @@ function PaymentContent() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") || "basic";
   const months = parseInt(searchParams.get("months") || "1", 10);
+  const urlUserId = searchParams.get("userId") || null;
   
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -32,11 +33,9 @@ function PaymentContent() {
     const checkAuth = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
+      // Allow access even without confirmed session (user just registered)
       setLoading(false);
+      if (!user) return; // Will handle gracefully in handlePayWithCrypto
     };
     checkAuth();
   }, [router]);
@@ -48,7 +47,8 @@ function PaymentContent() {
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const userId = user?.id || urlUserId;
+      if (!userId) {
         router.replace("/login");
         return;
       }
@@ -56,7 +56,7 @@ function PaymentContent() {
       const res = await fetch("/api/payments/create-plan-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, userId: user.id, months, amount: totalPrice }),
+        body: JSON.stringify({ plan, userId, months, amount: totalPrice }),
       });
 
       const data = await res.json();

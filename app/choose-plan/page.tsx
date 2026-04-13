@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
 import { Check, Zap, Shield, Star, Camera, Mic, TrendingUp, Video, MessageCircle, Globe, Tag, X } from "lucide-react";
@@ -66,6 +66,9 @@ const STATS = [
 
 export default function ChoosePlanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromWelcome = searchParams?.get("from") === "welcome";
+  const uid = searchParams?.get("uid") || "";
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<"plan" | "duration">("plan");
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -83,11 +86,13 @@ export default function ChoosePlanPage() {
   } | null>(null);
 
   useEffect(() => {
+    // If coming from welcome page, allow access without confirmed session
+    if (fromWelcome) { setLoading(false); return; }
     createClient().auth.getUser().then(({ data: { user } }) => {
       if (!user) router.replace("/login");
       else setLoading(false);
     });
-  }, [router]);
+  }, [router, fromWelcome]);
 
   const handleSelectPlan = (planId: string) => {
     setSelectedPlan(planId);
@@ -138,7 +143,7 @@ export default function ChoosePlanPage() {
       router.push(`/dashboard?plan_activated=true&plan=${selectedPlan}&promo=${promoCode}`);
       return;
     }
-    router.push(`/choose-plan/payment?plan=${selectedPlan}&months=${selectedDuration}&amount=${finalPrice}&promo=${promoCode || ""}`);
+    router.push(`/choose-plan/payment?plan=${selectedPlan}&months=${selectedDuration}&amount=${finalPrice}&promo=${promoCode || ""}${uid ? `&userId=${uid}` : ""}`);
   };
 
   if (loading) {

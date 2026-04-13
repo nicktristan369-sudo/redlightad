@@ -10,6 +10,7 @@ function WelcomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isNew = searchParams.get("new") === "1";
+  const uid = searchParams.get("uid") || "";
   const [loading, setLoading] = useState(false);
 
   const handleContinueFree = async () => {
@@ -135,7 +136,7 @@ function WelcomeContent() {
             </p>
 
             <Link
-              href="/choose-plan"
+              href={`/choose-plan?from=welcome${uid ? `&uid=${uid}` : ""}`}
               className="block w-full px-6 py-4 bg-[#DC2626] text-white font-bold text-center hover:bg-[#B91C1C] transition-colors"
               style={{ borderRadius: 0 }}
             >
