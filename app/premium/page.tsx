@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase"
-import { Crown, MapPin, Mic } from "lucide-react"
+import { Crown } from "lucide-react"
 import Navbar from "@/components/Navbar"
-import Link from "next/link"
-import Image from "next/image"
+import AdCardGrid from "@/components/AdCardGrid"
 import { SUPPORTED_COUNTRIES } from "@/lib/countries"
 
 const GENDERS = ["All", "Woman", "Man", "Trans", "Couple"]
@@ -18,18 +17,22 @@ const TIERS = [
 type Listing = {
   id: string
   title: string
+  display_name: string | null
   profile_image: string | null
-  about: string | null
+  images: string[] | null
+  profile_video_url: string | null
   age: number | null
   gender: string | null
   category: string | null
   country: string | null
   city: string | null
   location: string | null
-  languages: string[] | null
   premium_tier: string | null
-  voice_message_url: string | null
-  display_name: string | null
+  opening_hours: Record<string, { open: string; close: string; closed: boolean }> | null
+  timezone: string | null
+  created_at: string
+  social_links: Record<string, { url?: string }> | null
+  onlyfans_username: string | null
 }
 
 export default function PremiumProfilesPage() {
@@ -47,7 +50,7 @@ export default function PremiumProfilesPage() {
 
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, about, age, gender, category, country, city, location, languages, premium_tier, voice_message_url, display_name")
+      .select("id, title, display_name, profile_image, images, profile_video_url, age, gender, category, country, city, location, premium_tier, opening_hours, timezone, created_at, social_links, onlyfans_username")
       .not("premium_tier", "is", null)
       .eq("status", "active")
 
@@ -61,7 +64,7 @@ export default function PremiumProfilesPage() {
       const order: Record<string, number> = { vip: 0, basic: 1 }
       return (order[a.premium_tier ?? ""] ?? 2) - (order[b.premium_tier ?? ""] ?? 2)
     })
-    setListings(sorted)
+    setListings(sorted as Listing[])
     setLoading(false)
   }
 
@@ -91,8 +94,7 @@ export default function PremiumProfilesPage() {
           </div>
 
           {/* Filter bar */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 mb-4 flex items-center gap-2 overflow-x-auto flex-nowrap">
-            {/* Tier */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 mb-5 flex items-center gap-2 overflow-x-auto flex-nowrap">
             {TIERS.map(t => (
               <button
                 key={t.value}
@@ -114,7 +116,6 @@ export default function PremiumProfilesPage() {
 
             <div className="w-px h-6 bg-gray-200 flex-shrink-0 mx-1" />
 
-            {/* Gender */}
             {GENDERS.map(g => (
               <button
                 key={g}
@@ -131,7 +132,6 @@ export default function PremiumProfilesPage() {
 
             <div className="w-px h-6 bg-gray-200 flex-shrink-0 mx-1" />
 
-            {/* Country */}
             <select
               value={country}
               onChange={e => setCountry(e.target.value)}
@@ -142,7 +142,6 @@ export default function PremiumProfilesPage() {
               ))}
             </select>
 
-            {/* Clear */}
             {(gender !== "All" || country || tier) && (
               <button
                 onClick={() => { setGender("All"); setCountry(""); setTier("") }}
@@ -168,64 +167,30 @@ export default function PremiumProfilesPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {listings.map((ad) => (
-                <Link key={ad.id} href={`/ads/${ad.id}`} className="group block">
-                  <div className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-
-                    {/* Photo */}
-                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
-                      {ad.profile_image ? (
-                        <Image
-                          src={ad.profile_image}
-                          alt={ad.title || "Profile"}
-                          fill
-                          className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-400 text-3xl">?</span>
-                        </div>
-                      )}
-
-                      {/* Tier badge */}
-                      <div className={`absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 text-[10px] font-black tracking-widest ${
-                        ad.premium_tier === "vip"
-                          ? "bg-yellow-400 text-gray-900"
-                          : "bg-black text-white"
-                      }`}>
-                        {ad.premium_tier === "vip" && <Crown className="w-2.5 h-2.5" />}
-                        {ad.premium_tier === "vip" ? "VIP" : "PREMIUM"}
-                      </div>
-
-                      {/* Voice */}
-                      {ad.voice_message_url && (
-                        <div className="absolute top-2.5 right-2.5 w-6 h-6 bg-black/60 flex items-center justify-center">
-                          <Mic className="w-3 h-3 text-white" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="px-3 pt-2.5 pb-3">
-                      <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
-                        {ad.display_name || ad.title || "Profile"}
-                      </p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        <span className="text-xs text-gray-500 truncate">
-                          {[ad.city, ad.country].filter(Boolean).join(", ") || ad.location || ""}
-                        </span>
-                        {ad.age && <span className="text-xs text-gray-400 flex-shrink-0">· {ad.age}</span>}
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-[11px] text-gray-400 capitalize">{ad.category || ""}</span>
-                        <span className="text-[11px] text-gray-400 capitalize">{ad.gender || ""}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8">
+              {listings.map((ad, i) => (
+                <AdCardGrid
+                  key={ad.id}
+                  id={ad.id}
+                  title={ad.title}
+                  display_name={ad.display_name}
+                  image={ad.profile_image || "/placeholder.jpg"}
+                  images={ad.images}
+                  profileVideoUrl={ad.profile_video_url}
+                  verified={true}
+                  age={ad.age}
+                  city={ad.city}
+                  country={ad.country}
+                  location={ad.location || ""}
+                  category={ad.category || ""}
+                  created_at={ad.created_at}
+                  opening_hours={ad.opening_hours}
+                  timezone={ad.timezone}
+                  premium_tier={ad.premium_tier}
+                  social_links={ad.social_links}
+                  onlyfans_username={ad.onlyfans_username}
+                  staggerDelay={i * 30}
+                />
               ))}
             </div>
           )}
