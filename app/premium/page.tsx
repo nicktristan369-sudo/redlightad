@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase"
 import { Crown, Filter } from "lucide-react"
 import Navbar from "@/components/Navbar"
 import AdCard from "@/components/AdCard"
-import { COUNTRIES } from "@/lib/countries"
+import { SUPPORTED_COUNTRIES } from "@/lib/countries"
 
 const GENDERS = ["All", "Woman", "Man", "Trans", "Couple"]
 const TIERS = [
@@ -53,7 +53,7 @@ export default function PremiumProfilesPage() {
 
   const countryOptions = [
     { code: "", name: "All Countries" },
-    ...COUNTRIES.filter(c => c.code).map(c => ({ code: c.code, name: c.name }))
+    ...SUPPORTED_COUNTRIES.map(c => ({ code: c.code, name: c.name }))
   ]
 
   return (
