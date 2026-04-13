@@ -468,7 +468,7 @@ function Pill({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-between gap-2 w-full px-3 py-2 text-sm font-medium border transition-colors ${
+      className={`flex items-center justify-between gap-1.5 w-full px-3 md:px-2.5 py-2 md:py-1.5 text-sm md:text-[13px] font-medium border transition-colors ${
         active
           ? "border-gray-900 text-gray-900 bg-white font-semibold"
           : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
@@ -477,9 +477,9 @@ function Pill({
     >
       <span className="flex items-center gap-1.5">
         {icon}
-        <span className="truncate max-w-[110px]">{label}</span>
+        <span className="truncate max-w-[90px]">{label}</span>
       </span>
-      <ChevronDown size={12} className="flex-shrink-0" />
+      <ChevronDown size={11} className="flex-shrink-0" />
     </button>
   )
 }
@@ -632,7 +632,7 @@ function FilterBarInner() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-2">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-2 md:py-1.5">
 
         {/* Search — full width top row on mobile */}
         <div className="relative mb-2 md:hidden">
@@ -662,8 +662,8 @@ function FilterBarInner() {
               onChange={e => setQ(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") update({ q }) }}
               onBlur={() => { if (q !== (searchParams.get("q") ?? "")) update({ q }) }}
-              className="h-9 w-44 pl-8 pr-3 bg-white border border-gray-200 outline-none focus:border-gray-400"
-              style={{ borderRadius: 0, fontSize: 16 }}
+              className="h-8 w-36 pl-7 pr-3 bg-white border border-gray-200 outline-none focus:border-gray-400"
+              style={{ borderRadius: 0, fontSize: 13 }}
             />
           </div>
 
@@ -717,7 +717,7 @@ function FilterBarInner() {
             <div className="relative">
               <button
                 onClick={() => setDrawerOpen(true)}
-                className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium border transition-colors"
+                className="flex items-center justify-center gap-1.5 w-full h-full px-3 md:px-2.5 py-2 md:py-1.5 text-sm md:text-[13px] font-medium border transition-colors"
                 style={{
                   borderRadius: 0,
                   border: (ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) ? "1px solid #DC2626" : "1px solid #E5E7EB",
