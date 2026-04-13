@@ -57,6 +57,7 @@ function DashboardContent() {
   const planActivated = searchParams.get("plan_activated")
   const plan = searchParams.get("plan")
   const tier = searchParams.get("tier")
+  const [checking, setChecking] = useState(true)
   const [listingId, setListingId] = useState<string | null>(null)
   const [camStatus, setCamStatus] = useState<"offline"|"available"|"scheduled">("offline")
   const [camAvailableUntil, setCamAvailableUntil] = useState<string|null>(null)
@@ -90,6 +91,8 @@ function DashboardContent() {
         return
       }
 
+      setChecking(false)
+
       if (listing?.id) {
         setListingId(listing.id)
         // Fetch cam availability
@@ -118,6 +121,14 @@ function DashboardContent() {
     if (newStatus === "scheduled" && scheduledDateTime) setCamScheduledAt(scheduledDateTime)
     if (newStatus === "offline") { setCamAvailableUntil(null); setCamScheduledAt(null) }
     setCamStatusSaving(false)
+  }
+
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-7 h-7 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
