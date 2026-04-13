@@ -1,525 +1,600 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
+import { uploadImages } from "@/lib/uploadImages";
+import { SUPPORTED_COUNTRIES } from "@/lib/countries";
+import { CATEGORIES } from "@/lib/constants/categories";
 import Logo from "@/components/Logo";
-import { Smartphone, CheckCircle, RefreshCw } from "lucide-react";
-import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-type AccountType = "provider" | "customer" | null;
-
-// Country dial codes (top used + alphabetical)
-const DIAL_CODES = [
-  { code: "+45", iso: "DK", name: "Denmark" },
-  { code: "+46", iso: "SE", name: "Sweden" },
-  { code: "+47", iso: "NO", name: "Norway" },
-  { code: "+358", iso: "FI", name: "Finland" },
-  { code: "+44", iso: "GB", name: "United Kingdom" },
-  { code: "+66", iso: "TH", name: "Thailand" },
-  { code: "+63", iso: "PH", name: "Philippines" },
-  { code: "+60", iso: "MY", name: "Malaysia" },
-  { code: "+62", iso: "ID", name: "Indonesia" },
-  { code: "+84", iso: "VN", name: "Vietnam" },
-  { code: "+49", iso: "DE", name: "Germany" },
-  { code: "+33", iso: "FR", name: "France" },
-  { code: "+31", iso: "NL", name: "Netherlands" },
-  { code: "+34", iso: "ES", name: "Spain" },
-  { code: "+39", iso: "IT", name: "Italy" },
-  { code: "+1",  iso: "US", name: "USA / Canada" },
-  { code: "+61", iso: "AU", name: "Australia" },
-  { code: "+55", iso: "BR", name: "Brazil" },
-  { code: "+52", iso: "MX", name: "Mexico" },
-  { code: "+48", iso: "PL", name: "Poland" },
-  { code: "+43", iso: "AT", name: "Austria" },
-  { code: "+32", iso: "BE", name: "Belgium" },
-  { code: "+41", iso: "CH", name: "Switzerland" },
-  { code: "+420", iso: "CZ", name: "Czech Republic" },
-  { code: "+36", iso: "HU", name: "Hungary" },
-  { code: "+40", iso: "RO", name: "Romania" },
-  { code: "+30", iso: "GR", name: "Greece" },
-  { code: "+351", iso: "PT", name: "Portugal" },
-  { code: "+380", iso: "UA", name: "Ukraine" },
-  { code: "+7",  iso: "RU", name: "Russia" },
-  { code: "+90", iso: "TR", name: "Turkey" },
-  { code: "+971", iso: "AE", name: "UAE" },
-  { code: "+27", iso: "ZA", name: "South Africa" },
-  { code: "+81", iso: "JP", name: "Japan" },
-  { code: "+82", iso: "KR", name: "South Korea" },
-  { code: "+86", iso: "CN", name: "China" },
-  { code: "+91", iso: "IN", name: "India" },
+const GENDER_OPTIONS = [
+  { value: "Woman", label: "Woman" },
+  { value: "Man", label: "Man" },
+  { value: "Trans", label: "Trans" },
+  { value: "Couple", label: "Couple" },
 ];
 
-const RESEND_DELAY = 30;
+const AGE_OPTIONS = Array.from({ length: 53 }, (_, i) => i + 18); // 18-70
 
 export default function RegisterPage() {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [accountType, setAccountType] = useState<AccountType>(null);
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Step 2 state
+  // Section 1 — Account Details
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [agreeAge, setAgreeAge] = useState(false);
-  const [btnHov, setBtnHov] = useState(false);
-  const [emailFocus, setEmailFocus] = useState(false);
-  const [pwFocus, setPwFocus] = useState(false);
-  const [cpwFocus, setCpwFocus] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
-  // Step 3 state
-  const [dialCode, setDialCode] = useState("+45");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [phoneFocus, setPhoneFocus] = useState(false);
-  const [codeSent, setCodeSent] = useState(false);
-  const [codeInputs, setCodeInputs] = useState(["", "", "", "", "", ""]);
-  const [sendingCode, setSendingCode] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [phoneError, setPhoneError] = useState("");
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
-  const [showDialDropdown, setShowDialDropdown] = useState(false);
-  const [dialSearch, setDialSearch] = useState("");
-  const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const { t } = useLanguage();
+  // Section 2 — Profile Info
+  const [displayName, setDisplayName] = useState("");
+  const [gender, setGender] = useState("");
+  const [category, setCategory] = useState("");
+  const [age, setAge] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [about, setAbout] = useState("");
 
-  const fullPhone = dialCode + phoneNumber.replace(/\s/g, "");
+  // Section 3 — Location
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
 
-  // Resend countdown
-  useEffect(() => {
-    if (resendTimer > 0) {
-      timerRef.current = setInterval(() => setResendTimer(prev => prev - 1), 1000);
+  // Section 4 — Contact
+  const [phone, setPhone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [telegram, setTelegram] = useState("");
+
+  // Section 5 — Photos
+  const [frontPhotoFile, setFrontPhotoFile] = useState<File | null>(null);
+  const [frontPhotoPreview, setFrontPhotoPreview] = useState("");
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+
+  // Section 6 — Terms
+  const [acceptTerms, setAcceptTerms] = useState(false);
+
+  const handleFrontPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFrontPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setFrontPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
     }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [resendTimer]);
+  };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + galleryFiles.length > 15) {
+      setError("Maximum 15 gallery photos allowed");
+      return;
+    }
+    setGalleryFiles([...galleryFiles, ...files]);
+    
+    const newPreviews: string[] = [];
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        newPreviews.push(reader.result as string);
+        if (newPreviews.length === files.length) {
+          setGalleryPreviews([...galleryPreviews, ...newPreviews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeGalleryPhoto = (index: number) => {
+    setGalleryFiles(galleryFiles.filter((_, i) => i !== index));
+    setGalleryPreviews(galleryPreviews.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    if (password.length < 6) { setError(t.reg_password_short); return; }
-    if (password !== confirmPassword) { setError(t.reg_password_mismatch); return; }
     setLoading(true);
-    const supabase = createClient();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://redlightad.com";
-    const redirectTo = accountType === "provider"
-      ? `${siteUrl}/create-profile`
-      : `${siteUrl}/kunde`;
-    const { data, error: authError } = await supabase.auth.signUp({
-      email, password,
-      options: {
-        data: { account_type: accountType },
-        emailRedirectTo: redirectTo,
-      },
-    });
-    if (authError) { setError(authError.message); setLoading(false); return; }
 
-    // TEST MODE: auto-confirm test@redlightad.com and redirect directly
-    if (email.toLowerCase() === "test@redlightad.com" && data.user?.id) {
-      await fetch("/api/admin/confirm-test-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: data.user.id }),
+    try {
+      // Validation
+      if (!email || !password || !confirmPassword) {
+        throw new Error("Email and password are required");
+      }
+      if (password.length < 6) {
+        throw new Error("Password must be at least 6 characters");
+      }
+      if (password !== confirmPassword) {
+        throw new Error("Passwords do not match");
+      }
+      if (!displayName) {
+        throw new Error("Display name is required");
+      }
+      if (!gender) {
+        throw new Error("Please select who you are");
+      }
+      if (!category) {
+        throw new Error("Service type is required");
+      }
+      if (!age) {
+        throw new Error("Age is required");
+      }
+      if (!about || about.length < 50) {
+        throw new Error("About me must be at least 50 characters");
+      }
+      if (!country) {
+        throw new Error("Country is required");
+      }
+      if (!city) {
+        throw new Error("City is required");
+      }
+      if (!phone) {
+        throw new Error("Phone number is required");
+      }
+      if (!frontPhotoFile) {
+        throw new Error("Front photo is required");
+      }
+      if (!acceptTerms) {
+        throw new Error("You must accept the terms and conditions");
+      }
+
+      const supabase = createClient();
+
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/welcome`,
+        },
       });
-      // Sign in immediately and go to create-profile
-      await supabase.auth.signInWithPassword({ email, password });
-      window.location.href = "/create-profile";
-      return;
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create account");
+
+      // 2. Upload photos
+      const photoFiles = [frontPhotoFile, ...galleryFiles];
+      const photoUrls = await uploadImages(photoFiles);
+      const profileImage = photoUrls[0];
+      const images = photoUrls.slice(1);
+
+      // 3. Create listing
+      const { error: insertError } = await supabase.from("listings").insert({
+        user_id: authData.user.id,
+        title: displayName,
+        gender,
+        category,
+        age: parseInt(age),
+        nationality,
+        height: height ? parseInt(height) : null,
+        weight: weight ? parseInt(weight) : null,
+        about,
+        country,
+        city,
+        location: `${city}, ${country}`,
+        phone,
+        whatsapp: whatsapp || null,
+        telegram: telegram || null,
+        profile_image: profileImage,
+        images,
+        status: "pending",
+        premium_tier: null,
+      });
+
+      if (insertError) throw insertError;
+
+      // 4. Redirect to welcome page
+      router.push("/welcome?new=1");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+      setLoading(false);
     }
-
-    setUserId(data.user?.id ?? null);
-    setLoading(false);
-    // Skip phone step — go directly to success (phone verify is optional, done from dashboard)
-    setPhoneVerified(true);
   };
-
-  const sendCode = async () => {
-    setPhoneError("");
-    if (!phoneNumber.trim() || phoneNumber.replace(/\D/g, "").length < 5) {
-      setPhoneError(t.reg_phone_invalid);
-      return;
-    }
-    setSendingCode(true);
-    const res = await fetch("/api/auth/send-verification", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: fullPhone }),
-    });
-    const data = await res.json();
-    setSendingCode(false);
-    if (!res.ok) { setPhoneError(data.error ?? "Failed to send SMS"); return; }
-    setCodeSent(true);
-    setResendTimer(RESEND_DELAY);
-    setCodeInputs(["", "", "", "", "", ""]);
-    setTimeout(() => codeRefs.current[0]?.focus(), 100);
-  };
-
-  const handleCodeInput = (i: number, v: string) => {
-    const digit = v.replace(/\D/g, "").slice(-1);
-    const next = [...codeInputs];
-    next[i] = digit;
-    setCodeInputs(next);
-    if (digit && i < 5) codeRefs.current[i + 1]?.focus();
-  };
-
-  const handleCodeKeyDown = (i: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !codeInputs[i] && i > 0) codeRefs.current[i - 1]?.focus();
-  };
-
-  const verifyCode = async () => {
-    const code = codeInputs.join("");
-    if (code.length < 6) { setPhoneError("Enter the full 6-digit code"); return; }
-    setVerifying(true);
-    setPhoneError("");
-    const res = await fetch("/api/auth/verify-phone", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: fullPhone, code, user_id: userId }),
-    });
-    const data = await res.json();
-    setVerifying(false);
-    if (!res.ok) { setPhoneError(data.error ?? "Verification failed"); return; }
-    setPhoneVerified(true);
-  };
-
-  const skipPhone = async () => {
-    // Mark email verified — proceed to success
-    setPhoneVerified(true);
-  };
-
-  const filteredDials = DIAL_CODES.filter(d =>
-    !dialSearch || d.name.toLowerCase().includes(dialSearch.toLowerCase()) || d.code.includes(dialSearch)
-  );
-
-  if (phoneVerified) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4" style={{ background: "#F5F5F7" }}>
-        <div className="w-full max-w-md bg-white rounded-2xl p-8 text-center shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
-          <div className="flex justify-center mb-4"><Logo variant="light" height={28} /></div>
-          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "#DCFCE7" }}>
-            <CheckCircle size={28} color="#16A34A" />
-          </div>
-          <h2 className="text-[20px] font-bold text-gray-900 mb-2">{t.reg_account_created}</h2>
-          <p className="text-[14px] text-gray-500 mb-6">
-            {t.reg_check_email} <strong>{email}</strong>
-          </p>
-          <Link href="/login"
-            className="inline-block w-full py-3 text-[13px] font-semibold text-white rounded-xl transition-colors"
-            style={{ background: "#000" }}
-            onMouseEnter={e => (e.currentTarget.style.background = "#CC0000")}
-            onMouseLeave={e => (e.currentTarget.style.background = "#000")}>
-            {t.reg_go_login}
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12" style={{ backgroundColor: "#F5F5F7" }}>
-      {/* Step indicator */}
-      <div className="w-full" style={{ maxWidth: "680px" }}>
-        <div className="flex items-center justify-center gap-2 mb-6">
-          {[1, 2].map(s => (
-            <div key={s} className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold transition-colors"
-                style={{ background: step >= s ? "#000" : "#E5E5E5", color: step >= s ? "#fff" : "#9CA3AF" }}>
-                {s}
-              </div>
-              {s < 2 && <div className="w-8 h-0.5" style={{ background: step > s ? "#000" : "#E5E5E5" }} />}
-            </div>
-          ))}
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <Logo />
         </div>
+      </header>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+      {/* Main Form */}
+      <main className="max-w-4xl mx-auto px-4 py-12">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Create Your Profile</h1>
 
-          {/* ── STEP 1 ── */}
-          {step === 1 && (
-            <div className="p-8 sm:p-10">
-              <div className="text-center mb-8">
-                <p className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] uppercase mb-3">{t.reg_step_of} 1/2</p>
-                <h1 className="text-[32px] font-bold text-gray-900 leading-tight mb-2">{t.reg_select_type}</h1>
-                <p className="text-base text-gray-500">{t.reg_choose_how}</p>
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700" style={{ borderRadius: 0 }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-12">
+          {/* Section 1 — Account Details */}
+          <section className="pb-8 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Account Details</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  required
+                />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                {/* Provider */}
-                <button type="button" onClick={() => setAccountType("provider")}
-                  className="text-left rounded-2xl border-2 p-6 transition-all duration-150 focus:outline-none"
-                  style={{ borderColor: accountType === "provider" ? "#000" : "#E5E7EB", boxShadow: accountType === "provider" ? "0 2px 12px rgba(0,0,0,0.10)" : "none" }}>
-                  <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">{t.reg_create_profile}</h2>
-                  <p className="text-[11px] font-bold text-red-600 tracking-[0.1em] uppercase mb-2">{t.reg_for_providers}</p>
-                  <p className="text-sm text-gray-500 mb-4">{t.reg_provider_features}</p>
-                  <ul className="space-y-1.5">
-                    {[t.reg_post_listings, t.reg_receive_messages, t.reg_add_media, t.reg_voice_messages, t.reg_boost_visibility].map(f => (
-                      <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </button>
-                {/* Customer */}
-                <button type="button" onClick={() => setAccountType("customer")}
-                  className="text-left rounded-2xl border-2 p-6 transition-all duration-150 focus:outline-none"
-                  style={{ borderColor: accountType === "customer" ? "#000" : "#E5E7EB", boxShadow: accountType === "customer" ? "0 2px 12px rgba(0,0,0,0.10)" : "none" }}>
-                  <div className="w-12 h-12 rounded-xl bg-gray-600 flex items-center justify-center mb-4">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">{t.reg_customer_account}</h2>
-                  <p className="text-[11px] font-bold text-gray-400 tracking-[0.1em] uppercase mb-2">{t.reg_for_clients}</p>
-                  <p className="text-sm text-gray-500 mb-4">{t.reg_customer_features}</p>
-                  <ul className="space-y-1.5">
-                    {[t.reg_private_profile, t.reg_secure_messaging, t.reg_buy_redcoins, t.reg_unlock_content].map(f => (
-                      <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  minLength={6}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
               </div>
-              <div className="flex gap-3">
-                <Link href="/" className="px-5 py-3 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap">{t.common_cancel}</Link>
-                <button type="button" disabled={!accountType} onClick={() => setStep(2)}
-                  className="flex-1 py-3 text-sm font-semibold text-white transition-colors"
-                  style={{ borderRadius: "8px", backgroundColor: accountType ? "#111" : "#D1D5DB", cursor: accountType ? "pointer" : "not-allowed" }}>
-                  {t.auth_continue}
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  required
+                />
               </div>
             </div>
-          )}
+          </section>
 
-          {/* ── STEP 2 ── */}
-          {step === 2 && (
-            <div className="p-8 sm:p-10">
-              <div className="mb-6 flex items-center gap-3">
-                <button type="button" onClick={() => setStep(1)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <span className="inline-flex items-center rounded-full px-3 py-1 text-[12px] font-semibold text-white" style={{ background: "#000" }}>
-                  {accountType === "provider" ? t.auth_provider : t.auth_customer}
-                </span>
-                <span className="text-[12px] text-gray-400 ml-auto">{t.reg_step_of} 2/2</span>
+          {/* Section 2 — Profile Info */}
+          <section className="pb-8 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Profile Information</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Name / Nickname <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  required
+                />
               </div>
-              <div className="flex justify-center mb-6"><Logo variant="light" height={28} /></div>
-              <h1 className="text-[24px] font-bold text-center mb-1">{t.auth_register_title}</h1>
-              <p className="text-center mb-7 text-[14px] text-gray-500">{t.reg_fill_details}</p>
-              <form onSubmit={handleRegister} className="space-y-4">
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  WHO ARE YOU? <span className="text-red-600">*</span>
+                </label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors bg-white"
+                  style={{ borderRadius: 0 }}
+                  required
+                >
+                  <option value="">Select...</option>
+                  {GENDER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Service Type / Category <span className="text-red-600">*</span>
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors bg-white"
+                  style={{ borderRadius: 0 }}
+                  required
+                >
+                  <option value="">Select...</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Age <span className="text-red-600">*</span>
+                </label>
+                <select
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors bg-white"
+                  style={{ borderRadius: 0 }}
+                  required
+                >
+                  <option value="">Select...</option>
+                  {AGE_OPTIONS.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nationality
+                </label>
+                <input
+                  type="text"
+                  value={nationality}
+                  onChange={(e) => setNationality(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  placeholder="e.g. Danish, Thai, Brazilian"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">{t.auth_email}</label>
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                    onFocus={() => setEmailFocus(true)} onBlur={() => setEmailFocus(false)}
-                    placeholder="your@email.com"
-                    className="w-full px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors"
-                    style={{ border: `1px solid ${emailFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }} />
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">{t.auth_password}</label>
-                  <div className="relative">
-                    <input type={showPassword ? "text" : "password"} required value={password} onChange={e => setPassword(e.target.value)}
-                      onFocus={() => setPwFocus(true)} onBlur={() => setPwFocus(false)} placeholder={t.reg_min_chars}
-                      className="w-full px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors"
-                      style={{ border: `1px solid ${pwFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        {showPassword ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" />
-                          : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-[13px] font-medium text-gray-700">{t.auth_confirm_password}</label>
-                  <div className="relative">
-                    <input type={showConfirmPassword ? "text" : "password"} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                      onFocus={() => setCpwFocus(true)} onBlur={() => setCpwFocus(false)} placeholder={t.reg_repeat_password}
-                      className="w-full px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors"
-                      style={{ border: `1px solid ${cpwFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }} />
-                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        {showConfirmPassword ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" />
-                          : <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></>}
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-3 pt-1">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" required checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} className="mt-0.5 h-4 w-4 flex-shrink-0 accent-black" />
-                    <span className="text-[13px] text-gray-700">{t.reg_agree_terms} <Link href="/terms" className="underline font-medium" target="_blank">{t.reg_terms}</Link> & <Link href="/privacy" className="underline font-medium" target="_blank">{t.reg_privacy}</Link></span>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Height (cm)
                   </label>
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" required checked={agreeAge} onChange={e => setAgreeAge(e.target.checked)} className="mt-0.5 h-4 w-4 flex-shrink-0 accent-black" />
-                    <span className="text-[13px] text-gray-700">{t.reg_age_confirm}</span>
-                  </label>
+                  <input
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                    style={{ borderRadius: 0 }}
+                    placeholder="e.g. 170"
+                  />
                 </div>
-                {error && <p className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-[13px] text-red-600">{error}</p>}
-                <button type="submit" disabled={loading || !agreeTerms || !agreeAge}
-                  className="w-full py-3 text-sm font-semibold text-white flex items-center justify-center transition-all disabled:opacity-40"
-                  style={{ background: btnHov && !loading ? "#CC0000" : "#000", borderRadius: "8px" }}
-                  onMouseEnter={() => setBtnHov(true)} onMouseLeave={() => setBtnHov(false)}>
-                  {loading ? <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> : t.auth_continue}
-                </button>
-              </form>
-              <div className="my-6 flex items-center gap-3"><div className="h-px flex-1" style={{ background: "#D1D5DB" }} /><span className="text-[13px] text-gray-400">{t.common_or}</span><div className="h-px flex-1" style={{ background: "#D1D5DB" }} /></div>
-              <p className="text-center text-[14px] text-gray-500">{t.auth_have_account} <Link href="/login" className="font-bold text-gray-900 hover:underline">{t.auth_sign_in}</Link></p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                    style={{ borderRadius: 0 }}
+                    placeholder="e.g. 60"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  About Me / Describe Yourself <span className="text-red-600">*</span>
+                </label>
+                <textarea
+                  value={about}
+                  onChange={(e) => setAbout(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  rows={6}
+                  minLength={50}
+                  required
+                  placeholder="Tell us about yourself, your services, and what makes you special... (min. 50 characters)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {about.length} / 50 characters minimum
+                </p>
+              </div>
             </div>
-          )}
+          </section>
 
-          {/* ── STEP 3 — Phone Verification ── */}
-          {step === 3 && (
-            <div className="p-8 sm:p-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#F3F4F6" }}>
-                  <Smartphone size={20} color="#374151" />
-                </div>
-                <div>
-                  <h1 className="text-[20px] font-bold text-gray-900">{t.reg_verify_phone}</h1>
-                  <p className="text-[12px] text-gray-400">{t.reg_step3_desc}</p>
-                </div>
+          {/* Section 3 — Location */}
+          <section className="pb-8 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Location</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Country <span className="text-red-600">*</span>
+                </label>
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors bg-white"
+                  style={{ borderRadius: 0 }}
+                  required
+                >
+                  <option value="">Select country...</option>
+                  {SUPPORTED_COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.name}>
+                      {c.flag} {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  required
+                  placeholder="e.g. Copenhagen"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4 — Contact */}
+          <section className="pb-8 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Contact Information</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone (with country code) <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  required
+                  placeholder="e.g. +45 12345678"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  WhatsApp
+                </label>
+                <input
+                  type="text"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  placeholder="e.g. +45 12345678"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Telegram
+                </label>
+                <input
+                  type="text"
+                  value={telegram}
+                  onChange={(e) => setTelegram(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  placeholder="e.g. @username"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Section 5 — Photos */}
+          <section className="pb-8 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Photos</h2>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Front Photo <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFrontPhotoChange}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                  required
+                />
+                {frontPhotoPreview && (
+                  <div className="mt-4">
+                    <img
+                      src={frontPhotoPreview}
+                      alt="Front photo preview"
+                      className="w-48 h-48 object-cover border border-gray-300"
+                    />
+                  </div>
+                )}
               </div>
 
-              {!codeSent ? (
-                <div className="space-y-4">
-                  <p className="text-[14px] text-gray-600">
-                    {t.reg_phone_desc}
-                  </p>
-
-                  {/* Phone input */}
-                  <div>
-                    <label className="block mb-1.5 text-[13px] font-medium text-gray-700">{t.reg_phone_number}</label>
-                    <div className="flex gap-2">
-                      {/* Dial code picker */}
-                      <div className="relative">
-                        <button type="button" onClick={() => setShowDialDropdown(v => !v)}
-                          className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-[13px] font-semibold h-full transition-colors"
-                          style={{ border: "1px solid #E5E5E5", minWidth: "80px", background: showDialDropdown ? "#F5F5F5" : "#fff" }}>
-                          {dialCode}
-                          <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-                        {showDialDropdown && (
-                          <div className="absolute left-0 top-full mt-1 z-50 bg-white rounded-xl shadow-xl overflow-hidden"
-                            style={{ border: "1px solid #E5E5E5", width: "220px" }}>
-                            <div className="p-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
-                              <input value={dialSearch} onChange={e => setDialSearch(e.target.value)}
-                                placeholder={t.reg_search_country}
-                                className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
-                                style={{ border: "1px solid #E5E5E5" }} autoFocus />
-                            </div>
-                            <div className="overflow-y-auto" style={{ maxHeight: "200px" }}>
-                              {filteredDials.map(d => (
-                                <button key={d.iso} type="button"
-                                  onClick={() => { setDialCode(d.code); setShowDialDropdown(false); setDialSearch(""); }}
-                                  className="w-full text-left px-3 py-2 text-[12px] hover:bg-gray-50 flex items-center gap-2">
-                                  <span className="font-semibold text-gray-900 w-10">{d.code}</span>
-                                  <span className="text-gray-500 truncate">{d.name}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      {/* Number */}
-                      <input value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)}
-                        onFocus={() => setPhoneFocus(true)} onBlur={() => setPhoneFocus(false)}
-                        placeholder="XX XX XX XX" type="tel"
-                        className="flex-1 px-4 py-2.5 text-[13px] text-gray-900 placeholder-gray-400 outline-none"
-                        style={{ border: `1px solid ${phoneFocus ? "#000" : "#E5E5E5"}`, borderRadius: "8px" }} />
-                    </div>
-                  </div>
-
-                  {phoneError && <p className="text-[13px] text-red-600">{phoneError}</p>}
-
-                  <button onClick={sendCode} disabled={sendingCode}
-                    className="w-full py-3 text-[13px] font-semibold text-white rounded-xl disabled:opacity-40 transition-colors"
-                    style={{ background: "#000" }}
-                    onMouseEnter={e => { if (!sendingCode) e.currentTarget.style.background = "#CC0000"; }}
-                    onMouseLeave={e => e.currentTarget.style.background = "#000"}>
-                    {sendingCode ? t.reg_sending : t.reg_send_code}
-                  </button>
-
-                  <button onClick={skipPhone} type="button"
-                    className="w-full py-3 text-[13px] font-medium text-gray-400 hover:text-gray-600 transition-colors">
-                    {t.reg_skip}
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  <div className="flex items-start gap-3 px-4 py-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-                    <CheckCircle size={16} color="#16A34A" className="flex-shrink-0 mt-0.5" />
-                    <p className="text-[13px] text-green-700">
-                      {t.reg_code_sent_to} <strong>{fullPhone}</strong>
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block mb-3 text-[13px] font-medium text-gray-700">{t.reg_enter_code}</label>
-                    <div className="flex gap-1.5 sm:gap-2 justify-center">
-                      {codeInputs.map((v, i) => (
-                        <input
-                          key={i}
-                          ref={el => { codeRefs.current[i] = el; }}
-                          type="text" inputMode="numeric" maxLength={1} value={v}
-                          onChange={e => handleCodeInput(i, e.target.value)}
-                          onKeyDown={e => handleCodeKeyDown(i, e)}
-                          className="w-10 h-12 sm:w-11 sm:h-14 text-center text-[18px] sm:text-[20px] font-bold outline-none rounded-xl transition-colors"
-                          style={{ border: `2px solid ${v ? "#000" : "#E5E5E5"}` }}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gallery Photos (optional, max 15)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleGalleryChange}
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-[#DC2626] transition-colors"
+                  style={{ borderRadius: 0 }}
+                />
+                {galleryPreviews.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 md:grid-cols-5 gap-4">
+                    {galleryPreviews.map((preview, i) => (
+                      <div key={i} className="relative">
+                        <img
+                          src={preview}
+                          alt={`Gallery ${i + 1}`}
+                          className="w-full h-32 object-cover border border-gray-300"
                         />
-                      ))}
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryPhoto(i)}
+                          className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+                          style={{ borderRadius: 0 }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
-
-                  {phoneError && <p className="text-[13px] text-red-600 text-center">{phoneError}</p>}
-
-                  <button onClick={verifyCode} disabled={verifying || codeInputs.join("").length < 6}
-                    className="w-full py-3 text-[13px] font-semibold text-white rounded-xl disabled:opacity-40 transition-colors"
-                    style={{ background: "#000" }}
-                    onMouseEnter={e => { if (!verifying) e.currentTarget.style.background = "#CC0000"; }}
-                    onMouseLeave={e => e.currentTarget.style.background = "#000"}>
-                    {verifying ? t.reg_verifying : t.reg_verify_btn}
-                  </button>
-
-                  <div className="flex items-center justify-between text-[13px]">
-                    <button type="button" onClick={() => { setCodeSent(false); setCodeInputs(["","","","","",""]); setPhoneError(""); }}
-                      className="text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
-                      {t.reg_change_number}
-                    </button>
-                    {resendTimer > 0 ? (
-                      <span className="text-gray-400 flex items-center gap-1">
-                        <RefreshCw size={12} /> {t.reg_resend_in} {resendTimer}s
-                      </span>
-                    ) : (
-                      <button type="button" onClick={sendCode} disabled={sendingCode}
-                        className="text-gray-900 font-semibold hover:text-red-600 transition-colors flex items-center gap-1">
-                        <RefreshCw size={12} /> {t.reg_resend_code}
-                      </button>
-                    )}
-                  </div>
-
-                  <button onClick={skipPhone} type="button"
-                    className="w-full py-2 text-[13px] font-medium text-gray-400 hover:text-gray-600 transition-colors">
-                    {t.reg_skip_verify}
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          )}
+          </section>
 
-        </div>
-      </div>
+          {/* Section 6 — Terms */}
+          <section className="pb-8">
+            <div className="space-y-4">
+              <label className="flex items-start">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="mt-1 mr-3"
+                  required
+                />
+                <span className="text-sm text-gray-700">
+                  I accept the{" "}
+                  <Link href="/terms" className="text-[#DC2626] hover:underline">
+                    terms and conditions
+                  </Link>{" "}
+                  <span className="text-red-600">*</span>
+                </span>
+              </label>
+            </div>
+          </section>
+
+          {/* Submit Button */}
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-8 py-4 bg-[#DC2626] text-white font-semibold hover:bg-[#B91C1C] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              style={{ borderRadius: 0 }}
+            >
+              {loading ? "Creating your profile..." : "Create my profile →"}
+            </button>
+          </div>
+
+          <div className="text-center text-sm text-gray-600">
+            Already have an account?{" "}
+            <Link href="/login" className="text-[#DC2626] hover:underline font-medium">
+              Sign in
+            </Link>
+          </div>
+        </form>
+      </main>
     </div>
   );
 }
