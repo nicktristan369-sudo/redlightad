@@ -80,76 +80,74 @@ export default function PremiumProfilesPage() {
         <div className="mx-auto max-w-7xl px-4 py-6">
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <div className="flex items-center gap-2.5">
-              <Crown className="w-6 h-6 text-yellow-500" />
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-5">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Premium Profiles</h1>
-                <p className="text-sm text-gray-500">Verified premium members worldwide</p>
+                <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">Premium Profiles</h1>
+                <p className="text-sm text-gray-400 mt-0.5">Verified premium members worldwide</p>
+              </div>
+              {!loading && (
+                <span className="text-sm text-gray-400 font-medium">{listings.length} profiles</span>
+              )}
+            </div>
+
+            {/* Filter bar */}
+            <div className="flex items-center gap-0 border-b border-gray-200 overflow-x-auto">
+              {/* Tier filters */}
+              {TIERS.map(t => (
+                <button
+                  key={t.value}
+                  onClick={() => setTier(t.value)}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
+                    tier === t.value
+                      ? "border-gray-900 text-gray-900"
+                      : "border-transparent text-gray-400 hover:text-gray-700"
+                  }`}
+                >
+                  {t.value === "vip" && <Crown className="w-3 h-3" />}
+                  {t.label}
+                </button>
+              ))}
+
+              <div className="w-px h-5 bg-gray-200 flex-shrink-0 mx-3" />
+
+              {/* Gender filters */}
+              {GENDERS.map(g => (
+                <button
+                  key={g}
+                  onClick={() => setGender(g)}
+                  className={`flex-shrink-0 px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
+                    gender === g
+                      ? "border-gray-900 text-gray-900"
+                      : "border-transparent text-gray-400 hover:text-gray-700"
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+
+              <div className="ml-auto flex-shrink-0 flex items-center gap-3 pb-1">
+                {/* Country */}
+                <select
+                  value={country}
+                  onChange={e => setCountry(e.target.value)}
+                  className="text-sm text-gray-600 font-medium bg-transparent border border-gray-200 px-3 py-1.5 focus:outline-none focus:border-gray-400 cursor-pointer"
+                >
+                  {countryOptions.map(c => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                </select>
+
+                {(gender !== "All" || country || tier) && (
+                  <button
+                    onClick={() => { setGender("All"); setCountry(""); setTier("") }}
+                    className="text-xs text-red-600 font-semibold hover:underline"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
             </div>
-            {!loading && (
-              <span className="text-sm text-gray-500">{listings.length} profiles</span>
-            )}
-          </div>
-
-          {/* Filter bar */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 mb-5 flex items-center gap-2 overflow-x-auto flex-nowrap">
-            {TIERS.map(t => (
-              <button
-                key={t.value}
-                onClick={() => setTier(t.value)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold border transition-colors ${
-                  tier === t.value
-                    ? t.value === "vip"
-                      ? "bg-yellow-400 text-gray-900 border-yellow-400"
-                      : t.value === "basic"
-                      ? "bg-red-600 text-white border-red-600"
-                      : "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
-                }`}
-              >
-                {t.value === "vip" && <Crown className="w-3.5 h-3.5" />}
-                {t.label}
-              </button>
-            ))}
-
-            <div className="w-px h-6 bg-gray-200 flex-shrink-0 mx-1" />
-
-            {GENDERS.map(g => (
-              <button
-                key={g}
-                onClick={() => setGender(g)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
-                  gender === g
-                    ? "bg-gray-100 text-gray-900 border-gray-400"
-                    : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                {g}
-              </button>
-            ))}
-
-            <div className="w-px h-6 bg-gray-200 flex-shrink-0 mx-1" />
-
-            <select
-              value={country}
-              onChange={e => setCountry(e.target.value)}
-              className="flex-shrink-0 rounded-full border border-gray-200 px-4 py-2 text-sm bg-white focus:outline-none focus:border-red-500 text-gray-600 font-semibold cursor-pointer"
-            >
-              {countryOptions.map(c => (
-                <option key={c.code} value={c.code}>{c.name}</option>
-              ))}
-            </select>
-
-            {(gender !== "All" || country || tier) && (
-              <button
-                onClick={() => { setGender("All"); setCountry(""); setTier("") }}
-                className="flex-shrink-0 text-xs text-red-600 font-bold hover:underline px-2"
-              >
-                Clear
-              </button>
-            )}
           </div>
 
           {/* Grid */}
