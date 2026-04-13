@@ -13,24 +13,28 @@ export default async function VideosPage() {
   const supabase = createServerClient()
 
   // Fetch one video per listing — the most recent unlocked video
-  // Join with listings to get profile info
   const { data: videos } = await supabase
     .from("listing_videos")
     .select(`
       id, url, thumbnail_url, title, is_locked, redcoin_price, views, likes, sort_order, created_at,
       listing_id,
-      listings!inner(id, title, city, country, profile_image, premium_tier)
+      listings!inner(id, title, display_name, city, country, profile_image, premium_tier)
     `)
     .order("created_at", { ascending: false })
-    .limit(200)
+    .limit(500)
 
-  // De-dupe: one video per listing (keep first = most recent)
+  // De-dupe: one video per listing but count total videos per listing
+  const countMap: Record<string, number> = {}
+  ;(videos ?? []).forEach((v: any) => {
+    countMap[v.listing_id] = (countMap[v.listing_id] || 0) + 1
+  })
+
   const seen = new Set<string>()
   const deduped = (videos ?? []).filter((v: any) => {
     if (seen.has(v.listing_id)) return false
     seen.add(v.listing_id)
     return true
-  })
+  }).map((v: any) => ({ ...v, video_count: countMap[v.listing_id] || 1 }))
 
   return (
     <>
