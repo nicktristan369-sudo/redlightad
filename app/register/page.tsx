@@ -153,6 +153,9 @@ export default function RegisterPage() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create account");
 
+      // Auto sign-in immediately so session is active for choose-plan
+      await supabase.auth.signInWithPassword({ email, password });
+
       // 2. Upload photos
       const photoFiles = [frontPhotoFile, ...galleryFiles];
       const photoUrls = await uploadImages(photoFiles);
