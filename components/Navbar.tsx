@@ -30,6 +30,7 @@ export default function Navbar() {
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
   const [showCountrySelector, setShowCountrySelector] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [hasActivePlan, setHasActivePlan] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
@@ -61,11 +62,15 @@ export default function Navbar() {
       } else {
         const { data } = await supabase.from("profiles").select("avatar_url").eq("id", authUser.id).single();
         avatar = data?.avatar_url || null;
-        // Fallback: første listing profile_image
-        if (!avatar) {
-          const { data: listing } = await supabase.from("listings").select("profile_image").eq("user_id", authUser.id).limit(1).single();
-          avatar = listing?.profile_image || null;
-        }
+        // Fallback: første listing profile_image + check active plan
+        const { data: listing } = await supabase
+          .from("listings")
+          .select("profile_image, premium_tier")
+          .eq("user_id", authUser.id)
+          .limit(1)
+          .single();
+        if (!avatar) avatar = listing?.profile_image || null;
+        setHasActivePlan(!!(listing?.premium_tier));
       }
 
       setUser({ email, id: authUser.id, accountType, avatar, initials });
@@ -272,8 +277,9 @@ export default function Navbar() {
                         </div>
                         {/* Menu items */}
                         {[
-                          { href: dashboardHref, label: "Dashboard" },
-                          { href: `${dashboardHref}/profil`, label: "Indstillinger" },
+                          ...(hasActivePlan || user?.accountType === "customer" ? [{ href: dashboardHref, label: "Dashboard" }] : []),
+                          ...(hasActivePlan || user?.accountType === "customer" ? [{ href: `${dashboardHref}/profil`, label: "Indstillinger" }] : []),
+                          ...(!hasActivePlan && user?.accountType !== "customer" ? [{ href: "/create-profile", label: "Complete Profile" }] : []),
                           ...(coinBalance !== null ? [{ href: `${dashboardHref}/coins`, label: `🔴 ${coinBalance} coins` }] : []),
                         ].map(({ href, label }) => (
                           <Link key={href} href={href} onClick={() => setShowUserMenu(false)}
@@ -416,10 +422,17 @@ export default function Navbar() {
           <div style={{ padding: "6px 16px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
             {user ? (
               <>
-                <Link href={dashboardHref} onClick={closeDrawer}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "11px", borderRadius: 10, background: "#111", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none", letterSpacing: "-0.01em" }}>
-                  Dashboard
-                </Link>
+                {(hasActivePlan || user?.accountType === "customer") ? (
+                  <Link href={dashboardHref} onClick={closeDrawer}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "11px", borderRadius: 10, background: "#111", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none", letterSpacing: "-0.01em" }}>
+                    Dashboard
+                  </Link>
+                ) : (
+                  <Link href="/create-profile" onClick={closeDrawer}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "11px", borderRadius: 10, background: "#DC2626", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none", letterSpacing: "-0.01em" }}>
+                    Complete your profile
+                  </Link>
+                )}
                 <button onClick={handleLogout}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px", borderRadius: 10, border: "none", background: "#FEF2F2", color: "#DC2626", fontSize: 14, fontWeight: 600, cursor: "pointer", letterSpacing: "-0.01em" }}>
                   <LogOut size={14} strokeWidth={2.5} /> Sign out
