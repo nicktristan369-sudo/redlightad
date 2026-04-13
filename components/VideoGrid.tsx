@@ -66,11 +66,25 @@ function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => vo
           />
         ) : (
           <>
-            {video.thumbnail_url ? (
+            {/* Video preview — autoplay muted on hover */}
+            {video.url ? (
+              <video
+                src={`${video.url}#t=0.5`}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                poster={video.thumbnail_url || listing.profile_image || undefined}
+                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                style={{ pointerEvents: "none" }}
+                onMouseEnter={e => (e.currentTarget as HTMLVideoElement).play()}
+                onMouseLeave={e => { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
+              />
+            ) : video.thumbnail_url || listing.profile_image ? (
               <img
-                src={video.thumbnail_url}
+                src={video.thumbnail_url || listing.profile_image!}
                 alt={name}
-                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-400"
+                className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full bg-gray-900 flex items-center justify-center">
