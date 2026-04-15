@@ -67,15 +67,10 @@ export default function MineAnnoncer() {
       <div>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
-            <p className="text-gray-500 text-sm mt-1">{listings.length} listing{listings.length !== 1 ? "s" : ""} total</p>
+            <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+            <p className="text-gray-500 text-sm mt-1">Manage your profile and settings</p>
           </div>
-          <a
-            href="/create-profile"
-            className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors"
-          >
-            New Listing
-          </a>
+
         </div>
 
         {loading ? (
@@ -125,10 +120,10 @@ export default function MineAnnoncer() {
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 flex-shrink-0 w-full sm:w-auto">
                     <a
-                      href={`/upgrade?listing=${listing.id}`}
-                      className="px-4 py-2 rounded-xl text-sm font-medium bg-yellow-50 hover:bg-yellow-100 text-yellow-700 transition-colors"
+                      href={`/ads/${listing.id}`}
+                      className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-900 hover:bg-black text-white transition-colors"
                     >
-                      Upgrade
+                      View Profile
                     </a>
                     <button
                       onClick={() => router.push(`/dashboard/annoncer/${listing.id}/edit`)}

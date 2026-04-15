@@ -375,8 +375,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         onlyfans_username: form.onlyfans_username || null,
         onlyfans_price_usd: form.onlyfans_price_usd ? parseFloat(form.onlyfans_price_usd) : null,
         updated_at:      new Date().toISOString(),
-        // Keep existing status + tier — admin must re-approve changes
-        status:          "pending",
+        // Keep status as active — no re-approval needed for edits
       }).eq("id", id).eq("user_id", user.id);
 
       if (updateErr) throw updateErr;
@@ -441,10 +440,10 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
             <CheckCircle size={28} color="#16A34A" />
           </div>
           <h2 className="text-[20px] font-bold text-gray-900 mb-2">Ændringer gemt</h2>
-          <p className="text-[14px] text-gray-500 mb-6">Din annonce er sendt til godkendelse og vil være synlig igen inden for 24 timer.</p>
-          <button onClick={() => router.push("/dashboard/annoncer")}
+          <p className="text-[14px] text-gray-500 mb-6">Dine ændringer er gemt og er synlige på din profil med det samme.</p>
+          <button onClick={() => router.push(`/ads/${id}`)}
             className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white"
-            style={{ background: "#000" }}>Se mine annoncer</button>
+            style={{ background: "#000" }}>Se min profil</button>
         </div>
       </div>
     </DashboardLayout>
