@@ -3,22 +3,7 @@ import Link from "next/link"
 import { CheckCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 
-function isAvailableNow(
-  hours: Record<string, { open: string; close: string; closed: boolean }> | null | undefined,
-  tz: string | null | undefined
-): boolean {
-  if (!hours || !tz) return false
-  try {
-    const day = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" }).format(new Date()).toLowerCase()
-    const h = hours[day]
-    if (!h || h.closed) return false
-    const now = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date())
-    const [ch, cm] = now.split(":").map(Number)
-    const [oh, om] = h.open.split(":").map(Number)
-    const [clh, clm] = h.close.split(":").map(Number)
-    return (ch * 60 + cm) >= (oh * 60 + om) && (ch * 60 + cm) < (clh * 60 + clm)
-  } catch { return false }
-}
+import { isAvailableNow } from "@/lib/isAvailableNow"
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()

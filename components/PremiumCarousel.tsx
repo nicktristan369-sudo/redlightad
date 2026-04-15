@@ -151,23 +151,7 @@ function timeAgo(iso: string): string {
   return `${Math.floor(diff / 86400)}d ago`
 }
 
-function isAvailableNow(
-  hours: Record<string, { open: string; close: string; closed: boolean }> | null,
-  tz: string | null
-): boolean {
-  if (!hours || !tz) return false
-  try {
-    const dayName = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" }).format(new Date()).toLowerCase()
-    const day = hours[dayName]
-    if (!day || day.closed) return false
-    const nowStr = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date())
-    const [ch, cm] = nowStr.split(":").map(Number)
-    const cur = ch * 60 + cm
-    const [oh, om] = day.open.split(":").map(Number)
-    const [clh, clm] = day.close.split(":").map(Number)
-    return cur >= oh * 60 + om && cur < clh * 60 + clm
-  } catch { return false }
-}
+import { isAvailableNow } from "@/lib/isAvailableNow"
 
 interface PremiumCarouselProps {
   title?: string
