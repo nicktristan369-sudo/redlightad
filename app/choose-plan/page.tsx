@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
@@ -64,7 +64,7 @@ const STATS = [
   { value: "Top", label: "Search placement" },
 ];
 
-export default function ChoosePlanPage() {
+function ChoosePlanContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromWelcome = searchParams?.get("from") === "welcome";
@@ -479,5 +479,13 @@ export default function ChoosePlanPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ChoosePlanPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-7 h-7 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" /></div>}>
+      <ChoosePlanContent />
+    </Suspense>
   );
 }
