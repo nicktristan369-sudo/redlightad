@@ -213,7 +213,10 @@ export default function AdDetailPage() {
 
           {/* Title — udenfor grid, max 2/3 bredde på desktop så sidebar flugter med galleriet */}
           <div className="mb-4 flex items-start gap-3 w-full lg:max-w-[calc(66.666%-1.5rem)]">
-            <h1 className="text-lg md:text-xl font-bold text-gray-900 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ad.title}</h1>
+            <div>
+              <h1 className="text-lg md:text-xl font-bold text-gray-900 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ad.title}</h1>
+              {(ad as any).short_id && <span className="text-xs text-gray-400 font-mono mt-0.5 block">ID #{(ad as any).short_id}</span>}
+            </div>
             {isPremium && (
               <span className="flex-shrink-0 rounded bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
                 {ad.premium_tier}
