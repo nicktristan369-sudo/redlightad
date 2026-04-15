@@ -411,9 +411,9 @@ export default function PremiumCarousel({
 
                   {/* Available Now */}
                   {available && (
-                    <div className="absolute left-0 right-0 flex items-center gap-1.5 px-2 py-1" style={{ bottom: "86px", backgroundColor: "#00C853" }}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse flex-shrink-0" />
-                      <span className="text-white text-[10px] font-bold tracking-wide">Available Now</span>
+                    <div className="absolute bottom-16 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-0.5" style={{ borderLeft: "2px solid #22C55E" }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+                      <span className="text-white text-[9px] font-bold tracking-widest uppercase">Now</span>
                     </div>
                   )}
 
