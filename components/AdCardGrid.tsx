@@ -143,12 +143,13 @@ export default function AdCardGrid({
           />
           )}
 
-          {/* Available dot — top left */}
+          {/* Available dot — small green dot top right */}
           {available && (
             <div style={{
-              position: "absolute", top: 8, left: 8,
+              position: "absolute", top: 8, right: 8,
               width: 8, height: 8, borderRadius: "50%",
               background: "#22C55E", boxShadow: "0 0 0 2px white",
+              zIndex: 10,
             }} />
           )}
 

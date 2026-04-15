@@ -409,12 +409,13 @@ export default function PremiumCarousel({
                     </div>
                   )}
 
-                  {/* Available Now */}
+                  {/* Available Now — small green dot only */}
                   {available && (
-                    <div className="absolute bottom-16 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-0.5" style={{ borderLeft: "2px solid #22C55E" }}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
-                      <span className="text-white text-[9px] font-bold tracking-widest uppercase">Now</span>
-                    </div>
+                    <div style={{
+                      position: "absolute", top: 8, right: 8,
+                      width: 9, height: 9, borderRadius: "50%",
+                      background: "#22C55E", boxShadow: "0 0 0 2px white",
+                    }} />
                   )}
 
                   {/* Bottom overlay */}
