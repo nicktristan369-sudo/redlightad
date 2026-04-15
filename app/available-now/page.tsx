@@ -167,49 +167,64 @@ export default function AvailableNowPage() {
             </div>
           ) : listings.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 p-16 text-center">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gray-300"></span>
-                </span>
-                <span className="text-sm text-gray-400">No profiles available right now</span>
-              </div>
-              <p className="text-xs text-gray-400">Check back soon — profiles update in real time</p>
+              <p className="text-sm text-gray-400">No profiles available right now — check back soon</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8">
-              {listings.map((ad, i) => (
-                <div key={ad.id} className="relative">
-                  {/* Available now dot on card */}
-                  <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-sm">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400"></span>
-                    </span>
-                    <span className="text-[10px] font-bold text-white tracking-wide">NOW</span>
-                  </div>
-                  <AdCardGrid
-                    id={ad.id}
-                    title={ad.title}
-                    display_name={ad.display_name}
-                    image={ad.profile_image || "/placeholder.jpg"}
-                    images={ad.images}
-                    profileVideoUrl={ad.profile_video_url}
-                    verified={true}
-                    age={ad.age}
-                    city={ad.city}
-                    country={ad.country}
-                    location={ad.location || ""}
-                    category={ad.category || ""}
-                    created_at={ad.created_at}
-                    opening_hours={ad.opening_hours}
-                    timezone={ad.timezone}
-                    premium_tier={ad.premium_tier}
-                    social_links={ad.social_links}
-                    onlyfans_username={ad.onlyfans_username}
-                    staggerDelay={i * 30}
-                  />
-                </div>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              {listings.map((ad) => {
+                const name = ad.display_name || ad.title || ""
+                const location = [ad.city, ad.country].filter(Boolean).join(", ").toUpperCase()
+                const isVip = ad.premium_tier === "vip"
+                return (
+                  <a key={ad.id} href={`/ads/${ad.id}`} className="group block bg-black overflow-hidden rounded-sm shadow-sm hover:shadow-md transition-shadow">
+                    {/* Photo */}
+                    <div className="relative" style={{ aspectRatio: "3/4" }}>
+                      {ad.profile_image ? (
+                        <img
+                          src={ad.profile_image}
+                          alt={name}
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-800" />
+                      )}
+
+                      {/* Gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+
+                      {/* VIP badge */}
+                      {isVip && (
+                        <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[9px] font-black tracking-widest px-2 py-0.5 uppercase">
+                          VIP
+                        </div>
+                      )}
+
+                      {/* Photo count */}
+                      {ad.images && ad.images.length > 0 && (
+                        <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 flex items-center gap-1">
+                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                          {(ad.images.length + 1)}
+                        </div>
+                      )}
+
+                      {/* Name + location overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2">
+                        <p className="text-white text-[12px] font-bold uppercase tracking-wide truncate leading-tight">{name}</p>
+                        {location && <p className="text-white/60 text-[10px] tracking-wide truncate mt-0.5">{location}</p>}
+                      </div>
+                    </div>
+
+                    {/* Available Now bar */}
+                    <div className="flex items-center gap-1.5 bg-[#1a1a1a] px-3 py-2 border-t border-green-500/30">
+                      <span className="relative flex h-1.5 w-1.5 flex-shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400"></span>
+                      </span>
+                      <span className="text-green-400 text-[10px] font-bold tracking-widest uppercase">Available Now</span>
+                    </div>
+                  </a>
+                )
+              })}
             </div>
           )}
         </div>
