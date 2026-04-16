@@ -214,26 +214,28 @@ export default function AdDetailPage() {
           <StoryCircles listingId={ad.id} />
 
           {/* Title — udenfor grid, max 2/3 bredde på desktop så sidebar flugter med galleriet */}
-          <div className="mb-4 flex items-start gap-3 w-full lg:max-w-[calc(66.666%-1.5rem)]">
-            <div>
+          <div className="mb-4 w-full lg:max-w-[calc(66.666%-1.5rem)]">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-lg md:text-xl font-bold text-gray-900 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ad.title}</h1>
-              {(ad as any).short_id && <span className="text-xs text-gray-400 font-mono mt-0.5 block">ID #{(ad as any).short_id}</span>}
+              {isPremium && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                  </svg>
+                  Premium
+                </span>
+              )}
+              {ad.kyc_status === "verified" && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-600">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Verified
+                </span>
+              )}
             </div>
-            {isPremium && (
-              <span className="flex-shrink-0 rounded bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs font-semibold text-yellow-700 uppercase tracking-wide">
-                {ad.premium_tier}
-              </span>
-            )}
-            {ad.kyc_status === "verified" && (
-              <span className="flex-shrink-0" style={{
-                display: "inline-flex", alignItems: "center", gap: 4,
-                background: "#1D4ED8", color: "white",
-                fontSize: 10, fontWeight: 700, letterSpacing: "0.8px",
-                padding: "3px 8px", textTransform: "uppercase" as const,
-              }}>
-                ✓ VERIFIED
-              </span>
-            )}
+            {(ad as any).short_id && <span className="text-[11px] text-gray-400 mt-1 block">ID #{(ad as any).short_id}</span>}
           </div>
 
           {/* Two-column layout — sidebar flugter med galleriet */}
