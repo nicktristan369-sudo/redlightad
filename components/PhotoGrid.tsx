@@ -1,5 +1,6 @@
 "use client"
 import Image from "next/image"
+import { highQualityUrl } from "@/lib/cloudinaryUrl"
 
 export default function PhotoGrid({ images, onImageClick }: { images: string[]; onImageClick: (index: number) => void }) {
   if (!images || images.length === 0) return null
@@ -11,7 +12,7 @@ export default function PhotoGrid({ images, onImageClick }: { images: string[]; 
           onClick={() => onImageClick(i)}
           style={{ position: "relative", aspectRatio: "1/1", overflow: "hidden", cursor: "pointer" }}
         >
-          <Image src={src} alt={`Photo ${i + 1}`} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 33vw, 200px" />
+          <Image src={highQualityUrl(src, 600)} alt={`Photo ${i + 1}`} fill style={{ objectFit: "cover" }} quality={95} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 400px" unoptimized />
           {/* Hover overlay */}
           <div style={{
             position: "absolute", inset: 0,

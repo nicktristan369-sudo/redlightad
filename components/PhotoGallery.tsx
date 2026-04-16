@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, Maximize2, Lock } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { highQualityUrl } from "@/lib/cloudinaryUrl";
 
 interface PhotoGalleryProps {
   images: string[];
@@ -196,7 +197,7 @@ export default function PhotoGallery({
                   style={{ width: "15%", opacity: 0.45, filter: "brightness(0.7)", background: "#0a0a0a" }}
                   onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
                 >
-                  <img src={images[prevIdx]} alt="" className="w-full h-full object-contain" draggable={false} />
+                  <img src={highQualityUrl(images[prevIdx])} alt="" className="w-full h-full object-contain" draggable={false} />
                   {isLocked(prevIdx) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
@@ -213,7 +214,7 @@ export default function PhotoGallery({
                 onClick={() => openLightbox(activeIndex)}
               >
                 <img
-                  src={images[activeIndex]}
+                  src={highQualityUrl(images[activeIndex])}
                   alt={`${name} photo ${activeIndex + 1}`}
                   className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
                   draggable={false}
@@ -243,7 +244,7 @@ export default function PhotoGallery({
                   style={{ width: "15%", opacity: 0.45, filter: "brightness(0.7)", background: "#0a0a0a" }}
                   onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
                 >
-                  <img src={images[nextIdx]} alt="" className="w-full h-full object-contain" draggable={false} />
+                  <img src={highQualityUrl(images[nextIdx])} alt="" className="w-full h-full object-contain" draggable={false} />
                   {isLocked(nextIdx) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
@@ -306,7 +307,7 @@ export default function PhotoGallery({
                     outlineOffset: "1px",
                   }}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" draggable={false} />
+                  <img src={highQualityUrl(img, 120)} alt="" className="w-full h-full object-cover" draggable={false} />
                   {isLocked(i) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
@@ -332,7 +333,7 @@ export default function PhotoGallery({
             onClick={() => openLightbox(activeIndex)}
           >
             <img
-              src={images[activeIndex]}
+              src={highQualityUrl(images[activeIndex])}
               alt={`${name} photo ${activeIndex + 1}`}
               className="w-full h-full object-contain"
               draggable={false}
@@ -366,7 +367,7 @@ export default function PhotoGallery({
                     outlineOffset: "1px",
                   }}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" draggable={false} />
+                  <img src={highQualityUrl(img, 120)} alt="" className="w-full h-full object-cover" draggable={false} />
                   {isLocked(i) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
@@ -398,7 +399,7 @@ export default function PhotoGallery({
             style={{ maxWidth: "92vw", maxHeight: "92vh" }}
           >
             <img
-              src={images[lightboxIndex]}
+              src={highQualityUrl(images[lightboxIndex])}
               alt={`${name} photo ${lightboxIndex + 1}`}
               style={{
                 maxWidth: "92vw",
