@@ -94,6 +94,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   // travel schedule
   const [travelEntries, setTravelEntries] = useState<TravelEntry[]>([]);
   const [showTravelSchedule, setShowTravelSchedule] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
   const [travelLoading, setTravelLoading] = useState(false);
   const [newTravel, setNewTravel] = useState({ from_date: "", to_date: "", city: "", country: "" });
   const [travelError, setTravelError] = useState("");
@@ -164,6 +165,15 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "toggle_visibility", show }),
     });
+  };
+
+  const toggleReviewsVisibility = async (show: boolean) => {
+    setShowReviews(show);
+    const supabase = createClient();
+    await supabase
+      .from("listings")
+      .update({ show_reviews: show })
+      .eq("id", id);
   };
 
   /* ─── Load listing ─── */
@@ -268,6 +278,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
       if (listing.location_changed_at) setLocationChangedAt(listing.location_changed_at);
       if (listing.show_travel_schedule) setShowTravelSchedule(listing.show_travel_schedule);
+      if (listing.show_reviews) setShowReviews(listing.show_reviews);
 
       // Fetch travel entries
       fetch(`/api/listings/${id}/travel`)
@@ -1027,6 +1038,42 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                       <Crown size={18} color="#B45309" className="mx-auto mb-2" />
                       <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
                       <p className="text-[12px] text-amber-700 mb-3">Vis fremtidige rejseplaner på din profil</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Reviews Toggle (Premium only) */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[13px] font-semibold text-gray-900">Reviews</p>
+                    {!isPremium && (
+                      <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">Premium only</span>
+                    )}
+                  </div>
+                  {isPremium ? (
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => toggleReviewsVisibility(!showReviews)}
+                        className="flex items-center gap-2 text-[13px] font-medium rounded-xl border px-4 py-2.5 transition-colors w-full"
+                        style={{
+                          background: showReviews ? "#F0FDF4" : "#F9FAFB",
+                          borderColor: showReviews ? "#86EFAC" : "#E5E7EB",
+                          color: showReviews ? "#15803D" : "#6B7280",
+                        }}
+                      >
+                        {showReviews ? <Eye size={14} /> : <EyeOff size={14} />}
+                        {showReviews ? "Reviews er aktiveret på din profil" : "Reviews er deaktiveret"}
+                      </button>
+                      <p className="text-[12px] text-gray-400">
+                        Når reviews er aktiveret, kan kunder skrive anmeldelser på din profil.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
+                      <Crown size={18} color="#B45309" className="mx-auto mb-2" />
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Aktivér reviews på din profil for at bygge troværdighed</p>
                       <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
                     </div>
                   )}

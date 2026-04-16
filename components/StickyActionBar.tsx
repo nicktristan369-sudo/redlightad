@@ -214,7 +214,7 @@ function ReviewGate({ onClose }: { onClose: () => void }) {
 }
 
 function scrollToReviews() {
-  const el = document.getElementById("reviews-section")
+  const el = document.getElementById("reviews")
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
   else window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })
 }

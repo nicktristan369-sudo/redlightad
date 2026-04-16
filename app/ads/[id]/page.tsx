@@ -22,6 +22,7 @@ import PrivateContentPreview from "@/components/PrivateContentPreview";
 import MarketplaceSection from "@/components/MarketplaceSection";
 import LockedContentSection from "@/components/LockedContentSection";
 import ReadMoreText from "@/components/ReadMoreText";
+import ReviewsSection from "@/components/ReviewsSection";
 import StoryCircles from "@/components/StoryCircles";
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
@@ -355,6 +356,15 @@ export default function AdDetailPage() {
 
               {/* Marketplace */}
               <MarketplaceSection listingId={ad.id} isLoggedIn={currentUserId !== null} />
+
+              {/* Reviews */}
+              {(ad as any).show_reviews && (
+                <ReviewsSection
+                  listingId={ad.id}
+                  isLoggedIn={currentUserId !== null}
+                  isOwnListing={isOwnListing}
+                />
+              )}
             </div>
 
             {/* Right sidebar */}
