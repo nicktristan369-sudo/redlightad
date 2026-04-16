@@ -67,6 +67,7 @@ interface Listing {
   // Ekstra profilfelter
   height_cm?: number | null;
   weight_kg?: number | null;
+  body_build?: string | null;
   ethnicity?: string | null;
   eye_color?: string | null;
   hair_color?: string | null;
@@ -396,6 +397,7 @@ export default function AdDetailPage() {
                   available_for={ad.available_for}
                   meeting_with={ad.meeting_with}
                   travel={ad.travel}
+                  body_build={(ad as any).body_build}
                 />
                 <ContactSection contact={{
                   phone: ad.phone,
