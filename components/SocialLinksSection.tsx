@@ -1,74 +1,74 @@
 "use client";
 
-import React from "react";
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { createClient } from "@/lib/supabase";
-import { Lock, ExternalLink, CheckCircle, AlertCircle, Coins } from "lucide-react";
+import { Lock, ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
 
-export type SocialPlatform = "snapchat" | "instagram" | "onlyfans" | "telegram" | "whatsapp" | "twitter_x";
+export type SocialPlatform = "snapchat" | "instagram" | "onlyfans" | "telegram" | "whatsapp" | "twitter_x" | "tiktok" | "fansly";
 
 export interface SocialLinkConfig {
   url: string;
-  locked: boolean;
-  price_coins: number;
+  locked?: boolean;
+  price_coins?: number;
 }
 
 export type SocialLinks = Partial<Record<SocialPlatform, SocialLinkConfig>>;
 
-// ─── Brand SVG Icons ──────────────────────────────────────────────────────────
+// Platform metadata with brand colors
+const PLATFORM_META: Record<SocialPlatform, { label: string; color: string; hoverBg: string }> = {
+  onlyfans:  { label: "OnlyFans",    color: "#00AFF0", hoverBg: "#00AFF0" },
+  fansly:    { label: "Fansly",      color: "#00AFF0", hoverBg: "#00AFF0" },
+  snapchat:  { label: "Snapchat",    color: "#FFFC00", hoverBg: "#FFFC00" },
+  instagram: { label: "Instagram",   color: "#E1306C", hoverBg: "#E1306C" },
+  telegram:  { label: "Telegram",    color: "#0088CC", hoverBg: "#0088CC" },
+  whatsapp:  { label: "WhatsApp",    color: "#25D366", hoverBg: "#25D366" },
+  twitter_x: { label: "X",           color: "#000000", hoverBg: "#000000" },
+  tiktok:    { label: "TikTok",      color: "#000000", hoverBg: "#000000" },
+};
+
+// Clean SVG icons
 const Icons: Record<SocialPlatform, React.ReactElement> = {
   onlyfans: (
-    <img src="/onlyfans-logo.svg" alt="OnlyFans" width={60} height={20} style={{ objectFit: "contain" }} />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm0-14c-3.309 0-6 2.691-6 6s2.691 6 6 6 6-2.691 6-6-2.691-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z"/>
+    </svg>
+  ),
+  fansly: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/>
+      <path d="M12 7l1.5 3 3.5.5-2.5 2.5.5 3.5-3-1.5-3 1.5.5-3.5L7 10.5l3.5-.5z"/>
+    </svg>
   ),
   snapchat: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="12" fill="#FFFC00"/>
-      <path d="M12 5C10.07 5 8.5 6.6 8.5 8.56V10.1C8.14 10.22 7.5 10.44 7.5 10.83C7.5 11.15 7.77 11.4 8.08 11.4C8.21 11.4 8.34 11.37 8.46 11.3C8.35 11.62 8.29 11.97 8.29 12.32C8.29 13.97 9.86 15.5 12 15.5C14.14 15.5 15.71 13.97 15.71 12.32C15.71 11.97 15.65 11.62 15.54 11.3C15.66 11.37 15.79 11.4 15.92 11.4C16.23 11.4 16.5 11.15 16.5 10.83C16.5 10.44 15.86 10.22 15.5 10.1V8.56C15.5 6.6 13.93 5 12 5ZM9.5 14.85C9.15 14.93 7.97 15.14 7.5 15.36C7.19 15.5 7 15.72 7 16C7 16.55 8.1 17 9.04 17.3C9.15 17.7 9.29 18.5 9.97 18.5C10.3 18.5 10.58 18.37 10.84 18.26C11.17 18.12 11.56 18 12 18C12.44 18 12.83 18.12 13.16 18.26C13.42 18.37 13.7 18.5 14.03 18.5C14.71 18.5 14.85 17.7 14.96 17.3C15.9 17 17 16.55 17 16C17 15.72 16.81 15.5 16.5 15.36C16.03 15.14 14.85 14.93 14.5 14.85" fill="#000" stroke="none"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.166 3c.796 0 3.495.223 4.769 3.073.426.954.322 2.584.24 3.87l-.012.197c-.009.135-.017.267-.023.389.12.062.291.109.5.109.182 0 .381-.038.591-.12.088-.035.179-.052.272-.052.218 0 .413.088.534.246.157.207.159.484.003.701-.298.416-.896.642-1.312.778-.1.033-.189.063-.251.088-.043.015-.18.068-.18.18 0 .063.027.123.051.168.269.509.656 1.02 1.151 1.52.604.609 1.313 1.09 2.106 1.43.118.051.384.169.423.434.051.351-.249.614-.628.839-.598.354-1.254.5-1.664.58-.05.009-.164.034-.189.075-.037.06-.006.203.014.302l.005.02c.038.18.082.382-.019.563-.104.189-.316.299-.565.299h-.001c-.202 0-.434-.051-.698-.111-.343-.078-.728-.166-1.196-.166-.168 0-.342.013-.518.039-.642.096-1.112.46-1.65.871-.653.498-1.393 1.063-2.507 1.063h-.062c-1.115 0-1.855-.565-2.508-1.064-.538-.41-1.007-.774-1.649-.87-.177-.026-.351-.039-.519-.039-.467 0-.852.088-1.195.166-.265.06-.497.111-.698.111h-.001c-.25 0-.462-.11-.566-.299-.1-.181-.056-.383-.018-.563l.005-.02c.02-.099.051-.242.014-.302-.025-.041-.139-.066-.189-.075-.41-.08-1.066-.226-1.664-.58-.378-.225-.679-.488-.627-.839.038-.265.304-.383.423-.434.792-.34 1.501-.821 2.106-1.43.494-.5.882-1.011 1.15-1.52.025-.045.052-.105.052-.168 0-.112-.137-.165-.18-.18-.062-.025-.151-.055-.251-.088-.416-.136-1.014-.362-1.312-.778-.156-.217-.154-.494.003-.701.121-.158.316-.246.534-.246.093 0 .184.017.272.052.21.082.409.12.591.12.209 0 .38-.047.5-.109-.006-.122-.014-.254-.023-.389l-.012-.197c-.082-1.286-.186-2.916.24-3.87C8.505 3.223 11.204 3 12 3h.166z"/>
     </svg>
   ),
   instagram: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <defs>
-        <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#F9A825"/>
-          <stop offset="40%" stopColor="#E1306C"/>
-          <stop offset="100%" stopColor="#833AB4"/>
-        </linearGradient>
-      </defs>
-      <circle cx="12" cy="12" r="12" fill="url(#ig-grad)"/>
-      <rect x="7.5" y="7.5" width="9" height="9" rx="2.5" stroke="white" strokeWidth="1.5" fill="none"/>
-      <circle cx="12" cy="12" r="2.3" stroke="white" strokeWidth="1.5" fill="none"/>
-      <circle cx="15.2" cy="8.8" r="0.7" fill="white"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
     </svg>
   ),
   telegram: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="12" fill="#0088CC"/>
-      <path d="M5.5 11.8L17.5 7L14.5 18L11.5 15L9 17V13.5L16 8.5L8.5 12.8L5.5 11.8Z" fill="white"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
     </svg>
   ),
   whatsapp: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="12" fill="#25D366"/>
-      <path d="M17 14.8C16.8 15.7 15.8 16.4 14.8 16.6C14.2 16.7 13.4 16.8 10.8 15.7C7.7 14.4 5.8 11.2 5.6 11C5.4 10.7 4.5 9.5 4.5 8.2C4.5 6.9 5.2 6.3 5.5 6C5.8 5.7 6.1 5.6 6.3 5.6C6.5 5.6 6.7 5.6 6.9 5.6C7.1 5.6 7.4 5.5 7.7 6.2C8 6.9 8.7 8.2 8.8 8.4C8.9 8.6 8.9 8.8 8.8 9C8.7 9.2 8.6 9.4 8.4 9.6C8.2 9.8 8 10 8.1 10.2C8.7 11.2 9.5 12 10.4 12.6C10.9 12.9 11.1 12.9 11.3 12.7C11.5 12.5 12.1 11.8 12.4 11.6C12.6 11.4 12.8 11.4 13 11.5C13.2 11.6 14.5 12.2 14.7 12.4C14.9 12.6 15.1 12.7 15.1 12.9C15.2 13.1 15.2 13.8 17 14.8Z" fill="white"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
     </svg>
   ),
   twitter_x: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="12" fill="#000"/>
-      <path d="M13.2 10.9L17.5 6H16.4L12.7 10.2L9.7 6H6.5L11 12.8L6.5 18H7.6L11.5 13.6L14.7 18H17.9L13.2 10.9ZM12.1 12.9L11.6 12.2L7.9 6.8H9.2L12.5 11.2L13 11.9L16.9 17.3H15.6L12.1 12.9Z" fill="white"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
     </svg>
   ),
-};
-
-const PLATFORM_META: Record<SocialPlatform, { label: string; color: string; bg: string }> = {
-  onlyfans:  { label: "OnlyFans",   color: "#00AFF0", bg: "#E8F7FF" },
-  snapchat:  { label: "Snapchat",   color: "#F9A825", bg: "#FFFDE7" },
-  instagram: { label: "Instagram",  color: "#E1306C", bg: "#FDE8F0" },
-  telegram:  { label: "Telegram",   color: "#0088CC", bg: "#E3F2FD" },
-  whatsapp:  { label: "WhatsApp",   color: "#25D366", bg: "#E8F5E9" },
-  twitter_x: { label: "X (Twitter)",color: "#000000", bg: "#F3F4F6" },
+  tiktok: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+    </svg>
+  ),
 };
 
 interface Props {
@@ -98,10 +98,10 @@ export default function SocialLinksSection({ listingId, socialLinks, isPremium, 
       p_platform: platform,
     });
     if (error || !data?.success) {
-      setResult({ platform, ok: false, msg: data?.error ?? error?.message ?? "Fejl" });
+      setResult({ platform, ok: false, msg: data?.error ?? error?.message ?? "Error" });
     } else {
       setUnlocked(prev => ({ ...prev, [platform]: data.url }));
-      setResult({ platform, ok: true, msg: `${PLATFORM_META[platform].label} låst op!` });
+      setResult({ platform, ok: true, msg: `${PLATFORM_META[platform].label} unlocked!` });
     }
     setBusy(null);
   };
@@ -112,10 +112,10 @@ export default function SocialLinksSection({ listingId, socialLinks, isPremium, 
   };
 
   return (
-    <div className="rounded-2xl bg-white p-5" style={{ border: "1px solid #E5E5E5" }}>
-      <h3 className="text-[15px] font-bold text-gray-900 mb-4">Social Media</h3>
+    <div className="rounded-lg bg-white p-5" style={{ border: "1px solid #E5E7EB" }}>
+      <h3 className="text-[15px] font-semibold text-gray-900 mb-4">Social Media</h3>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="space-y-2">
         {platforms.map(([platform, cfg]) => {
           const meta = PLATFORM_META[platform];
           const isUnlocked = !!unlocked[platform];
@@ -131,41 +131,58 @@ export default function SocialLinksSection({ listingId, socialLinks, isPremium, 
             <div
               key={platform}
               onClick={() => canClick ? openUrl(url!) : undefined}
-              className="relative flex flex-col items-center justify-center gap-2 rounded-2xl py-4 px-3 transition-all"
+              className="group flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200"
               style={{
-                background: meta.bg,
-                border: `1.5px solid ${meta.color}22`,
+                background: "#FAFAFA",
                 cursor: canClick ? "pointer" : "default",
-                minHeight: 88,
               }}
-              onMouseEnter={e => { if (canClick) (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 14px ${meta.color}33`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = ""; }}
+              onMouseEnter={e => {
+                if (canClick) {
+                  (e.currentTarget as HTMLDivElement).style.background = meta.hoverBg;
+                  (e.currentTarget as HTMLDivElement).style.color = platform === "snapchat" ? "#000" : "#fff";
+                }
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLDivElement).style.background = "#FAFAFA";
+                (e.currentTarget as HTMLDivElement).style.color = "";
+              }}
             >
-              {/* Brand icon */}
-              <div className="flex-shrink-0">{Icons[platform]}</div>
+              {/* Icon */}
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+                style={{ 
+                  background: meta.color,
+                  color: platform === "snapchat" ? "#000" : "#fff",
+                }}
+              >
+                {Icons[platform]}
+              </div>
 
               {/* Label */}
-              <span className="text-[12px] font-bold" style={{ color: meta.color }}>{meta.label}</span>
+              <div className="flex-1">
+                <span className="text-[14px] font-medium text-gray-900 group-hover:text-inherit transition-colors">
+                  {meta.label}
+                </span>
+              </div>
 
-              {/* State indicator */}
-              {isOwnListing ? (
-                <ExternalLink size={11} color={meta.color} className="absolute top-2.5 right-2.5 opacity-60" />
-              ) : isUnlocked ? (
-                <CheckCircle size={11} color="#16A34A" className="absolute top-2.5 right-2.5" />
-              ) : cfg.locked ? (
-                <button
-                  onClick={e => { e.stopPropagation(); handleUnlock(platform, cfg.price_coins); }}
-                  disabled={isBusy}
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap"
-                  style={{ background: meta.color, color: "#fff", opacity: isBusy ? 0.6 : 1 }}
-                >
-                  {isBusy
-                    ? <div className="w-2.5 h-2.5 border border-white/40 border-t-white rounded-full animate-spin" />
-                    : <><Lock size={9} /> {cfg.price_coins} coins</>
-                  }
-                </button>
+              {/* Action */}
+              {isOwnListing || isUnlocked || !cfg.locked ? (
+                <ExternalLink size={16} className="text-gray-400 group-hover:text-inherit transition-colors" />
               ) : (
-                <ExternalLink size={11} color={meta.color} className="absolute top-2.5 right-2.5 opacity-60" />
+                <button
+                  onClick={e => { e.stopPropagation(); handleUnlock(platform, cfg.price_coins || 0); }}
+                  disabled={isBusy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-[12px] font-medium rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  {isBusy ? (
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Lock size={12} />
+                      {cfg.price_coins} coins
+                    </>
+                  )}
+                </button>
               )}
             </div>
           );
@@ -173,12 +190,14 @@ export default function SocialLinksSection({ listingId, socialLinks, isPremium, 
       </div>
 
       {result && (
-        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-[12px]"
+        <div 
+          className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-[12px]"
           style={{
             background: result.ok ? "#F0FDF4" : "#FEF2F2",
             border: `1px solid ${result.ok ? "#BBF7D0" : "#FECACA"}`,
             color: result.ok ? "#14532D" : "#DC2626",
-          }}>
+          }}
+        >
           {result.ok ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
           {result.msg}
         </div>
