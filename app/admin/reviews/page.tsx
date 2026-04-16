@@ -64,7 +64,12 @@ export default function AdminReviewsPage() {
       .order("created_at", { ascending: false });
 
     if (data) {
-      setReviews(data as Review[]);
+      // Normalize listings from array to single object
+      const normalized = data.map((r: any) => ({
+        ...r,
+        listings: Array.isArray(r.listings) ? r.listings[0] : r.listings,
+      }));
+      setReviews(normalized as Review[]);
       setStats({
         total: data.length,
         approved: data.filter((r) => r.is_approved).length,

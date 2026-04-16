@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/supabaseServer";
 
 // GET reviews for a listing
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
-  const listingId = params.id;
+  const { id: listingId } = await params;
+  const supabase = createServerClient();
 
   // Check if listing exists and has reviews enabled
   const { data: listing } = await supabase
@@ -60,10 +60,10 @@ export async function GET(
 // POST a new review
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
-  const listingId = params.id;
+  const { id: listingId } = await params;
+  const supabase = createServerClient();
 
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
@@ -120,7 +120,7 @@ export async function POST(
       title: title || null,
       body: review_body || null,
       images: images || [],
-      is_approved: true, // Auto-approve for now, can add moderation later
+      is_approved: true,
     })
     .select()
     .single();

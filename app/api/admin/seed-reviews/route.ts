@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/supabaseServer";
 
 // Dummy reviews for testing
 const DUMMY_REVIEWS = [
@@ -43,7 +43,7 @@ const DUMMY_REVIEWS = [
 
 // POST: Seed dummy reviews for a listing
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
+  const supabase = createServerClient();
 
   // Check admin
   const { data: { user } } = await supabase.auth.getUser();
