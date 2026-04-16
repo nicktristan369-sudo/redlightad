@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import AdminLayout from "@/components/AdminLayout";
-import { Star, CheckCircle, XCircle, Eye, Trash2, Shield } from "lucide-react";
+import { Star, CheckCircle, XCircle, Eye, Trash2, Shield, Settings, Ban } from "lucide-react";
+import Link from "next/link";
 
 type Review = {
   id: string;
@@ -143,9 +144,20 @@ export default function AdminReviewsPage() {
     <AdminLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
-          <p className="text-sm text-gray-500">Administrer brugeranmeldelser</p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
+            <p className="text-sm text-gray-500">Administrer brugeranmeldelser</p>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/reviews/banned-words"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <Ban className="w-4 h-4" />
+              Banned Words
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
