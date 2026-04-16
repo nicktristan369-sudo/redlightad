@@ -423,6 +423,7 @@ export default function AdDetailPage() {
                   listingTitle={ad.title}
                   profileImage={ad.profile_image ?? ad.images?.[0] ?? null}
                   isLoggedIn={currentUserId !== null}
+                  isOwnListing={isOwnListing}
                 />
               </div>
             </div>

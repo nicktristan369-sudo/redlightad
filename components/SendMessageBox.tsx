@@ -11,9 +11,13 @@ interface Props {
   listingTitle: string
   profileImage?: string | null
   isLoggedIn: boolean
+  isOwnListing?: boolean
 }
 
-export default function SendMessageBox({ listingId, listingTitle, profileImage, isLoggedIn }: Props) {
+export default function SendMessageBox({ listingId, listingTitle, profileImage, isLoggedIn, isOwnListing }: Props) {
+  // Don't show message box on own listing
+  if (isOwnListing) return null
+
   const { t } = useLanguage()
   const [msg, setMsg] = useState("")
   const [sending, setSending] = useState(false)
