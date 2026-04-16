@@ -177,9 +177,9 @@ export default function AdDetailPage() {
   const isPremium = !!ad.premium_tier;
 
   const rates = [
-    ad.rate_1hour    && { duration: "1 time",    price: ad.rate_1hour },
-    ad.rate_2hours   && { duration: "2 timer",   price: ad.rate_2hours },
-    ad.rate_overnight && { duration: "Overnat",  price: ad.rate_overnight },
+    ad.rate_1hour    && { duration: "1 hour",    price: ad.rate_1hour },
+    ad.rate_2hours   && { duration: "2 hours",   price: ad.rate_2hours },
+    ad.rate_overnight && { duration: "Overnight",  price: ad.rate_overnight },
     ad.rate_weekend  && { duration: "Weekend",   price: ad.rate_weekend },
   ].filter(Boolean) as { duration: string; price: string }[];
 

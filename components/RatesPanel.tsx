@@ -8,7 +8,7 @@ interface Rate {
   price: string
 }
 
-// ── Valutaer der tilbydes i vælgeren ──────────────────────────
+// ── Available currencies ──────────────────────────────────────
 const CURRENCIES = [
   { code: "DKK", symbol: "kr",  iso: "dk", rate: 1.000 },
   { code: "EUR", symbol: "€",   iso: "eu", rate: 0.134 },
@@ -39,11 +39,11 @@ function parseDKK(price: string): number {
 
 function formatAmount(amount: number, code: string): string {
   if (["JPY", "KRW"].includes(code)) return Math.round(amount).toLocaleString()
-  if (["DKK", "SEK", "NOK"].includes(code)) return Math.round(amount).toLocaleString("da-DK")
+  if (["DKK", "SEK", "NOK"].includes(code)) return Math.round(amount).toLocaleString("en-US")
   return amount.toLocaleString("en", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
-// ── Valuta-dropdown ────────────────────────────────────────────
+// ── Currency dropdown ────────────────────────────────────────────
 function CurrencyPicker({
   selected,
   onChange,
@@ -56,21 +56,20 @@ function CurrencyPicker({
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all"
-        style={{ background: "#fff", border: "1.5px solid #E5E7EB", color: "#111", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:bg-gray-50"
+        style={{ background: "#fff", border: "1px solid #E5E7EB", color: "#374151" }}
       >
-        <Flag iso={selected.iso} size={18} />
+        <Flag iso={selected.iso} size={16} />
         <span>{selected.code}</span>
-        <ChevronDown size={12} color="#9CA3AF" />
+        <ChevronDown size={12} className="text-gray-400" />
       </button>
 
       {open && (
         <>
-          {/* Overlay */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="absolute right-0 top-full mt-1.5 z-50 bg-white rounded-xl overflow-hidden"
-            style={{ minWidth: 160, boxShadow: "0 8px 30px rgba(0,0,0,0.12)", border: "1px solid #F0F0F0" }}
+            className="absolute right-0 top-full mt-1.5 z-50 bg-white rounded-xl overflow-hidden py-1"
+            style={{ minWidth: 140, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", border: "1px solid #F0F0F0" }}
           >
             {CURRENCIES.map(c => {
               const active = c.code === selected.code
@@ -78,14 +77,10 @@ function CurrencyPicker({
                 <button
                   key={c.code}
                   onClick={() => { onChange(c); setOpen(false) }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                  style={{ background: active ? "#FFF5F5" : "transparent" }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "#F9FAFB" }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = active ? "#FFF5F5" : "transparent" }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-gray-50 ${active ? 'bg-gray-50' : ''}`}
                 >
-                  <Flag iso={c.iso} size={18} />
-                  <span className="text-[13px] font-semibold" style={{ color: active ? "#DC2626" : "#111" }}>{c.code}</span>
-                  <span className="text-[12px] text-gray-400 ml-auto">{c.symbol}</span>
+                  <Flag iso={c.iso} size={16} />
+                  <span className={`text-[13px] font-medium ${active ? 'text-gray-900' : 'text-gray-600'}`}>{c.code}</span>
                 </button>
               )
             })}
@@ -96,7 +91,7 @@ function CurrencyPicker({
   )
 }
 
-// ── Hoved komponent ────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────
 export default function RatesPanel({
   rates,
   listingId,
@@ -115,7 +110,6 @@ export default function RatesPanel({
   const validRates = rates.filter(r => parseDKK(r.price) > 0)
   if (validRates.length === 0) return null
 
-  // Konverter DKK → valgt valuta
   function convert(dkk: number): string {
     const amount = dkk * currency.rate
     return formatAmount(amount, currency.code)
@@ -135,45 +129,51 @@ export default function RatesPanel({
       const data = await res.json()
       if (!res.ok) {
         if (res.status === 401) { window.location.href = "/login"; return }
-        setMsg(data.error === "insufficient_coins" ? "Ikke nok RedCoins — køb mere i din wallet." : data.error || "Noget gik galt")
+        setMsg(data.error === "insufficient_coins" ? "Not enough RedCoins — top up your wallet." : data.error || "Something went wrong")
       } else {
-        setMsg("Booking bekræftet! ✓")
+        setMsg("Booking confirmed! ✓")
       }
-    } catch { setMsg("Netværksfejl") }
+    } catch { setMsg("Network error") }
     finally { setLoading(null) }
   }
 
   return (
     <div className="rounded-xl bg-white overflow-hidden" style={{ border: "1px solid #E5E7EB" }}>
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-4 border-b border-gray-100">
-        <h3 className="text-[15px] font-bold text-gray-900">Rates</h3>
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
+        <h3 className="text-[15px] font-semibold text-gray-900">Rates</h3>
         <div className="flex items-center gap-2">
           {/* Fiat / RC toggle */}
-          <div className="flex rounded-lg overflow-hidden border border-gray-200">
+          <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #E5E7EB" }}>
             <button
               onClick={() => setMode("fiat")}
-              className="px-3 py-1.5 text-[12px] font-bold transition-colors"
-              style={{ background: mode === "fiat" ? "#111" : "#fff", color: mode === "fiat" ? "#fff" : "#6B7280" }}
+              className="px-3 py-1.5 text-[11px] font-semibold transition-colors"
+              style={{ 
+                background: mode === "fiat" ? "#111" : "#fff", 
+                color: mode === "fiat" ? "#fff" : "#6B7280" 
+              }}
             >
-              Valuta
+              Currency
             </button>
             <button
               onClick={() => setMode("rc")}
-              className="flex items-center gap-1 px-3 py-1.5 text-[12px] font-bold transition-colors"
-              style={{ background: mode === "rc" ? "#DC2626" : "#fff", color: mode === "rc" ? "#fff" : "#6B7280" }}
+              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold transition-colors"
+              style={{ 
+                background: mode === "rc" ? "#DC2626" : "#fff", 
+                color: mode === "rc" ? "#fff" : "#6B7280" 
+              }}
             >
-              <Coins size={11} /> RC
+              <Coins size={10} /> RC
             </button>
           </div>
-          {/* Valuta vælger — kun i fiat mode */}
+          {/* Currency picker - only in fiat mode */}
           {mode === "fiat" && (
             <CurrencyPicker selected={currency} onChange={setCurrency} />
           )}
         </div>
       </div>
 
-      {/* Rate rækker */}
+      {/* Rate rows */}
       <div className="divide-y divide-gray-50">
         {validRates.map((rate) => {
           const dkk = parseDKK(rate.price)
@@ -181,35 +181,33 @@ export default function RatesPanel({
           const isLoading = loading === rate.duration
 
           return (
-            <div key={rate.duration} className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 hover:bg-gray-50 transition-colors">
-              <span className="text-[14px] font-medium text-gray-600 min-w-0 truncate">{rate.duration}</span>
+            <div key={rate.duration} className="flex items-center justify-between px-5 py-3.5">
+              <span className="text-[14px] text-gray-600">{rate.duration}</span>
 
               <div className="flex items-center gap-3">
                 {mode === "fiat" ? (
-                  // Fiat mode: vis konverteret pris
                   <div className="text-right">
-                    <span className="text-[17px] font-bold text-gray-900">
+                    <span className="text-[16px] font-semibold text-gray-900">
                       {convert(dkk)}
                     </span>
-                    <span className="text-[12px] text-gray-400 ml-1.5">{currency.code}</span>
+                    <span className="text-[12px] text-gray-400 ml-1">{currency.code}</span>
                   </div>
                 ) : (
-                  // RC mode: vis RC pris + betal knap
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <span className="text-[17px] font-bold" style={{ color: "#DC2626" }}>{rc.toLocaleString()}</span>
+                      <span className="text-[16px] font-semibold" style={{ color: "#DC2626" }}>{rc.toLocaleString()}</span>
                       <span className="text-[12px] text-gray-400 ml-1">RC</span>
                     </div>
                     <button
                       onClick={() => payRC(rate)}
                       disabled={isLoading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white transition-all"
-                      style={{ background: isLoading ? "#9CA3AF" : "#DC2626", minWidth: 64 }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white transition-all"
+                      style={{ background: isLoading ? "#9CA3AF" : "#DC2626", minWidth: 56 }}
                     >
                       {isLoading ? (
                         <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin mx-auto" />
                       ) : (
-                        <><Coins size={11} /> Betal</>
+                        <><Coins size={10} /> Pay</>
                       )}
                     </button>
                   </div>
@@ -224,18 +222,18 @@ export default function RatesPanel({
       <div className="px-5 py-3 border-t border-gray-50">
         {mode === "rc" ? (
           <p className="text-[11px] text-gray-400 flex items-center gap-1">
-            <Coins size={11} color="#DC2626" />
-            <span>RedCoins = anonym & sikker betaling · 1 DKK = {RC_RATE} RC</span>
+            <Coins size={10} className="text-red-500" />
+            <span>RedCoins = anonymous & secure payment · 1 {baseCurrency} = {RC_RATE} RC</span>
           </p>
         ) : (
           <p className="text-[11px] text-gray-400">
-            Kurser er vejledende · Priser angivet i {baseCurrency}
+            Rates are indicative · Prices listed in {baseCurrency}
           </p>
         )}
       </div>
 
       {msg && (
-        <div className="mx-5 mb-4 px-3 py-2 rounded-lg text-[12px] font-semibold"
+        <div className="mx-5 mb-4 px-3 py-2 rounded-lg text-[12px] font-medium"
           style={{ background: msg.includes("✓") ? "#F0FDF4" : "#FEF2F2", color: msg.includes("✓") ? "#15803D" : "#DC2626" }}>
           {msg}
         </div>
