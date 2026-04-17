@@ -16,7 +16,7 @@ export default async function VideosPage() {
   const { data: videos } = await supabase
     .from("listing_videos")
     .select(`
-      id, url, thumbnail_url, title, description, duration, is_locked, redcoin_price, views, likes, sort_order, created_at,
+      id, url, thumbnail_url, title, is_locked, redcoin_price, views, likes, sort_order, created_at,
       listing_id,
       listings!inner(id, title, display_name, city, country, profile_image, premium_tier)
     `)

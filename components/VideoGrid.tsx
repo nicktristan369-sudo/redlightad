@@ -9,8 +9,6 @@ type Video = {
   url: string
   thumbnail_url: string | null
   title: string | null
-  description?: string | null
-  duration?: number | null
   is_locked: boolean
   redcoin_price: number
   views: number
@@ -31,12 +29,7 @@ type Video = {
 
 type Props = { videos: Video[] }
 
-function formatDuration(seconds: number | null | undefined): string {
-  if (!seconds) return ""
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, "0")}`
-}
+// Duration will be added later when we add that field to the database
 
 function formatViews(views: number): string {
   if (views >= 1000000) return (views / 1000000).toFixed(1) + "M"
@@ -53,7 +46,6 @@ function VideoCard({ video }: { video: Video }) {
   
   const uploaderName = listing.display_name || listing.title || "Anonymous"
   const videoTitle = video.title || `Video by ${uploaderName}`
-  const duration = formatDuration(video.duration)
   const viewCount = formatViews(video.views)
 
   const handlePlay = (e: React.MouseEvent) => {
@@ -122,12 +114,7 @@ function VideoCard({ video }: { video: Video }) {
               />
             )}
 
-            {/* Duration badge - bottom right */}
-            {duration && (
-              <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-bold px-1.5 py-0.5">
-                {duration}
-              </div>
-            )}
+
 
             {/* Play button on hover */}
             <div className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
