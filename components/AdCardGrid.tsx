@@ -128,34 +128,41 @@ export default function AdCardGrid({
           />
           )}
 
-          {/* Available dot — subtle green dot top right */}
+          {/* Top row: PREMIUM (left) + VERIFIED (right) */}
+          <div style={{ position: "absolute", top: 8, left: 8, right: 8, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 4 }}>
+            {/* Premium badge - left */}
+            {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") ? (
+              <div style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: "0.5px",
+                padding: "3px 7px", textTransform: "uppercase",
+                background: "#111", color: "#fff",
+              }}>PREMIUM</div>
+            ) : <div />}
+
+            {/* Verified badge - right */}
+            {verified && (
+              <div style={{
+                background: "rgba(0,0,0,0.6)", color: "#fff",
+                fontSize: 9, fontWeight: 700, letterSpacing: "0.03em",
+                padding: "3px 6px",
+                display: "flex", alignItems: "center", gap: 3,
+              }}>
+                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                VERIFIED
+              </div>
+            )}
+          </div>
+
+          {/* Available dot — subtle green dot below badges */}
           {available && (
             <div style={{
-              position: "absolute", top: 8, right: 8,
+              position: "absolute", top: premium_tier || verified ? 32 : 8, right: 8,
               width: 7, height: 7, borderRadius: "50%",
               background: "#22C55E",
               zIndex: 10,
             }} />
-          )}
-
-          {/* Verified badge — top right */}
-          {verified && (
-            <div style={{
-              position: "absolute", top: 8, right: 8,
-              background: "rgba(0,0,0,0.6)", color: "#fff",
-              fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
-              padding: "2px 6px",
-            }}>✓ VERIFIED</div>
-          )}
-
-          {/* Premium badge */}
-          {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") && (
-            <div style={{
-              position: "absolute", top: available ? 24 : 8, left: 8,
-              fontSize: 10, fontWeight: 600, letterSpacing: "0.8px",
-              padding: "3px 8px", textTransform: "uppercase",
-              background: "#111", color: "#fff",
-            }}>PREMIUM</div>
           )}
           {/* OnlyFans badge */}
           {(social_links?.onlyfans?.url || onlyfans_username) && (
