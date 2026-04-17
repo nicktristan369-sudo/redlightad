@@ -491,16 +491,16 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     staggerDelay={idx * 600}
                   />
 
-                  {/* ── DESKTOP layout (hidden below md) — Clean, minimal like thailand-property ── */}
-                  <div className="hidden md:flex">
+                  {/* ── DESKTOP layout (hidden below md) — Compact + elegant ── */}
+                  <div className="hidden md:flex h-[200px]">
                     {/* Left: thumbnail */}
-                    <div className="relative flex-shrink-0 w-[200px] bg-gray-100">
+                    <div className="relative flex-shrink-0 w-[160px] h-full bg-gray-100">
                       {ad.video_url ? (
                         <>
                           <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-9 h-9 bg-black/50 rounded-full flex items-center justify-center">
-                              <svg className="w-3.5 h-3.5 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
+                              <svg className="w-3 h-3 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
                               </svg>
                             </div>
@@ -513,63 +513,53 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     </div>
 
                     {/* Right: details */}
-                    <div className="flex-1 p-4 flex flex-col min-w-0">
+                    <div className="flex-1 p-3 flex flex-col min-w-0">
                       {/* Header: Title + Verified */}
-                      <div className="flex items-start justify-between gap-3 mb-0.5">
-                        <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                            <span className="flex-shrink-0" style={{ width: 7, height: 7, borderRadius: "50%", background: "#22C55E" }} />
+                            <span className="flex-shrink-0" style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} />
                           )}
-                          <h3 className="font-semibold text-[16px] text-gray-900 leading-tight truncate">{ad.title}</h3>
+                          <h3 className="font-semibold text-[14px] text-gray-900 leading-tight truncate">{ad.title}</h3>
                         </div>
-                        <span className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border" style={{ color: "#059669", borderColor: "#BBF7D0" }}>
-                          <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <span className="flex-shrink-0 inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded border" style={{ color: "#059669", borderColor: "#BBF7D0" }}>
+                          <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
                           </svg>
                           Verified
                         </span>
                       </div>
 
-                      {/* Location */}
-                      <p className="text-[12px] text-gray-500 mb-2 flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        {displayLocation}{ad.country ? `, ${ad.country}` : ""}
-                      </p>
-
-                      {/* Quick stats inline */}
-                      <div className="flex items-center gap-4 text-[11px] text-gray-500 mb-2">
-                        <span>{ad.age} years</span>
-                        <span>·</span>
-                        <span className="capitalize">{ad.gender}</span>
-                        <span>·</span>
-                        <span className="capitalize">{ad.category}</span>
-                      </div>
+                      {/* Posted time */}
+                      <p className="text-[10px] text-gray-400 mb-1.5">Posted {timeAgo(ad.created_at)}</p>
 
                       {/* Description */}
-                      <p className="text-[13px] text-gray-600 leading-relaxed line-clamp-3 flex-1">{description || "No description available."}</p>
+                      <p className="text-[12px] text-gray-600 leading-relaxed line-clamp-2 mb-2">{description || "No description available."}</p>
 
-                      {/* Bottom row: icons */}
-                      <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50">
+                      {/* Stats grid - compact */}
+                      <div className="grid grid-cols-5 gap-x-2 text-[10px] border-t border-gray-100 pt-2 mb-2">
+                        {[
+                          { label: "AGE", value: ad.age },
+                          { label: "GENDER", value: ad.gender },
+                          { label: "CATEGORY", value: ad.category },
+                          { label: "LOCATION", value: displayLocation },
+                          { label: "LANGUAGE", value: ad.languages?.[0] || "—" },
+                        ].map(({ label, value }) => (
+                          <div key={label}>
+                            <p className="text-[8px] font-medium tracking-wider text-gray-400 uppercase">{label}</p>
+                            <p className="font-medium text-gray-800 truncate text-[11px]">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Bottom row */}
+                      <div className="flex items-center mt-auto pt-2 border-t border-gray-100">
                         {((ad as any).social_links?.onlyfans?.url || (ad as any).onlyfans_username) && (
-                          <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 14, width: "auto", objectFit: "contain", opacity: 0.6 }} />
+                          <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 12, width: "auto", objectFit: "contain", opacity: 0.6 }} />
                         )}
-                        <div className="ml-auto flex items-center gap-2">
-                          {/* Phone icon */}
-                          <div className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                            </svg>
-                          </div>
-                          {/* Heart icon */}
-                          <div className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                            </svg>
-                          </div>
-                        </div>
+                        <span className="ml-auto text-[11px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                          View Profile →
+                        </span>
                       </div>
                     </div>
                   </div>
