@@ -60,7 +60,10 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
       .finally(() => setLoading(false))
   }, [country, listingId])
 
-  if (!loading && groups.length === 0) return null
+  // Don't render anything until we know if there are stories
+  // This prevents the "flash" of skeleton loading when there are no stories
+  if (loading) return null
+  if (groups.length === 0) return null
 
   const openViewer = (idx: number) => {
     setActiveIdx(idx)
@@ -97,24 +100,8 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
           >
             <style>{`.story-scroll::-webkit-scrollbar{display:none}`}</style>
 
-            {/* Skeleton loading */}
-            {loading &&
-              [0, 1, 2, 3, 4].map((i) => (
-                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7, flexShrink: 0, width: 80 }}>
-                  <div style={{
-                    width: 74, height: 74, borderRadius: "50%",
-                    background: "linear-gradient(135deg,#f3e0f7,#fcd6d6)",
-                    opacity: 0.5, animation: "spulse 1.4s ease-in-out infinite",
-                  }} />
-                  <div style={{ width: 52, height: 8, borderRadius: 4, background: "#E5E7EB" }} />
-                  <div style={{ width: 38, height: 7, borderRadius: 4, background: "#F3F4F6" }} />
-                  <style dangerouslySetInnerHTML={{ __html: `@keyframes spulse{0%,100%{opacity:.5}50%{opacity:1}}` }} />
-                </div>
-              ))}
-
             {/* Story circles */}
-            {!loading &&
-              groups.map((g, i) => {
+            {groups.map((g, i) => {
                 const isViewed = viewed.includes(g.listing_id)
                 const count = g.stories.length
                 // Most recent story's timestamp
