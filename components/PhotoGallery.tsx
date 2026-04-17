@@ -66,7 +66,7 @@ export default function PhotoGallery({
     setActiveIndex(index);
     scheduleRestart();
     if (thumbStripRef.current) {
-      const btn = thumbStripRef.current.children[index + 1] as HTMLElement | undefined; // +1 for left arrow
+      const btn = thumbStripRef.current.children[index + 1] as HTMLElement | undefined;
       btn?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
   }, [scheduleRestart, isLoggedIn]);
@@ -145,141 +145,140 @@ export default function PhotoGallery({
 
   if (count === 0) return null;
 
-  // Double chevron icon for ts4rent style
   const DoubleChevronLeft = () => (
-    <span className="text-[18px] font-bold text-white">«</span>
+    <span className="text-[20px] font-bold text-white drop-shadow-lg">«</span>
   );
   const DoubleChevronRight = () => (
-    <span className="text-[18px] font-bold text-white">»</span>
+    <span className="text-[20px] font-bold text-white drop-shadow-lg">»</span>
+  );
+
+  // 3-panel gallery component (used for both desktop and mobile)
+  const ThreePanelGallery = ({ height, isMobile = false }: { height: number | string; isMobile?: boolean }) => (
+    <div
+      className="relative w-full flex"
+      style={{ height }}
+      onTouchStart={handleGalTouchStart}
+      onTouchEnd={handleGalTouchEnd}
+    >
+      {/* Counter + Expand — top right */}
+      <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-3 right-3'} z-30 flex items-center gap-0.5`}>
+        <div className={`${isMobile ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-[12px]'} font-semibold text-white select-none`}
+          style={{ background: "rgba(50,50,50,0.9)" }}>
+          {activeIndex + 1} / {count}
+        </div>
+        <button
+          className={`${isMobile ? 'w-7 h-6' : 'w-8 h-8'} flex items-center justify-center hover:bg-white/10 transition-colors`}
+          style={{ background: "rgba(50,50,50,0.9)" }}
+          onClick={() => openLightbox(activeIndex)}
+          aria-label="Fullscreen"
+        >
+          <Maximize2 size={isMobile ? 12 : 14} color="#fff" />
+        </button>
+      </div>
+
+      {/* Left preview */}
+      {count > 1 && (
+        <div
+          className="relative flex-shrink-0 cursor-pointer overflow-hidden"
+          style={{ width: isMobile ? "20%" : "22%" }}
+          onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
+        >
+          <img 
+            src={highQualityUrl(images[prevIdx])} 
+            alt="" 
+            className="w-full h-full object-cover"
+            style={{ opacity: 0.7 }}
+            draggable={false} 
+          />
+          {isLocked(prevIdx) && (
+            <div className="absolute inset-0 flex items-center justify-center"
+              style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
+              <Lock size={isMobile ? 18 : 28} color="#fff" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Center main image */}
+      <div
+        className="relative flex-1 cursor-pointer overflow-hidden"
+        onClick={() => openLightbox(activeIndex)}
+      >
+        <img
+          src={highQualityUrl(images[activeIndex])}
+          alt={`${name} photo ${activeIndex + 1}`}
+          className="w-full h-full object-cover"
+          draggable={false}
+        />
+      </div>
+
+      {/* Right preview */}
+      {count > 1 && (
+        <div
+          className="relative flex-shrink-0 cursor-pointer overflow-hidden"
+          style={{ width: isMobile ? "20%" : "22%" }}
+          onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
+        >
+          <img 
+            src={highQualityUrl(images[nextIdx])} 
+            alt="" 
+            className="w-full h-full object-cover"
+            style={{ opacity: 0.7 }}
+            draggable={false} 
+          />
+          {isLocked(nextIdx) && (
+            <div className="absolute inset-0 flex items-center justify-center"
+              style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}>
+              <Lock size={isMobile ? 18 : 28} color="#fff" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Navigation arrows */}
+      {count > 1 && (
+        <>
+          <button
+            onClick={prevGal}
+            className={`absolute left-1 top-1/2 -translate-y-1/2 z-20 ${isMobile ? 'w-6 h-8' : 'w-8 h-12'} flex items-center justify-center`}
+          >
+            <DoubleChevronLeft />
+          </button>
+          <button
+            onClick={nextGal}
+            className={`absolute right-1 top-1/2 -translate-y-1/2 z-20 ${isMobile ? 'w-6 h-8' : 'w-8 h-12'} flex items-center justify-center`}
+          >
+            <DoubleChevronRight />
+          </button>
+        </>
+      )}
+    </div>
   );
 
   return (
     <>
       {/* ════════════════════════════════════════════════════════
-          GALLERY — TS4Rent Style
+          GALLERY — TS4Rent Style (3-panel on both desktop & mobile)
           ════════════════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden" style={{ background: "#1a1a1a" }}>
+      <div className="relative overflow-hidden" style={{ background: "#222" }}>
 
-        {/* ── DESKTOP: 3-panel layout like ts4rent.de ─────────── */}
+        {/* ── DESKTOP ─────────────────────────────────────────── */}
         <div className="hidden md:block">
-          {/* Counter + Expand — absolute top right of entire gallery */}
-          <div className="absolute top-3 right-3 z-30 flex items-center gap-0.5">
-            <div className="px-2.5 py-1 text-[12px] font-semibold text-white select-none"
-              style={{ background: "rgba(50,50,50,0.9)" }}>
-              {activeIndex + 1} / {count}
-            </div>
-            <button
-              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 transition-colors"
-              style={{ background: "rgba(50,50,50,0.9)" }}
-              onClick={() => openLightbox(activeIndex)}
-              aria-label="Fullscreen"
-            >
-              <Maximize2 size={14} color="#fff" />
-            </button>
-          </div>
-
-          <div
-            className="relative w-full flex items-stretch"
-            style={{ height: 480 }}
-            onTouchStart={handleGalTouchStart}
-            onTouchEnd={handleGalTouchEnd}
-          >
-            {/* Left preview — 22% width, full height, object-cover */}
-            {count > 1 && (
-              <div
-                className="relative flex-shrink-0 cursor-pointer overflow-hidden"
-                style={{ width: "22%" }}
-                onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
-              >
-                <img 
-                  src={highQualityUrl(images[prevIdx])} 
-                  alt="" 
-                  className="w-full h-full object-cover"
-                  style={{ opacity: 0.65 }}
-                  draggable={false} 
-                />
-                {isLocked(prevIdx) && (
-                  <div className="absolute inset-0 flex items-center justify-center"
-                    style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
-                    <Lock size={28} color="#fff" />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Center main image — fills remaining, object-contain to show full image */}
-            <div
-              className="relative flex-1 cursor-pointer overflow-hidden flex items-center justify-center"
-              style={{ background: "#111" }}
-              onClick={() => openLightbox(activeIndex)}
-            >
-              <img
-                src={highQualityUrl(images[activeIndex])}
-                alt={`${name} photo ${activeIndex + 1}`}
-                className="max-w-full max-h-full object-contain"
-                draggable={false}
-              />
-            </div>
-
-            {/* Right preview — 22% width, full height, object-cover */}
-            {count > 1 && (
-              <div
-                className="relative flex-shrink-0 cursor-pointer overflow-hidden"
-                style={{ width: "22%" }}
-                onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
-              >
-                <img 
-                  src={highQualityUrl(images[nextIdx])} 
-                  alt="" 
-                  className="w-full h-full object-cover"
-                  style={{ opacity: 0.65 }}
-                  draggable={false} 
-                />
-                {isLocked(nextIdx) && (
-                  <div className="absolute inset-0 flex items-center justify-center"
-                    style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
-                    <Lock size={28} color="#fff" />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Navigation arrows — at edge of gallery */}
-            {count > 1 && (
-              <>
-                <button
-                  onClick={prevGal}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-10 flex items-center justify-center transition-all hover:bg-black/60"
-                  style={{ background: "rgba(0,0,0,0.4)" }}
-                >
-                  <DoubleChevronLeft />
-                </button>
-                <button
-                  onClick={nextGal}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-10 flex items-center justify-center transition-all hover:bg-black/60"
-                  style={{ background: "rgba(0,0,0,0.4)" }}
-                >
-                  <DoubleChevronRight />
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Desktop thumbnail strip with navigation arrows */}
+          <ThreePanelGallery height={480} />
+          
+          {/* Thumbnail strip */}
           {count > 1 && (
-            <div className="flex items-center" style={{ background: "#1a1a1a" }}>
-              {/* Left scroll arrow */}
+            <div className="flex items-center" style={{ background: "#222" }}>
               <button
                 onClick={prevGal}
-                className="flex-shrink-0 w-8 h-16 flex items-center justify-center hover:bg-white/10 transition-colors"
+                className="flex-shrink-0 w-10 h-16 flex items-center justify-center hover:bg-white/5 transition-colors"
               >
                 <DoubleChevronLeft />
               </button>
               
-              {/* Thumbnails */}
               <div
                 ref={thumbStripRef}
-                className="flex-1 flex items-center gap-1.5 py-2.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+                className="flex-1 flex items-center gap-1 py-2 overflow-x-auto [&::-webkit-scrollbar]:hidden"
               >
                 {images.map((img, i) => (
                   <button
@@ -305,10 +304,9 @@ export default function PhotoGallery({
                 ))}
               </div>
               
-              {/* Right scroll arrow */}
               <button
                 onClick={nextGal}
-                className="flex-shrink-0 w-8 h-16 flex items-center justify-center hover:bg-white/10 transition-colors"
+                className="flex-shrink-0 w-10 h-16 flex items-center justify-center hover:bg-white/5 transition-colors"
               >
                 <DoubleChevronRight />
               </button>
@@ -316,47 +314,16 @@ export default function PhotoGallery({
           )}
         </div>
 
-        {/* ── MOBILE ────────────────────────────────────────────── */}
-        <div
-          className="md:hidden"
-          style={{ background: "#111" }}
-          onTouchStart={handleGalTouchStart}
-          onTouchEnd={handleGalTouchEnd}
-        >
-          {/* Counter + Expand — top right */}
-          <div className="absolute top-2 right-2 z-30 flex items-center gap-0.5">
-            <div className="px-2 py-1 text-[11px] font-semibold text-white select-none"
-              style={{ background: "rgba(50,50,50,0.9)" }}>
-              {activeIndex + 1} / {count}
-            </div>
-            <button
-              className="w-7 h-7 flex items-center justify-center"
-              style={{ background: "rgba(50,50,50,0.9)" }}
-              onClick={() => openLightbox(activeIndex)}
-            >
-              <Maximize2 size={13} color="#fff" />
-            </button>
-          </div>
-
-          <div
-            className="relative flex items-center justify-center"
-            style={{ minHeight: 300, maxHeight: "60vh" }}
-            onClick={() => openLightbox(activeIndex)}
-          >
-            <img
-              src={highQualityUrl(images[activeIndex])}
-              alt={`${name} photo ${activeIndex + 1}`}
-              className="max-w-full max-h-[60vh] object-contain"
-              draggable={false}
-            />
-          </div>
-
-          {/* Mobile thumbnail strip */}
+        {/* ── MOBILE — Same 3-panel layout ────────────────────── */}
+        <div className="md:hidden">
+          <ThreePanelGallery height={320} isMobile />
+          
+          {/* Thumbnail strip */}
           {count > 1 && (
             <div 
               ref={thumbStripRef}
-              className="flex gap-1.5 px-3 py-2.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
-              style={{ background: "#1a1a1a" }}
+              className="flex gap-1 px-2 py-2 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+              style={{ background: "#222" }}
             >
               {images.map((img, i) => (
                 <button
@@ -375,7 +342,7 @@ export default function PhotoGallery({
                   {isLocked(i) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
-                      <Lock size={12} color="#fff" />
+                      <Lock size={11} color="#fff" />
                     </div>
                   )}
                 </button>
