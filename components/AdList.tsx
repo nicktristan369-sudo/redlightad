@@ -574,6 +574,17 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                           View Profile
                         </span>
                       </div>
+
+                      {/* Available Now bar */}
+                      {isAvailableNow(ad.opening_hours, ad.timezone) && (
+                        <div className="flex items-center gap-1.5 bg-[#1a1a1a] px-3 py-2 mt-2 -mx-4 -mb-4">
+                          <span className="relative flex h-1.5 w-1.5 flex-shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400"></span>
+                          </span>
+                          <span className="text-green-400 text-[10px] font-bold tracking-widest uppercase">Available Now</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

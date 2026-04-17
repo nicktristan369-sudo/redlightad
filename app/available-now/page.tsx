@@ -176,10 +176,10 @@ export default function AvailableNowPage() {
                       {/* Gradient */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-                      {/* VIP badge */}
+                      {/* Premium badge - elegant black style */}
                       {isVip && (
-                        <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[9px] font-black tracking-widest px-2 py-0.5 uppercase">
-                          VIP
+                        <div className="absolute top-2 left-2 bg-black text-white text-[9px] font-semibold tracking-wide px-2.5 py-1 uppercase">
+                          PREMIUM
                         </div>
                       )}
 
