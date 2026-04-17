@@ -36,7 +36,6 @@ export default function PhotoGallery({
 
   const isLocked = (index: number) => !isLoggedIn && index > 0;
 
-  // Auto-slide every 3s
   const startAutoSlide = useCallback(() => {
     if (autoSlideRef.current) clearInterval(autoSlideRef.current);
     if (count <= 1) return;
@@ -67,7 +66,7 @@ export default function PhotoGallery({
     setActiveIndex(index);
     scheduleRestart();
     if (thumbStripRef.current) {
-      const btn = thumbStripRef.current.children[index] as HTMLElement | undefined;
+      const btn = thumbStripRef.current.children[index + 1] as HTMLElement | undefined; // +1 for left arrow
       btn?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
   }, [scheduleRestart, isLoggedIn]);
@@ -146,188 +145,210 @@ export default function PhotoGallery({
 
   if (count === 0) return null;
 
+  // Double chevron icon for ts4rent style
+  const DoubleChevronLeft = () => (
+    <span className="text-[18px] font-bold text-white">«</span>
+  );
+  const DoubleChevronRight = () => (
+    <span className="text-[18px] font-bold text-white">»</span>
+  );
+
   return (
     <>
       {/* ════════════════════════════════════════════════════════
-          GALLERY — TS4Rent Style (object-contain, no crop)
+          GALLERY — TS4Rent Style
           ════════════════════════════════════════════════════════ */}
-      <div className="overflow-hidden" style={{ background: "#111" }}>
+      <div className="relative overflow-hidden" style={{ background: "#1a1a1a" }}>
 
-        {/* ── DESKTOP: 3-panel layout ─────────────────────────── */}
+        {/* ── DESKTOP: 3-panel layout like ts4rent.de ─────────── */}
         <div className="hidden md:block">
+          {/* Counter + Expand — absolute top right of entire gallery */}
+          <div className="absolute top-3 right-3 z-30 flex items-center gap-0.5">
+            <div className="px-2.5 py-1 text-[12px] font-semibold text-white select-none"
+              style={{ background: "rgba(50,50,50,0.9)" }}>
+              {activeIndex + 1} / {count}
+            </div>
+            <button
+              className="w-8 h-8 flex items-center justify-center hover:bg-white/10 transition-colors"
+              style={{ background: "rgba(50,50,50,0.9)" }}
+              onClick={() => openLightbox(activeIndex)}
+              aria-label="Fullscreen"
+            >
+              <Maximize2 size={14} color="#fff" />
+            </button>
+          </div>
+
           <div
-            className="relative w-full"
-            style={{ height: 500, background: "#111" }}
+            className="relative w-full flex items-stretch"
+            style={{ height: 480 }}
             onTouchStart={handleGalTouchStart}
             onTouchEnd={handleGalTouchEnd}
           >
-            <div className="absolute inset-0 flex items-stretch">
-
-              {/* Left preview — 18% width */}
-              {count > 1 && (
-                <div
-                  className="relative flex-shrink-0 cursor-pointer overflow-hidden"
-                  style={{ width: "18%", background: "#111" }}
-                  onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
-                >
-                  <img 
-                    src={highQualityUrl(images[prevIdx])} 
-                    alt="" 
-                    className="w-full h-full object-contain transition-opacity duration-300"
-                    style={{ opacity: 0.5 }}
-                    draggable={false} 
-                  />
-                  {isLocked(prevIdx) && (
-                    <div className="absolute inset-0 flex items-center justify-center"
-                      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
-                      <Lock size={24} color="#fff" />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Center main image */}
+            {/* Left preview — 22% width, full height, object-cover */}
+            {count > 1 && (
               <div
-                className="relative flex-1 cursor-pointer group overflow-hidden"
-                style={{ background: "#111" }}
-                onClick={() => openLightbox(activeIndex)}
+                className="relative flex-shrink-0 cursor-pointer overflow-hidden"
+                style={{ width: "22%" }}
+                onClick={() => isLocked(prevIdx) ? setLockModalOpen(true) : prevGal()}
               >
-                <img
-                  src={highQualityUrl(images[activeIndex])}
-                  alt={`${name} photo ${activeIndex + 1}`}
-                  className="w-full h-full object-contain"
-                  draggable={false}
+                <img 
+                  src={highQualityUrl(images[prevIdx])} 
+                  alt="" 
+                  className="w-full h-full object-cover"
+                  style={{ opacity: 0.65 }}
+                  draggable={false} 
                 />
-                
-                {/* Counter + Expand — top right corner like ts4rent */}
-                <div className="absolute top-3 right-3 flex items-center gap-1">
-                  <div className="px-2 py-1 text-[12px] font-semibold text-white select-none"
-                    style={{ background: "rgba(60,60,60,0.85)" }}>
-                    {activeIndex + 1} / {count}
+                {isLocked(prevIdx) && (
+                  <div className="absolute inset-0 flex items-center justify-center"
+                    style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
+                    <Lock size={28} color="#fff" />
                   </div>
-                  <button
-                    className="w-8 h-8 flex items-center justify-center"
-                    style={{ background: "rgba(60,60,60,0.85)" }}
-                    onClick={(e) => { e.stopPropagation(); openLightbox(activeIndex); }}
-                    aria-label="Fullscreen"
-                  >
-                    <Maximize2 size={14} color="#fff" />
-                  </button>
-                </div>
+                )}
               </div>
+            )}
 
-              {/* Right preview — 18% width */}
-              {count > 1 && (
-                <div
-                  className="relative flex-shrink-0 cursor-pointer overflow-hidden"
-                  style={{ width: "18%", background: "#111" }}
-                  onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
-                >
-                  <img 
-                    src={highQualityUrl(images[nextIdx])} 
-                    alt="" 
-                    className="w-full h-full object-contain transition-opacity duration-300"
-                    style={{ opacity: 0.5 }}
-                    draggable={false} 
-                  />
-                  {isLocked(nextIdx) && (
-                    <div className="absolute inset-0 flex items-center justify-center"
-                      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
-                      <Lock size={24} color="#fff" />
-                    </div>
-                  )}
-                </div>
-              )}
+            {/* Center main image — fills remaining, object-contain to show full image */}
+            <div
+              className="relative flex-1 cursor-pointer overflow-hidden flex items-center justify-center"
+              style={{ background: "#111" }}
+              onClick={() => openLightbox(activeIndex)}
+            >
+              <img
+                src={highQualityUrl(images[activeIndex])}
+                alt={`${name} photo ${activeIndex + 1}`}
+                className="max-w-full max-h-full object-contain"
+                draggable={false}
+              />
             </div>
 
-            {/* Navigation arrows */}
+            {/* Right preview — 22% width, full height, object-cover */}
+            {count > 1 && (
+              <div
+                className="relative flex-shrink-0 cursor-pointer overflow-hidden"
+                style={{ width: "22%" }}
+                onClick={() => isLocked(nextIdx) ? setLockModalOpen(true) : nextGal()}
+              >
+                <img 
+                  src={highQualityUrl(images[nextIdx])} 
+                  alt="" 
+                  className="w-full h-full object-cover"
+                  style={{ opacity: 0.65 }}
+                  draggable={false} 
+                />
+                {isLocked(nextIdx) && (
+                  <div className="absolute inset-0 flex items-center justify-center"
+                    style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
+                    <Lock size={28} color="#fff" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Navigation arrows — at edge of gallery */}
             {count > 1 && (
               <>
                 <button
                   onClick={prevGal}
-                  className="absolute left-[17%] top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center transition-all hover:bg-black/80"
-                  style={{ background: "rgba(0,0,0,0.6)" }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-10 flex items-center justify-center transition-all hover:bg-black/60"
+                  style={{ background: "rgba(0,0,0,0.4)" }}
                 >
-                  <ChevronLeft size={20} color="#fff" />
+                  <DoubleChevronLeft />
                 </button>
                 <button
                   onClick={nextGal}
-                  className="absolute right-[17%] top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center transition-all hover:bg-black/80"
-                  style={{ background: "rgba(0,0,0,0.6)" }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-10 flex items-center justify-center transition-all hover:bg-black/60"
+                  style={{ background: "rgba(0,0,0,0.4)" }}
                 >
-                  <ChevronRight size={20} color="#fff" />
+                  <DoubleChevronRight />
                 </button>
               </>
             )}
           </div>
 
-          {/* Desktop thumbnail strip */}
+          {/* Desktop thumbnail strip with navigation arrows */}
           {count > 1 && (
-            <div
-              ref={thumbStripRef}
-              className="flex items-center gap-1.5 px-4 py-3 overflow-x-auto [&::-webkit-scrollbar]:hidden"
-              style={{ background: "#111" }}
-            >
-              {images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => goTo(i)}
-                  className="relative flex-shrink-0 overflow-hidden transition-all duration-200"
-                  style={{
-                    width: 64,
-                    height: 64,
-                    opacity: i === activeIndex ? 1 : 0.4,
-                    outline: i === activeIndex ? "2px solid #DC2626" : "none",
-                    outlineOffset: 1,
-                  }}
-                >
-                  <img src={highQualityUrl(img, 140)} alt="" className="w-full h-full object-cover" draggable={false} />
-                  {isLocked(i) && (
-                    <div className="absolute inset-0 flex items-center justify-center"
-                      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
-                      <Lock size={14} color="#fff" />
-                    </div>
-                  )}
-                </button>
-              ))}
+            <div className="flex items-center" style={{ background: "#1a1a1a" }}>
+              {/* Left scroll arrow */}
+              <button
+                onClick={prevGal}
+                className="flex-shrink-0 w-8 h-16 flex items-center justify-center hover:bg-white/10 transition-colors"
+              >
+                <DoubleChevronLeft />
+              </button>
+              
+              {/* Thumbnails */}
+              <div
+                ref={thumbStripRef}
+                className="flex-1 flex items-center gap-1.5 py-2.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+              >
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    className="relative flex-shrink-0 overflow-hidden transition-all duration-200"
+                    style={{
+                      width: 64,
+                      height: 64,
+                      opacity: i === activeIndex ? 1 : 0.5,
+                      outline: i === activeIndex ? "2px solid #DC2626" : "none",
+                      outlineOffset: 1,
+                    }}
+                  >
+                    <img src={highQualityUrl(img, 140)} alt="" className="w-full h-full object-cover" draggable={false} />
+                    {isLocked(i) && (
+                      <div className="absolute inset-0 flex items-center justify-center"
+                        style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
+                        <Lock size={14} color="#fff" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Right scroll arrow */}
+              <button
+                onClick={nextGal}
+                className="flex-shrink-0 w-8 h-16 flex items-center justify-center hover:bg-white/10 transition-colors"
+              >
+                <DoubleChevronRight />
+              </button>
             </div>
           )}
         </div>
 
-        {/* ── MOBILE: Full-width single image ────────────────── */}
+        {/* ── MOBILE ────────────────────────────────────────────── */}
         <div
           className="md:hidden"
           style={{ background: "#111" }}
           onTouchStart={handleGalTouchStart}
           onTouchEnd={handleGalTouchEnd}
         >
+          {/* Counter + Expand — top right */}
+          <div className="absolute top-2 right-2 z-30 flex items-center gap-0.5">
+            <div className="px-2 py-1 text-[11px] font-semibold text-white select-none"
+              style={{ background: "rgba(50,50,50,0.9)" }}>
+              {activeIndex + 1} / {count}
+            </div>
+            <button
+              className="w-7 h-7 flex items-center justify-center"
+              style={{ background: "rgba(50,50,50,0.9)" }}
+              onClick={() => openLightbox(activeIndex)}
+            >
+              <Maximize2 size={13} color="#fff" />
+            </button>
+          </div>
+
           <div
-            className="relative cursor-pointer"
-            style={{ height: "auto", minHeight: 300, maxHeight: "65vh" }}
+            className="relative flex items-center justify-center"
+            style={{ minHeight: 300, maxHeight: "60vh" }}
             onClick={() => openLightbox(activeIndex)}
           >
             <img
               src={highQualityUrl(images[activeIndex])}
               alt={`${name} photo ${activeIndex + 1}`}
-              className="w-full h-auto object-contain"
-              style={{ maxHeight: "65vh" }}
+              className="max-w-full max-h-[60vh] object-contain"
               draggable={false}
             />
-            
-            {/* Counter + Expand — top right corner */}
-            <div className="absolute top-3 right-3 flex items-center gap-1">
-              <div className="px-2 py-1 text-[11px] font-semibold text-white select-none"
-                style={{ background: "rgba(60,60,60,0.85)" }}>
-                {activeIndex + 1} / {count}
-              </div>
-              <button
-                className="w-8 h-8 flex items-center justify-center"
-                style={{ background: "rgba(60,60,60,0.85)" }}
-                onClick={(e) => { e.stopPropagation(); openLightbox(activeIndex); }}
-              >
-                <Maximize2 size={14} color="#fff" />
-              </button>
-            </div>
           </div>
 
           {/* Mobile thumbnail strip */}
@@ -335,7 +356,7 @@ export default function PhotoGallery({
             <div 
               ref={thumbStripRef}
               className="flex gap-1.5 px-3 py-2.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
-              style={{ background: "#111" }}
+              style={{ background: "#1a1a1a" }}
             >
               {images.map((img, i) => (
                 <button
@@ -345,7 +366,7 @@ export default function PhotoGallery({
                   style={{
                     width: 48,
                     height: 48,
-                    opacity: i === activeIndex ? 1 : 0.4,
+                    opacity: i === activeIndex ? 1 : 0.5,
                     outline: i === activeIndex ? "2px solid #DC2626" : "none",
                     outlineOffset: 1,
                   }}
@@ -393,7 +414,6 @@ export default function PhotoGallery({
               draggable={false}
             />
 
-            {/* Watermark */}
             <div className="absolute bottom-4 right-4 pointer-events-none select-none">
               <span className="text-[13px] font-semibold tracking-wider uppercase text-white/60"
                 style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.85)" }}>
