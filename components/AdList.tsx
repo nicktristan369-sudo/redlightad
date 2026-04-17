@@ -491,16 +491,16 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     staggerDelay={idx * 600}
                   />
 
-                  {/* ── DESKTOP layout (hidden below md) ── */}
+                  {/* ── DESKTOP layout (hidden below md) — Clean, elegant design ── */}
                   <div className="hidden md:flex">
                     {/* Left: thumbnail */}
-                    <div className="relative flex-shrink-0 w-[200px] h-[240px] bg-gray-100">
+                    <div className="relative flex-shrink-0 w-[180px] h-[220px] bg-gray-100">
                       {ad.video_url ? (
                         <>
                           <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <div className="w-9 h-9 bg-black/50 rounded-full flex items-center justify-center">
+                              <svg className="w-3.5 h-3.5 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
                               </svg>
                             </div>
@@ -513,36 +513,36 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     </div>
 
                     {/* Right: details */}
-                    <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
-                      <div>
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", flexShrink: 0, boxShadow: "0 0 0 2px #fff, 0 0 0 3px #22C55E" }} />
-                            )}
-                            <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
-                          </div>
-                          <span style={{
-                            flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 4,
-                            fontSize: 11, fontWeight: 600, color: "#16A34A",
-                            background: "#F0FDF4", border: "1px solid #BBF7D0",
-                            padding: "3px 9px", borderRadius: 20,
-                          }}>
-                            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Verified
-                          </span>
+                    <div className="flex-1 p-5 flex flex-col min-w-0">
+                      {/* Header: Title + Verified */}
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isAvailableNow(ad.opening_hours, ad.timezone) && (
+                            <span className="flex-shrink-0" style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", boxShadow: "0 0 0 2px #fff, 0 0 0 3px #22C55E" }} />
+                          )}
+                          <h3 className="font-semibold text-[17px] text-gray-900 leading-tight truncate">{ad.title}</h3>
                         </div>
-                        <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        <span className="flex-shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded border" style={{ color: "#059669", borderColor: "#A7F3D0" }}>
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                           </svg>
-                          Posted {timeAgo(ad.created_at)}
-                        </p>
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">{description}</p>
+                          Verified
+                        </span>
                       </div>
-                      <div className="grid grid-cols-5 gap-x-3 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-3">
+
+                      {/* Posted time */}
+                      <p className="text-[12px] text-gray-400 mb-2.5 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Posted {timeAgo(ad.created_at)}
+                      </p>
+
+                      {/* Description */}
+                      <p className="text-[13px] text-gray-600 leading-relaxed line-clamp-2 mb-4">{description || "No description available."}</p>
+
+                      {/* Stats grid */}
+                      <div className="grid grid-cols-5 gap-x-4 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-4">
                         {[
                           { label: "AGE",      value: ad.age },
                           { label: "GENDER",   value: ad.gender },
@@ -551,16 +551,18 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                           { label: "LANGUAGE", value: ad.languages?.[0] || "—" },
                         ].map(({ label, value }) => (
                           <div key={label}>
-                            <p className="text-[9px] font-semibold tracking-widest text-gray-400 uppercase">{label}</p>
-                            <p className="font-semibold text-gray-800 truncate">{value}</p>
+                            <p className="text-[9px] font-medium tracking-wider text-gray-400 uppercase mb-0.5">{label}</p>
+                            <p className="font-medium text-gray-800 truncate">{value}</p>
                           </div>
                         ))}
                       </div>
-                      <div className="flex items-center gap-2">
+
+                      {/* Action row */}
+                      <div className="flex items-center gap-3 mt-auto">
                         {((ad as any).social_links?.onlyfans?.url || (ad as any).onlyfans_username) && (
-                          <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 16, width: "auto", objectFit: "contain", flexShrink: 0 }} />
+                          <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 15, width: "auto", objectFit: "contain", flexShrink: 0, opacity: 0.7 }} />
                         )}
-                        <span className="flex-1 bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2.5 rounded-none text-center transition-colors">
+                        <span className="flex-1 bg-gray-800 hover:bg-gray-900 text-white text-[13px] font-medium py-2.5 text-center transition-colors">
                           View Profile
                         </span>
                       </div>
