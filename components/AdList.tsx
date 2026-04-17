@@ -515,7 +515,8 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     {/* Right: details */}
                     <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
                       <div>
-                        <div className="flex items-start justify-between gap-2 mb-2">
+                        {/* Title + Verified */}
+                        <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2 min-w-0">
                             {isAvailableNow(ad.opening_hours, ad.timezone) && (
                               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", flexShrink: 0, boxShadow: "0 0 0 2px #fff, 0 0 0 3px #22C55E" }} />
@@ -534,14 +535,30 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                             Verified
                           </span>
                         </div>
-                        <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+
+                        {/* Location with pin */}
+                        <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                          <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                           </svg>
-                          Posted {timeAgo(ad.created_at)}
+                          {displayLocation}{ad.country ? `, ${ad.country}` : ""}
                         </p>
+
+                        {/* Inline stats: age · gender · category */}
+                        <p className="text-xs text-gray-500 mb-2">
+                          <span className="font-medium text-gray-700">{ad.age} years</span>
+                          <span className="mx-2 text-gray-300">·</span>
+                          <span className="capitalize">{ad.gender}</span>
+                          <span className="mx-2 text-gray-300">·</span>
+                          <span className="capitalize">{ad.category}</span>
+                        </p>
+
+                        {/* Description */}
                         <p className="text-sm text-gray-600 line-clamp-2 mb-3">{description}</p>
                       </div>
+
+                      {/* Stats grid */}
                       <div className="grid grid-cols-5 gap-x-3 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-3">
                         {[
                           { label: "AGE",      value: ad.age },
