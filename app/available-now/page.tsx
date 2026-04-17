@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase"
 import Navbar from "@/components/Navbar"
 import AdCardGrid from "@/components/AdCardGrid"
 import { SUPPORTED_COUNTRIES } from "@/lib/countries"
+import { isAvailableNow } from "@/lib/isAvailableNow"
 
 const GENDERS = ["All", "Woman", "Man", "Trans", "Couple"]
 
@@ -27,23 +28,6 @@ type Listing = {
   created_at: string
   social_links: Record<string, { url?: string }> | null
   onlyfans_username: string | null
-}
-
-function isAvailableNow(
-  hours: Record<string, { open: string; close: string; closed: boolean }> | null | undefined,
-  tz: string | null | undefined
-): boolean {
-  if (!hours || !tz) return false
-  try {
-    const day = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" }).format(new Date()).toLowerCase()
-    const h = hours[day]
-    if (!h || h.closed) return false
-    const now = new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date())
-    const [ch, cm] = now.split(":").map(Number)
-    const [oh, om] = h.open.split(":").map(Number)
-    const [clh, clm] = h.close.split(":").map(Number)
-    return (ch * 60 + cm) >= (oh * 60 + om) && (ch * 60 + cm) < (clh * 60 + clm)
-  } catch { return false }
 }
 
 export default function AvailableNowPage() {
