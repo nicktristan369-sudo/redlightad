@@ -128,38 +128,7 @@ export default function AdCardGrid({
           />
           )}
 
-          {/* Top row: PREMIUM (left) + VERIFIED (right) */}
-          <div style={{ position: "absolute", top: 8, left: 8, right: 8, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 4 }}>
-            {/* Premium badge - left - solid black */}
-            {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") ? (
-              <div style={{
-                fontSize: 9, fontWeight: 600, letterSpacing: "0.5px",
-                padding: "4px 10px", textTransform: "uppercase",
-                background: "#000",
-                color: "#fff",
-              }}>PREMIUM</div>
-            ) : <div />}
-
-            {/* Verified badge - right - elegant transparent glass */}
-            {verified && (
-              <div style={{
-                background: "rgba(120,120,120,0.5)",
-                backdropFilter: "blur(8px)",
-                color: "#fff",
-                fontSize: 9, fontWeight: 500, letterSpacing: "0.3px",
-                padding: "4px 8px",
-                display: "flex", alignItems: "center", gap: 4,
-              }}>
-                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-                </svg>
-                VERIFIED
-              </div>
-            )}
-          </div>
-
-
-          {/* OnlyFans badge */}
+          {/* OnlyFans badge - keep this one */}
           {(social_links?.onlyfans?.url || onlyfans_username) && (
             <div style={{
               position: "absolute", bottom: 8, right: 8,
@@ -173,6 +142,7 @@ export default function AdCardGrid({
         </div>
 
         {/* CIRKEL — absolut relativt til YDRE container */}
+        {/* Premium = tynd grå kant, Story = gradient, Normal = hvid */}
         <div
           onClick={hasStory ? (e) => { e.preventDefault(); e.stopPropagation(); onStoryClick?.() } : undefined}
           style={{
@@ -183,10 +153,14 @@ export default function AdCardGrid({
             width: 64,
             height: 64,
             borderRadius: "50%",
-            border: "3px solid transparent",
+            border: hasStory
+              ? "3px solid transparent"
+              : (premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic")
+                ? "2px solid #374151"
+                : "3px solid white",
             backgroundImage: hasStory
               ? "linear-gradient(white, white), linear-gradient(135deg, #DC2626, #F59E0B)"
-              : "linear-gradient(white, white), linear-gradient(white, white)",
+              : "none",
             backgroundOrigin: "border-box",
             backgroundClip: "padding-box, border-box",
             overflow: "hidden",
@@ -206,15 +180,14 @@ export default function AdCardGrid({
         {/* TEKST sektion */}
         <div style={{ paddingTop: 40, paddingBottom: 12, paddingLeft: 12, paddingRight: 12, background: "white" }}>
 
-          {/* Navn + verified ikon */}
+          {/* Navn */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
             <p style={{
               fontSize: 14, fontWeight: 700, color: "#111111",
               margin: 0, lineHeight: 1.3,
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-              maxWidth: "calc(100% - 20px)",
+              maxWidth: "100%",
             }}>{displayTitle}</p>
-            {verified && <CheckCircle size={13} color="#DC2626" style={{ flexShrink: 0 }} />}
           </div>
 
           {/* By + land */}

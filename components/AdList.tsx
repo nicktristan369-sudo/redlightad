@@ -70,14 +70,9 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
 
       {/* ── Title (max 2 lines, bold, NOT uppercase) ── */}
       <div className="px-3 pt-3 pb-2">
-        <div className="flex items-center gap-1.5">
-          {isAvailableNow(ad.opening_hours, ad.timezone) && (
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0, display: "inline-block" }} />
-          )}
-          <h3 className="font-bold text-[15px] text-gray-900 leading-snug line-clamp-2">
-            {ad.title}
-          </h3>
-        </div>
+        <h3 className="font-bold text-[15px] text-gray-900 leading-snug line-clamp-2">
+          {ad.title}
+        </h3>
       </div>
 
       {/* ── 3-panel layout (with live video in center if available) ── */}
@@ -115,21 +110,7 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
           ) : (
             panels[2] ? <img src={panels[2]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />
           )}
-          {/* Elegant VERIFIED badge - glass style */}
-          <div className="absolute top-2 right-2">
-            <span className="inline-flex items-center gap-1 text-[9px] font-medium px-2 py-1"
-              style={{
-                background: "rgba(120,120,120,0.5)",
-                backdropFilter: "blur(8px)",
-                color: "#fff",
-                letterSpacing: "0.3px",
-              }}>
-              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-              </svg>
-              VERIFIED
-            </span>
-          </div>
+
         </div>
       </div>
 
@@ -502,7 +483,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       ) : (
                         <DesktopThumb ad={ad} staggerDelay={idx * 600} />
                       )}
-                      {tierBadge(ad.premium_tier)}
+
 
                       {/* Available Now bar - bottom of thumbnail */}
                       {isAvailableNow(ad.opening_hours, ad.timezone) && (
@@ -519,7 +500,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     {/* Right: details */}
                     <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
                       <div>
-                        {/* Title + Verified */}
+                        {/* Title */}
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-1.5 min-w-0">
                             {isAvailableNow(ad.opening_hours, ad.timezone) && (
@@ -527,17 +508,6 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                             )}
                             <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
                           </div>
-                          <span style={{
-                            flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 4,
-                            fontSize: 11, fontWeight: 600, color: "#16A34A",
-                            background: "#F0FDF4", border: "1px solid #BBF7D0",
-                            padding: "3px 9px", borderRadius: 20,
-                          }}>
-                            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Verified
-                          </span>
                         </div>
 
                         {/* Location with pin */}

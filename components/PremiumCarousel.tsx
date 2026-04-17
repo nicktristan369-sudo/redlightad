@@ -358,48 +358,11 @@ export default function PremiumCarousel({
                     staggerDelay={cardIdx * 800}
                   />
 
-                  {/* Tier badge */}
-                  {(isVip || isFeatured) && (
-                    <div style={{
-                      position: "absolute", top: 8, left: 8,
-                      fontSize: 9, fontWeight: 800, letterSpacing: "0.1em",
-                      padding: "3px 7px", borderRadius: 4,
-                      background: isVip
-                        ? "linear-gradient(135deg, #C9A84C, #F0D080, #C9A84C)"
-                        : "rgba(0,0,0,0.72)",
-                      color: isVip ? "#1a0f00" : "#E5E7EB",
-                      border: isVip ? "none" : "1px solid rgba(255,255,255,0.15)",
-                      backdropFilter: "blur(4px)",
-                      boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
-                    }}>
-                      {isVip ? "VIP" : "TOP"}
-                    </div>
-                  )}
-
                   {/* OnlyFans badge */}
                   {(l.social_links?.onlyfans?.url || l.onlyfans_username) && (
                     <div className="absolute bottom-2 right-2 bg-black/70 rounded px-1 py-0.5 flex items-center">
                       <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 12, width: "auto" }} />
                     </div>
-                  )}
-
-                  {/* Camera icon */}
-                  {hasPhotos && (
-                    <div className="absolute top-2 right-2 bg-black/50 rounded-full w-6 h-6 flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                  )}
-
-                  {/* Available Now — subtle green dot */}
-                  {available && (
-                    <div style={{
-                      position: "absolute", top: 8, right: 8,
-                      width: 7, height: 7, borderRadius: "50%",
-                      background: "#22C55E",
-                    }} />
                   )}
 
                   {/* Bottom overlay */}
