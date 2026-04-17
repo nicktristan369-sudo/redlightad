@@ -115,15 +115,14 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
           ) : (
             panels[2] ? <img src={panels[2]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />
           )}
-          {/* Elegant VERIFIED badge */}
+          {/* Elegant VERIFIED badge - glass style */}
           <div className="absolute top-2 right-2">
-            <span className="inline-flex items-center gap-1 text-[9px] font-medium px-2 py-1 rounded-sm"
+            <span className="inline-flex items-center gap-1 text-[9px] font-medium px-2 py-1"
               style={{
-                background: "rgba(255,255,255,0.15)",
-                color: "rgba(255,255,255,0.95)",
+                background: "rgba(120,120,120,0.5)",
                 backdropFilter: "blur(8px)",
-                border: "1px solid rgba(255,255,255,0.25)",
-                letterSpacing: "0.03em",
+                color: "#fff",
+                letterSpacing: "0.3px",
               }}>
               <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>

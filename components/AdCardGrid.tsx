@@ -128,31 +128,26 @@ export default function AdCardGrid({
           />
           )}
 
-          {/* Top row: PREMIUM (left) + VERIFIED (right) - elegant transparent style */}
+          {/* Top row: PREMIUM (left) + VERIFIED (right) */}
           <div style={{ position: "absolute", top: 8, left: 8, right: 8, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 4 }}>
-            {/* Premium badge - left - elegant style */}
+            {/* Premium badge - left - solid black */}
             {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") ? (
               <div style={{
-                fontSize: 9, fontWeight: 500, letterSpacing: "0.04em",
-                padding: "4px 8px", textTransform: "uppercase",
-                background: "rgba(255,255,255,0.15)",
-                backdropFilter: "blur(8px)",
-                border: "1px solid rgba(255,255,255,0.25)",
-                color: "rgba(255,255,255,0.95)",
-                borderRadius: 2,
+                fontSize: 9, fontWeight: 600, letterSpacing: "0.5px",
+                padding: "4px 10px", textTransform: "uppercase",
+                background: "#000",
+                color: "#fff",
               }}>PREMIUM</div>
             ) : <div />}
 
-            {/* Verified badge - right - elegant transparent */}
+            {/* Verified badge - right - elegant transparent glass */}
             {verified && (
               <div style={{
-                background: "rgba(255,255,255,0.15)",
+                background: "rgba(120,120,120,0.5)",
                 backdropFilter: "blur(8px)",
-                border: "1px solid rgba(255,255,255,0.25)",
-                color: "rgba(255,255,255,0.95)",
-                fontSize: 9, fontWeight: 500, letterSpacing: "0.04em",
+                color: "#fff",
+                fontSize: 9, fontWeight: 500, letterSpacing: "0.3px",
                 padding: "4px 8px",
-                borderRadius: 2,
                 display: "flex", alignItems: "center", gap: 4,
               }}>
                 <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -163,15 +158,7 @@ export default function AdCardGrid({
             )}
           </div>
 
-          {/* Available dot — subtle green dot below badges */}
-          {available && (
-            <div style={{
-              position: "absolute", top: premium_tier || verified ? 36 : 8, right: 8,
-              width: 7, height: 7, borderRadius: "50%",
-              background: "#22C55E",
-              zIndex: 10,
-            }} />           
-          )}
+
           {/* OnlyFans badge */}
           {(social_links?.onlyfans?.url || onlyfans_username) && (
             <div style={{
