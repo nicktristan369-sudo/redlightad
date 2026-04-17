@@ -393,12 +393,12 @@ export default function PremiumCarousel({
                     </div>
                   )}
 
-                  {/* Available Now — small green dot only */}
+                  {/* Available Now — subtle green dot */}
                   {available && (
                     <div style={{
                       position: "absolute", top: 8, right: 8,
-                      width: 9, height: 9, borderRadius: "50%",
-                      background: "#22C55E", boxShadow: "0 0 0 2px white",
+                      width: 7, height: 7, borderRadius: "50%",
+                      background: "#22C55E",
                     }} />
                   )}
 

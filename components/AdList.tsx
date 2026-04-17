@@ -70,9 +70,9 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
 
       {/* ── Title (max 2 lines, bold, NOT uppercase) ── */}
       <div className="px-3 pt-3 pb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {isAvailableNow(ad.opening_hours, ad.timezone) && (
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", flexShrink: 0, display: "inline-block", boxShadow: "0 0 0 2px #fff, 0 0 0 3px #22C55E" }} />
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0, display: "inline-block" }} />
           )}
           <h3 className="font-bold text-[15px] text-gray-900 leading-snug line-clamp-2">
             {ad.title}
@@ -517,9 +517,9 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       <div>
                         {/* Title + Verified */}
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex items-center gap-1.5 min-w-0">
                             {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", flexShrink: 0, boxShadow: "0 0 0 2px #fff, 0 0 0 3px #22C55E" }} />
+                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
                             )}
                             <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
                           </div>
