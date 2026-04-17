@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import Logo from "@/components/Logo";
+import OAuthButtons from "@/components/OAuthButtons";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function LoginPage() {
@@ -163,6 +164,11 @@ export default function LoginPage() {
           <span className="text-[13px]" style={{ color: "#9CA3AF" }}>{t.common_or}</span>
           <div className="h-px flex-1" style={{ background: "#D1D5DB" }} />
         </div>
+
+        {/* OAuth Buttons */}
+        <OAuthButtons variant="login" />
+
+        <div className="my-6" />
 
         {/* Sign up */}
         <p className="text-center text-[14px]" style={{ color: "#6B7280" }}>

@@ -25,6 +25,7 @@ import {
   AVAILABLE_FOR_OPTIONS,
 } from "@/lib/listingOptions";
 import Logo from "@/components/Logo";
+import OAuthButtons from "@/components/OAuthButtons";
 
 const GENDER_OPTIONS = [
   { value: "Woman", label: "Woman" },
@@ -498,6 +499,19 @@ export default function RegisterProviderPage() {
                 <p className="text-[15px] text-gray-500 mt-1">
                   Create your account in under 3 minutes.
                 </p>
+              </div>
+
+              {/* OAuth Signup */}
+              <div className="bg-white border border-gray-100 p-6">
+                <p className="text-center text-[14px] text-gray-500 mb-4">Sign up with</p>
+                <OAuthButtons variant="signup" redirectTo={`${typeof window !== 'undefined' ? window.location.origin : ''}/register/provider`} />
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-gray-200" />
+                <span className="text-[13px] text-gray-400">or with email</span>
+                <div className="h-px flex-1 bg-gray-200" />
               </div>
 
               <div className="bg-white border border-gray-100 p-6 space-y-5">
