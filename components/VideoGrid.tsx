@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Search, Play, Share2, User, Film } from "lucide-react"
+import { Search, Play, Eye } from "lucide-react"
 import Link from "next/link"
 
 type Video = {
@@ -9,6 +9,8 @@ type Video = {
   url: string
   thumbnail_url: string | null
   title: string | null
+  description?: string | null
+  duration?: number | null
   is_locked: boolean
   redcoin_price: number
   views: number
@@ -29,14 +31,30 @@ type Video = {
 
 type Props = { videos: Video[] }
 
-function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => void }) {
+function formatDuration(seconds: number | null | undefined): string {
+  if (!seconds) return ""
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, "0")}`
+}
+
+function formatViews(views: number): string {
+  if (views >= 1000000) return (views / 1000000).toFixed(1) + "M"
+  if (views >= 1000) return (views / 1000).toFixed(1) + "K"
+  return views.toString()
+}
+
+function VideoCard({ video }: { video: Video }) {
   const listing = video.listings
   const [playing, setPlaying] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const isVip = listing.premium_tier === "vip"
-  const location = [listing.city, listing.country].filter(Boolean).join(", ")
-  const name = listing.display_name || listing.title || ""
-  const videoCount = video.video_count || 1
+  const previewRef = useRef<HTMLVideoElement>(null)
+  
+  const uploaderName = listing.display_name || listing.title || "Anonymous"
+  const videoTitle = video.title || `Video by ${uploaderName}`
+  const duration = formatDuration(video.duration)
+  const viewCount = formatViews(video.views)
 
   const handlePlay = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -50,10 +68,29 @@ function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => vo
     setTimeout(() => videoRef.current?.play(), 50)
   }
 
+  const handleMouseEnter = () => {
+    setIsHovering(true)
+    previewRef.current?.play()
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovering(false)
+    if (previewRef.current) {
+      previewRef.current.pause()
+      previewRef.current.currentTime = 0
+    }
+  }
+
   return (
-    <div className="bg-black overflow-hidden rounded-sm group">
-      {/* Video / Thumbnail */}
-      <div className="relative" style={{ aspectRatio: "9/16" }}>
+    <div className="group">
+      {/* Thumbnail / Video */}
+      <div 
+        className="relative bg-gray-900 overflow-hidden cursor-pointer"
+        style={{ aspectRatio: "16/9" }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={handlePlay}
+      >
         {playing ? (
           <video
             ref={videoRef}
@@ -61,103 +98,70 @@ function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => vo
             controls
             autoPlay
             playsInline
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain bg-black"
             onClick={e => e.stopPropagation()}
           />
         ) : (
           <>
-            {/* Video preview — autoplay muted on hover */}
-            {video.url ? (
+            {/* Video preview on hover */}
+            {video.url && isHovering ? (
               <video
+                ref={previewRef}
                 src={`${video.url}#t=0.5`}
                 muted
                 loop
                 playsInline
                 preload="metadata"
-                poster={video.thumbnail_url || listing.profile_image || undefined}
-                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                style={{ pointerEvents: "none" }}
-                onMouseEnter={e => (e.currentTarget as HTMLVideoElement).play()}
-                onMouseLeave={e => { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
-              />
-            ) : video.thumbnail_url || listing.profile_image ? (
-              <img
-                src={video.thumbnail_url || listing.profile_image!}
-                alt={name}
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                <Film className="w-8 h-8 text-gray-600" />
+              <img
+                src={video.thumbnail_url || listing.profile_image || "/placeholder-video.jpg"}
+                alt={videoTitle}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            )}
+
+            {/* Duration badge - bottom right */}
+            {duration && (
+              <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-bold px-1.5 py-0.5">
+                {duration}
               </div>
             )}
 
-            {/* Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-
-            {/* VIP badge */}
-            {isVip && (
-              <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[9px] font-black tracking-widest px-1.5 py-0.5">
-                VIP
+            {/* Play button on hover */}
+            <div className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center">
+                <Play className="w-7 h-7 text-white fill-white ml-1" />
               </div>
-            )}
-
-            {/* Video count badge */}
-            {videoCount > 1 && (
-              <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5">
-                <Film className="w-2.5 h-2.5" />
-                {videoCount}
-              </div>
-            )}
-
-            {/* Play button */}
-            <button
-              onClick={handlePlay}
-              className="absolute inset-0 flex items-center justify-center"
-            >
-              <div className="w-11 h-11 rounded-full border-2 border-white/80 bg-black/30 flex items-center justify-center group-hover:bg-red-600/80 group-hover:border-red-500 transition-all duration-200">
-                <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-              </div>
-            </button>
-
-            {/* Name + location */}
-            <div className="absolute bottom-10 left-0 right-0 px-2.5">
-              <p className="text-white text-[11px] font-bold uppercase tracking-wide truncate leading-tight">
-                {name}
-              </p>
-              {location && (
-                <p className="text-white/60 text-[10px] uppercase tracking-wide truncate mt-0.5">
-                  {location}
-                </p>
-              )}
             </div>
           </>
         )}
       </div>
 
-      {/* Action bar */}
-      <div className="flex items-center border-t border-white/5" style={{ background: "#111" }}>
-        <Link
-          href={`/ads/${listing.id}`}
-          className="flex-1 flex items-center justify-center py-2.5 text-white/40 hover:text-white transition-colors border-r border-white/5"
-          title="View profile"
-        >
-          <User className="w-3.5 h-3.5" />
+      {/* Video info */}
+      <div className="pt-2.5 pb-3">
+        {/* Uploader + Views row */}
+        <div className="flex items-center gap-2 mb-1">
+          <Link 
+            href={`/ads/${listing.id}`}
+            className="text-[12px] font-medium text-gray-300 hover:text-white transition-colors truncate"
+          >
+            {uploaderName}
+          </Link>
+          <span className="text-gray-600">•</span>
+          <div className="flex items-center gap-1 text-gray-500">
+            <Eye className="w-3 h-3" />
+            <span className="text-[11px]">{viewCount}</span>
+          </div>
+        </div>
+
+        {/* Title */}
+        <Link href={`/ads/${listing.id}#videos`}>
+          <h3 className="text-[13px] font-medium text-white leading-tight line-clamp-2 hover:text-gray-300 transition-colors">
+            {videoTitle}
+          </h3>
         </Link>
-        <button
-          onClick={handlePlay}
-          className="flex-1 flex items-center justify-center py-2.5 text-white/40 hover:text-red-500 transition-colors border-r border-white/5"
-          title="Play video"
-        >
-          <Play className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => onShare(video)}
-          className="flex-1 flex items-center justify-center py-2.5 text-white/40 hover:text-white transition-colors"
-          title="Share"
-        >
-          <Share2 className="w-3.5 h-3.5" />
-        </button>
       </div>
     </div>
   )
@@ -166,62 +170,54 @@ function VideoCard({ video, onShare }: { video: Video; onShare: (v: Video) => vo
 export default function VideoGrid({ videos }: Props) {
   const [search, setSearch] = useState("")
   const [sort, setSort] = useState<"newest" | "most_viewed">("newest")
-  const [toast, setToast] = useState<string | null>(null)
 
   const filtered = videos
-    .filter(v => !search || (v.listings.title + " " + (v.listings.display_name || "")).toLowerCase().includes(search.toLowerCase()))
+    .filter(v => {
+      if (!search) return true
+      const searchLower = search.toLowerCase()
+      const name = (v.listings.title + " " + (v.listings.display_name || "")).toLowerCase()
+      const title = (v.title || "").toLowerCase()
+      return name.includes(searchLower) || title.includes(searchLower)
+    })
     .sort((a, b) => {
       if (sort === "most_viewed") return b.views - a.views
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
-
-  const handleShare = (video: Video) => {
-    navigator.clipboard.writeText(`https://redlightad.com/ads/${video.listings.id}#videos`)
-    setToast("Link copied!")
-    setTimeout(() => setToast(null), 2500)
-  }
 
   return (
     <>
       {/* Filter bar */}
       <div className="flex items-center gap-3 mb-5">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
           <input
-            placeholder="Search profiles..."
+            placeholder="Search videos..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-white border border-gray-200 pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-gray-400"
-            style={{ borderRadius: 0 }}
+            className="w-full bg-[#1a1a1a] border border-gray-800 pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600"
           />
         </div>
         <select
           value={sort}
           onChange={e => setSort(e.target.value as any)}
-          className="bg-white border border-gray-200 px-3 py-2 text-sm focus:outline-none cursor-pointer text-gray-600"
-          style={{ borderRadius: 0 }}
+          className="bg-[#1a1a1a] border border-gray-800 px-3 py-2 text-sm text-gray-300 focus:outline-none cursor-pointer"
         >
           <option value="newest">Newest</option>
           <option value="most_viewed">Most Viewed</option>
         </select>
-        <span className="text-sm text-gray-400 ml-auto">{filtered.length} profiles</span>
+        <span className="text-sm text-gray-500 ml-auto">{filtered.length} videos</span>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-          <p className="font-semibold">No videos found</p>
+        <div className="text-center py-20">
+          <Play className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+          <p className="text-gray-500 font-medium">No videos found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {filtered.map(v => (
-            <VideoCard key={v.id} video={v} onShare={handleShare} />
+            <VideoCard key={v.id} video={v} />
           ))}
-        </div>
-      )}
-
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm px-4 py-2 shadow-lg">
-          {toast}
         </div>
       )}
     </>
