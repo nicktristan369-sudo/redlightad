@@ -80,54 +80,65 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         </div>
       </div>
 
-      {/* ── Levende profilbillede ELLER 3-panel ── */}
-      {ad.profile_video_url ? (
-        <div className="h-[190px] overflow-hidden bg-black relative">
-          <video
-            src={ad.profile_video_url}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover"
-          />
+      {/* ── 3-panel layout (with live video in center if available) ── */}
+      <div className="flex h-[190px]" style={{ gap: 1 }}>
+        {/* Left panel - static image */}
+        <div className="relative overflow-hidden bg-gray-200 flex-1">
+          {panels[0]
+            ? <img src={panels[0]} alt="" className="w-full h-full object-cover" />
+            : <div className="w-full h-full bg-gray-200" />}
+        </div>
+
+        {/* Center panel - LIVE video or static image */}
+        <div className="relative overflow-hidden bg-gray-200 flex-1">
+          {ad.profile_video_url ? (
+            <>
+              <video
+                src={ad.profile_video_url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-1.5 right-1.5">
+                <span className="inline-flex items-center gap-[3px] text-[8.5px] font-semibold px-1.5 py-[3px] rounded"
+                  style={{ background: "rgba(0,0,0,0.45)", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(3px)" }}>
+                  🎬 LIVE
+                </span>
+              </div>
+            </>
+          ) : panels[1] ? (
+            <img src={panels[1]} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gray-200" />
+          )}
+        </div>
+
+        {/* Right panel - static image + VERIFIED badge */}
+        <div className="relative overflow-hidden bg-gray-200 flex-1">
+          {ad.profile_video_url ? (
+            // When live video, show panel[1] on right (panel[0] is left)
+            panels[1] ? <img src={panels[1]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />
+          ) : (
+            panels[2] ? <img src={panels[2]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />
+          )}
           <div className="absolute top-1.5 right-1.5">
             <span className="inline-flex items-center gap-[3px] text-[8.5px] font-semibold px-1.5 py-[3px] rounded"
-              style={{ background: "rgba(0,0,0,0.45)", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(3px)" }}>
-              🎬 LIVE
+              style={{
+                background: "rgba(0,0,0,0.30)",
+                color: "rgba(255,255,255,0.80)",
+                backdropFilter: "blur(3px)",
+                border: "1px solid rgba(255,255,255,0.18)",
+              }}>
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              VERIFIED
             </span>
           </div>
         </div>
-      ) : (
-      <div className="flex h-[190px]" style={{ gap: 1 }}>
-        {panels.map((src, idx) => (
-          <div key={idx} className="relative overflow-hidden bg-gray-200 flex-1">
-            {src
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={src} alt="" className="w-full h-full object-cover" />
-              : <div className="w-full h-full bg-gray-200" />}
-
-            {/* VERIFIED — top-right of right panel, semi-transparent */}
-            {idx === 2 && (
-              <div className="absolute top-1.5 right-1.5">
-                <span className="inline-flex items-center gap-[3px] text-[8.5px] font-semibold px-1.5 py-[3px] rounded"
-                  style={{
-                    background: "rgba(0,0,0,0.30)",
-                    color: "rgba(255,255,255,0.80)",
-                    backdropFilter: "blur(3px)",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                  }}>
-                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  VERIFIED
-                </span>
-              </div>
-            )}
-          </div>
-        ))}
       </div>
-      )}
 
       {/* ── Stats bar ── */}
       <div className="flex items-center gap-2.5 px-3 py-2 border-t border-gray-100">
