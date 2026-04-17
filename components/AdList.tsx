@@ -92,22 +92,14 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         {/* Center panel - LIVE video or static image */}
         <div className="relative overflow-hidden bg-gray-200 flex-1">
           {ad.profile_video_url ? (
-            <>
-              <video
-                src={ad.profile_video_url}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-1.5 right-1.5">
-                <span className="inline-flex items-center gap-[3px] text-[8.5px] font-semibold px-1.5 py-[3px] rounded"
-                  style={{ background: "rgba(0,0,0,0.45)", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(3px)" }}>
-                  🎬 LIVE
-                </span>
-              </div>
-            </>
+            <video
+              src={ad.profile_video_url}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+            />
           ) : panels[1] ? (
             <img src={panels[1]} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -123,16 +115,18 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
           ) : (
             panels[2] ? <img src={panels[2]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />
           )}
-          <div className="absolute top-1.5 right-1.5">
-            <span className="inline-flex items-center gap-[3px] text-[8.5px] font-semibold px-1.5 py-[3px] rounded"
+          {/* Elegant VERIFIED badge */}
+          <div className="absolute top-2 right-2">
+            <span className="inline-flex items-center gap-1 text-[9px] font-medium px-2 py-1 rounded-sm"
               style={{
-                background: "rgba(0,0,0,0.30)",
-                color: "rgba(255,255,255,0.80)",
-                backdropFilter: "blur(3px)",
-                border: "1px solid rgba(255,255,255,0.18)",
+                background: "rgba(255,255,255,0.15)",
+                color: "rgba(255,255,255,0.95)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.25)",
+                letterSpacing: "0.03em",
               }}>
-              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
               </svg>
               VERIFIED
             </span>
