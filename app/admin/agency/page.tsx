@@ -83,17 +83,30 @@ export default function AgencyPage() {
     
     // Set up realtime subscriptions
     const messagesChannel = supabase
-      .channel("agency_messages")
-      .on("postgres_changes", { event: "*", schema: "public", table: "agency_messages" }, 
+      .channel("agency_messages_realtime")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "agency_messages" }, 
         (payload) => {
-          if (payload.eventType === "INSERT") {
-            setMessages(prev => [...prev, payload.new as Message])
-          }
+          const newMsg = payload.new as Message
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(m => m.id === newMsg.id)) return prev
+            return [...prev, newMsg]
+          })
+          // Also refresh conversations to update message count
+          if (selectedPhone) loadConversations(selectedPhone)
+        })
+      .subscribe()
+
+    const conversationsChannel = supabase
+      .channel("agency_conversations_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "agency_conversations" },
+        () => {
+          if (selectedPhone) loadConversations(selectedPhone)
         })
       .subscribe()
 
     const notificationsChannel = supabase
-      .channel("agency_notifications")
+      .channel("agency_notifications_realtime")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "agency_notifications" },
         (payload) => {
           setNotifications(prev => [payload.new as Notification, ...prev])
@@ -103,17 +116,18 @@ export default function AgencyPage() {
       .subscribe()
 
     const phonesChannel = supabase
-      .channel("agency_phones")
+      .channel("agency_phones_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "agency_phones" },
         () => loadPhones())
       .subscribe()
 
     return () => {
       supabase.removeChannel(messagesChannel)
+      supabase.removeChannel(conversationsChannel)
       supabase.removeChannel(notificationsChannel)
       supabase.removeChannel(phonesChannel)
     }
-  }, [])
+  }, [selectedPhone])
 
   // Scroll to bottom when new messages
   useEffect(() => {
