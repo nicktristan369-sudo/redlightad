@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabaseServer"
 import OpenAI from "openai"
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// Lazy init to avoid build-time errors
+function getOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" })
+}
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient()
@@ -239,7 +242,7 @@ Skriv nu et naturligt svar på kundens besked.`
     // Add user message to history
     messages.push({ role: "user", content: userMessage })
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
