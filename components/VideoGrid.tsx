@@ -39,26 +39,12 @@ function formatViews(views: number): string {
 
 function VideoCard({ video }: { video: Video }) {
   const listing = video.listings
-  const [playing, setPlaying] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
   const previewRef = useRef<HTMLVideoElement>(null)
   
   const uploaderName = listing.display_name || listing.title || "Anonymous"
   const videoTitle = video.title || `Video by ${uploaderName}`
   const viewCount = formatViews(video.views)
-
-  const handlePlay = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    fetch("/api/videos/view", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videoId: video.id }),
-    }).catch(() => {})
-    setPlaying(true)
-    setTimeout(() => videoRef.current?.play(), 50)
-  }
 
   const handleMouseEnter = () => {
     setIsHovering(true)
@@ -74,68 +60,48 @@ function VideoCard({ video }: { video: Video }) {
   }
 
   return (
-    <div className="group">
+    <Link href={`/watch/${video.id}`} className="group block">
       {/* Thumbnail / Video */}
       <div 
         className="relative bg-gray-900 overflow-hidden cursor-pointer"
         style={{ aspectRatio: "16/9" }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={handlePlay}
       >
-        {playing ? (
+        {/* Video preview on hover */}
+        {video.url && isHovering ? (
           <video
-            ref={videoRef}
-            src={video.url}
-            controls
-            autoPlay
+            ref={previewRef}
+            src={`${video.url}#t=0.5`}
+            muted
+            loop
             playsInline
-            className="w-full h-full object-contain bg-black"
-            onClick={e => e.stopPropagation()}
+            preload="metadata"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <>
-            {/* Video preview on hover */}
-            {video.url && isHovering ? (
-              <video
-                ref={previewRef}
-                src={`${video.url}#t=0.5`}
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <img
-                src={video.thumbnail_url || listing.profile_image || "/placeholder-video.jpg"}
-                alt={videoTitle}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            )}
-
-
-
-            {/* Play button on hover */}
-            <div className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center">
-                <Play className="w-7 h-7 text-white fill-white ml-1" />
-              </div>
-            </div>
-          </>
+          <img
+            src={video.thumbnail_url || listing.profile_image || "/placeholder-video.jpg"}
+            alt={videoTitle}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
         )}
+
+        {/* Play button on hover */}
+        <div className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center">
+            <Play className="w-7 h-7 text-white fill-white ml-1" />
+          </div>
+        </div>
       </div>
 
       {/* Video info */}
       <div className="pt-2.5 pb-3">
         {/* Uploader + Views row */}
         <div className="flex items-center gap-2 mb-1">
-          <Link 
-            href={`/ads/${listing.id}`}
-            className="text-[12px] font-medium text-gray-300 hover:text-white transition-colors truncate"
-          >
+          <span className="text-[12px] font-medium text-gray-300 group-hover:text-white transition-colors truncate">
             {uploaderName}
-          </Link>
+          </span>
           <span className="text-gray-600">•</span>
           <div className="flex items-center gap-1 text-gray-500">
             <Eye className="w-3 h-3" />
@@ -144,13 +110,11 @@ function VideoCard({ video }: { video: Video }) {
         </div>
 
         {/* Title */}
-        <Link href={`/ads/${listing.id}#videos`}>
-          <h3 className="text-[13px] font-medium text-white leading-tight line-clamp-2 hover:text-gray-300 transition-colors">
-            {videoTitle}
-          </h3>
-        </Link>
+        <h3 className="text-[13px] font-medium text-white leading-tight line-clamp-2 group-hover:text-gray-300 transition-colors">
+          {videoTitle}
+        </h3>
       </div>
-    </div>
+    </Link>
   )
 }
 
