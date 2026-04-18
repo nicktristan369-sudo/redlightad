@@ -202,7 +202,7 @@ export default function WatchVideoPage() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header - Desktop */}
+      {/* Header - Desktop only */}
       <header className="hidden md:block sticky top-0 z-50 bg-black border-b border-gray-800">
         <div className="max-w-[1800px] mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center">
@@ -217,20 +217,12 @@ export default function WatchVideoPage() {
         </div>
       </header>
 
-      {/* Header - Mobile (inside video area) */}
-      <div className="md:hidden absolute top-0 left-0 right-0 z-20 p-3 bg-gradient-to-b from-black/80 to-transparent">
-        <Link href="/videos" className="inline-flex items-center gap-2 text-white">
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm font-medium">Back</span>
-        </Link>
-      </div>
-
       <div className="max-w-[1800px] mx-auto">
         <div className="flex flex-col lg:flex-row">
           {/* Main content */}
           <div className="flex-1 lg:max-w-[calc(100%-380px)]">
             {/* Video Player */}
-            <div className="relative bg-black aspect-video md:aspect-video">
+            <div className="relative bg-black aspect-video">
               <video
                 ref={videoRef}
                 src={video.url}
@@ -239,7 +231,16 @@ export default function WatchVideoPage() {
                 playsInline
                 poster={video.thumbnail_url || video.listing.profile_image || undefined}
                 className="w-full h-full"
+                style={{ WebkitMediaControls: 'default' } as any}
               />
+            </div>
+
+            {/* Mobile: Back button below video */}
+            <div className="md:hidden px-3 pt-2">
+              <Link href="/videos" className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white text-sm">
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Videos</span>
+              </Link>
             </div>
 
             {/* Video Info */}
