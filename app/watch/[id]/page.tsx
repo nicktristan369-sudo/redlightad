@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase"
-import { ThumbsUp, ThumbsDown, Heart, Plus, Share2, Flag, Eye, Clock, ChevronRight, Play, CheckCircle, ArrowLeft } from "lucide-react"
+import { ThumbsUp, ThumbsDown, Heart, Plus, Share2, Flag, Eye, Clock, ChevronRight, Play, CheckCircle } from "lucide-react"
+import Navbar from "@/components/Navbar"
 
 interface VideoData {
   id: string
@@ -202,6 +203,11 @@ export default function WatchVideoPage() {
 
   return (
     <div className="min-h-screen bg-black">
+      {/* Mobile Navbar */}
+      <div className="md:hidden">
+        <Navbar />
+      </div>
+
       {/* Header - Desktop only */}
       <header className="hidden md:block sticky top-0 z-50 bg-black border-b border-gray-800">
         <div className="max-w-[1800px] mx-auto px-4 h-14 flex items-center justify-between">
@@ -235,13 +241,7 @@ export default function WatchVideoPage() {
               />
             </div>
 
-            {/* Mobile: Back button below video */}
-            <div className="md:hidden px-3 pt-2">
-              <Link href="/videos" className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white text-sm">
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Videos</span>
-              </Link>
-            </div>
+
 
             {/* Video Info */}
             <div className="px-3 md:px-4 py-3 md:py-4">
