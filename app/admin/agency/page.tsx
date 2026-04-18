@@ -320,11 +320,16 @@ export default function AgencyPage() {
                     <div className={`w-3 h-3 rounded-full ${selectedPhoneData?.is_online ? "bg-green-500" : "bg-gray-600"}`} />
                     <span className="font-semibold">{selectedPhoneData?.persona_name}</span>
                   </div>
-                  <button className="p-1.5 hover:bg-gray-800 rounded">
+                  <button 
+                    onClick={() => navigator.clipboard.writeText(selectedPhone || "").then(() => alert("Phone ID copied: " + selectedPhone))}
+                    className="p-1.5 hover:bg-gray-800 rounded" 
+                    title="Copy Phone ID"
+                  >
                     <Settings className="w-4 h-4 text-gray-400" />
                   </button>
                 </div>
                 <p className="text-xs text-gray-400">{selectedPhoneData?.phone_number}</p>
+                <p className="text-[10px] text-gray-600 mt-1 font-mono break-all">ID: {selectedPhone}</p>
                 
                 {/* AI Toggle */}
                 <div className="flex items-center justify-between mt-3 p-2 bg-gray-800 rounded-lg">
