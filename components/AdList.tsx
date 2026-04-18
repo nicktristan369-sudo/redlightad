@@ -78,14 +78,21 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
       {/* ── 3-panel layout (with live video in center if available) ── */}
       <div className="flex h-[190px]" style={{ gap: 1 }}>
         {/* Left panel - static image */}
-        <div className="relative overflow-hidden bg-gray-200 flex-1">
-          {panels[0]
-            ? <img src={panels[0]} alt="" className="w-full h-full object-cover" />
-            : <div className="w-full h-full bg-gray-200" />}
+        <div className="relative overflow-hidden bg-gray-300 flex-1">
+          {panels[0] && (
+            <img 
+              src={panels[0]} 
+              alt="" 
+              className="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+            />
+          )}
         </div>
 
         {/* Center panel - LIVE video or static image */}
-        <div className="relative overflow-hidden bg-gray-200 flex-1">
+        <div className="relative overflow-hidden bg-gray-300 flex-1">
           {ad.profile_video_url ? (
             <video
               src={ad.profile_video_url}
@@ -95,22 +102,24 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
               playsInline
               className="w-full h-full object-cover"
             />
-          ) : panels[1] ? (
-            <img src={panels[1]} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gray-200" />
+          ) : panels[1] && (
+            <img 
+              src={panels[1]} 
+              alt="" 
+              className="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
+            />
           )}
         </div>
 
-        {/* Right panel - static image + VERIFIED badge */}
-        <div className="relative overflow-hidden bg-gray-200 flex-1">
+        {/* Right panel - static image */}
+        <div className="relative overflow-hidden bg-gray-300 flex-1">
           {ad.profile_video_url ? (
-            // When live video, show panel[1] on right (panel[0] is left)
-            panels[1] ? <img src={panels[1]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />
+            panels[1] && <img src={panels[1]} alt="" className="w-full h-full object-cover" loading="eager" decoding="async" />
           ) : (
-            panels[2] ? <img src={panels[2]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />
+            panels[2] && <img src={panels[2]} alt="" className="w-full h-full object-cover" loading="eager" decoding="async" />
           )}
-
         </div>
       </div>
 

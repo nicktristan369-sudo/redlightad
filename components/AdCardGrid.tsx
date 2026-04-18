@@ -119,6 +119,9 @@ export default function AdCardGrid({
           <img
             src={currentImg}
             alt={title}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
             style={{
               width: "100%", height: "100%", objectFit: "cover", display: "block",
               transition: "opacity 0.5s ease, transform 0.3s ease",
@@ -173,6 +176,8 @@ export default function AdCardGrid({
           <img
             src={image}
             alt={title}
+            loading="eager"
+            decoding="async"
             style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%", display: "block" }}
           />
         </div>
