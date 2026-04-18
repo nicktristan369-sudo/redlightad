@@ -314,10 +314,11 @@ export default function WatchVideoPage() {
               <div className="py-3 md:py-4">
                 {/* Mobile Layout */}
                 <div className="lg:hidden">
-                  <div className="flex items-center gap-3">
+                  {/* Profile row - horizontal layout */}
+                  <div className="flex items-center gap-2.5">
                     {/* Profile Image */}
                     <Link href={`/ads/${video.listing.id}`} className="flex-shrink-0">
-                      <div className="w-11 h-11 rounded-full overflow-hidden bg-gray-800">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800">
                         {video.listing.profile_image ? (
                           <img 
                             src={video.listing.profile_image} 
@@ -325,46 +326,46 @@ export default function WatchVideoPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-500 text-base font-bold">
+                          <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm font-bold">
                             {uploaderName.charAt(0)}
                           </div>
                         )}
                       </div>
                     </Link>
 
-                    {/* Name & Stats - with max width */}
-                    <div className="flex-1 min-w-0" style={{ maxWidth: "calc(100% - 160px)" }}>
-                      <Link href={`/ads/${video.listing.id}`} className="flex items-center gap-1 hover:opacity-80">
-                        <span className="text-white font-semibold text-sm truncate block">{uploaderName}</span>
+                    {/* Name - single line truncated */}
+                    <Link href={`/ads/${video.listing.id}`} className="flex-1 min-w-0 hover:opacity-80">
+                      <div className="flex items-center gap-1">
+                        <span className="text-white font-semibold text-sm truncate">{uploaderName}</span>
                         {isVerified && (
                           <CheckCircle className="w-3.5 h-3.5 text-blue-500 fill-blue-500 flex-shrink-0" />
                         )}
-                      </Link>
-                      <p className="text-gray-400 text-xs truncate">
-                        {profileVideos.length + 1} Videos{location ? ` • ${location}` : ""}
+                      </div>
+                      <p className="text-gray-400 text-[11px]">
+                        {profileVideos.length + 1} Videos
                       </p>
-                    </div>
+                    </Link>
 
-                    {/* See Profile Button - Mobile */}
+                    {/* See Profile Button */}
                     <Link
                       href={`/ads/${video.listing.id}`}
-                      className="flex-shrink-0 flex items-center gap-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded transition-colors whitespace-nowrap"
+                      className="flex-shrink-0 px-3 py-1.5 bg-red-600 text-white font-semibold text-xs rounded"
                     >
-                      See My Profile
+                      Profile
                     </Link>
-                  </div>
 
-                  {/* Subscribe Button - Full width below */}
-                  <button
-                    onClick={handleSubscribe}
-                    className={`w-full mt-3 py-2.5 text-sm font-semibold rounded transition-colors ${
-                      subscribed 
-                        ? "bg-gray-700 text-white" 
-                        : "bg-white/10 border border-white/20 text-white hover:bg-white/20"
-                    }`}
-                  >
-                    {subscribed ? "Subscribed ✓" : "Subscribe"}
-                  </button>
+                    {/* Subscribe Button */}
+                    <button
+                      onClick={handleSubscribe}
+                      className={`flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded ${
+                        subscribed 
+                          ? "bg-gray-700 text-white" 
+                          : "bg-white/10 border border-white/30 text-white"
+                      }`}
+                    >
+                      {subscribed ? "Subscribed" : "Subscribe"}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Desktop Layout */}
