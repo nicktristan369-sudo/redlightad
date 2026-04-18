@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabaseServer"
-import OpenAI from "openai"
+import Anthropic from "@anthropic-ai/sdk"
 
 // Lazy init to avoid build-time errors
-function getOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" })
+function getAnthropic() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || "" })
 }
 
 export async function POST(req: NextRequest) {
@@ -38,10 +38,10 @@ export async function POST(req: NextRequest) {
       .limit(1)
 
     if (blocked && blocked.length > 0) {
-      return NextResponse.json({ ok: true, action: "blocked" })
+      return NextResponse.json({ ok: true, blocked: true })
     }
 
-    // Get or create conversation
+    // Find or create conversation
     let { data: conversation } = await supabase
       .from("agency_conversations")
       .select("*")
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (!conversation) {
-      const { data: newConv } = await supabase
+      const { data: newConv, error: convError } = await supabase
         .from("agency_conversations")
         .insert({
           phone_id,
@@ -59,11 +59,11 @@ export async function POST(req: NextRequest) {
         })
         .select()
         .single()
-      conversation = newConv
-    }
 
-    if (!conversation) {
-      return NextResponse.json({ error: "Failed to create conversation" }, { status: 500 })
+      if (convError) {
+        return NextResponse.json({ error: "Failed to create conversation" }, { status: 500 })
+      }
+      conversation = newConv
     }
 
     // Save inbound message
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       received_at: timestamp || new Date().toISOString(),
     })
 
-    // Update conversation
+    // Update conversation stats
     await supabase
       .from("agency_conversations")
       .update({
@@ -86,17 +86,19 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", conversation.id)
 
-    // Check keywords for notifications
+    // Check for keywords
     const { data: keywords } = await supabase
       .from("agency_keywords")
       .select("*")
       .or(`phone_id.is.null,phone_id.eq.${phone_id}`)
       .eq("is_active", true)
 
-    const messageLower = message.toLowerCase()
-    const matchedKeywords = (keywords || []).filter(kw => {
-      if (kw.match_type === "exact") return messageLower === kw.keyword.toLowerCase()
-      if (kw.match_type === "contains") return messageLower.includes(kw.keyword.toLowerCase())
+    const matchedKeywords = (keywords || []).filter((kw: any) => {
+      const msgLower = message.toLowerCase()
+      const kwLower = kw.keyword.toLowerCase()
+      
+      if (kw.match_type === "exact") return msgLower === kwLower
+      if (kw.match_type === "contains") return msgLower.includes(kwLower)
       if (kw.match_type === "regex") {
         try { return new RegExp(kw.keyword, "i").test(message) }
         catch { return false }
@@ -128,7 +130,7 @@ export async function POST(req: NextRequest) {
     let scheduledSendAt: string | null = null
 
     if (phone.ai_enabled && conversation.status === "ai_handling") {
-      // Generate AI response
+      // Generate AI response with Claude
       aiResponse = await generateAIResponse(phone, message, conversation.id, supabase)
 
       if (aiResponse) {
@@ -157,7 +159,7 @@ export async function POST(req: NextRequest) {
       conversation_id: conversation.id,
       ai_response: aiResponse,
       scheduled_send_at: scheduledSendAt,
-      keywords_matched: matchedKeywords.map(k => k.keyword),
+      keywords_matched: matchedKeywords.map((k: any) => k.keyword),
     })
 
   } catch (error) {
@@ -228,31 +230,34 @@ Detaljer om dig:
 ${phone.persona_description || ""}
 
 VIGTIGE REGLER:
-1. Svar ALTID på dansk med mindre kunden skriver på et andet sprog
-2. Vær ${phone.ai_style === "flirty" ? "flirtende og charmerende" : phone.ai_style === "professional" ? "professionel og forretningsmæssig" : "venlig og afslappet"}
-3. Hold svarene korte og naturlige som SMS-beskeder (maks 2-3 sætninger)
-4. Brug ALDRIG emojis i overdreven grad - max 1 per besked
-5. Skriv som et rigtigt menneske, ikke som en robot
-6. Hvis du ikke ved svaret, sig at du vender tilbage eller bed dem kontakte dig på et andet tidspunkt
+1. Du SKAL svare på dansk med mindre kunden skriver på et andet sprog
+2. Vær ${phone.ai_style === "flirty" ? "flirtende, charmerende og legende" : phone.ai_style === "professional" ? "professionel og forretningsmæssig" : "venlig, varm og afslappet"}
+3. Hold svarene korte og naturlige som SMS-beskeder (1-3 sætninger max)
+4. Brug emojis sparsomt - max 1-2 per besked, og kun når det passer naturligt
+5. Skriv som et rigtigt menneske - brug afslappet sprog, forkortelser, og små fejl er ok
+6. Hvis du ikke ved svaret, sig at du vender tilbage senere
 7. Del ALDRIG personlige oplysninger der ikke er givet i din profil
-8. Hvis nogen spørger om priser eller services, vær vag og foreslå at de kontakter dig for mere info
-
-Skriv nu et naturligt svar på kundens besked.`
+8. Hvis nogen spørger om priser eller services, vær mystisk og foreslå at de skriver mere
+9. Vær ALDRIG robotagtig eller formel - du er en rigtig person der tekster
+10. Vis personlighed og karakter i dine svar`
 
     // Add user message to history
     messages.push({ role: "user", content: userMessage })
 
-    const response = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
-      max_tokens: 150,
-      temperature: 0.8,
+    // Use Claude for natural, personal responses
+    const anthropic = getAnthropic()
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 200,
+      system: systemPrompt,
+      messages: messages.map((m: any) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
     })
 
-    return response.choices[0]?.message?.content || null
+    const textBlock = response.content.find((block: any) => block.type === "text")
+    return textBlock ? (textBlock as any).text : null
 
   } catch (error) {
     console.error("AI generation error:", error)
