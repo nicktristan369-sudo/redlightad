@@ -12,13 +12,13 @@ export const metadata = {
 export default async function VideosPage() {
   const supabase = createServerClient()
 
-  // Fetch all videos with listing info
+  // Fetch all videos with listing info including gender and category
   const { data: videos } = await supabase
     .from("listing_videos")
     .select(`
       id, url, thumbnail_url, title, is_locked, redcoin_price, views, likes, sort_order, created_at,
       listing_id,
-      listings!inner(id, title, display_name, city, country, profile_image, premium_tier)
+      listings!inner(id, title, display_name, city, country, profile_image, premium_tier, gender, category)
     `)
     .order("created_at", { ascending: false })
     .limit(500)
