@@ -37,7 +37,7 @@ export default async function VideosPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar variant="dark" />
       <main style={{ background: "#0d0d0d", minHeight: "100vh" }}>
         <section className="py-8">
           <div className="mx-auto max-w-7xl px-4">

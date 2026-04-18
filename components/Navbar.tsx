@@ -18,7 +18,12 @@ interface UserState {
   initials: string;
 }
 
-export default function Navbar() {
+interface NavbarProps {
+  variant?: "light" | "dark";
+}
+
+export default function Navbar({ variant = "light" }: NavbarProps) {
+  const isDark = variant === "dark";
   const { t } = useLanguage();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -173,8 +178,11 @@ export default function Navbar() {
 
       {/* ── Main navbar ── */}
       <nav style={{
-        position: "sticky", top: 0, zIndex: 40, background: "#fff",
-        borderBottom: "1px solid #F3F3F3", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", height: "56px",
+        position: "sticky", top: 0, zIndex: 40, 
+        background: isDark ? "#000" : "#fff",
+        borderBottom: isDark ? "1px solid #333" : "1px solid #F3F3F3", 
+        boxShadow: isDark ? "none" : "0 1px 3px rgba(0,0,0,0.06)", 
+        height: "56px",
       }}>
         <div style={{
           maxWidth: "1280px", margin: "0 auto",
@@ -183,7 +191,7 @@ export default function Navbar() {
         }}>
           {/* Logo */}
           <Link href="/" style={{ flexShrink: 0 }}>
-            <Logo variant="light" height={28} />
+            <Logo variant={isDark ? "dark" : "light"} height={28} />
           </Link>
 
           {/* Right icons */}
@@ -191,9 +199,9 @@ export default function Navbar() {
 
             {/* Search */}
             <button onClick={() => setSearchOpen(!searchOpen)} style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              <Search size={20} color="#374151" />
+              <Search size={20} color={isDark ? "#fff" : "#374151"} />
             </button>
 
             {user ? (
@@ -201,10 +209,10 @@ export default function Navbar() {
                 {/* Notifikationer / beskeder */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
-                    style={{ position: "relative", padding: 8, borderRadius: 8, border: "none", background: showNotifications ? "#F5F5F7" : "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+                    style={{ position: "relative", padding: 8, borderRadius: 8, border: "none", background: showNotifications ? (isDark ? "#222" : "#F5F5F7") : "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
                     onMouseLeave={e => { if (!showNotifications) e.currentTarget.style.background = "transparent"; }}>
-                    <MessageSquare size={20} color="#374151" />
+                    <MessageSquare size={20} color={isDark ? "#fff" : "#374151"} />
                     {unreadMessages > 0 && (
                       <span style={{
                         position: "absolute", top: 4, right: 4,
@@ -307,9 +315,9 @@ export default function Navbar() {
             {/* Hamburger */}
             <button onClick={() => setDrawerOpen(true)}
               style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              <Menu size={20} color="#374151" />
+              <Menu size={20} color={isDark ? "#fff" : "#374151"} />
             </button>
           </div>
         </div>

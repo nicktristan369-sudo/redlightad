@@ -205,7 +205,7 @@ export default function WatchVideoPage() {
     <div className="min-h-screen bg-black">
       {/* Mobile Navbar */}
       <div className="md:hidden">
-        <Navbar />
+        <Navbar variant="dark" />
       </div>
 
       {/* Header - Desktop only */}
