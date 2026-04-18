@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck, UserPlus,
   CreditCard, Coins, ArrowDownToLine, Mail, MessageCircle,
   Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight,
-  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag,
+  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2,
 } from "lucide-react";
 
 type NavItem = {
@@ -247,6 +247,7 @@ export default function AdminLayout({
       items: [
         { href: "/admin/inbox",       label: "Inbox",       icon: Mail },
         { href: "/admin/sms",         label: "SMS Center",  icon: MessageCircle },
+        { href: "/admin/agency",      label: "Agency SMS",  icon: Building2 },
         { href: "/admin/broadcasts",  label: "Broadcasts",  icon: Megaphone },
       ],
     },

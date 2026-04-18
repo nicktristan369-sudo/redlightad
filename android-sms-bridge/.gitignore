@@ -1,0 +1,12 @@
+# Android build files
+/build/
+/app/build/
+/.gradle/
+local.properties
+*.iml
+.idea/
+*.log
+
+# APK files (we don't need to store compiled APKs in git)
+*.apk
+*.aab
