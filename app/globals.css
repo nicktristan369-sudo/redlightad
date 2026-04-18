@@ -22,17 +22,62 @@
   animation: slideInLeft 0.25s cubic-bezier(0.4,0,0.2,1) both;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME VARIABLES — Light & Dark Mode
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --bg: #F5F5F7;
-  --text: #1D1D1F;
-  --accent: #8B0000;
-  --background: #F5F5F7;
-  --foreground: #1D1D1F;
+  /* Light mode (default) */
+  --bg-primary: #F5F5F7;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --text-primary: #1D1D1F;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --border-color: #E5E7EB;
+  --border-light: #F3F4F6;
+  --accent: #DC2626;
+  --accent-hover: #B91C1C;
+  --navbar-bg: #FFFFFF;
+  --navbar-border: #E5E7EB;
+  --footer-bg: #1F2937;
+  --footer-text: #D1D5DB;
 }
 
+[data-theme="dark"] {
+  /* Dark mode */
+  --bg-primary: #0d0d0d;
+  --bg-secondary: #141414;
+  --bg-card: #1a1a1a;
+  --bg-elevated: #222222;
+  --text-primary: #F5F5F5;
+  --text-secondary: #A3A3A3;
+  --text-muted: #6B6B6B;
+  --border-color: #2D2D2D;
+  --border-light: #1F1F1F;
+  --accent: #DC2626;
+  --accent-hover: #EF4444;
+  --navbar-bg: #0d0d0d;
+  --navbar-border: #1F1F1F;
+  --footer-bg: #0a0a0a;
+  --footer-text: #A3A3A3;
+}
+
+/* Theme utility classes */
+.theme-bg { background-color: var(--bg-primary); }
+.theme-bg-secondary { background-color: var(--bg-secondary); }
+.theme-bg-card { background-color: var(--bg-card); }
+.theme-bg-elevated { background-color: var(--bg-elevated); }
+.theme-text { color: var(--text-primary); }
+.theme-text-secondary { color: var(--text-secondary); }
+.theme-text-muted { color: var(--text-muted); }
+.theme-border { border-color: var(--border-color); }
+.theme-border-light { border-color: var(--border-light); }
+
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
   --font-sans: var(--font-inter);
   --radius-sm: 2px;
   --radius-default: 4px;
@@ -44,9 +89,10 @@
 }
 
 body {
-  background-color: #F5F5F7;
-  color: #1D1D1F;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 @keyframes fadeSlideIn {

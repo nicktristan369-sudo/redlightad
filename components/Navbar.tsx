@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare, Home, Star, Zap, Play, ShoppingBag, Heart, Video, CircleDollarSign, LifeBuoy, ExternalLink } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare, Home, Star, Zap, Play, ShoppingBag, Heart, Video, CircleDollarSign, LifeBuoy, ExternalLink, Sun, Moon } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { useTheme } from "@/lib/ThemeContext";
 
 interface UserState {
   email: string;
@@ -20,6 +21,7 @@ interface UserState {
 
 export default function Navbar() {
   const { t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [navSearch, setNavSearch] = useState("");
@@ -173,8 +175,11 @@ export default function Navbar() {
 
       {/* ── Main navbar ── */}
       <nav style={{
-        position: "sticky", top: 0, zIndex: 40, background: "#fff",
-        borderBottom: "1px solid #F3F3F3", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", height: "56px",
+        position: "sticky", top: 0, zIndex: 40, 
+        background: theme === "dark" ? "#0d0d0d" : "#fff",
+        borderBottom: theme === "dark" ? "1px solid #1F1F1F" : "1px solid #F3F3F3", 
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06)", height: "56px",
+        transition: "background 0.3s ease, border-color 0.3s ease",
       }}>
         <div style={{
           maxWidth: "1280px", margin: "0 auto",
@@ -183,17 +188,32 @@ export default function Navbar() {
         }}>
           {/* Logo */}
           <Link href="/" style={{ flexShrink: 0 }}>
-            <Logo variant="light" height={28} />
+            <Logo variant={theme === "dark" ? "dark" : "light"} height={28} />
           </Link>
 
           {/* Right icons */}
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 
+            {/* Theme toggle */}
+            <button 
+              onClick={toggleTheme} 
+              style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
+              onMouseEnter={e => { e.currentTarget.style.background = theme === "dark" ? "#333" : "#F5F5F7"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? (
+                <Sun size={20} color="#F5F5F5" />
+              ) : (
+                <Moon size={20} color="#374151" />
+              )}
+            </button>
+
             {/* Search */}
             <button onClick={() => setSearchOpen(!searchOpen)} style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#F5F5F7"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = theme === "dark" ? "#333" : "#F5F5F7"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              <Search size={20} color="#374151" />
+              <Search size={20} color={theme === "dark" ? "#F5F5F5" : "#374151"} />
             </button>
 
             {user ? (

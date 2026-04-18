@@ -9,7 +9,7 @@ export default function Home() {
     <>
       <Navbar />
       <FilterBar />
-      <main className="bg-[#F5F5F7]">
+      <main className="theme-bg">
         <StoryCircles />
         <PremiumCarousel />
         <AdList />
