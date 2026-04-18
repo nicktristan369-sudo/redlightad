@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
-import { ThemeProvider } from "@/lib/ThemeContext";
+
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import CookieBanner from "@/components/CookieBanner";
 
@@ -40,16 +40,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} antialiased theme-bg theme-text flex flex-col min-h-screen`}
+        className={`${inter.variable} antialiased bg-[#F5F5F7] text-[#1D1D1F] flex flex-col min-h-screen`}
       >
-        <ThemeProvider>
-          <LanguageProvider>
-            <AgeVerificationModal />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <CookieBanner />
-          </LanguageProvider>
-        </ThemeProvider>
+        <LanguageProvider>
+          <AgeVerificationModal />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <CookieBanner />
+        </LanguageProvider>
       </body>
     </html>
   );
