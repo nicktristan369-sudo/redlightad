@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import CountrySelector from "@/components/CountrySelector"
-import Logo from "@/components/Logo"
+import Link from "next/link"
 
 export default function AgeVerificationModal() {
   const [visible, setVisible] = useState(false)
@@ -20,7 +20,6 @@ export default function AgeVerificationModal() {
   const handleEnter = () => {
     try { localStorage.setItem("age_verified", "true") } catch { /* ignore */ }
     setVisible(false)
-    // Show country selector if no country chosen yet
     try {
       if (!localStorage.getItem("selected_country")) setShowCountry(true)
     } catch { /* ignore */ }
@@ -33,56 +32,101 @@ export default function AgeVerificationModal() {
   if (!visible) return showCountry ? <CountrySelector forceOpen onClose={() => setShowCountry(false)} /> : null
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.92)" }}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-gray-950 px-8 pt-8 pb-6 text-center">
-          <div className="flex justify-center mb-6">
-            <Logo variant="dark" height={36} />
-          </div>
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            <h2 className="text-white text-lg font-bold">Adult Content Warning</h2>
-          </div>
-          <p className="text-gray-400 text-sm leading-relaxed">
-            This website contains adult content intended<br />
-            for individuals 18 years of age or older.
-          </p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ backgroundColor: "#000" }}>
+      {/* Background image with overlay */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ 
+          backgroundImage: "url('/age-verify-bg.jpg')",
+          filter: "brightness(0.3) blur(3px)",
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-2xl px-4">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <span style={{ fontSize: 42, fontWeight: 900, letterSpacing: "-0.02em" }}>
+            <span style={{ color: "#DC2626" }}>RED</span>
+            <span style={{ color: "#fff" }}>LIGHTAD</span>
+          </span>
         </div>
 
-        {/* Body */}
-        <div className="px-8 py-6">
-          <p className="text-sm font-semibold text-gray-700 mb-3">By entering, you confirm that:</p>
-          <ul className="space-y-2 mb-7">
-            {[
-              "You are 18 years of age or older",
-              "It is legal to view adult content in your location",
-              "You accept our Terms of Service and Privacy Policy",
-            ].map(item => (
-              <li key={item} className="flex items-start gap-2.5 text-sm text-gray-600">
-                <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-gray-900 flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
+        {/* Main heading */}
+        <h1 className="text-white text-center text-3xl md:text-4xl font-bold mb-6">
+          This is an adult website
+        </h1>
 
-          {/* Buttons */}
+        {/* Notice box */}
+        <div className="flex justify-center mb-6">
+          <span className="inline-block px-5 py-2 border border-white/30 text-white text-sm font-medium">
+            Notice to Users
+          </span>
+        </div>
+
+        {/* Description */}
+        <p className="text-gray-300 text-center text-sm md:text-base leading-relaxed mb-6 max-w-xl mx-auto">
+          This website contains age-restricted materials including nudity and explicit 
+          depictions of sexual activity. By entering, you affirm that you are at least 18 years of 
+          age or the age of majority in the jurisdiction you are accessing the website from and 
+          you consent to viewing sexually explicit content.
+        </p>
+
+        {/* Notice to Law Enforcement */}
+        <div className="text-center mb-8">
+          <Link href="/legal/law-enforcement" className="text-red-500 hover:text-red-400 text-sm font-medium">
+            Notice to Law Enforcement
+          </Link>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto mb-8">
           <button
             onClick={handleEnter}
-            className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl text-sm tracking-wide transition-colors mb-3"
+            className="flex-1 py-4 px-8 border-2 border-white/80 text-white font-bold text-sm hover:bg-white hover:text-black transition-all"
           >
-            ENTER — I AM 18+
+            I am 18 or older - Enter
           </button>
           <button
             onClick={handleExit}
-            className="w-full text-red-500 hover:text-red-700 text-sm font-medium py-2 transition-colors"
+            className="flex-1 py-4 px-8 border-2 border-red-500 text-red-500 font-bold text-sm hover:bg-red-500 hover:text-white transition-all"
           >
-            EXIT
+            I am under 18 - Exit
           </button>
+        </div>
+
+        {/* Parental controls & Terms */}
+        <p className="text-gray-400 text-center text-sm mb-2">
+          Our{" "}
+          <Link href="/parental-controls" className="text-red-500 hover:text-red-400">
+            parental controls page
+          </Link>
+          {" "}explains how you can easily<br />
+          block access to this site.
+        </p>
+        <p className="text-center mb-8">
+          <Link href="/terms" className="text-red-500 hover:text-red-400 text-sm font-medium">
+            Terms of Service
+          </Link>
+        </p>
+
+        {/* Footer with RTA */}
+        <div className="flex items-center justify-center gap-3 text-gray-500 text-sm">
+          <span>© RedLightAD.com, {new Date().getFullYear()}</span>
+          <span className="text-gray-600">|</span>
+          <a 
+            href="https://www.rtalabel.org" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            {/* RTA Logo */}
+            <svg width="40" height="20" viewBox="0 0 80 40" fill="none">
+              <rect x="1" y="1" width="78" height="38" stroke="white" strokeWidth="2" fill="none"/>
+              <text x="40" y="26" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold" fontFamily="Arial, sans-serif">RTA</text>
+              <text x="68" y="16" fill="white" fontSize="8" fontFamily="Arial, sans-serif">®</text>
+            </svg>
+          </a>
         </div>
       </div>
     </div>
