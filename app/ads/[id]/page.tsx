@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import FilterBar from "@/components/FilterBar";
 import AdDetailClient from "./AdDetailClient";
 import PhotoGallery from "@/components/PhotoGallery";
 import VoicePlayer from "@/components/VoicePlayer";
@@ -189,7 +188,6 @@ export default function AdDetailPage() {
   return (
     <>
       <Navbar />
-      <FilterBar />
       <main className="bg-gray-50 min-h-screen pb-20" style={{ paddingTop: 12 }}>
         {/* Mobile-only: full-width gallery at top */}
         <div className="md:hidden px-3">
