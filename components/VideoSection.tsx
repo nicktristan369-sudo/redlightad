@@ -278,13 +278,13 @@ export default function VideoSection({ videos, isLoggedIn, listingId, currentUse
           ))}
         </div>
 
-        {/* Watch all knap */}
-        <button
-          onClick={() => videos[0] && handleOpen(videos[0])}
-          className="mt-4 w-full py-3 rounded text-sm font-semibold text-white text-center transition-opacity hover:opacity-90"
+        {/* Watch all knap - links til dedikeret profile video side */}
+        <Link
+          href={`/ads/${listingId}/videos`}
+          className="mt-4 w-full py-3 rounded text-sm font-semibold text-white text-center transition-opacity hover:opacity-90 block"
           style={{ background: "#DC2626" }}>
-          {t.watch_videos}
-        </button>
+          {t.watch_videos} →
+        </Link>
       </div>
 
       {/* Modal */}
