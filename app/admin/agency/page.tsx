@@ -71,6 +71,8 @@ export default function AgencyPage() {
   const [loading, setLoading] = useState(true)
   const [showPhoneModal, setShowPhoneModal] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showPhoneSettings, setShowPhoneSettings] = useState(false)
+  const [editingPhone, setEditingPhone] = useState<Phone | null>(null)
   const [messageInput, setMessageInput] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   
@@ -235,6 +237,14 @@ export default function AgencyPage() {
     loadConversations(selectedPhone!)
   }
 
+  async function updatePhone(phoneId: string, updates: any) {
+    await supabase
+      .from("agency_phones")
+      .update(updates)
+      .eq("id", phoneId)
+    loadPhones()
+  }
+
   const unreadNotifications = notifications.filter(n => !n.is_read).length
   const selectedPhoneData = phones.find(p => p.id === selectedPhone)
   const selectedConvData = conversations.find(c => c.id === selectedConversation)
@@ -305,9 +315,13 @@ export default function AgencyPage() {
               }`} />
               
               {/* Avatar/Initial */}
-              <span className="text-lg font-bold">
-                {phone.persona_name.charAt(0)}
-              </span>
+              {(phone as any).avatar_url ? (
+                <img src={(phone as any).avatar_url} alt={phone.persona_name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-lg font-bold">
+                  {phone.persona_name.charAt(0)}
+                </span>
+              )}
               
               {/* AI indicator */}
               {phone.ai_enabled && (
@@ -335,9 +349,12 @@ export default function AgencyPage() {
                     <span className="font-semibold">{selectedPhoneData?.persona_name}</span>
                   </div>
                   <button 
-                    onClick={() => navigator.clipboard.writeText(selectedPhone || "").then(() => alert("Phone ID copied: " + selectedPhone))}
+                    onClick={() => {
+                      setEditingPhone(selectedPhoneData || null)
+                      setShowPhoneSettings(true)
+                    }}
                     className="p-1.5 hover:bg-gray-800 rounded" 
-                    title="Copy Phone ID"
+                    title="Phone Settings"
                   >
                     <Settings className="w-4 h-4 text-gray-400" />
                   </button>
@@ -581,6 +598,22 @@ export default function AgencyPage() {
       {/* Add Phone Modal */}
       {showPhoneModal && (
         <PhoneModal onClose={() => setShowPhoneModal(false)} onSave={() => { setShowPhoneModal(false); loadPhones() }} />
+      )}
+
+      {/* Phone Settings Modal */}
+      {showPhoneSettings && editingPhone && (
+        <PhoneSettingsModal 
+          phone={editingPhone} 
+          onClose={() => {
+            setShowPhoneSettings(false)
+            setEditingPhone(null)
+          }} 
+          onSave={(updates) => {
+            updatePhone(editingPhone.id, updates)
+            setShowPhoneSettings(false)
+            setEditingPhone(null)
+          }} 
+        />
       )}
     </div>
   )
@@ -830,6 +863,273 @@ function PhoneModal({ onClose, onSave }: { onClose: () => void; onSave: () => vo
             className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
           >
             {loading ? "Creating..." : "Create Phone"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Phone Settings Modal Component
+function PhoneSettingsModal({ phone, onClose, onSave }: { 
+  phone: Phone
+  onClose: () => void
+  onSave: (updates: Partial<Phone>) => void 
+}) {
+  const [form, setForm] = useState({
+    persona_name: phone.persona_name || "",
+    persona_age: phone.persona_age?.toString() || "",
+    persona_gender: (phone as any).persona_gender || "female",
+    persona_location: phone.persona_location || "",
+    persona_nationality: (phone as any).persona_nationality || "",
+    persona_height: (phone as any).persona_height || "",
+    persona_weight: (phone as any).persona_weight || "",
+    persona_personality: phone.persona_personality || "",
+    persona_description: (phone as any).persona_description || "",
+    ai_enabled: (phone as any).ai_enabled ?? true,
+    ai_style: (phone as any).ai_style || "flirty",
+    ai_response_delay_min: phone.ai_response_delay_min?.toString() || "45",
+    ai_response_delay_max: phone.ai_response_delay_max?.toString() || "90",
+    avatar_url: (phone as any).avatar_url || "",
+  })
+  const [loading, setLoading] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>((phone as any).avatar_url || null)
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        setAvatarPreview(dataUrl)
+        setForm({ ...form, avatar_url: dataUrl })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSave = async () => {
+    setLoading(true)
+    await onSave({
+      persona_name: form.persona_name,
+      persona_age: form.persona_age ? parseInt(form.persona_age) : null,
+      persona_location: form.persona_location,
+      persona_personality: form.persona_personality,
+      ai_response_delay_min: parseInt(form.ai_response_delay_min) || 45,
+      ai_response_delay_max: parseInt(form.ai_response_delay_max) || 90,
+      // Extended fields
+      persona_gender: form.persona_gender,
+      persona_nationality: form.persona_nationality,
+      persona_height: form.persona_height,
+      persona_weight: form.persona_weight,
+      persona_description: form.persona_description,
+      ai_enabled: form.ai_enabled,
+      ai_style: form.ai_style,
+      avatar_url: form.avatar_url,
+    } as any)
+    setLoading(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 bg-gray-900">
+          <h2 className="text-lg font-bold">📱 Phone Settings</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-800 rounded">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-6">
+          {/* Avatar Section */}
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-bold text-gray-500">
+                    {form.persona_name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <label className="absolute bottom-0 right-0 w-7 h-7 bg-red-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-700">
+                <Edit className="w-3.5 h-3.5" />
+                <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+              </label>
+            </div>
+            <div>
+              <p className="font-semibold">{phone.phone_number}</p>
+              <p className="text-xs text-gray-400 font-mono">ID: {phone.id}</p>
+              <button 
+                onClick={() => navigator.clipboard.writeText(phone.id)}
+                className="text-xs text-blue-400 hover:underline mt-1"
+              >
+                Copy ID
+              </button>
+            </div>
+          </div>
+
+          {/* Persona Info */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">👤 Persona</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={form.persona_name}
+                  onChange={e => setForm({ ...form, persona_name: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Age</label>
+                <input
+                  type="number"
+                  value={form.persona_age}
+                  onChange={e => setForm({ ...form, persona_age: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Gender</label>
+                <select
+                  value={form.persona_gender}
+                  onChange={e => setForm({ ...form, persona_gender: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                >
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={form.persona_location}
+                  onChange={e => setForm({ ...form, persona_location: e.target.value })}
+                  placeholder="e.g. København"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Nationality</label>
+                <input
+                  type="text"
+                  value={form.persona_nationality}
+                  onChange={e => setForm({ ...form, persona_nationality: e.target.value })}
+                  placeholder="e.g. Danish"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Height</label>
+                <input
+                  type="text"
+                  value={form.persona_height}
+                  onChange={e => setForm({ ...form, persona_height: e.target.value })}
+                  placeholder="e.g. 170cm"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                />
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="block text-sm text-gray-400 mb-1">Personality</label>
+              <input
+                type="text"
+                value={form.persona_personality}
+                onChange={e => setForm({ ...form, persona_personality: e.target.value })}
+                placeholder="e.g. Flirty, playful, mysterious"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              />
+            </div>
+            <div className="mt-3">
+              <label className="block text-sm text-gray-400 mb-1">Description</label>
+              <textarea
+                value={form.persona_description}
+                onChange={e => setForm({ ...form, persona_description: e.target.value })}
+                placeholder="Describe the persona in detail..."
+                rows={3}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
+              />
+            </div>
+          </div>
+
+          {/* AI Settings */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">🤖 AI Settings</p>
+            
+            <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg mb-3">
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-blue-400" />
+                <span className="text-sm">AI Auto-Reply</span>
+              </div>
+              <button
+                onClick={() => setForm({ ...form, ai_enabled: !form.ai_enabled })}
+                className={`w-10 h-5 rounded-full transition-colors ${
+                  form.ai_enabled ? "bg-green-500" : "bg-gray-600"
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
+                  form.ai_enabled ? "translate-x-5" : "translate-x-0.5"
+                }`} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Style</label>
+                <select
+                  value={form.ai_style}
+                  onChange={e => setForm({ ...form, ai_style: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                >
+                  <option value="flirty">😏 Flirty</option>
+                  <option value="friendly">😊 Friendly</option>
+                  <option value="professional">💼 Professional</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Min Delay (s)</label>
+                <input
+                  type="number"
+                  value={form.ai_response_delay_min}
+                  onChange={e => setForm({ ...form, ai_response_delay_min: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Max Delay (s)</label>
+                <input
+                  type="number"
+                  value={form.ai_response_delay_max}
+                  onChange={e => setForm({ ...form, ai_response_delay_max: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">AI will wait between {form.ai_response_delay_min}-{form.ai_response_delay_max} seconds before replying</p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-800 flex gap-3 sticky bottom-0 bg-gray-900">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 border border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading || !form.persona_name}
+            className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            {loading ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>

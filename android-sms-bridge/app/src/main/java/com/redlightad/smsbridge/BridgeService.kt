@@ -39,13 +39,12 @@ class BridgeService : Service() {
         startForeground(NOTIFICATION_ID, createNotification())
         startBackgroundTasks()
         
-        // Register SMS Observer as backup for BroadcastReceiver
-        // This works better on Samsung phones
-        if (smsObserver == null) {
-            smsObserver = SmsObserver(this)
-            smsObserver?.register()
-            Log.d(TAG, "SMS Observer registered")
-        }
+        // SMS Observer disabled - using polling instead to avoid duplicates
+        // if (smsObserver == null) {
+        //     smsObserver = SmsObserver(this)
+        //     smsObserver?.register()
+        //     Log.d(TAG, "SMS Observer registered")
+        // }
         
         return START_STICKY
     }
@@ -76,14 +75,9 @@ class BridgeService : Service() {
     }
 
     private fun startBackgroundTasks() {
-        // Start with ID 0 to process ALL recent SMS on first poll
-        lastProcessedSmsId = 0
-        Log.d(TAG, "Starting SMS polling - will process all recent messages")
-        
-        // Immediately send recent SMS to server
-        serviceScope.launch {
-            sendRecentSmsToServer()
-        }
+        // Initialize with latest SMS ID to only process NEW messages
+        lastProcessedSmsId = getLatestSmsId()
+        Log.d(TAG, "Starting SMS polling - lastProcessedSmsId: $lastProcessedSmsId")
         
         // Heartbeat task
         heartbeatJob = serviceScope.launch {
