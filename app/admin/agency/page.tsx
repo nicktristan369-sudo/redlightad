@@ -886,12 +886,16 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     persona_weight: (phone as any).persona_weight || "",
     persona_personality: phone.persona_personality || "",
     persona_description: (phone as any).persona_description || "",
+    persona_services: (phone as any).persona_services || "",
+    persona_rates: (phone as any).persona_rates || "",
+    persona_availability: (phone as any).persona_availability || "",
     ai_enabled: (phone as any).ai_enabled ?? true,
     ai_style: (phone as any).ai_style || "flirty",
     ai_response_delay_min: phone.ai_response_delay_min?.toString() || "45",
     ai_response_delay_max: phone.ai_response_delay_max?.toString() || "90",
     avatar_url: (phone as any).avatar_url || "",
   })
+  const [customQA, setCustomQA] = useState<{q: string, a: string}[]>((phone as any).custom_qa || [])
   const [loading, setLoading] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState<string | null>((phone as any).avatar_url || null)
 
@@ -923,9 +927,13 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
       persona_height: form.persona_height,
       persona_weight: form.persona_weight,
       persona_description: form.persona_description,
+      persona_services: form.persona_services,
+      persona_rates: form.persona_rates,
+      persona_availability: form.persona_availability,
       ai_enabled: form.ai_enabled,
       ai_style: form.ai_style,
       avatar_url: form.avatar_url,
+      custom_qa: customQA.filter(qa => qa.q.trim() && qa.a.trim()),
     } as any)
     setLoading(false)
     onClose()
@@ -1113,6 +1121,94 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-2">AI will wait between {form.ai_response_delay_min}-{form.ai_response_delay_max} seconds before replying</p>
+          </div>
+
+          {/* Services & Rates */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">💰 Services & Priser</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Services (hvad tilbyder du)</label>
+                <textarea
+                  value={form.persona_services}
+                  onChange={e => setForm({ ...form, persona_services: e.target.value })}
+                  placeholder="f.eks. Massage, GFE, Outcall..."
+                  rows={2}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Priser</label>
+                <textarea
+                  value={form.persona_rates}
+                  onChange={e => setForm({ ...form, persona_rates: e.target.value })}
+                  placeholder="f.eks. 30 min: 1000kr, 1 time: 1500kr, 2 timer: 2500kr"
+                  rows={2}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Tilgængelighed</label>
+                <input
+                  type="text"
+                  value={form.persona_availability}
+                  onChange={e => setForm({ ...form, persona_availability: e.target.value })}
+                  placeholder="f.eks. Man-Fre 18-22, Weekend hele dagen"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Custom Q&A */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">❓ Custom Q&A (Auto-svar)</p>
+            <p className="text-xs text-gray-500 mb-3">Tilføj spørgsmål og svar. Hvis kunden skriver noget der matcher spørgsmålet, svarer AI automatisk med dit svar.</p>
+            
+            <div className="space-y-3">
+              {customQA.map((qa, index) => (
+                <div key={index} className="bg-gray-800 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-400">Regel #{index + 1}</span>
+                    <button
+                      onClick={() => setCustomQA(customQA.filter((_, i) => i !== index))}
+                      className="text-red-400 hover:text-red-300 text-xs"
+                    >
+                      Slet
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={qa.q}
+                    onChange={e => {
+                      const newQA = [...customQA]
+                      newQA[index].q = e.target.value
+                      setCustomQA(newQA)
+                    }}
+                    placeholder="Hvis de spørger om... (f.eks. 'pris', 'hvor bor du')"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:border-red-500"
+                  />
+                  <textarea
+                    value={qa.a}
+                    onChange={e => {
+                      const newQA = [...customQA]
+                      newQA[index].a = e.target.value
+                      setCustomQA(newQA)
+                    }}
+                    placeholder="Så svar... (dit svar)"
+                    rows={2}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
+                  />
+                </div>
+              ))}
+              
+              <button
+                onClick={() => setCustomQA([...customQA, { q: "", a: "" }])}
+                className="w-full py-2 border border-dashed border-gray-600 rounded-lg text-sm text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors"
+              >
+                + Tilføj Q&A regel
+              </button>
+            </div>
           </div>
         </div>
 

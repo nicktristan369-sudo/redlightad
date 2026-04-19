@@ -42,38 +42,21 @@ object SmsSender {
         smsManager: SmsManager,
         phoneNumber: String,
         message: String
-    ): Boolean = suspendCancellableCoroutine { continuation ->
-        val sentIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            Intent(SMS_SENT_ACTION),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context, intent: Intent) {
-                context.unregisterReceiver(this)
-                val success = resultCode == android.app.Activity.RESULT_OK
-                Log.d(TAG, "SMS sent result: $success (code: $resultCode)")
-                continuation.resume(success)
-            }
-        }
-
-        context.registerReceiver(receiver, IntentFilter(SMS_SENT_ACTION), Context.RECEIVER_NOT_EXPORTED)
-
-        try {
+    ): Boolean {
+        return try {
+            // Simple send without waiting for callback (GrapheneOS compatibility)
             smsManager.sendTextMessage(
                 phoneNumber,
                 null,
                 message,
-                sentIntent,
+                null, // No sent intent - just fire and forget
                 null
             )
-            Log.d(TAG, "SMS queued for sending to $phoneNumber")
+            Log.d(TAG, "SMS sent to $phoneNumber")
+            true
         } catch (e: Exception) {
-            context.unregisterReceiver(receiver)
-            Log.e(TAG, "Failed to queue SMS", e)
-            continuation.resume(false)
+            Log.e(TAG, "Failed to send SMS to $phoneNumber", e)
+            false
         }
     }
 

@@ -27,6 +27,7 @@ class BridgeService : Service() {
     private var smsPollJob: Job? = null
     private var smsObserver: SmsObserver? = null
     private var lastProcessedSmsId: Long = 0
+    private var isProcessingOutbound = false // Prevent duplicate processing
 
     override fun onCreate() {
         super.onCreate()
@@ -239,11 +240,24 @@ class BridgeService : Service() {
     }
 
     private suspend fun checkAndSendOutboundMessages() {
+        // Prevent duplicate processing
+        if (isProcessingOutbound) {
+            Log.d(TAG, "[OUTBOUND] Already processing, skipping...")
+            return
+        }
+        
+        isProcessingOutbound = true
         try {
+            Log.d(TAG, "[OUTBOUND] Checking for pending messages...")
             val messages = ApiService.getOutboundMessages()
+            Log.d(TAG, "[OUTBOUND] Found ${messages.size} pending messages")
+            
+            if (messages.isEmpty()) {
+                return
+            }
             
             for (msg in messages) {
-                Log.d(TAG, "Sending outbound SMS to ${msg.to_number}")
+                Log.d(TAG, "[OUTBOUND] Sending SMS to ${msg.to_number}: ${msg.message.take(30)}...")
                 
                 val success = SmsSender.sendSms(
                     context = this@BridgeService,
@@ -251,15 +265,20 @@ class BridgeService : Service() {
                     message = msg.message
                 )
                 
+                Log.d(TAG, "[OUTBOUND] SMS send result: $success")
+                
                 // Confirm to server
                 val status = if (success) "sent" else "failed"
-                ApiService.confirmSent(msg.id, status)
+                val confirmResult = ApiService.confirmSent(msg.id, status)
+                Log.d(TAG, "[OUTBOUND] Confirm result: $confirmResult")
                 
-                // Small delay between messages
-                delay(500)
+                // Delay between messages to avoid spam
+                delay(2000)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking outbound messages", e)
+            Log.e(TAG, "[OUTBOUND] Error checking outbound messages", e)
+        } finally {
+            isProcessingOutbound = false
         }
     }
 
