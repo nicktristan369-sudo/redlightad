@@ -1006,6 +1006,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     ai_enabled: (phone as any).ai_enabled ?? true,
     ai_style: (phone as any).ai_style || "flirty",
     ai_language: (phone as any).ai_language || "da",
+    dashboard_language: (phone as any).dashboard_language || "none",
     ai_response_delay_min: phone.ai_response_delay_min?.toString() || "45",
     ai_response_delay_max: phone.ai_response_delay_max?.toString() || "90",
     avatar_url: (phone as any).avatar_url || "",
@@ -1076,6 +1077,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
       ai_enabled: form.ai_enabled,
       ai_style: form.ai_style,
       ai_language: form.ai_language,
+      dashboard_language: form.dashboard_language,
       avatar_url: form.avatar_url,
       custom_qa: customQA.filter(qa => qa.q.trim() && qa.a.trim()),
       ai_rules: aiRules.filter(r => r.trim()),
@@ -1233,14 +1235,15 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
               </button>
             </div>
 
-            {/* Language dropdown */}
-            <div className="mb-3">
-              <label className="block text-sm text-gray-400 mb-1">🌐 Sprog (AI svarer på dette sprog)</label>
-              <select
-                value={form.ai_language || "da"}
-                onChange={e => setForm({ ...form, ai_language: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
-              >
+            {/* Language dropdowns */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">💬 SMS Sprog (kunden modtager)</label>
+                <select
+                  value={form.ai_language || "da"}
+                  onChange={e => setForm({ ...form, ai_language: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                >
                 <option value="da">🇩🇰 Dansk</option>
                 <option value="en">🇬🇧 English</option>
                 <option value="de">🇩🇪 Deutsch</option>
@@ -1264,7 +1267,34 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                 <option value="zh">🇨🇳 中文</option>
                 <option value="ja">🇯🇵 日本語</option>
                 <option value="ko">🇰🇷 한국어</option>
-              </select>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">👁️ Dit sprog (dashboard oversættelse)</label>
+                <select
+                  value={form.dashboard_language || "none"}
+                  onChange={e => setForm({ ...form, dashboard_language: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                >
+                  <option value="none">❌ Ingen oversættelse</option>
+                  <option value="da">🇩🇰 Dansk</option>
+                  <option value="en">🇬🇧 English</option>
+                  <option value="de">🇩🇪 Deutsch</option>
+                  <option value="sv">🇸🇪 Svenska</option>
+                  <option value="no">🇳🇴 Norsk</option>
+                  <option value="nl">🇳🇱 Nederlands</option>
+                  <option value="fr">🇫🇷 Français</option>
+                  <option value="es">🇪🇸 Español</option>
+                  <option value="it">🇮🇹 Italiano</option>
+                  <option value="pt">🇵🇹 Português</option>
+                  <option value="pl">🇵🇱 Polski</option>
+                  <option value="ru">🇷🇺 Русский</option>
+                  <option value="tr">🇹🇷 Türkçe</option>
+                  <option value="ar">🇸🇦 العربية</option>
+                  <option value="zh">🇨🇳 中文</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Oversæt beskeder i dashboard til dit sprog</p>
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
