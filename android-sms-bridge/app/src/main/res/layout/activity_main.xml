@@ -259,6 +259,44 @@
 
         </LinearLayout>
 
+        <!-- Recent Messages Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#1E1E1E"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📨 Recent Messages"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/recentMessages"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No messages yet"
+                android:textSize="13sp"
+                android:textColor="#AAAAAA"
+                android:lineSpacingExtra="4dp" />
+
+            <Button
+                android:id="@+id/viewMessagesButton"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:text="Open SMS Inbox"
+                android:textSize="12sp"
+                android:backgroundTint="#333333"
+                android:layout_marginTop="12dp" />
+
+        </LinearLayout>
+
         <!-- Info -->
         <TextView
             android:layout_width="match_parent"

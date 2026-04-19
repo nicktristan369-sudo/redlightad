@@ -16,9 +16,18 @@ class SmsReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
+        // Handle both SMS_RECEIVED (non-default app) and SMS_DELIVER (default app)
+        val validActions = listOf(
+            Telephony.Sms.Intents.SMS_RECEIVED_ACTION,
+            Telephony.Sms.Intents.SMS_DELIVER_ACTION
+        )
+        
+        if (intent.action !in validActions) {
+            Log.d(TAG, "Ignoring action: ${intent.action}")
             return
         }
+        
+        Log.d(TAG, "SMS received via action: ${intent.action}")
 
         // Check if connected
         if (!SMSBridgeApp.isConnected()) {

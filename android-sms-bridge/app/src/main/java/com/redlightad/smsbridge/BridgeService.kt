@@ -18,11 +18,15 @@ class BridgeService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val HEARTBEAT_INTERVAL = 30_000L // 30 seconds
         private const val OUTBOUND_CHECK_INTERVAL = 5_000L // 5 seconds
+        private const val SMS_POLL_INTERVAL = 3_000L // 3 seconds - poll for new SMS
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var heartbeatJob: Job? = null
     private var outboundJob: Job? = null
+    private var smsPollJob: Job? = null
+    private var smsObserver: SmsObserver? = null
+    private var lastProcessedSmsId: Long = 0
 
     override fun onCreate() {
         super.onCreate()
@@ -35,6 +39,14 @@ class BridgeService : Service() {
         startForeground(NOTIFICATION_ID, createNotification())
         startBackgroundTasks()
         
+        // Register SMS Observer as backup for BroadcastReceiver
+        // This works better on Samsung phones
+        if (smsObserver == null) {
+            smsObserver = SmsObserver(this)
+            smsObserver?.register()
+            Log.d(TAG, "SMS Observer registered")
+        }
+        
         return START_STICKY
     }
 
@@ -43,6 +55,10 @@ class BridgeService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "Service destroyed")
+        
+        // Unregister SMS Observer
+        smsObserver?.unregister()
+        smsObserver = null
         
         // Notify server that phone is offline
         serviceScope.launch {
@@ -55,10 +71,20 @@ class BridgeService : Service() {
         
         heartbeatJob?.cancel()
         outboundJob?.cancel()
+        smsPollJob?.cancel()
         serviceScope.cancel()
     }
 
     private fun startBackgroundTasks() {
+        // Start with ID 0 to process ALL recent SMS on first poll
+        lastProcessedSmsId = 0
+        Log.d(TAG, "Starting SMS polling - will process all recent messages")
+        
+        // Immediately send recent SMS to server
+        serviceScope.launch {
+            sendRecentSmsToServer()
+        }
+        
         // Heartbeat task
         heartbeatJob = serviceScope.launch {
             while (isActive) {
@@ -79,6 +105,142 @@ class BridgeService : Service() {
                 }
                 delay(OUTBOUND_CHECK_INTERVAL)
             }
+        }
+        
+        // SMS polling task - checks for new SMS every 3 seconds
+        smsPollJob = serviceScope.launch {
+            while (isActive) {
+                if (SMSBridgeApp.isConnected()) {
+                    pollForNewSms()
+                }
+                delay(SMS_POLL_INTERVAL)
+            }
+        }
+    }
+    
+    private fun pollForNewSms() {
+        try {
+            val cursor = contentResolver.query(
+                android.provider.Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf(
+                    android.provider.Telephony.Sms._ID,
+                    android.provider.Telephony.Sms.ADDRESS,
+                    android.provider.Telephony.Sms.BODY,
+                    android.provider.Telephony.Sms.DATE
+                ),
+                "${android.provider.Telephony.Sms._ID} > ?",
+                arrayOf(lastProcessedSmsId.toString()),
+                "${android.provider.Telephony.Sms._ID} ASC"
+            )
+            
+            cursor?.use {
+                while (it.moveToNext()) {
+                    val id = it.getLong(it.getColumnIndexOrThrow(android.provider.Telephony.Sms._ID))
+                    val sender = it.getString(it.getColumnIndexOrThrow(android.provider.Telephony.Sms.ADDRESS)) ?: continue
+                    val body = it.getString(it.getColumnIndexOrThrow(android.provider.Telephony.Sms.BODY)) ?: continue
+                    val date = it.getLong(it.getColumnIndexOrThrow(android.provider.Telephony.Sms.DATE))
+                    
+                    Log.d(TAG, "[POLL] New SMS found: ID=$id, From=$sender, Body=${body.take(30)}...")
+                    
+                    // Update last processed ID immediately
+                    lastProcessedSmsId = id
+                    
+                    // Send to server
+                    serviceScope.launch {
+                        try {
+                            val response = ApiService.sendInboundSms(
+                                fromNumber = sender,
+                                message = body,
+                                timestamp = date
+                            )
+                            
+                            if (response?.ok == true) {
+                                Log.d(TAG, "[POLL] SMS forwarded successfully!")
+                            } else {
+                                Log.e(TAG, "[POLL] Failed to forward SMS")
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "[POLL] Error forwarding SMS", e)
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "[POLL] Error polling SMS", e)
+        }
+    }
+    
+    private fun getLatestSmsId(): Long {
+        try {
+            val cursor = contentResolver.query(
+                android.provider.Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf(android.provider.Telephony.Sms._ID),
+                null,
+                null,
+                "${android.provider.Telephony.Sms._ID} DESC LIMIT 1"
+            )
+            
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    return it.getLong(it.getColumnIndexOrThrow(android.provider.Telephony.Sms._ID))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting latest SMS ID", e)
+        }
+        return 0
+    }
+    
+    private suspend fun sendRecentSmsToServer() {
+        try {
+            Log.d(TAG, "[STARTUP] Sending recent SMS to server...")
+            
+            val cursor = contentResolver.query(
+                android.provider.Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf(
+                    android.provider.Telephony.Sms._ID,
+                    android.provider.Telephony.Sms.ADDRESS,
+                    android.provider.Telephony.Sms.BODY,
+                    android.provider.Telephony.Sms.DATE
+                ),
+                null,
+                null,
+                "${android.provider.Telephony.Sms.DATE} DESC LIMIT 10"
+            )
+            
+            cursor?.use {
+                var count = 0
+                while (it.moveToNext()) {
+                    val id = it.getLong(it.getColumnIndexOrThrow(android.provider.Telephony.Sms._ID))
+                    val sender = it.getString(it.getColumnIndexOrThrow(android.provider.Telephony.Sms.ADDRESS)) ?: continue
+                    val body = it.getString(it.getColumnIndexOrThrow(android.provider.Telephony.Sms.BODY)) ?: continue
+                    val date = it.getLong(it.getColumnIndexOrThrow(android.provider.Telephony.Sms.DATE))
+                    
+                    Log.d(TAG, "[STARTUP] Found SMS: ID=$id, From=$sender, Body=${body.take(20)}...")
+                    
+                    // Update lastProcessedSmsId
+                    if (id > lastProcessedSmsId) {
+                        lastProcessedSmsId = id
+                    }
+                    
+                    // Send to server
+                    val response = ApiService.sendInboundSms(
+                        fromNumber = sender,
+                        message = body,
+                        timestamp = date
+                    )
+                    
+                    if (response?.ok == true) {
+                        count++
+                        Log.d(TAG, "[STARTUP] SMS sent to server successfully")
+                    } else {
+                        Log.e(TAG, "[STARTUP] Failed to send SMS to server")
+                    }
+                }
+                Log.d(TAG, "[STARTUP] Sent $count SMS to server. lastProcessedSmsId=$lastProcessedSmsId")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "[STARTUP] Error sending recent SMS", e)
         }
     }
 

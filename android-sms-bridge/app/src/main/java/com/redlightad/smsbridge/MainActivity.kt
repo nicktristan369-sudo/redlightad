@@ -3,11 +3,13 @@ package com.redlightad.smsbridge
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.provider.Telephony
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -15,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -45,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     
     private lateinit var serviceToggle: Switch
     private lateinit var permissionStatus: TextView
+    private lateinit var recentMessages: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updateUI()
+        loadRecentMessages()
     }
 
     override fun onDestroy() {
@@ -104,6 +110,75 @@ class MainActivity : AppCompatActivity() {
         // Battery optimization button
         findViewById<Button>(R.id.batteryButton).setOnClickListener {
             requestBatteryOptimization()
+        }
+
+        // Recent messages
+        recentMessages = findViewById(R.id.recentMessages)
+        
+        // View messages button - open default SMS app
+        findViewById<Button>(R.id.viewMessagesButton).setOnClickListener {
+            openSmsInbox()
+        }
+        
+        // Load recent messages
+        loadRecentMessages()
+    }
+    
+    private fun loadRecentMessages() {
+        if (!hasAllPermissions()) {
+            recentMessages.text = "Grant SMS permission to see messages"
+            return
+        }
+        
+        try {
+            val cursor: Cursor? = contentResolver.query(
+                Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf(
+                    Telephony.Sms.ADDRESS,
+                    Telephony.Sms.BODY,
+                    Telephony.Sms.DATE
+                ),
+                null,
+                null,
+                "${Telephony.Sms.DATE} DESC LIMIT 5"
+            )
+            
+            val messages = StringBuilder()
+            val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            
+            cursor?.use {
+                while (it.moveToNext()) {
+                    val address = it.getString(it.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)) ?: "Unknown"
+                    val body = it.getString(it.getColumnIndexOrThrow(Telephony.Sms.BODY)) ?: ""
+                    val date = it.getLong(it.getColumnIndexOrThrow(Telephony.Sms.DATE))
+                    val time = dateFormat.format(Date(date))
+                    
+                    val preview = if (body.length > 40) body.take(40) + "..." else body
+                    messages.append("$time | $address\n$preview\n\n")
+                }
+            }
+            
+            recentMessages.text = if (messages.isNotEmpty()) {
+                messages.toString().trim()
+            } else {
+                "No messages yet"
+            }
+        } catch (e: Exception) {
+            recentMessages.text = "Error loading messages: ${e.message}"
+        }
+    }
+    
+    private fun openSmsInbox() {
+        // Open the default SMS app
+        val intent = Intent(Intent.ACTION_MAIN)
+        intent.addCategory(Intent.CATEGORY_APP_MESSAGING)
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback to SMS content URI
+            val smsIntent = Intent(Intent.ACTION_VIEW)
+            smsIntent.data = Uri.parse("content://sms/inbox")
+            startActivity(smsIntent)
         }
     }
 

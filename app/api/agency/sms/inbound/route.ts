@@ -67,15 +67,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Save inbound message
-    await supabase.from("agency_messages").insert({
+    const { error: insertError } = await supabase.from("agency_messages").insert({
       conversation_id: conversation.id,
       phone_id,
       direction: "inbound",
       content: message,
       status: "received",
       sent_by: "customer",
-      received_at: timestamp || new Date().toISOString(),
+      received_at: new Date().toISOString(),
     })
+    
+    if (insertError) {
+      console.error("Failed to insert inbound message:", insertError)
+    } else {
+      console.log("Inbound message saved successfully")
+    }
 
     // Update conversation stats
     await supabase
