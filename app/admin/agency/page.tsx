@@ -937,9 +937,29 @@ function PhoneModal({ onClose, onSave }: { onClose: () => void; onSave: () => vo
                 onChange={e => setForm({ ...form, ai_language: e.target.value })}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
               >
-                <option value="da">Danish</option>
-                <option value="en">English</option>
-                <option value="de">German</option>
+                <option value="da">🇩🇰 Dansk</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="sv">🇸🇪 Svenska</option>
+                <option value="no">🇳🇴 Norsk</option>
+                <option value="fi">🇫🇮 Suomi</option>
+                <option value="nl">🇳🇱 Nederlands</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="es">🇪🇸 Español</option>
+                <option value="it">🇮🇹 Italiano</option>
+                <option value="pt">🇵🇹 Português</option>
+                <option value="pl">🇵🇱 Polski</option>
+                <option value="cs">🇨🇿 Čeština</option>
+                <option value="ro">🇷🇴 Română</option>
+                <option value="hu">🇭🇺 Magyar</option>
+                <option value="ru">🇷🇺 Русский</option>
+                <option value="uk">🇺🇦 Українська</option>
+                <option value="tr">🇹🇷 Türkçe</option>
+                <option value="ar">🇸🇦 العربية</option>
+                <option value="th">🇹🇭 ไทย</option>
+                <option value="zh">🇨🇳 中文</option>
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="ko">🇰🇷 한국어</option>
               </select>
             </div>
           </div>
@@ -985,6 +1005,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     persona_address: (phone as any).persona_address || "",
     ai_enabled: (phone as any).ai_enabled ?? true,
     ai_style: (phone as any).ai_style || "flirty",
+    ai_language: (phone as any).ai_language || "da",
     ai_response_delay_min: phone.ai_response_delay_min?.toString() || "45",
     ai_response_delay_max: phone.ai_response_delay_max?.toString() || "90",
     avatar_url: (phone as any).avatar_url || "",
@@ -1054,6 +1075,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
       custom_services: customServices,
       ai_enabled: form.ai_enabled,
       ai_style: form.ai_style,
+      ai_language: form.ai_language,
       avatar_url: form.avatar_url,
       custom_qa: customQA.filter(qa => qa.q.trim() && qa.a.trim()),
       ai_rules: aiRules.filter(r => r.trim()),
@@ -1209,6 +1231,40 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                   form.ai_enabled ? "translate-x-5" : "translate-x-0.5"
                 }`} />
               </button>
+            </div>
+
+            {/* Language dropdown */}
+            <div className="mb-3">
+              <label className="block text-sm text-gray-400 mb-1">🌐 Sprog (AI svarer på dette sprog)</label>
+              <select
+                value={form.ai_language || "da"}
+                onChange={e => setForm({ ...form, ai_language: e.target.value })}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              >
+                <option value="da">🇩🇰 Dansk</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="sv">🇸🇪 Svenska</option>
+                <option value="no">🇳🇴 Norsk</option>
+                <option value="fi">🇫🇮 Suomi</option>
+                <option value="nl">🇳🇱 Nederlands</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="es">🇪🇸 Español</option>
+                <option value="it">🇮🇹 Italiano</option>
+                <option value="pt">🇵🇹 Português</option>
+                <option value="pl">🇵🇱 Polski</option>
+                <option value="cs">🇨🇿 Čeština</option>
+                <option value="ro">🇷🇴 Română</option>
+                <option value="hu">🇭🇺 Magyar</option>
+                <option value="ru">🇷🇺 Русский</option>
+                <option value="uk">🇺🇦 Українська</option>
+                <option value="tr">🇹🇷 Türkçe</option>
+                <option value="ar">🇸🇦 العربية</option>
+                <option value="th">🇹🇭 ไทย</option>
+                <option value="zh">🇨🇳 中文</option>
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="ko">🇰🇷 한국어</option>
+              </select>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
