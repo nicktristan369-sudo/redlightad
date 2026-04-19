@@ -887,6 +887,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     persona_personality: phone.persona_personality || "",
     persona_description: (phone as any).persona_description || "",
     persona_availability: (phone as any).persona_availability || "",
+    persona_address: (phone as any).persona_address || "",
     ai_enabled: (phone as any).ai_enabled ?? true,
     ai_style: (phone as any).ai_style || "flirty",
     ai_response_delay_min: phone.ai_response_delay_min?.toString() || "45",
@@ -952,6 +953,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
       persona_weight: form.persona_weight,
       persona_description: form.persona_description,
       persona_availability: form.persona_availability,
+      persona_address: form.persona_address,
       rates: rates.filter(r => r.incall || r.outcall),
       services: selectedServices,
       custom_services: customServices,
@@ -1273,6 +1275,19 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                 Tilføj
               </button>
             </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">📍 Adresse / Lokation</p>
+            <input
+              type="text"
+              value={form.persona_address || ""}
+              onChange={e => setForm({ ...form, persona_address: e.target.value })}
+              placeholder="f.eks. Vesterbrogade 45, 1620 København V"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">AI bruger denne adresse når kunder spørger hvor du er</p>
           </div>
 
           {/* Availability */}
