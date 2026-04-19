@@ -85,24 +85,34 @@ export default function AgencyPage() {
     
     // Set up realtime subscriptions
     const messagesChannel = supabase
-      .channel("agency_messages_realtime")
+      .channel("agency_messages_realtime_v2")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "agency_messages" }, 
         (payload) => {
           const newMsg = payload.new as Message
+          console.log("[REALTIME] New message:", newMsg.id, newMsg.content?.substring(0, 30))
+          
+          // Add to messages if it's for the current conversation
           setMessages(prev => {
-            // Avoid duplicates
             if (prev.some(m => m.id === newMsg.id)) return prev
+            // Only add if same conversation
+            if (prev.length > 0 && prev[0].conversation_id !== newMsg.conversation_id) return prev
             return [...prev, newMsg]
           })
-          // Also refresh conversations to update message count
-          if (selectedPhone) loadConversations(selectedPhone)
+          
+          // Always refresh conversations to update counts and last message
+          if (selectedPhone) {
+            loadConversations(selectedPhone)
+          }
         })
-      .subscribe()
+      .subscribe((status) => {
+        console.log("[REALTIME] Messages channel status:", status)
+      })
 
     const conversationsChannel = supabase
-      .channel("agency_conversations_realtime")
+      .channel("agency_conversations_realtime_v2")
       .on("postgres_changes", { event: "*", schema: "public", table: "agency_conversations" },
-        () => {
+        (payload) => {
+          console.log("[REALTIME] Conversation update:", payload.eventType)
           if (selectedPhone) loadConversations(selectedPhone)
         })
       .subscribe()
@@ -144,6 +154,17 @@ export default function AgencyPage() {
   // Load messages when conversation selected
   useEffect(() => {
     if (selectedConversation) loadMessages(selectedConversation)
+  }, [selectedConversation])
+
+  // Auto-refresh messages every 3 seconds as backup for realtime
+  useEffect(() => {
+    if (!selectedConversation) return
+    
+    const interval = setInterval(() => {
+      loadMessages(selectedConversation)
+    }, 3000)
+    
+    return () => clearInterval(interval)
   }, [selectedConversation])
 
   async function loadData() {
