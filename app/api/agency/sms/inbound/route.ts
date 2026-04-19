@@ -66,6 +66,22 @@ export async function POST(req: NextRequest) {
       conversation = newConv
     }
 
+    // Check for duplicate (same message in last 60 seconds)
+    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString()
+    const { data: existingMsg } = await supabase
+      .from("agency_messages")
+      .select("id")
+      .eq("conversation_id", conversation.id)
+      .eq("direction", "inbound")
+      .eq("content", message)
+      .gte("created_at", oneMinuteAgo)
+      .limit(1)
+    
+    if (existingMsg && existingMsg.length > 0) {
+      console.log("Duplicate message ignored")
+      return NextResponse.json({ ok: true, duplicate: true })
+    }
+
     // Save inbound message
     const { error: insertError } = await supabase.from("agency_messages").insert({
       conversation_id: conversation.id,
