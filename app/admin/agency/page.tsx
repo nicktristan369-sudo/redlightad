@@ -886,8 +886,6 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     persona_weight: (phone as any).persona_weight || "",
     persona_personality: phone.persona_personality || "",
     persona_description: (phone as any).persona_description || "",
-    persona_services: (phone as any).persona_services || "",
-    persona_rates: (phone as any).persona_rates || "",
     persona_availability: (phone as any).persona_availability || "",
     ai_enabled: (phone as any).ai_enabled ?? true,
     ai_style: (phone as any).ai_style || "flirty",
@@ -896,6 +894,30 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     avatar_url: (phone as any).avatar_url || "",
   })
   const [customQA, setCustomQA] = useState<{q: string, a: string}[]>((phone as any).custom_qa || [])
+  
+  // Rates: [{service, incall, outcall}]
+  const [rates, setRates] = useState<{service: string, incall: string, outcall: string}[]>(
+    (phone as any).rates || [
+      { service: "0.5 time", incall: "", outcall: "" },
+      { service: "1 time", incall: "", outcall: "" },
+      { service: "2 timer", incall: "", outcall: "" },
+      { service: "3 timer", incall: "", outcall: "" },
+      { service: "Hel nat", incall: "", outcall: "" },
+    ]
+  )
+  
+  // Standard services list
+  const standardServices = [
+    "Blowjob", "69", "Cum in mouth", "Cum in face", "Anal", "Kiss", "GFE",
+    "Erotic massage", "Oil massage", "Escort service", "Lesbian", "Domina",
+    "Goldenshower", "Handjob", "All positions", "Bondage", "Strap on",
+    "Video call", "Roleplay", "Facesitting", "Couples"
+  ]
+  
+  // Selected services (from standardServices + custom)
+  const [selectedServices, setSelectedServices] = useState<string[]>((phone as any).services || [])
+  const [customServices, setCustomServices] = useState<string[]>((phone as any).custom_services || [])
+  const [newService, setNewService] = useState("")
   const [loading, setLoading] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState<string | null>((phone as any).avatar_url || null)
 
@@ -927,9 +949,10 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
       persona_height: form.persona_height,
       persona_weight: form.persona_weight,
       persona_description: form.persona_description,
-      persona_services: form.persona_services,
-      persona_rates: form.persona_rates,
       persona_availability: form.persona_availability,
+      rates: rates.filter(r => r.incall || r.outcall),
+      services: selectedServices,
+      custom_services: customServices,
       ai_enabled: form.ai_enabled,
       ai_style: form.ai_style,
       avatar_url: form.avatar_url,
@@ -1123,37 +1146,140 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
             <p className="text-xs text-gray-500 mt-2">AI will wait between {form.ai_response_delay_min}-{form.ai_response_delay_max} seconds before replying</p>
           </div>
 
-          {/* Services & Rates */}
+          {/* Rates Table */}
           <div>
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">💰 Services & Priser</p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Services (hvad tilbyder du)</label>
-                <textarea
-                  value={form.persona_services}
-                  onChange={e => setForm({ ...form, persona_services: e.target.value })}
-                  placeholder="f.eks. Massage, GFE, Outcall..."
-                  rows={2}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Priser</label>
-                <textarea
-                  value={form.persona_rates}
-                  onChange={e => setForm({ ...form, persona_rates: e.target.value })}
-                  placeholder="f.eks. 30 min: 1000kr, 1 time: 1500kr, 2 timer: 2500kr"
-                  rows={2}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Tilgængelighed</label>
-                <input
-                  type="text"
-                  value={form.persona_availability}
-                  onChange={e => setForm({ ...form, persona_availability: e.target.value })}
-                  placeholder="f.eks. Man-Fre 18-22, Weekend hele dagen"
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">💰 Prisliste</p>
+            
+            {/* Header */}
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="text-xs text-gray-500 font-medium">SERVICE</div>
+              <div className="text-xs text-gray-500 font-medium text-center">INCALL</div>
+              <div className="text-xs text-gray-500 font-medium text-center">OUTCALL</div>
+            </div>
+            
+            {/* Rates rows */}
+            <div className="space-y-2">
+              {rates.map((rate, index) => (
+                <div key={index} className="grid grid-cols-3 gap-2 items-center">
+                  <input
+                    type="text"
+                    value={rate.service}
+                    onChange={e => {
+                      const newRates = [...rates]
+                      newRates[index].service = e.target.value
+                      setRates(newRates)
+                    }}
+                    placeholder="Service"
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-red-500"
+                  />
+                  <input
+                    type="text"
+                    value={rate.incall}
+                    onChange={e => {
+                      const newRates = [...rates]
+                      newRates[index].incall = e.target.value
+                      setRates(newRates)
+                    }}
+                    placeholder="Pris / X"
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-center focus:outline-none focus:border-red-500"
+                  />
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={rate.outcall}
+                      onChange={e => {
+                        const newRates = [...rates]
+                        newRates[index].outcall = e.target.value
+                        setRates(newRates)
+                      }}
+                      placeholder="Pris / X"
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-center focus:outline-none focus:border-red-500"
+                    />
+                    <button
+                      onClick={() => setRates(rates.filter((_, i) => i !== index))}
+                      className="text-red-400 hover:text-red-300 px-1"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => setRates([...rates, { service: "", incall: "", outcall: "" }])}
+              className="mt-2 w-full py-1.5 border border-dashed border-gray-600 rounded text-xs text-gray-400 hover:border-gray-500"
+            >
+              + Tilføj pris
+            </button>
+          </div>
+
+          {/* Services */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">✨ Services</p>
+            
+            {/* Standard services grid */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {[...standardServices, ...customServices].map(service => (
+                <button
+                  key={service}
+                  onClick={() => {
+                    if (selectedServices.includes(service)) {
+                      setSelectedServices(selectedServices.filter(s => s !== service))
+                    } else {
+                      setSelectedServices([...selectedServices, service])
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedServices.includes(service)
+                      ? "bg-red-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  }`}
+                >
+                  {service}
+                </button>
+              ))}
+            </div>
+            
+            {/* Add custom service */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newService}
+                onChange={e => setNewService(e.target.value)}
+                placeholder="Tilføj custom service..."
+                className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-500"
+                onKeyDown={e => {
+                  if (e.key === "Enter" && newService.trim()) {
+                    setCustomServices([...customServices, newService.trim()])
+                    setSelectedServices([...selectedServices, newService.trim()])
+                    setNewService("")
+                  }
+                }}
+              />
+              <button
+                onClick={() => {
+                  if (newService.trim()) {
+                    setCustomServices([...customServices, newService.trim()])
+                    setSelectedServices([...selectedServices, newService.trim()])
+                    setNewService("")
+                  }
+                }}
+                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm"
+              >
+                Tilføj
+              </button>
+            </div>
+          </div>
+
+          {/* Availability */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">🕐 Tilgængelighed</p>
+            <input
+              type="text"
+              value={form.persona_availability}
+              onChange={e => setForm({ ...form, persona_availability: e.target.value })}
+              placeholder="f.eks. Man-Fre 18-22, Weekend hele dagen"
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
                 />
               </div>
