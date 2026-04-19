@@ -894,6 +894,8 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     avatar_url: (phone as any).avatar_url || "",
   })
   const [customQA, setCustomQA] = useState<{q: string, a: string}[]>((phone as any).custom_qa || [])
+  const [aiRules, setAiRules] = useState<string[]>((phone as any).ai_rules || [])
+  const [newRule, setNewRule] = useState("")
   
   // Rates: [{service, incall, outcall}]
   const [rates, setRates] = useState<{service: string, incall: string, outcall: string}[]>(
@@ -957,6 +959,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
       ai_style: form.ai_style,
       avatar_url: form.avatar_url,
       custom_qa: customQA.filter(qa => qa.q.trim() && qa.a.trim()),
+      ai_rules: aiRules.filter(r => r.trim()),
     } as any)
     setLoading(false)
     onClose()
@@ -1332,6 +1335,63 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
               >
                 + Tilføj Q&A regel
               </button>
+            </div>
+          </div>
+
+          {/* AI Rules - Things AI must never do */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">⛔ Regler / AI må aldrig...</p>
+            <p className="text-xs text-gray-500 mb-3">Tilføj regler for hvad AI aldrig må gøre eller sige.</p>
+            
+            <div className="space-y-2">
+              {aiRules.map((rule, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <span className="text-red-400">⛔</span>
+                  <input
+                    type="text"
+                    value={rule}
+                    onChange={e => {
+                      const newRules = [...aiRules]
+                      newRules[index] = e.target.value
+                      setAiRules(newRules)
+                    }}
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                  />
+                  <button
+                    onClick={() => setAiRules(aiRules.filter((_, i) => i !== index))}
+                    className="text-red-400 hover:text-red-300 px-2"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newRule}
+                  onChange={e => setNewRule(e.target.value)}
+                  placeholder="f.eks. Må aldrig give adresse, Må aldrig aftale pris under 1000kr..."
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && newRule.trim()) {
+                      setAiRules([...aiRules, newRule.trim()])
+                      setNewRule("")
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (newRule.trim()) {
+                      setAiRules([...aiRules, newRule.trim()])
+                      setNewRule("")
+                    }
+                  }}
+                  className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm"
+                >
+                  Tilføj
+                </button>
+              </div>
             </div>
           </div>
         </div>
