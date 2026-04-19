@@ -6,7 +6,7 @@ import {
   Smartphone, Plus, Settings, MessageSquare, Bell, Search, 
   MoreVertical, Send, User, Clock, Check, CheckCheck, AlertTriangle,
   Wifi, WifiOff, Battery, BatteryLow, X, ChevronRight, Bot, Hand,
-  Volume2, VolumeX, Trash2, Edit, Filter, RefreshCw
+  Volume2, VolumeX, Trash2, Edit, Filter, RefreshCw, Ban, Paperclip, Image
 } from "lucide-react"
 
 // Types
@@ -245,6 +245,38 @@ export default function AgencyPage() {
     loadPhones()
   }
 
+  async function updateContactName(conversationId: string, name: string) {
+    await supabase
+      .from("agency_conversations")
+      .update({ contact_name: name })
+      .eq("id", conversationId)
+    loadConversations(selectedPhone!)
+  }
+
+  async function blockContact(conversationId: string) {
+    await supabase
+      .from("agency_conversations")
+      .update({ status: "blocked" })
+      .eq("id", conversationId)
+    loadConversations(selectedPhone!)
+    setSelectedConversation(null)
+  }
+
+  async function deleteConversation(conversationId: string) {
+    // Delete messages first
+    await supabase
+      .from("agency_messages")
+      .delete()
+      .eq("conversation_id", conversationId)
+    // Delete conversation
+    await supabase
+      .from("agency_conversations")
+      .delete()
+      .eq("id", conversationId)
+    loadConversations(selectedPhone!)
+    setSelectedConversation(null)
+  }
+
   const unreadNotifications = notifications.filter(n => !n.is_read).length
   const selectedPhoneData = phones.find(p => p.id === selectedPhone)
   const selectedConvData = conversations.find(c => c.id === selectedConversation)
@@ -411,7 +443,7 @@ export default function AgencyPage() {
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm">
-                          {conv.customer_name || conv.customer_phone}
+                          {(conv as any).contact_name || conv.customer_name || conv.customer_phone}
                         </span>
                         <span className="text-[10px] text-gray-500">
                           {conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" }) : ""}
@@ -424,6 +456,9 @@ export default function AgencyPage() {
                         )}
                         {conv.status === "manual" && (
                           <Hand className="w-3 h-3 text-yellow-400 flex-shrink-0" />
+                        )}
+                        {(conv.status as string) === "blocked" && (
+                          <Ban className="w-3 h-3 text-red-400 flex-shrink-0" />
                         )}
                         {conv.is_flagged && (
                           <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
@@ -456,7 +491,7 @@ export default function AgencyPage() {
                   </div>
                   <div>
                     <p className="font-semibold">
-                      {selectedConvData.customer_name || selectedConvData.customer_phone}
+                      {(selectedConvData as any).contact_name || selectedConvData.customer_name || selectedConvData.customer_phone}
                     </p>
                     <p className="text-xs text-gray-400">
                       {selectedConvData.status === "ai_handling" ? "🤖 AI handling" : "✋ Manual mode"}
@@ -465,6 +500,46 @@ export default function AgencyPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* Contact name edit */}
+                  <button
+                    onClick={() => {
+                      const name = prompt("Gem kontakt som:", (selectedConvData as any).contact_name || "")
+                      if (name !== null) {
+                        updateContactName(selectedConversation, name)
+                      }
+                    }}
+                    className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
+                    title="Gem kontakt"
+                  >
+                    <User className="w-4 h-4 text-gray-400" />
+                  </button>
+                  
+                  {/* Block contact */}
+                  <button
+                    onClick={() => {
+                      if (confirm(`Bloker ${selectedConvData.customer_phone}?`)) {
+                        blockContact(selectedConversation)
+                      }
+                    }}
+                    className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
+                    title="Bloker kontakt"
+                  >
+                    <Ban className="w-4 h-4 text-gray-400" />
+                  </button>
+                  
+                  {/* Delete conversation */}
+                  <button
+                    onClick={() => {
+                      if (confirm("Slet hele samtalen?")) {
+                        deleteConversation(selectedConversation)
+                      }
+                    }}
+                    className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
+                    title="Slet samtale"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </button>
+                  
                   {selectedConvData.status === "ai_handling" ? (
                     <button
                       onClick={() => takeoverConversation(selectedConversation)}
@@ -523,11 +598,22 @@ export default function AgencyPage() {
               {/* Message Input */}
               <div className="p-4 bg-gray-900 border-t border-gray-800">
                 <div className="flex items-center gap-3">
+                  {/* Attachment button */}
+                  <button
+                    onClick={() => {
+                      alert("📷 MMS (billede/video) kommer snart!\n\nSMS Bridge understøtter kun tekst-SMS lige nu.")
+                    }}
+                    className="w-11 h-11 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center justify-center transition-colors"
+                    title="Vedhæft billede/video"
+                  >
+                    <Paperclip className="w-5 h-5 text-gray-400" />
+                  </button>
+                  
                   <input
                     value={messageInput}
                     onChange={e => setMessageInput(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                    placeholder="Type a message..."
+                    placeholder="Skriv en besked..."
                     className="flex-1 bg-gray-800 border-none rounded-xl px-4 py-3 text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
                   <button
@@ -540,8 +626,8 @@ export default function AgencyPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   {selectedConvData.status === "ai_handling" 
-                    ? "AI is handling this conversation. Send a message to take over."
-                    : "You are in control. Send messages manually."}
+                    ? "AI styrer samtalen. Send en besked for at tage over."
+                    : "Du styrer samtalen. Send beskeder manuelt."}
                 </p>
               </div>
             </>
