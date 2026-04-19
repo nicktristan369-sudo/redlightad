@@ -214,24 +214,29 @@ export default function AgencyPage() {
     const conversation = conversations.find(c => c.id === selectedConversation)
     if (!conversation) return
 
-    // Insert message
+    // Insert message with to_number for SMS Bridge to pick up
     await supabase.from("agency_messages").insert({
       conversation_id: selectedConversation,
       phone_id: conversation.phone_id,
       direction: "outbound",
       content: messageInput.trim(),
+      to_number: conversation.customer_phone, // Required for SMS sending!
       status: "pending",
       sent_by: "manual",
       ai_generated: false,
+      scheduled_send_at: new Date().toISOString(), // Send immediately
     })
 
     // Update conversation to manual mode
     await supabase
       .from("agency_conversations")
-      .update({ status: "manual" })
+      .update({ status: "manual", last_message_at: new Date().toISOString() })
       .eq("id", selectedConversation)
 
     setMessageInput("")
+    
+    // Refresh messages immediately
+    loadMessages(selectedConversation)
   }
 
   async function toggleAI(phoneId: string, enabled: boolean) {
