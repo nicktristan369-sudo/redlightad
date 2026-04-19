@@ -1280,10 +1280,8 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
               value={form.persona_availability}
               onChange={e => setForm({ ...form, persona_availability: e.target.value })}
               placeholder="f.eks. Man-Fre 18-22, Weekend hele dagen"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
-                />
-              </div>
-            </div>
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+            />
           </div>
 
           {/* Custom Q&A */}
