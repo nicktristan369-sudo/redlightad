@@ -4,11 +4,48 @@ import Anthropic from "@anthropic-ai/sdk"
 
 const anthropic = new Anthropic()
 
-// POST - Receive Telegram messages
+// Send Telegram message with optional inline keyboard
+async function sendTelegramMessageWithButtons(
+  botToken: string, 
+  chatId: string, 
+  text: string, 
+  buttons?: { text: string; url?: string; callback_data?: string }[][]
+) {
+  const payload: any = {
+    chat_id: chatId,
+    text: text,
+    parse_mode: "HTML",
+  }
+  
+  if (buttons) {
+    payload.reply_markup = {
+      inline_keyboard: buttons.map(row => 
+        row.map(btn => btn.url 
+          ? { text: btn.text, url: btn.url }
+          : { text: btn.text, callback_data: btn.callback_data }
+        )
+      )
+    }
+  }
+  
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+  return response.json()
+}
+
+// POST - Receive Telegram messages and callbacks
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     console.log("[TELEGRAM] Received webhook:", JSON.stringify(body).substring(0, 500))
+
+    // Handle callback queries (button clicks)
+    if (body.callback_query) {
+      return handleCallbackQuery(body.callback_query, req)
+    }
 
     // Extract message from Telegram update
     const message = body.message
@@ -42,6 +79,11 @@ export async function POST(req: NextRequest) {
     if (!phone) {
       console.error("[TELEGRAM] Phone not found:", phoneId)
       return NextResponse.json({ error: "Phone not found" }, { status: 404 })
+    }
+
+    // Handle commands
+    if (text.startsWith("/")) {
+      return handleCommand(text, chatId, phone, username, phoneId)
     }
 
     // Find or create conversation
@@ -233,4 +275,133 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 })
+}
+
+// Handle /commands
+async function handleCommand(text: string, chatId: string, phone: any, username: string, phoneId: string) {
+  const command = text.split(" ")[0].toLowerCase()
+  const botToken = phone.telegram_bot_token
+  const personaName = phone.persona_name || "Mig"
+  
+  // Get custom menu settings from phone
+  const telegramChannel = (phone as any).telegram_channel || ""
+  const snapchat = (phone as any).snapchat || ""
+  const onlyfans = (phone as any).onlyfans || ""
+  const instagram = (phone as any).instagram || ""
+  
+  if (command === "/start") {
+    const welcomeText = `
+✨ <b>Velkommen til ${personaName}</b> ✨
+
+Hej ${username}! 💋
+
+Hvad vil du gerne i dag?
+`
+    
+    const buttons: any[][] = [
+      [{ text: "💬 Chat med mig", callback_data: "chat" }],
+      [{ text: "📸 Køb mine billeder", callback_data: "billeder" }],
+    ]
+    
+    // Add social links if configured
+    if (telegramChannel) {
+      buttons.push([{ text: "📺 Telegram Kanal", url: telegramChannel }])
+    }
+    if (snapchat) {
+      buttons.push([{ text: "👻 Snapchat", url: `https://snapchat.com/add/${snapchat}` }])
+    }
+    if (onlyfans) {
+      buttons.push([{ text: "🔥 OnlyFans", url: onlyfans }])
+    }
+    if (instagram) {
+      buttons.push([{ text: "📷 Instagram", url: `https://instagram.com/${instagram}` }])
+    }
+    
+    await sendTelegramMessageWithButtons(botToken, chatId, welcomeText, buttons)
+    return NextResponse.json({ ok: true })
+  }
+  
+  if (command === "/chat") {
+    await sendTelegramMessageWithButtons(botToken, chatId, 
+      `💌 <b>Chat med ${personaName}</b>\n\nSkriv bare din besked, så svarer jeg så hurtigt jeg kan! 😘`,
+      [[{ text: "⬅️ Tilbage til menu", callback_data: "menu" }]]
+    )
+    return NextResponse.json({ ok: true })
+  }
+  
+  if (command === "/billeder" || command === "/pictures") {
+    const pricesText = `
+📸 <b>Mine billeder</b>
+
+👙 Lingeri billeder - 50 DKK
+🔥 Spicy billeder - 100 DKK  
+🌟 Premium pakke (10 stk) - 400 DKK
+🎉 Custom billeder - 200 DKK
+
+💳 Betaling via MobilePay
+
+Skriv til mig for at bestælle! 💋
+`
+    await sendTelegramMessageWithButtons(botToken, chatId, pricesText, [
+      [{ text: "💬 Bestil nu", callback_data: "chat" }],
+      [{ text: "⬅️ Tilbage til menu", callback_data: "menu" }]
+    ])
+    return NextResponse.json({ ok: true })
+  }
+  
+  if (command === "/menu" || command === "/help") {
+    // Same as /start
+    return handleCommand("/start", chatId, phone, username, phoneId)
+  }
+  
+  // Unknown command - treat as normal message
+  return NextResponse.json({ ok: true, handled: false })
+}
+
+// Handle button callbacks
+async function handleCallbackQuery(callback: any, req: NextRequest) {
+  const chatId = callback.message.chat.id.toString()
+  const data = callback.data
+  const username = callback.from.username || callback.from.first_name || "Unknown"
+  
+  const url = new URL(req.url)
+  const phoneId = url.searchParams.get("phone_id")
+  
+  if (!phoneId) {
+    return NextResponse.json({ ok: true })
+  }
+  
+  const supabase = createServerClient()
+  const { data: phone } = await supabase
+    .from("agency_phones")
+    .select("*")
+    .eq("id", phoneId)
+    .single()
+    
+  if (!phone) {
+    return NextResponse.json({ ok: true })
+  }
+  
+  const botToken = phone.telegram_bot_token
+  
+  // Answer callback to remove loading state
+  await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: callback.id })
+  })
+  
+  if (data === "menu") {
+    return handleCommand("/start", chatId, phone, username, phoneId)
+  }
+  
+  if (data === "chat") {
+    return handleCommand("/chat", chatId, phone, username, phoneId)
+  }
+  
+  if (data === "billeder") {
+    return handleCommand("/billeder", chatId, phone, username, phoneId)
+  }
+  
+  return NextResponse.json({ ok: true })
 }

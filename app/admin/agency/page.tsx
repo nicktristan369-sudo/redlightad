@@ -1041,6 +1041,10 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     dashboard_language: (phone as any).dashboard_language || "none",
     telegram_bot_token: (phone as any).telegram_bot_token || "",
     telegram_enabled: (phone as any).telegram_enabled || false,
+    telegram_channel: (phone as any).telegram_channel || "",
+    snapchat: (phone as any).snapchat || "",
+    onlyfans: (phone as any).onlyfans || "",
+    instagram: (phone as any).instagram || "",
     ai_response_delay_min: phone.ai_response_delay_min?.toString() || "45",
     ai_response_delay_max: phone.ai_response_delay_max?.toString() || "90",
     avatar_url: (phone as any).avatar_url || "",
@@ -1114,6 +1118,10 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
       dashboard_language: form.dashboard_language,
       telegram_bot_token: form.telegram_bot_token,
       telegram_enabled: form.telegram_enabled,
+      telegram_channel: form.telegram_channel,
+      snapchat: form.snapchat,
+      onlyfans: form.onlyfans,
+      instagram: form.instagram,
       avatar_url: form.avatar_url,
       custom_qa: customQA.filter(qa => qa.q.trim() && qa.a.trim()),
       ai_rules: aiRules.filter(r => r.trim()),
@@ -1387,6 +1395,55 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                 >
                   🔗 Aktiver Webhook
                 </button>
+              </div>
+            )}
+            
+            {/* Social Links for Telegram Menu */}
+            {form.telegram_enabled && (
+              <div className="mt-4 space-y-3">
+                <p className="text-xs text-gray-500">Links til Telegram menu (valgfrit):</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">📺 Telegram Kanal</label>
+                    <input
+                      type="text"
+                      value={form.telegram_channel}
+                      onChange={e => setForm({ ...form, telegram_channel: e.target.value })}
+                      placeholder="https://t.me/din_kanal"
+                      className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">👻 Snapchat</label>
+                    <input
+                      type="text"
+                      value={form.snapchat}
+                      onChange={e => setForm({ ...form, snapchat: e.target.value })}
+                      placeholder="dit_snapchat"
+                      className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">🔥 OnlyFans</label>
+                    <input
+                      type="text"
+                      value={form.onlyfans}
+                      onChange={e => setForm({ ...form, onlyfans: e.target.value })}
+                      placeholder="https://onlyfans.com/dig"
+                      className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">📷 Instagram</label>
+                    <input
+                      type="text"
+                      value={form.instagram}
+                      onChange={e => setForm({ ...form, instagram: e.target.value })}
+                      placeholder="dit_instagram"
+                      className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
