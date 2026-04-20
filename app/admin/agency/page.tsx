@@ -477,9 +477,15 @@ export default function AgencyPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm">
-                          {(conv as any).contact_name || conv.customer_name || conv.customer_phone}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {/* Channel icon */}
+                          {(conv as any).channel === "telegram" && <span className="text-xs">✈️</span>}
+                          {(conv as any).channel === "whatsapp" && <span className="text-xs">💬</span>}
+                          {!(conv as any).channel && <span className="text-xs">📱</span>}
+                          <span className="font-medium text-sm">
+                            {(conv as any).contact_name || conv.customer_name || conv.customer_phone}
+                          </span>
+                        </div>
                         <span className="text-[10px] text-gray-500">
                           {conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" }) : ""}
                         </span>
@@ -1033,6 +1039,8 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
     ai_style: (phone as any).ai_style || "flirty",
     ai_language: (phone as any).ai_language || "da",
     dashboard_language: (phone as any).dashboard_language || "none",
+    telegram_bot_token: (phone as any).telegram_bot_token || "",
+    telegram_enabled: (phone as any).telegram_enabled || false,
     ai_response_delay_min: phone.ai_response_delay_min?.toString() || "45",
     ai_response_delay_max: phone.ai_response_delay_max?.toString() || "90",
     avatar_url: (phone as any).avatar_url || "",
@@ -1104,6 +1112,8 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
       ai_style: form.ai_style,
       ai_language: form.ai_language,
       dashboard_language: form.dashboard_language,
+      telegram_bot_token: form.telegram_bot_token,
+      telegram_enabled: form.telegram_enabled,
       avatar_url: form.avatar_url,
       custom_qa: customQA.filter(qa => qa.q.trim() && qa.a.trim()),
       ai_rules: aiRules.filter(r => r.trim()),
@@ -1322,7 +1332,68 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                 <p className="text-xs text-gray-500 mt-1">Oversæt beskeder i dashboard til dit sprog</p>
               </div>
             </div>
+          </div>
 
+          {/* Telegram Integration */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">✈️ Telegram Integration</p>
+            
+            <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">✈️</span>
+                <span className="text-sm">Telegram Bot aktiv</span>
+              </div>
+              <button
+                onClick={() => setForm({ ...form, telegram_enabled: !form.telegram_enabled })}
+                className={`w-10 h-5 rounded-full transition-colors ${
+                  form.telegram_enabled ? "bg-blue-500" : "bg-gray-600"
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
+                  form.telegram_enabled ? "translate-x-5" : "translate-x-0.5"
+                }`} />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Telegram Bot Token</label>
+              <input
+                type="text"
+                value={form.telegram_bot_token}
+                onChange={e => setForm({ ...form, telegram_bot_token: e.target.value })}
+                placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Opret en bot via <a href="https://t.me/BotFather" target="_blank" className="text-blue-400 hover:underline">@BotFather</a> på Telegram og indsæt token her
+              </p>
+            </div>
+            
+            {form.telegram_bot_token && form.telegram_enabled && (
+              <div className="mt-3 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+                <p className="text-sm text-blue-300">✅ Telegram bot er konfigureret!</p>
+                <p className="text-xs text-gray-400 mt-1">Kunder kan nu skrive til din bot, og beskeder vises her i dashboard.</p>
+                <button
+                  onClick={async () => {
+                    const res = await fetch(`/api/telegram/webhook?phone_id=${phone.id}&action=setup`)
+                    const data = await res.json()
+                    if (data.success) {
+                      alert("✅ Telegram webhook aktiveret! Bot er klar til at modtage beskeder.")
+                    } else {
+                      alert("❌ Fejl: " + JSON.stringify(data))
+                    }
+                  }}
+                  className="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-medium"
+                >
+                  🔗 Aktiver Webhook
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* AI Settings continued */}
+          <div>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">⏱️ Timing</p>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Style</label>
