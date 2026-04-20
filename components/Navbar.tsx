@@ -178,12 +178,14 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
 
       {/* ── Main navbar ── */}
       <nav style={{
-        position: "sticky", top: 0, zIndex: 40, 
-        background: isDark ? "#000" : "#fff",
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, 
+        backgroundColor: isDark ? "#000000" : "#ffffff",
         borderBottom: isDark ? "1px solid #333" : "1px solid #F3F3F3", 
         boxShadow: isDark ? "none" : "0 1px 3px rgba(0,0,0,0.06)", 
         height: "56px",
       }}>
+      {/* Spacer for fixed navbar */}
+      <style>{`body { padding-top: 0; }`}</style>
         <div style={{
           maxWidth: "1280px", margin: "0 auto",
           display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -341,6 +343,9 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
           </div>
         )}
       </nav>
+      
+      {/* Spacer for fixed navbar */}
+      <div style={{ height: "56px" }} />
 
       {/* ── Overlay ── */}
       <div onClick={closeDrawer} style={{
