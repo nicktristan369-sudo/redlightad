@@ -213,19 +213,38 @@ export default function AgencyPage() {
     
     const conversation = conversations.find(c => c.id === selectedConversation)
     if (!conversation) return
+    
+    const messageContent = messageInput.trim()
+    const isTelegram = conversation.customer_phone.startsWith("telegram:")
+    const channel = (conversation as any).channel || (isTelegram ? "telegram" : "sms")
 
-    // Insert message with to_number for SMS Bridge to pick up
+    // Insert message
     await supabase.from("agency_messages").insert({
       conversation_id: selectedConversation,
       phone_id: conversation.phone_id,
       direction: "outbound",
-      content: messageInput.trim(),
-      to_number: conversation.customer_phone, // Required for SMS sending!
+      content: messageContent,
+      to_number: conversation.customer_phone,
       status: "pending",
       sent_by: "manual",
       ai_generated: false,
-      scheduled_send_at: new Date().toISOString(), // Send immediately
+      channel: channel,
+      scheduled_send_at: new Date().toISOString(),
     })
+
+    // If Telegram, send via API
+    if (isTelegram) {
+      const chatId = conversation.customer_phone.replace("telegram:", "")
+      await fetch("/api/telegram/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone_id: conversation.phone_id,
+          chat_id: chatId,
+          message: messageContent,
+        }),
+      })
+    }
 
     // Update conversation to manual mode
     await supabase
