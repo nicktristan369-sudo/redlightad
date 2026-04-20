@@ -46,6 +46,45 @@ export async function POST(req: NextRequest) {
     if (body.callback_query) {
       return handleCallbackQuery(body.callback_query, req)
     }
+    
+    // Handle pre-checkout query (must answer within 10 seconds)
+    if (body.pre_checkout_query) {
+      const preCheckout = body.pre_checkout_query
+      const url = new URL(req.url)
+      const phoneId = url.searchParams.get("phone_id")
+      
+      if (phoneId) {
+        const supabase = createServerClient()
+        const { data: phone } = await supabase
+          .from("agency_phones")
+          .select("telegram_bot_token")
+          .eq("id", phoneId)
+          .single()
+          
+        if (phone) {
+          // Always approve the payment
+          await fetch(`https://api.telegram.org/bot${phone.telegram_bot_token}/answerPreCheckoutQuery`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pre_checkout_query_id: preCheckout.id,
+              ok: true
+            })
+          })
+        }
+      }
+      return NextResponse.json({ ok: true })
+    }
+    
+    // Handle successful payment
+    if (body.message?.successful_payment) {
+      const url = new URL(req.url)
+      const phoneId = url.searchParams.get("phone_id")
+      if (phoneId) {
+        await handleSuccessfulPayment(body.message, phoneId)
+      }
+      return NextResponse.json({ ok: true })
+    }
 
     // Extract message from Telegram update
     const message = body.message
@@ -333,17 +372,15 @@ Hvad vil du gerne i dag?
     const pricesText = `
 📸 <b>Mine billeder</b>
 
-👙 Lingeri billeder - 50 DKK
-🔥 Spicy billeder - 100 DKK  
-🌟 Premium pakke (10 stk) - 400 DKK
-🎉 Custom billeder - 200 DKK
+Vælg en pakke og betal med Telegram Stars ⭐
 
-💳 Betaling via MobilePay
-
-Skriv til mig for at bestælle! 💋
+<i>1 ⭐ ≈ 0,15 DKK</i>
 `
     await sendTelegramMessageWithButtons(botToken, chatId, pricesText, [
-      [{ text: "💬 Bestil nu", callback_data: "chat" }],
+      [{ text: "👙 Lingeri (50 ⭐)", callback_data: "buy_lingeri" }],
+      [{ text: "🔥 Spicy (100 ⭐)", callback_data: "buy_spicy" }],
+      [{ text: "🌟 Premium 10 stk (400 ⭐)", callback_data: "buy_premium" }],
+      [{ text: "🎉 Custom (200 ⭐)", callback_data: "buy_custom" }],
       [{ text: "⬅️ Tilbage til menu", callback_data: "menu" }]
     ])
     return NextResponse.json({ ok: true })
@@ -356,6 +393,74 @@ Skriv til mig for at bestælle! 💋
   
   // Unknown command - treat as normal message
   return NextResponse.json({ ok: true, handled: false })
+}
+
+// Send invoice for Telegram Stars payment
+async function sendStarsInvoice(
+  botToken: string,
+  chatId: string,
+  title: string,
+  description: string,
+  payload: string,
+  amount: number // Amount in Stars
+) {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendInvoice`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      title: title,
+      description: description,
+      payload: payload,
+      provider_token: "", // Empty for Telegram Stars
+      currency: "XTR", // XTR = Telegram Stars
+      prices: [{ label: title, amount: amount }],
+    }),
+  })
+  return response.json()
+}
+
+// Handle successful payment
+async function handleSuccessfulPayment(message: any, phoneId: string) {
+  const payment = message.successful_payment
+  const chatId = message.chat.id.toString()
+  const totalAmount = payment.total_amount
+  const payload = payment.invoice_payload
+  
+  console.log(`[TELEGRAM] Payment received: ${totalAmount} Stars, payload: ${payload}`)
+  
+  const supabase = createServerClient()
+  
+  // Get phone for bot token
+  const { data: phone } = await supabase
+    .from("agency_phones")
+    .select("telegram_bot_token, persona_name")
+    .eq("id", phoneId)
+    .single()
+    
+  if (!phone) return
+  
+  // Store payment record (ignore errors if table doesn't exist)
+  try {
+    await supabase.from("agency_payments").insert({
+      phone_id: phoneId,
+      customer_id: `telegram:${chatId}`,
+      amount_stars: totalAmount,
+      payload: payload,
+      telegram_payment_id: payment.telegram_payment_charge_id,
+      status: "completed",
+    })
+  } catch (e) {
+    console.log("[TELEGRAM] Payment table might not exist:", e)
+  }
+  
+  // Send confirmation
+  const personaName = phone.persona_name || "Mig"
+  await sendTelegramMessage(
+    phone.telegram_bot_token,
+    chatId,
+    `✅ Tak for din betaling på ${totalAmount} ⭐!\n\n${personaName} sender dig billederne snarest! 💋`
+  )
 }
 
 // Handle button callbacks
@@ -401,6 +506,27 @@ async function handleCallbackQuery(callback: any, req: NextRequest) {
   
   if (data === "billeder") {
     return handleCommand("/billeder", chatId, phone, username, phoneId)
+  }
+  
+  // Handle Stars purchases
+  if (data === "buy_lingeri") {
+    await sendStarsInvoice(botToken, chatId, "👙 Lingeri billeder", "3 sexede lingeri billeder", "lingeri_3", 50)
+    return NextResponse.json({ ok: true })
+  }
+  
+  if (data === "buy_spicy") {
+    await sendStarsInvoice(botToken, chatId, "🔥 Spicy billeder", "3 spicy billeder", "spicy_3", 100)
+    return NextResponse.json({ ok: true })
+  }
+  
+  if (data === "buy_premium") {
+    await sendStarsInvoice(botToken, chatId, "🌟 Premium pakke", "10 eksklusive billeder", "premium_10", 400)
+    return NextResponse.json({ ok: true })
+  }
+  
+  if (data === "buy_custom") {
+    await sendStarsInvoice(botToken, chatId, "🎉 Custom billede", "1 custom billede efter dine ønsker", "custom_1", 200)
+    return NextResponse.json({ ok: true })
   }
   
   return NextResponse.json({ ok: true })
