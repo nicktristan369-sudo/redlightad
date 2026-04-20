@@ -242,27 +242,37 @@ export default function ReviewsSection({
 
   const visibleReviews = showAll ? sortedReviews : sortedReviews.slice(0, 3);
 
-  // Login required overlay
+  // Login required overlay - teaser style with gradient blur
   const LoginOverlay = () => (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm rounded-lg">
-      <Lock className="w-8 h-8 text-gray-400 mb-3" />
-      <h4 className="text-[15px] font-semibold text-gray-900 mb-1">Login Required</h4>
-      <p className="text-[13px] text-gray-500 mb-4 text-center px-6">
-        Create a free account to read and write reviews
-      </p>
-      <div className="flex gap-3">
-        <Link
-          href="/register"
-          className="px-5 py-2 bg-gray-900 text-white text-[13px] font-medium rounded-lg hover:bg-gray-800 transition-colors"
-        >
-          Sign Up Free
-        </Link>
-        <Link
-          href="/login"
-          className="px-5 py-2 border border-gray-200 text-gray-700 text-[13px] font-medium rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          Login
-        </Link>
+    <div className="absolute inset-0 z-10 flex flex-col items-end justify-end rounded-lg overflow-hidden">
+      {/* Gradient fade from transparent to white */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "linear-gradient(to bottom, transparent 0%, transparent 20%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.95) 70%, white 85%)"
+        }}
+      />
+      {/* CTA box at bottom */}
+      <div className="relative w-full p-5 text-center">
+        <Lock className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+        <h4 className="text-[14px] font-semibold text-gray-900 mb-1">Want to read more?</h4>
+        <p className="text-[12px] text-gray-500 mb-3">
+          Create a free account to see all reviews
+        </p>
+        <div className="flex gap-2 justify-center">
+          <Link
+            href="/register"
+            className="px-5 py-2 bg-red-600 text-white text-[13px] font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+          >
+            Sign Up Free
+          </Link>
+          <Link
+            href="/login"
+            className="px-4 py-2 border border-gray-200 text-gray-600 text-[12px] font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Login
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -280,10 +290,22 @@ export default function ReviewsSection({
 
   if (error || !stats) return null;
 
+  // Determine if we should show teaser mode (not logged in)
+  const showTeaser = !isLoggedIn && requireLogin;
+
   return (
-    <div id="reviews" className="rounded-lg bg-white p-6 shadow-sm relative" style={{ border: "1px solid #E5E7EB" }}>
+    <div 
+      id="reviews" 
+      className="rounded-lg bg-white p-6 shadow-sm relative" 
+      style={{ 
+        border: "1px solid #E5E7EB",
+        // Limit height on mobile when showing teaser to create curiosity
+        maxHeight: showTeaser ? "320px" : undefined,
+        overflow: showTeaser ? "hidden" : undefined,
+      }}
+    >
       {/* Login overlay for non-logged in users */}
-      {!isLoggedIn && requireLogin && <LoginOverlay />}
+      {showTeaser && <LoginOverlay />}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
