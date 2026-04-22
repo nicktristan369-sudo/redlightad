@@ -3,12 +3,17 @@ import FilterBar from "@/components/FilterBar";
 import PremiumCarousel from "@/components/PremiumCarousel";
 import AdList from "@/components/AdList";
 import StoryCircles from "@/components/StoryCircles";
+import CityFilter from "@/components/CityFilter";
+import { Suspense } from "react";
 
 export default function Home() {
   return (
     <>
       <Navbar />
       <FilterBar />
+      <Suspense fallback={null}>
+        <CityFilter />
+      </Suspense>
       <main className="bg-[#F5F5F7]">
         <StoryCircles />
         <PremiumCarousel />
