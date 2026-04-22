@@ -3,6 +3,27 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { SUPPORTED_COUNTRIES, POPULAR_COUNTRY_CODES, getCountry, COUNTRIES } from "@/lib/countries"
+import { getLocaleFromDomain, DOMAIN_LOCALE_MAP } from "@/lib/seo"
+
+// Map locale to country code for auto-selection
+const LOCALE_TO_COUNTRY: Record<string, string> = {
+  nl: 'nl',
+  de: 'de',
+  da: 'dk',
+  fr: 'fr',
+  es: 'es',
+  it: 'it',
+  pt: 'pt',
+  sv: 'se',
+  no: 'no',
+  pl: 'pl',
+  cs: 'cz',
+  ru: 'ru',
+  th: 'th',
+  ar: 'ae',
+  // Global domains - no auto-selection
+  en: '',
+}
 
 interface Props {
   onClose?: () => void
@@ -18,6 +39,21 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
   useEffect(() => {
     if (forceOpen) { setVisible(true); return }
     try {
+      // Check if domain has a country-specific TLD
+      const hostname = window.location.hostname
+      const domainLocale = getLocaleFromDomain(hostname)
+      const countryFromDomain = LOCALE_TO_COUNTRY[domainLocale]
+      
+      // If domain has a country (e.g. .nl, .de, .cz), auto-select and skip popup
+      if (countryFromDomain) {
+        localStorage.setItem("selected_country", countryFromDomain)
+        const match = SUPPORTED_COUNTRIES.find(c => c.code === countryFromDomain)
+        if (match) localStorage.setItem("selected_country_name", match.name)
+        window.dispatchEvent(new Event("countryChanged"))
+        return // Don't show popup
+      }
+      
+      // Only show popup on global domains (.com, .eu) if no country selected
       const ageVerified = localStorage.getItem("age_verified")
       const selectedCountry = localStorage.getItem("selected_country")
       if (ageVerified && !selectedCountry) setVisible(true)
