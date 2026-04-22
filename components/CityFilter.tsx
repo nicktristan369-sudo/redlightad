@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getLocaleFromDomain } from "@/lib/seo"
 import { getCitiesForCountry } from "@/lib/cities"
-import { MapPin, ChevronLeft, ChevronRight } from "lucide-react"
+// Icons removed - cleaner minimal design
 
 // Map locale to country name
 const LOCALE_TO_COUNTRY: Record<string, string> = {
@@ -96,83 +96,43 @@ export default function CityFilter() {
   }
 
   return (
-    <div className="bg-gradient-to-b from-white to-gray-50/50">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="relative py-4">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-3">
-            <MapPin className="w-4 h-4 text-red-500" />
-            <span className="text-sm font-medium text-gray-600">Browse by city</span>
-          </div>
+    <div className="bg-[#F5F5F7]">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
+        {/* Scrollable city list */}
+        <div
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex items-center gap-2 overflow-x-auto scrollbar-hide"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {/* All cities pill */}
+          <button
+            onClick={() => handleCityClick(null)}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+              !selectedCity
+                ? "bg-gray-900 text-white"
+                : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            All {countryName}
+          </button>
           
-          {/* Scroll container with arrows */}
-          <div className="relative group">
-            {/* Left arrow */}
-            {showLeftArrow && (
-              <button
-                onClick={() => scroll('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50 -ml-2 md:ml-0"
-              >
-                <ChevronLeft className="w-4 h-4 text-gray-600" />
-              </button>
-            )}
-            
-            {/* Right arrow */}
-            {showRightArrow && (
-              <button
-                onClick={() => scroll('right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50 -mr-2 md:mr-0"
-              >
-                <ChevronRight className="w-4 h-4 text-gray-600" />
-              </button>
-            )}
-            
-            {/* Scrollable city list */}
-            <div
-              ref={scrollRef}
-              onScroll={checkScroll}
-              className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          {/* City pills */}
+          {cities.map((city) => (
+            <button
+              key={city}
+              onClick={() => handleCityClick(city)}
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                selectedCity === city
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
+              }`}
             >
-              {/* All cities pill */}
-              <button
-                onClick={() => handleCityClick(null)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  !selectedCity
-                    ? "bg-gray-900 text-white shadow-sm"
-                    : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                All {countryName}
-              </button>
-              
-              {/* Divider */}
-              <div className="w-px h-6 bg-gray-200 flex-shrink-0 mx-1" />
-              
-              {/* City pills */}
-              {cities.map((city) => (
-                <button
-                  key={city}
-                  onClick={() => handleCityClick(city)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    selectedCity === city
-                      ? "bg-red-600 text-white shadow-sm"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-red-200 hover:text-red-600"
-                  }`}
-                >
-                  {city}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          {/* Gradient fade on edges (desktop) */}
-          <div className="hidden md:block absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-gray-50/50 to-transparent pointer-events-none" />
+              {city}
+            </button>
+          ))}
         </div>
       </div>
-      
-      {/* Bottom border with subtle gradient */}
-      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
     </div>
   )
 }

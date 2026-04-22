@@ -243,10 +243,10 @@ export default function PremiumCarousel({
       .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel, social_links, onlyfans_username")
       .eq("status", "active")
       .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
-      .limit(40)
+      .limit(100) // Fetch more, filter client-side for country
 
     if (excludeId) query = query.neq("id", excludeId)
-    if (selectedCountry) query = query.in("country", getCountryVariants(selectedCountry))
+    // Country filter moved to client-side for flexible matching
 
     query.then(({ data, error }) => {
       if (error) {
@@ -256,22 +256,39 @@ export default function PremiumCarousel({
           .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, social_links, onlyfans_username")
           .eq("status", "active")
           .in("premium_tier", ["vip", "featured", "basic"])
-          .limit(40)
+          .limit(100)
 
-        const fb = selectedCountry ? fallbackQuery.in("country", getCountryVariants(selectedCountry)) : fallbackQuery
-        const base = excludeId ? fb.neq("id", excludeId) : fb
+        const base = excludeId ? fallbackQuery.neq("id", excludeId) : fallbackQuery
 
         base.then(({ data: d2 }: { data: PremiumListing[] | null }) => {
-          const sorted = sortListings(d2 ?? [])
-          setListings(sorted)
+          let filtered = d2 ?? []
+          // Client-side country filter for flexible matching
+          if (selectedCountry) {
+            const variants = getCountryVariants(selectedCountry).map(v => v.toLowerCase())
+            filtered = filtered.filter(l => {
+              const c = (l.country || '').toLowerCase()
+              return variants.some(v => c.includes(v) || v.includes(c))
+            })
+          }
+          const sorted = sortListings(filtered)
+          setListings(sorted.slice(0, 40))
           setOffset(0)
           setLoaded(true)
         })
         return
       }
 
-      const sorted = sortListings(data ?? [])
-      setListings(sorted)
+      let filtered = data ?? []
+      // Client-side country filter for flexible matching
+      if (selectedCountry) {
+        const variants = getCountryVariants(selectedCountry).map(v => v.toLowerCase())
+        filtered = filtered.filter(l => {
+          const c = (l.country || '').toLowerCase()
+          return variants.some(v => c.includes(v) || v.includes(c))
+        })
+      }
+      const sorted = sortListings(filtered)
+      setListings(sorted.slice(0, 40))
       setOffset(0)
       setLoaded(true)
     })
