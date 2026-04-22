@@ -76,8 +76,9 @@ export async function GET(req: NextRequest) {
     const availableNow = searchParams.get("available_now") === "1";
     const regionOverride = searchParams.get("region"); // Allow explicit region override
     
-    // Get region from domain (via x-domain-locale header set by middleware)
-    const domainLocale = req.headers.get('x-domain-locale') as SupportedLocale | null;
+    // Get region from domain - check host header directly
+    const host = req.headers.get('host') || '';
+    const domainLocale = getLocaleFromDomain(host);
     const domainRegion = domainLocale ? LOCALE_TO_REGION[domainLocale] : null;
     const domainCountries = domainLocale ? LOCALE_TO_COUNTRY[domainLocale] : null;
 
@@ -96,10 +97,8 @@ export async function GET(req: NextRequest) {
       query = query.in("country", getCountryVariants(country));
     } else if (domainCountries && !q) {
       // Filter by domain's country if no explicit search
-      // Also include listings with matching region field
-      query = query.or(
-        `country.in.(${domainCountries.join(',')}),region.eq.${domainRegion || 'COM'}`
-      );
+      // Use .in() for country names
+      query = query.in("country", domainCountries);
     }
     if (city)     query = query.ilike("city", city);
     if (category) {

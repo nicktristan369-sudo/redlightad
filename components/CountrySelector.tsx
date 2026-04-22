@@ -75,7 +75,25 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
     } catch { /* ignore */ }
     setVisible(false)
     onClose?.()
-    router.push(`/${code}`)
+    
+    // Check if we're on a country-specific domain
+    const hostname = window.location.hostname
+    const domainLocale = getLocaleFromDomain(hostname)
+    const countryFromDomain = LOCALE_TO_COUNTRY[domainLocale]
+    
+    // If on a country-specific domain and selecting the same country, just reload
+    // If selecting a different country, redirect to the appropriate domain or /{code}
+    if (countryFromDomain === code) {
+      // Already on the right domain, just refresh to apply filter
+      window.location.href = '/'
+    } else if (countryFromDomain) {
+      // On a country domain but selecting different country - stay on current domain
+      // The filter is applied via the selected_country localStorage
+      window.location.href = '/'
+    } else {
+      // On global domain (.com, .eu) - redirect to /{code}
+      router.push(`/${code}`)
+    }
   }
 
   // Build Europe countries from SUPPORTED_COUNTRIES matching COUNTRIES.europe
