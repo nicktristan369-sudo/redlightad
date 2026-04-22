@@ -254,6 +254,28 @@ export default function PremiumCarousel({
 
   // Fetch from Supabase on mount + when country changes
   useEffect(() => {
+    // Get country from TLD directly here too (in case state hasn't updated yet)
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : ''
+    const tld = hostname.split('.').pop()?.toLowerCase() || ''
+    const TLD_TO_COUNTRY: Record<string, string> = {
+      'nl': 'Netherlands',
+      'de': 'Germany',
+      'dk': 'Denmark',
+      'fr': 'France',
+      'es': 'Spain',
+      'it': 'Italy',
+      'pt': 'Portugal',
+      'se': 'Sweden',
+      'no': 'Norway',
+      'pl': 'Poland',
+      'cz': 'Czech Republic',
+      'ch': 'Switzerland',
+      'co': 'Colombia',
+      'ca': 'Canada',
+    }
+    const countryFromTLD = TLD_TO_COUNTRY[tld]
+    const effectiveCountry = countryProp ?? selectedCountry ?? countryFromTLD
+    
     const supabase = createClient()
     setLoaded(false)
 
@@ -262,10 +284,9 @@ export default function PremiumCarousel({
       .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel, social_links, onlyfans_username")
       .eq("status", "active")
       .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
-      .limit(100) // Fetch more, filter client-side for country
+      .limit(100)
 
     if (excludeId) query = query.neq("id", excludeId)
-    // Country filter moved to client-side for flexible matching
 
     query.then(({ data, error }) => {
       if (error) {
@@ -282,11 +303,10 @@ export default function PremiumCarousel({
         base.then(({ data: d2 }: { data: PremiumListing[] | null }) => {
           let filtered = d2 ?? []
           // Client-side country filter - strict matching
-          if (selectedCountry) {
-            const variants = getCountryVariants(selectedCountry).map(v => v.toLowerCase())
+          if (effectiveCountry) {
+            const variants = getCountryVariants(effectiveCountry).map(v => v.toLowerCase())
             filtered = filtered.filter(l => {
               const c = (l.country || '').toLowerCase()
-              // Check if country field contains any of the variants
               return variants.some(v => c === v || c.includes(v))
             })
           }
@@ -300,11 +320,10 @@ export default function PremiumCarousel({
 
       let filtered = data ?? []
       // Client-side country filter - strict matching
-      if (selectedCountry) {
-        const variants = getCountryVariants(selectedCountry).map(v => v.toLowerCase())
+      if (effectiveCountry) {
+        const variants = getCountryVariants(effectiveCountry).map(v => v.toLowerCase())
         filtered = filtered.filter(l => {
           const c = (l.country || '').toLowerCase()
-          // Check if country field contains any of the variants
           return variants.some(v => c === v || c.includes(v))
         })
       }
