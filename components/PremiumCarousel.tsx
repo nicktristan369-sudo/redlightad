@@ -2,7 +2,26 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { createClient } from "@/lib/supabase"
 import { getCountryVariants } from "@/lib/countries"
+import { getLocaleFromDomain } from "@/lib/seo"
 import Link from "next/link"
+
+// Map locale to country name for filtering
+const LOCALE_TO_COUNTRY_NAME: Record<string, string> = {
+  nl: 'Netherlands',
+  de: 'Germany',
+  da: 'Denmark',
+  fr: 'France',
+  es: 'Spain',
+  it: 'Italy',
+  pt: 'Portugal',
+  sv: 'Sweden',
+  no: 'Norway',
+  pl: 'Poland',
+  cs: 'Czech Republic',
+  ru: 'Russia',
+  th: 'Thailand',
+  ar: 'UAE',
+}
 
 // ── Random cycling image with cross-fade ─────────────────────────────────────
 function CyclingImage({
@@ -177,10 +196,21 @@ export default function PremiumCarousel({
   const [hovered, setHovered] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // If country prop is set, use it directly — skip localStorage
-  // Otherwise read from localStorage (forside with CountrySelector)
+  // Priority: 1) prop, 2) domain-based country, 3) localStorage
   useEffect(() => {
-    if (countryProp) return // prop takes priority, no localStorage needed
+    if (countryProp) return // prop takes priority
+    
+    // Check domain first
+    const hostname = window.location.hostname
+    const domainLocale = getLocaleFromDomain(hostname)
+    const domainCountry = domainLocale ? LOCALE_TO_COUNTRY_NAME[domainLocale] : null
+    
+    if (domainCountry) {
+      setLocalCountry(domainCountry)
+      return // Domain country takes priority over localStorage
+    }
+    
+    // Fall back to localStorage for global domains (.com, .eu)
     const read = () => {
       try {
         const name = localStorage.getItem("selected_country_name")
@@ -200,7 +230,7 @@ export default function PremiumCarousel({
     }
   }, [countryProp])
 
-  // Resolved country: prop wins, then localStorage, then null (= all countries)
+  // Resolved country: prop wins, then domain/localStorage
   const selectedCountry = countryProp ?? localCountry
 
   // Fetch from Supabase on mount + when country changes
