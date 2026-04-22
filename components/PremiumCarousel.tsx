@@ -200,10 +200,29 @@ export default function PremiumCarousel({
   useEffect(() => {
     if (countryProp) return // prop takes priority
     
-    // Check domain first
+    // Check domain first - extract TLD
     const hostname = window.location.hostname
-    const domainLocale = getLocaleFromDomain(hostname)
-    const domainCountry = domainLocale ? LOCALE_TO_COUNTRY_NAME[domainLocale] : null
+    const tld = hostname.split('.').pop()?.toLowerCase() || ''
+    
+    // Direct TLD to country mapping
+    const TLD_TO_COUNTRY: Record<string, string> = {
+      'nl': 'Netherlands',
+      'de': 'Germany',
+      'dk': 'Denmark',
+      'fr': 'France',
+      'es': 'Spain',
+      'it': 'Italy',
+      'pt': 'Portugal',
+      'se': 'Sweden',
+      'no': 'Norway',
+      'pl': 'Poland',
+      'cz': 'Czech Republic',
+      'ch': 'Switzerland',
+      'co': 'Colombia',
+      'ca': 'Canada',
+    }
+    
+    const domainCountry = TLD_TO_COUNTRY[tld]
     
     if (domainCountry) {
       setLocalCountry(domainCountry)
@@ -262,12 +281,13 @@ export default function PremiumCarousel({
 
         base.then(({ data: d2 }: { data: PremiumListing[] | null }) => {
           let filtered = d2 ?? []
-          // Client-side country filter for flexible matching
+          // Client-side country filter - strict matching
           if (selectedCountry) {
             const variants = getCountryVariants(selectedCountry).map(v => v.toLowerCase())
             filtered = filtered.filter(l => {
               const c = (l.country || '').toLowerCase()
-              return variants.some(v => c.includes(v) || v.includes(c))
+              // Check if country field contains any of the variants
+              return variants.some(v => c === v || c.includes(v))
             })
           }
           const sorted = sortListings(filtered)
@@ -279,12 +299,13 @@ export default function PremiumCarousel({
       }
 
       let filtered = data ?? []
-      // Client-side country filter for flexible matching
+      // Client-side country filter - strict matching
       if (selectedCountry) {
         const variants = getCountryVariants(selectedCountry).map(v => v.toLowerCase())
         filtered = filtered.filter(l => {
           const c = (l.country || '').toLowerCase()
-          return variants.some(v => c.includes(v) || v.includes(c))
+          // Check if country field contains any of the variants
+          return variants.some(v => c === v || c.includes(v))
         })
       }
       const sorted = sortListings(filtered)
