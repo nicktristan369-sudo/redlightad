@@ -1,5 +1,45 @@
 import { NextRequest, NextResponse } from "next/server"
 
+// ── Domain to locale mapping ─────────────────────────────────────────────────
+const DOMAIN_LOCALE_MAP: Record<string, string> = {
+  'redlightad.nl': 'nl',
+  'redlightad.de': 'de',
+  'redlightad.dk': 'da',
+  'redlightad.fr': 'fr',
+  'redlightad.es': 'es',
+  'redlightad.it': 'it',
+  'redlightad.pt': 'pt',
+  'redlightad.se': 'sv',
+  'redlightad.no': 'no',
+  'redlightad.pl': 'pl',
+  'redlightad.cz': 'cs',
+  'redlightad.ru': 'ru',
+  'redlightad.th': 'th',
+  'redlightad.ae': 'ar',
+  // Global domains default to English
+  'redlightad.com': 'en',
+  'redlightad.eu': 'en',
+}
+
+function getLocaleFromDomain(host: string): string | null {
+  // Remove port if present
+  const domain = host.split(':')[0]
+  
+  // Check exact match
+  if (DOMAIN_LOCALE_MAP[domain]) {
+    return DOMAIN_LOCALE_MAP[domain]
+  }
+  
+  // Check if domain contains any of our mapped domains
+  for (const [mappedDomain, locale] of Object.entries(DOMAIN_LOCALE_MAP)) {
+    if (domain.includes(mappedDomain)) {
+      return locale
+    }
+  }
+  
+  return null
+}
+
 // ── Site lock cache (60 sek TTL) ─────────────────────────────────────────────
 let lockCache: { enabled: boolean; ts: number } | null = null
 const LOCK_CACHE_TTL = 60_000
@@ -64,8 +104,27 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // ── Domain-based locale detection ────────────────────────────────────────
+  const host = req.headers.get('host') || ''
+  const domainLocale = getLocaleFromDomain(host)
+  
   // --- Traffic tracking ---
   const response = NextResponse.next()
+  
+  // Set locale cookie based on domain (if not already set by user preference)
+  if (domainLocale) {
+    const userLocale = req.cookies.get('redlightad_locale')?.value
+    if (!userLocale) {
+      // Auto-set locale from domain on first visit
+      response.cookies.set('redlightad_locale', domainLocale, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        sameSite: 'lax',
+      })
+    }
+    // Always set the domain locale header for SSR
+    response.headers.set('x-domain-locale', domainLocale)
+  }
 
   if (!SKIP_TRACKING.some(p => pathname.startsWith(p))) {
     // Ensure session cookie

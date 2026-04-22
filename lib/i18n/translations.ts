@@ -1,4 +1,4 @@
-export type Locale = "en" | "da" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "sv" | "no" | "ar" | "th" | "ru" | "pl"
+export type Locale = "en" | "da" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "sv" | "no" | "ar" | "th" | "ru" | "pl" | "cs"
 
 export const LANGUAGES: Record<Locale, { name: string; flagCode: string; dir?: "rtl" }> = {
   en: { name: "English",    flagCode: "gb" },
@@ -15,6 +15,7 @@ export const LANGUAGES: Record<Locale, { name: string; flagCode: string; dir?: "
   th: { name: "ภาษาไทย",   flagCode: "th" },
   ru: { name: "Русский",    flagCode: "ru" },
   pl: { name: "Polski",     flagCode: "pl" },
+  cs: { name: "Čeština",    flagCode: "cz" },
 }
 
 export type TranslationKeys = {
@@ -3095,6 +3096,42 @@ const pl = makeSimple({
 // ─────────────────────────────────────────────────────────────────────────────
 // Export
 // ─────────────────────────────────────────────────────────────────────────────
+// Czech translations (copy from English, translate key strings)
+const cs: TranslationKeys = {
+  ...en,
+  // Override with Czech translations
+  nav_home: "Domů",
+  nav_support: "Podpora",
+  nav_post_ad: "Přidat inzerát",
+  nav_login: "Přihlásit se",
+  nav_create_account: "Vytvořit účet",
+  nav_dashboard: "Nástěnka",
+  nav_my_account: "Můj účet",
+  hero_title: "Najděte své spojení",
+  hero_subtitle: "Prozkoumejte ověřené profily a služby ve vašem okolí",
+  hero_cta_start: "Začít",
+  hero_cta_learn: "Více informací",
+  premium_listings: "Premium inzeráty",
+  latest_listings: "Nejnovější inzeráty",
+  search_placeholder: "Hledat...",
+  filter_all_countries: "Všechny země",
+  filter_all_categories: "Všechny kategorie",
+  filter_all_genders: "Všechna pohlaví",
+  filter_search_btn: "Hledat",
+  filter_clear: "Vymazat",
+  auth_login_title: "Přihlášení",
+  auth_login_subtitle: "Zadejte své údaje",
+  auth_email: "E-mail",
+  auth_password: "Heslo",
+  auth_forgot_password: "Zapomněli jste heslo?",
+  auth_login_btn: "Přihlásit se",
+  auth_no_account: "Nemáte účet?",
+  auth_create_account: "Vytvořit účet",
+  auth_register_title: "Registrace",
+  footer_copyright: "© 2026 RedLightAD. Všechna práva vyhrazena.",
+  footer_adults_only: "Pouze pro dospělé (18+)",
+}
+
 export const translations: Record<Locale, TranslationKeys> = {
-  en, da, de, fr, es, it, pt, nl, sv, no, ar, th, ru, pl,
+  en, da, de, fr, es, it, pt, nl, sv, no, ar, th, ru, pl, cs,
 }

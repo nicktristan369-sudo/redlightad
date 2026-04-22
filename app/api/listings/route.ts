@@ -1,6 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getCountryVariants } from "@/lib/countries";
+import { getLocaleFromDomain, SupportedLocale } from "@/lib/seo";
+
+// Map locale to region code for filtering
+const LOCALE_TO_REGION: Partial<Record<SupportedLocale, string>> = {
+  nl: 'NL',
+  de: 'DE',
+  da: 'DK',
+  fr: 'FR',
+  es: 'ES',
+  it: 'IT',
+  pt: 'PT',
+  sv: 'SE',
+  no: 'NO',
+  pl: 'PL',
+  cs: 'CZ',
+  ru: 'RU',
+  th: 'TH',
+  ar: 'AE',
+  // 'en' = global, no region filter
+};
+
+// Map locale to country name for filtering
+const LOCALE_TO_COUNTRY: Partial<Record<SupportedLocale, string[]>> = {
+  nl: ['Netherlands', 'Nederland', 'NL'],
+  de: ['Germany', 'Deutschland', 'DE'],
+  da: ['Denmark', 'Danmark', 'DK'],
+  fr: ['France', 'FR'],
+  es: ['Spain', 'España', 'ES'],
+  it: ['Italy', 'Italia', 'IT'],
+  pt: ['Portugal', 'PT'],
+  sv: ['Sweden', 'Sverige', 'SE'],
+  no: ['Norway', 'Norge', 'NO'],
+  pl: ['Poland', 'Polska', 'PL'],
+  cs: ['Czech Republic', 'Czechia', 'Česko', 'CZ'],
+  ru: ['Russia', 'Россия', 'RU'],
+  th: ['Thailand', 'TH'],
+  ar: ['UAE', 'United Arab Emirates', 'AE'],
+};
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +74,12 @@ export async function GET(req: NextRequest) {
     const hasOwnPlace  = searchParams.get("has_own_place") === "1";
     const verified     = searchParams.get("verified") === "1";
     const availableNow = searchParams.get("available_now") === "1";
+    const regionOverride = searchParams.get("region"); // Allow explicit region override
+    
+    // Get region from domain (via x-domain-locale header set by middleware)
+    const domainLocale = req.headers.get('x-domain-locale') as SupportedLocale | null;
+    const domainRegion = domainLocale ? LOCALE_TO_REGION[domainLocale] : null;
+    const domainCountries = domainLocale ? LOCALE_TO_COUNTRY[domainLocale] : null;
 
     const supabase = getClient();
 
@@ -45,7 +89,18 @@ export async function GET(req: NextRequest) {
       .eq("status", "active")
       .limit(limit);
 
-    if (country) query = query.in("country", getCountryVariants(country));
+    // Region/country filtering priority:
+    // 1. Explicit country param from user
+    // 2. Domain-based region (unless user explicitly searches)
+    if (country) {
+      query = query.in("country", getCountryVariants(country));
+    } else if (domainCountries && !q) {
+      // Filter by domain's country if no explicit search
+      // Also include listings with matching region field
+      query = query.or(
+        `country.in.(${domainCountries.join(',')}),region.eq.${domainRegion || 'COM'}`
+      );
+    }
     if (city)     query = query.ilike("city", city);
     if (category) {
       if (category.toLowerCase() === "trans") {

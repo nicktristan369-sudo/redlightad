@@ -1,6 +1,7 @@
 "use client"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { Locale, translations, LANGUAGES, TranslationKeys } from "./translations"
+import { getLocaleFromDomain, SupportedLocale } from "@/lib/seo"
 
 interface LanguageContextType {
   locale: Locale
@@ -15,11 +16,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("en")
 
   useEffect(() => {
+    // Priority: 1. Saved preference, 2. Domain-based, 3. Default to English
     const saved = localStorage.getItem("redlightad_locale") as Locale | null
     if (saved && translations[saved]) {
       setLocaleState(saved)
     } else {
-      // Default to English — only use saved preference, not browser language
+      // Check domain for locale
+      const domainLocale = getLocaleFromDomain(window.location.hostname) as Locale
+      if (domainLocale && translations[domainLocale]) {
+        setLocaleState(domainLocale)
+        localStorage.setItem("redlightad_locale", domainLocale)
+      }
     }
   }, [])
 
