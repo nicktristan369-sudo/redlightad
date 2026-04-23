@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { uploadImages } from "@/lib/uploadImages";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import { SUPPORTED_COUNTRIES, COUNTRY_CITIES } from "@/lib/countries";
 import { CATEGORIES } from "@/lib/constants/categories";
 import {
@@ -225,6 +226,7 @@ export default function RegisterProviderPage() {
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const frontPhotoRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -323,10 +325,34 @@ export default function RegisterProviderPage() {
     e.preventDefault();
     setError("");
 
+    // Require CAPTCHA
+    if (!captchaToken) {
+      setError("Please complete the security check");
+      return;
+    }
+
     const err = validateStep3();
     if (err) { setError(err); return; }
 
     setLoading(true);
+
+    // Verify CAPTCHA server-side
+    try {
+      const captchaRes = await fetch("/api/auth/verify-captcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+      const captchaData = await captchaRes.json();
+      if (!captchaData.success) {
+        setError("Security check failed. Please try again.");
+        setCaptchaToken(null);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      // Continue if captcha API fails (graceful degradation)
+    }
 
     try {
       setSubmittingText("Creating your account...");
@@ -986,6 +1012,16 @@ export default function RegisterProviderPage() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* CAPTCHA */}
+              <div className="bg-white border border-gray-100 p-6 flex justify-center">
+                <TurnstileCaptcha
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onError={() => setCaptchaToken(null)}
+                  onExpire={() => setCaptchaToken(null)}
+                  theme="light"
+                />
               </div>
 
               {/* Terms */}
