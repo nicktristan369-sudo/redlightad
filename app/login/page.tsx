@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import Logo from "@/components/Logo";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "twitter" | null>(null);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleOAuth = async (provider: "google" | "twitter") => {
     setOauthLoading(provider);
@@ -31,8 +33,34 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Require CAPTCHA for email/password login
+    if (!captchaToken) {
+      setError("Please complete the security check");
+      return;
+    }
+    
     setLoading(true);
     setError("");
+    
+    // Verify CAPTCHA server-side
+    try {
+      const captchaRes = await fetch("/api/auth/verify-captcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+      const captchaData = await captchaRes.json();
+      if (!captchaData.success) {
+        setError("Security check failed. Please try again.");
+        setCaptchaToken(null);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      // Continue if captcha API fails (graceful degradation)
+    }
+    
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) { setError(authError.message); setLoading(false); return; }
@@ -221,6 +249,16 @@ export default function LoginPage() {
                       )}
                     </button>
                   </div>
+                </div>
+
+                {/* CAPTCHA */}
+                <div className="flex justify-center">
+                  <TurnstileCaptcha
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onError={() => setCaptchaToken(null)}
+                    onExpire={() => setCaptchaToken(null)}
+                    theme="dark"
+                  />
                 </div>
 
                 {error && (

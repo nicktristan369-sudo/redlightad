@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import Logo from "@/components/Logo";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 
 export default function CustomerRegisterPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function CustomerRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "twitter" | null>(null);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleOAuth = async (provider: "google" | "twitter") => {
     setOauthLoading(provider);
@@ -30,9 +32,34 @@ export default function CustomerRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    // Require CAPTCHA
+    if (!captchaToken) {
+      setError("Please complete the security check");
+      return;
+    }
+    
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
     if (password !== confirm) { setError("Passwords do not match"); return; }
     setLoading(true);
+
+    // Verify CAPTCHA server-side
+    try {
+      const captchaRes = await fetch("/api/auth/verify-captcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+      const captchaData = await captchaRes.json();
+      if (!captchaData.success) {
+        setError("Security check failed. Please try again.");
+        setCaptchaToken(null);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      // Continue if captcha API fails
+    }
 
     const supabase = createClient();
     const { data, error: authError } = await supabase.auth.signUp({
@@ -208,6 +235,16 @@ export default function CustomerRegisterPage() {
                     required
                     className="w-full px-4 py-3 text-[14px] text-white placeholder-gray-500 bg-[#2a2a2a] border border-gray-700 focus:border-gray-500 outline-none transition-colors"
                     style={{ borderRadius: "4px" }}
+                  />
+                </div>
+
+                {/* CAPTCHA */}
+                <div className="flex justify-center">
+                  <TurnstileCaptcha
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onError={() => setCaptchaToken(null)}
+                    onExpire={() => setCaptchaToken(null)}
+                    theme="dark"
                   />
                 </div>
 
