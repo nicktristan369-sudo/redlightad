@@ -282,7 +282,7 @@ export default function PremiumCarousel({
 
     let query = supabase
       .from("listings")
-      .select("id, slug, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel, social_links, onlyfans_username")
+      .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel, social_links, onlyfans_username")
       .eq("status", "active")
       .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
       .limit(100)
@@ -294,7 +294,7 @@ export default function PremiumCarousel({
         // Column doesn't exist yet (migration pending) → fall back without in_carousel filter
         const fallbackQuery = supabase
           .from("listings")
-          .select("id, slug, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, social_links, onlyfans_username")
+          .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, social_links, onlyfans_username")
           .eq("status", "active")
           .in("premium_tier", ["vip", "featured", "basic"])
           .limit(100)
