@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import CookieBanner from "@/components/CookieBanner";
 import PWARegister from "@/components/PWARegister";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { ThemeProvider } from "@/lib/theme-context";
 
 const inter = Inter({
@@ -66,6 +67,7 @@ export default function RootLayout({
             <AgeVerificationModal />
             <main className="flex-1">{children}</main>
             <Footer />
+            <MobileBottomNav />
             <CookieBanner />
             <PWARegister />
           </LanguageProvider>
