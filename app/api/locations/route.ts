@@ -129,18 +129,42 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Country code to name mapping for filtering
+    const COUNTRY_CODE_TO_NAMES: Record<string, string[]> = {
+      'DE': ['germany', 'deutschland', 'de'],
+      'US': ['united states', 'usa', 'us', 'america'],
+      'GB': ['united kingdom', 'uk', 'gb', 'england', 'britain'],
+      'FR': ['france', 'fr'],
+      'ES': ['spain', 'españa', 'es'],
+      'IT': ['italy', 'italia', 'it'],
+      'NL': ['netherlands', 'nederland', 'nl', 'holland'],
+      'DK': ['denmark', 'danmark', 'dk'],
+      'SE': ['sweden', 'sverige', 'se'],
+      'NO': ['norway', 'norge', 'no'],
+      'PL': ['poland', 'polska', 'pl'],
+      'PT': ['portugal', 'pt'],
+      'BR': ['brazil', 'brasil', 'br'],
+      'AU': ['australia', 'au'],
+      'CA': ['canada', 'ca'],
+      'TH': ['thailand', 'th'],
+      'AE': ['uae', 'united arab emirates', 'ae'],
+      'CZ': ['czech republic', 'czechia', 'cz'],
+      'CH': ['switzerland', 'schweiz', 'ch'],
+      'AT': ['austria', 'österreich', 'at'],
+      'BE': ['belgium', 'belgique', 'be'],
+      'FI': ['finland', 'fi'],
+    };
+
     // Filter by country if specified
-    const countryVariants = countryParam 
-      ? [countryParam, countryParam.toUpperCase(), countryParam.toLowerCase()]
-      : [];
+    const countryCode = countryParam.toUpperCase();
+    const countryVariants = COUNTRY_CODE_TO_NAMES[countryCode] || [countryParam.toLowerCase()];
     
     const filteredListings = countryParam
-      ? listings?.filter(l => 
-          countryVariants.some(v => 
-            l.country?.toLowerCase() === v.toLowerCase() ||
-            l.country?.toLowerCase().includes(v.toLowerCase())
-          )
-        )
+      ? listings?.filter(l => {
+          if (!l.country) return false;
+          const listingCountry = l.country.toLowerCase().trim();
+          return countryVariants.some(v => listingCountry === v || listingCountry.includes(v));
+        })
       : listings;
 
     // Count cities
