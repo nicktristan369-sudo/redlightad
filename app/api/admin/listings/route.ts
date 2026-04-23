@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendEmail, profileApprovedEmail, profileRejectedEmail } from "@/lib/email";
 
 // Map full country name → possible DB values (code variants + full name)
 const COUNTRY_ALIASES: Record<string, string[]> = {
@@ -187,8 +188,38 @@ export async function POST(req: NextRequest) {
 
     // ── reject ──
     if (action === "reject") {
+      // Get listing info for email
+      const { data: listing } = await supabase
+        .from("listings")
+        .select("user_id, title")
+        .eq("id", listingId)
+        .single();
+
       const { error } = await supabase.from("listings").update({ status: "rejected" }).eq("id", listingId);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      // Send rejection email
+      if (listing?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email, full_name, email_notifications")
+          .eq("id", listing.user_id)
+          .single();
+
+        if (profile?.email && profile.email_notifications !== false) {
+          const reason = (body.reason as string) || undefined;
+          const emailData = profileRejectedEmail({
+            providerName: profile.full_name || "Provider",
+            reason,
+          });
+          sendEmail({
+            to: profile.email,
+            subject: emailData.subject,
+            html: emailData.html,
+          }).catch(err => console.error("[Email] rejection notification error:", err));
+        }
+      }
+
       return NextResponse.json({ success: true });
     }
 
@@ -219,8 +250,38 @@ export async function POST(req: NextRequest) {
 
     // ── approve (legacy) ──
     if (action === "approve") {
+      // Get listing info for email
+      const { data: listing } = await supabase
+        .from("listings")
+        .select("user_id, title")
+        .eq("id", listingId)
+        .single();
+
       const { error } = await supabase.from("listings").update({ status: "active" }).eq("id", listingId);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      // Send approval email
+      if (listing?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email, full_name, email_notifications")
+          .eq("id", listing.user_id)
+          .single();
+
+        if (profile?.email && profile.email_notifications !== false) {
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://redlightad.com";
+          const emailData = profileApprovedEmail({
+            providerName: profile.full_name || "Provider",
+            profileUrl: `${siteUrl}/profile/${listingId}`,
+          });
+          sendEmail({
+            to: profile.email,
+            subject: emailData.subject,
+            html: emailData.html,
+          }).catch(err => console.error("[Email] approval notification error:", err));
+        }
+      }
+
       return NextResponse.json({ success: true, status: "active" });
     }
 

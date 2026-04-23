@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { messageRateLimit, getClientIP } from "@/lib/rate-limit"
+import { sendEmail, newMessageEmail } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -116,6 +117,43 @@ export async function POST(req: NextRequest) {
   if (msgErr) {
     console.error("message insert error:", msgErr)
     return NextResponse.json({ error: "Kunne ikke gemme beskeden: " + msgErr.message }, { status: 500 })
+  }
+
+  // Send email notification to provider (fire-and-forget)
+  try {
+    // Get provider email and name
+    const { data: providerProfile } = await db
+      .from("profiles")
+      .select("email, full_name, email_notifications")
+      .eq("id", providerId)
+      .single()
+
+    // Get customer name
+    const { data: customerProfile } = await db
+      .from("profiles")
+      .select("full_name")
+      .eq("id", customerId)
+      .single()
+
+    // Only send if provider has email notifications enabled (default true)
+    if (providerProfile?.email && providerProfile.email_notifications !== false) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://redlightad.com"
+      const emailData = newMessageEmail({
+        recipientName: providerProfile.full_name || "Provider",
+        senderName: customerProfile?.full_name || "A customer",
+        messagePreview: content.trim(),
+        conversationUrl: `${siteUrl}/dashboard/messages/${conversationId}`,
+      })
+
+      sendEmail({
+        to: providerProfile.email,
+        subject: emailData.subject,
+        html: emailData.html,
+      }).catch(err => console.error("[Email] notification error:", err))
+    }
+  } catch (emailErr) {
+    // Don't fail the request if email fails
+    console.error("[Email] notification error:", emailErr)
   }
 
   return NextResponse.json({ ok: true, conversation_id: conversationId })

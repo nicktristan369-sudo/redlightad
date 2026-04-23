@@ -249,9 +249,9 @@ export default function AdminAnnoncerPage() {
   };
 
   const counts = {
-    pending:  listings.filter(l => l.status === "pending").length,
-    active:   listings.filter(l => l.status === "active").length,
-    rejected: listings.filter(l => l.status === "rejected").length,
+    pending:  listings.filter(l => (l.status ?? "").toLowerCase() === "pending").length,
+    active:   listings.filter(l => (l.status ?? "").toLowerCase() === "active").length,
+    rejected: listings.filter(l => (l.status ?? "").toLowerCase() === "rejected").length,
     all:      listings.length,
   };
 
@@ -259,7 +259,7 @@ export default function AdminAnnoncerPage() {
   const allCountries = [...SUPPORTED_COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
 
   const q = search.toLowerCase();
-  const base = tab === "all" ? listings : listings.filter(l => l.status === tab);
+  const base = tab === "all" ? listings : listings.filter(l => (l.status ?? "").toLowerCase() === tab.toLowerCase());
   const filtered = base
     .filter(l => gender === "all" || (l.gender ?? "").toLowerCase() === gender.toLowerCase())
     .filter(l =>
