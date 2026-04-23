@@ -8,6 +8,7 @@ import VoiceMessagePlayer from "@/components/VoiceMessagePlayer"
 
 interface AdCardProps {
   id: string | number;
+  slug?: string | null;
   title: string;
   image: string;
   verified: boolean;
@@ -30,6 +31,7 @@ interface AdCardProps {
 
 export default function AdCard({
   id,
+  slug,
   title,
   image,
   verified,
@@ -57,7 +59,7 @@ export default function AdCard({
     : city || country || location || "";
 
   return (
-    <Link href={`/ads/${id}`} className="block group">
+    <Link href={`/ads/${slug || id}`} className="block group">
       <div
         className="flex flex-col sm:flex-row gap-4 sm:gap-5 rounded-none p-4 transition-all hover:shadow-md relative"
         style={{

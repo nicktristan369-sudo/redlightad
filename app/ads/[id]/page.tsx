@@ -113,13 +113,32 @@ export default function AdDetailPage() {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id ?? null);
 
-      // Fetch listing
-      const { data } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("id", id)
-        .eq("status", "active")
-        .single();
+      // Fetch listing - try by ID first, then by slug
+      let data = null;
+      
+      // Check if id looks like a UUID
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      
+      if (isUuid) {
+        const result = await supabase
+          .from("listings")
+          .select("*")
+          .eq("id", id)
+          .eq("status", "active")
+          .single();
+        data = result.data;
+      }
+      
+      // If not found by ID (or not a UUID), try by slug
+      if (!data) {
+        const result = await supabase
+          .from("listings")
+          .select("*")
+          .eq("slug", id)
+          .eq("status", "active")
+          .single();
+        data = result.data;
+      }
 
       setAd(data ?? null);
 

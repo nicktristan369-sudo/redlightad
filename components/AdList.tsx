@@ -9,6 +9,7 @@ import AdCardGrid from "./AdCardGrid"
 
 interface Listing {
   id: string
+  slug?: string | null
   title: string
   profile_image: string | null
   profile_video_url?: string | null
@@ -462,7 +463,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
             const displayLocation = ad.city || ad.location || ""
             const description = ad.about || ""
             return (
-              <Link key={ad.id} href={`/ads/${ad.id}`} className="block">
+              <Link key={ad.id} href={`/ads/${ad.slug || ad.id}`} className="block">
                 <div className="bg-white rounded-none shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
 
                   {/* ── MOBILE layout — MobileAdCard component ── */}

@@ -17,6 +17,7 @@ function timeAgo(dateStr: string): string {
 
 interface AdCardGridProps {
   id: string | number
+  slug?: string | null
   title: string
   display_name?: string | null
   image: string
@@ -40,7 +41,7 @@ interface AdCardGridProps {
 }
 
 export default function AdCardGrid({
-  id, title, display_name, image, images, profileVideoUrl, verified, age, city, country, location,
+  id, slug, title, display_name, image, images, profileVideoUrl, verified, age, city, country, location,
   category, created_at, opening_hours, timezone, premium_tier,
   hasStory = false, onStoryClick, staggerDelay = 0, social_links, onlyfans_username,
 }: AdCardGridProps) {
@@ -80,7 +81,7 @@ export default function AdCardGrid({
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <Link href={`/ads/${id}`} style={{ display: "block", textDecoration: "none" }}>
+    <Link href={`/ads/${slug || id}`} style={{ display: "block", textDecoration: "none" }}>
       {/* YDRE container — position: relative, overflow: visible */}
       <div
         className="group"

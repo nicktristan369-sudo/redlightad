@@ -141,6 +141,7 @@ function CyclingImage({
 
 interface PremiumListing {
   id: string
+  slug?: string | null
   title: string
   profile_image: string | null
   profile_video_url: string | null
@@ -281,7 +282,7 @@ export default function PremiumCarousel({
 
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel, social_links, onlyfans_username")
+      .select("id, slug, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, in_carousel, social_links, onlyfans_username")
       .eq("status", "active")
       .or("premium_tier.in.(vip,featured,basic),in_carousel.eq.true")
       .limit(100)
@@ -293,7 +294,7 @@ export default function PremiumCarousel({
         // Column doesn't exist yet (migration pending) → fall back without in_carousel filter
         const fallbackQuery = supabase
           .from("listings")
-          .select("id, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, social_links, onlyfans_username")
+          .select("id, slug, title, profile_image, profile_video_url, video_url, age, city, location, country, premium_tier, about, images, opening_hours, timezone, created_at, social_links, onlyfans_username")
           .eq("status", "active")
           .in("premium_tier", ["vip", "featured", "basic"])
           .limit(100)
@@ -438,7 +439,7 @@ export default function PremiumCarousel({
             const isFeatured = l.premium_tier === "featured"
 
             return (
-              <Link href={`/ads/${l.id}`} key={l.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[173px]">
+              <Link href={`/ads/${l.slug || l.id}`} key={l.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[173px]">
                 <div className="relative overflow-hidden cursor-pointer w-full" style={{ aspectRatio: "173/260" }}>
                   {/* Cycling gallery image — staggered per card */}
                   <CyclingImage

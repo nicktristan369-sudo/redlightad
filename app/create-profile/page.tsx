@@ -9,6 +9,7 @@ import VoiceRecorder from "@/components/VoiceRecorder";
 import SocialLinksEditor from "@/components/SocialLinksEditor";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 import { CreditCard, Banknote, Coins, Zap } from "lucide-react";
+import { generateUniqueSlug } from "@/lib/slug";
 
 const DIAL_CODES = [
   { code: "+45",  iso: "DK", name: "Denmark" },
@@ -509,8 +510,12 @@ export default function OpretAnnoncePage() {
         imageUrls = await uploadImages(imageFiles);
       }
 
+      // Generate URL slug from display name or title
+      const slug = generateUniqueSlug(form.display_name || form.title);
+      
       const { data: insertedData, error } = await supabase.from("listings").insert({
         user_id: user.id,
+        slug: slug,
         display_name: form.display_name,
         title: form.title,
         category: form.category,
