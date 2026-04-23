@@ -27,6 +27,7 @@ interface Listing {
   profile_image: string | null;
   created_at: string;
   user_id: string;
+  premium_expires_at: string | null;
 }
 
 type Tab = "pending" | "active" | "rejected" | "all";
@@ -371,6 +372,7 @@ export default function AdminAnnoncerPage() {
                     { label: "Category",  w: "" },
                     { label: "Location",  w: "w-[160px]" },
                     { label: "Tier",      w: "w-[148px]" },
+                    { label: "Expires",   w: "w-[100px]" },
                     { label: "Carousel",  w: "w-[80px]" },
                     { label: "Status",    w: "" },
                     { label: "Date",      w: "" },
@@ -424,6 +426,26 @@ export default function AdminAnnoncerPage() {
                       {/* Tier — editable dropdown */}
                       <td className="px-4 py-3">
                         <TierDropdown listingId={l.id} currentTier={l.tier} onSet={setTier} />
+                      </td>
+                      {/* Premium Expires */}
+                      <td className="px-4 py-3 text-[11px] whitespace-nowrap">
+                        {l.tier && l.tier !== "basic" && l.premium_expires_at ? (() => {
+                          const expires = new Date(l.premium_expires_at);
+                          const now = new Date();
+                          const daysLeft = Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          const isExpired = daysLeft <= 0;
+                          const isWarning = daysLeft > 0 && daysLeft <= 3;
+                          return (
+                            <span className="px-2 py-1 rounded-full font-semibold" style={{
+                              background: isExpired ? "#FEE2E2" : isWarning ? "#FEF3C7" : "#DCFCE7",
+                              color: isExpired ? "#991B1B" : isWarning ? "#92400E" : "#166534",
+                            }}>
+                              {isExpired ? "Expired" : daysLeft === 1 ? "1 day" : `${daysLeft} days`}
+                            </span>
+                          );
+                        })() : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
                       {/* Carousel toggle */}
                       <td className="px-4 py-3 text-center">
