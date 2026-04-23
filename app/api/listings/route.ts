@@ -51,14 +51,19 @@ const getClient = () =>
 
 export async function GET(req: NextRequest) {
   try {
-    // Rate limiting - 30 requests per minute per IP
+    // Rate limiting - 30 requests per minute per IP (skip if Upstash not configured)
     const ip = getClientIP(req);
-    const { success: rateLimitOk } = await searchRateLimit.limit(ip);
-    if (!rateLimitOk) {
-      return NextResponse.json(
-        { error: "Too many requests. Please slow down." },
-        { status: 429 }
-      );
+    try {
+      const { success: rateLimitOk } = await searchRateLimit.limit(ip);
+      if (!rateLimitOk) {
+        return NextResponse.json(
+          { error: "Too many requests. Please slow down." },
+          { status: 429 }
+        );
+      }
+    } catch (rateLimitError) {
+      // Rate limiting unavailable (Upstash not configured) - continue without it
+      console.warn("[Listings API] Rate limiting unavailable:", rateLimitError);
     }
 
     const { searchParams } = new URL(req.url);
