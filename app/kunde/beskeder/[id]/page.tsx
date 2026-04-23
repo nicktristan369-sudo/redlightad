@@ -10,6 +10,7 @@ interface Message {
   sender_id: string
   content: string
   created_at: string
+  read_at?: string | null
 }
 
 interface Conv {
@@ -27,8 +28,11 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
   const [msg, setMsg] = useState("")
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isTyping, setIsTyping] = useState(false)
+  const [otherTyping, setOtherTyping] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -74,18 +78,76 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
       }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message])
       })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "typing_status",
+        filter: `conversation_id=eq.${convId}`,
+      }, (payload) => {
+        const status = payload.new as { user_id: string; is_typing: boolean }
+        if (status.user_id !== userId) {
+          setOtherTyping(status.is_typing)
+          if (status.is_typing) {
+            setTimeout(() => setOtherTyping(false), 3000)
+          }
+        }
+      })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [convId])
+  }, [convId, userId])
 
   // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  // Broadcast typing status
+  const broadcastTyping = async (typing: boolean) => {
+    if (!conv) return
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
+    
+    fetch("/api/chat/typing", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ conversation_id: convId, is_typing: typing }),
+    }).catch(() => {})
+  }
+
+  // Handle input change with typing indicator
+  const handleInputChange = (value: string) => {
+    setMsg(value)
+    
+    if (value.trim() && !isTyping) {
+      setIsTyping(true)
+      broadcastTyping(true)
+    }
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false)
+      broadcastTyping(false)
+    }, 2000)
+  }
+
   const send = async () => {
     if (!msg.trim() || !conv || !userId) return
     setSending(true)
+    
+    // Clear typing status
+    setIsTyping(false)
+    broadcastTyping(false)
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
@@ -197,8 +259,13 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
                           }}>
                             {m.content}
                           </div>
-                          <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isMe ? "right" : "left", paddingLeft: isMe ? 0 : 4, paddingRight: isMe ? 4 : 0 }}>
+                          <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isMe ? "right" : "left", paddingLeft: isMe ? 0 : 4, paddingRight: isMe ? 4 : 0, display: "flex", alignItems: "center", gap: 4, justifyContent: isMe ? "flex-end" : "flex-start" }}>
                             {fmt(m.created_at)}
+                            {isMe && (
+                              <span style={{ color: m.read_at ? "#10B981" : "#9CA3AF" }}>
+                                {m.read_at ? "✓✓" : "✓"}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -206,6 +273,32 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
                   })}
                 </div>
               ))
+            )}
+            {/* Typing indicator */}
+            {otherTyping && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, marginBottom: 4 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", overflow: "hidden", background: "#E5E7EB", flexShrink: 0 }}>
+                  {profileImg
+                    ? <img src={profileImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <div style={{ width: "100%", height: "100%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 8, fontWeight: 800, color: "#fff" }}>{profileTitle.slice(0,2).toUpperCase()}</span>
+                      </div>}
+                </div>
+                <div style={{ 
+                  padding: "8px 14px", 
+                  background: "#F3F4F6", 
+                  borderRadius: "18px 18px 18px 4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4
+                }}>
+                  <div style={{ display: "flex", gap: 3 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0s" }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0.2s" }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0.4s" }} />
+                  </div>
+                </div>
+              </div>
             )}
             <div ref={bottomRef} />
           </div>
@@ -215,7 +308,7 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
             <textarea
               ref={inputRef}
               value={msg}
-              onChange={e => setMsg(e.target.value)}
+              onChange={e => handleInputChange(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Write a message..."
               rows={1}
@@ -237,7 +330,13 @@ export default function KundeChatPage({ params }: { params: Promise<{ id: string
           </div>
         </div>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes bounce{
+          0%,60%,100%{transform:translateY(0)}
+          30%{transform:translateY(-4px)}
+        }
+      `}</style>
     </KundeLayout>
   )
 }

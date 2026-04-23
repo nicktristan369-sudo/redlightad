@@ -12,6 +12,7 @@ interface Message {
   sender_id: string
   content: string
   created_at: string
+  read_at?: string | null
 }
 
 interface Conv {
@@ -51,8 +52,11 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showProfile, setShowProfile] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
+  const [otherTyping, setOtherTyping] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -102,6 +106,7 @@ export default function ChatPage() {
       const unreadField = user.id === c.provider_id ? "provider_unread" : "customer_unread"
       await supabase.from("conversations").update({ [unreadField]: 0 }).eq("id", convId)
 
+      // Subscribe to new messages
       const channel = supabase
         .channel(`chat:${convId}`)
         .on("postgres_changes", {
@@ -110,15 +115,74 @@ export default function ChatPage() {
         }, (payload) => {
           setMessages(prev => [...prev, payload.new as Message])
         })
+        .on("postgres_changes", {
+          event: "*", schema: "public", table: "typing_status",
+          filter: `conversation_id=eq.${convId}`,
+        }, (payload) => {
+          const status = payload.new as { user_id: string; is_typing: boolean; updated_at: string }
+          if (status.user_id !== user.id) {
+            setOtherTyping(status.is_typing)
+            // Auto-clear typing after 3 seconds
+            if (status.is_typing) {
+              setTimeout(() => setOtherTyping(false), 3000)
+            }
+          }
+        })
         .subscribe()
       return () => { supabase.removeChannel(channel) }
     }
     init()
   }, [convId, router])
 
+  // Broadcast typing status
+  const broadcastTyping = async (typing: boolean) => {
+    if (!conv) return
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
+    
+    fetch("/api/chat/typing", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ conversation_id: convId, is_typing: typing }),
+    }).catch(() => {})
+  }
+
+  // Handle input change with typing indicator
+  const handleInputChange = (value: string) => {
+    setNewMessage(value)
+    
+    if (value.trim() && !isTyping) {
+      setIsTyping(true)
+      broadcastTyping(true)
+    }
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    
+    // Set new timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false)
+      broadcastTyping(false)
+    }, 2000)
+  }
+
   const sendMessage = async () => {
     if (!newMessage.trim() || sending || !userId || !conv) return
     setSending(true)
+    
+    // Clear typing status
+    setIsTyping(false)
+    broadcastTyping(false)
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    
     const content = newMessage.trim()
     setNewMessage("")
     const supabase = createClient()
@@ -216,8 +280,13 @@ export default function ChatPage() {
                           }}>
                             {m.content}
                           </div>
-                          <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isMe ? "right" : "left" }}>
+                          <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isMe ? "right" : "left", display: "flex", alignItems: "center", gap: 4, justifyContent: isMe ? "flex-end" : "flex-start" }}>
                             {fmt(m.created_at)}
+                            {isMe && (
+                              <span style={{ color: m.read_at ? "#10B981" : "#9CA3AF" }}>
+                                {m.read_at ? "✓✓" : "✓"}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -225,6 +294,26 @@ export default function ChatPage() {
                   })}
                 </div>
               ))
+            )}
+            {/* Typing indicator */}
+            {otherTyping && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, marginBottom: 4 }}>
+                <AvatarBubble size={24} />
+                <div style={{ 
+                  padding: "8px 14px", 
+                  background: "#F3F4F6", 
+                  borderRadius: "18px 18px 18px 4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4
+                }}>
+                  <div style={{ display: "flex", gap: 3 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0s" }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0.2s" }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0.4s" }} />
+                  </div>
+                </div>
+              </div>
             )}
             <div ref={bottomRef} />
           </div>
@@ -235,7 +324,7 @@ export default function ChatPage() {
               ref={inputRef}
               type="text"
               value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
+              onChange={e => handleInputChange(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") sendMessage() }}
               placeholder={t.chat_placeholder}
               style={{ flex: 1, padding: "10px 16px", fontSize: 14, border: "1px solid #E5E7EB", borderRadius: 24, outline: "none", background: "#F9FAFB" }}
@@ -254,7 +343,13 @@ export default function ChatPage() {
         <CustomerProfileCard profile={customer} onClose={() => setShowProfile(false)} />
       )}
 
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes bounce{
+          0%,60%,100%{transform:translateY(0)}
+          30%{transform:translateY(-4px)}
+        }
+      `}</style>
     </DashboardLayout>
   )
 }
