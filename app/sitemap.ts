@@ -1,6 +1,9 @@
 import { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 3600; // Revalidate every hour
+
 const BASE_URL = "https://redlightad.com";
 
 // Create Supabase client for server-side

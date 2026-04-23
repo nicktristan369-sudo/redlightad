@@ -50,8 +50,12 @@ export async function GET(req: NextRequest) {
   }
 
   // Filter out any deleted/inactive listings
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeFavorites = (favorites ?? [])
-    .filter(f => f.listings && (f.listings as { status: string }).status === "active")
+    .filter(f => {
+      const listing = f.listings as { status?: string } | null;
+      return listing && listing.status === "active";
+    })
     .map(f => ({
       id: f.id,
       listing_id: f.listing_id,

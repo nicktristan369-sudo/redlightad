@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseAdmin = createClient(
+const getAdmin = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "").trim()
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token)
+  const { data: { user }, error: authErr } = await getAdmin().auth.getUser(token)
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { listingId, amount, viewerUsername } = await req.json()
@@ -20,12 +20,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Get listing → streamer user_id
-  const { data: listing } = await supabaseAdmin
+  const { data: listing } = await getAdmin()
     .from("listings").select("user_id").eq("id", listingId).single()
   if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 })
 
   // Get viewer wallet balance (source of truth)
-  const { data: viewerWallet } = await supabaseAdmin
+  const { data: viewerWallet } = await getAdmin()
     .from("wallets").select("balance").eq("user_id", user.id).maybeSingle()
   const currentBalance = viewerWallet?.balance ?? 0
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   // Deduct from viewer
   const newBalance = currentBalance - amount
   if (viewerWallet) {
-    const { error: deductErr } = await supabaseAdmin
+    const { error: deductErr } = await getAdmin()
       .from("wallets").update({ balance: newBalance }).eq("user_id", user.id)
     if (deductErr) return NextResponse.json({ error: "Kunne ikke trække RC" }, { status: 500 })
   } else {
@@ -44,19 +44,19 @@ export async function POST(req: NextRequest) {
   }
 
   // Credit streamer wallet
-  const { data: streamerWallet } = await supabaseAdmin
+  const { data: streamerWallet } = await getAdmin()
     .from("wallets").select("balance, total_earned").eq("user_id", listing.user_id).maybeSingle()
   if (streamerWallet) {
-    await supabaseAdmin.from("wallets")
+    await getAdmin().from("wallets")
       .update({ balance: streamerWallet.balance + amount, total_earned: (streamerWallet.total_earned || 0) + amount })
       .eq("user_id", listing.user_id)
   } else {
-    await supabaseAdmin.from("wallets")
+    await getAdmin().from("wallets")
       .insert({ user_id: listing.user_id, balance: amount, total_earned: amount })
   }
 
   // Log wallet transaction for streamer
-  await supabaseAdmin.from("wallet_transactions").insert({
+  await getAdmin().from("wallet_transactions").insert({
     user_id: listing.user_id,
     type: "tip",
     amount,
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Insert chat message — realtime broadcaster til alle inkl. go-live
-  await supabaseAdmin.from("cam_messages").insert({
+  await getAdmin().from("cam_messages").insert({
     room_id: listingId,
     user_id: user.id,
     username: viewerUsername || "Anonymous",
