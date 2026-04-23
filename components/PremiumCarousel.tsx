@@ -276,6 +276,11 @@ export default function PremiumCarousel({
     const countryFromTLD = TLD_TO_COUNTRY[tld]
     const effectiveCountry = countryProp ?? selectedCountry ?? countryFromTLD
     
+    // Debug: log what country we're filtering by
+    if (typeof window !== 'undefined') {
+      console.log('[PremiumCarousel] TLD:', tld, '| countryFromTLD:', countryFromTLD, '| effectiveCountry:', effectiveCountry)
+    }
+    
     const supabase = createClient()
     setLoaded(false)
 
@@ -302,12 +307,14 @@ export default function PremiumCarousel({
 
         base.then(({ data: d2 }: { data: PremiumListing[] | null }) => {
           let filtered = d2 ?? []
-          // Client-side country filter - strict matching
+          // Client-side country filter - strict matching for regional domains
           if (effectiveCountry) {
-            const variants = getCountryVariants(effectiveCountry).map(v => v.toLowerCase())
+            const countryLower = effectiveCountry.toLowerCase()
             filtered = filtered.filter(l => {
-              const c = (l.country || '').toLowerCase()
-              return variants.some(v => c === v || c.includes(v))
+              const listingCountry = (l.country || '').toLowerCase()
+              return listingCountry.includes(countryLower) || 
+                     countryLower.includes(listingCountry) ||
+                     listingCountry === countryLower
             })
           }
           const sorted = sortListings(filtered)
@@ -319,12 +326,15 @@ export default function PremiumCarousel({
       }
 
       let filtered = data ?? []
-      // Client-side country filter - strict matching
+      // Client-side country filter - strict matching for regional domains
       if (effectiveCountry) {
-        const variants = getCountryVariants(effectiveCountry).map(v => v.toLowerCase())
+        const countryLower = effectiveCountry.toLowerCase()
         filtered = filtered.filter(l => {
-          const c = (l.country || '').toLowerCase()
-          return variants.some(v => c === v || c.includes(v))
+          const listingCountry = (l.country || '').toLowerCase()
+          // Must contain the country name (e.g. "netherlands" in country field)
+          return listingCountry.includes(countryLower) || 
+                 countryLower.includes(listingCountry) ||
+                 listingCountry === countryLower
         })
       }
       const sorted = sortListings(filtered)
