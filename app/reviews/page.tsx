@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabaseServer"
+import { headers } from "next/headers"
 import Navbar from "@/components/Navbar"
 import ReviewsClient from "@/components/ReviewsClient"
+import { getCountryFromHeaders } from "@/lib/domain-country"
 
 export const revalidate = 120
 
@@ -11,6 +13,8 @@ export const metadata = {
 
 export default async function ReviewsPage() {
   const supabase = createServerClient()
+  const headersList = await headers()
+  const domainCountry = getCountryFromHeaders(headersList)
 
   // Try with is_approved filter first, fall back if column missing
   let { data: reviews, error } = await supabase
@@ -29,6 +33,16 @@ export default async function ReviewsPage() {
     reviews = fallback.data
   }
 
+  // Filter by domain country if on regional domain
+  let filteredReviews = reviews ?? []
+  if (domainCountry) {
+    const countryLower = domainCountry.toLowerCase()
+    filteredReviews = filteredReviews.filter((r: any) => {
+      const listingCountry = (r.listings?.country || '').toLowerCase()
+      return listingCountry.includes(countryLower) || listingCountry === countryLower
+    })
+  }
+
   return (
     <>
       <Navbar />
@@ -39,7 +53,7 @@ export default async function ReviewsPage() {
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Reviews</h1>
               <p className="text-gray-500 mt-2">Read verified reviews from real clients worldwide</p>
             </div>
-            <ReviewsClient reviews={(reviews as any) || []} />
+            <ReviewsClient reviews={(filteredReviews as any) || []} />
           </div>
         </section>
       </main>

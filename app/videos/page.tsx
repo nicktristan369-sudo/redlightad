@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabaseServer"
+import { headers } from "next/headers"
 import Navbar from "@/components/Navbar"
 import VideoGrid from "@/components/VideoGrid"
+import { getCountryFromHeaders } from "@/lib/domain-country"
 
 export const revalidate = 60
 
@@ -11,9 +13,11 @@ export const metadata = {
 
 export default async function VideosPage() {
   const supabase = createServerClient()
+  const headersList = await headers()
+  const domainCountry = getCountryFromHeaders(headersList)
 
   // Fetch all videos with listing info including gender and category
-  const { data: videos } = await supabase
+  let query = supabase
     .from("listing_videos")
     .select(`
       id, url, thumbnail_url, title, is_locked, redcoin_price, views, likes, sort_order, created_at,
@@ -23,14 +27,26 @@ export default async function VideosPage() {
     .order("created_at", { ascending: false })
     .limit(500)
 
+  const { data: videos } = await query
+
+  // Filter by domain country if on regional domain
+  let filteredVideos = videos ?? []
+  if (domainCountry) {
+    const countryLower = domainCountry.toLowerCase()
+    filteredVideos = filteredVideos.filter((v: any) => {
+      const listingCountry = (v.listings?.country || '').toLowerCase()
+      return listingCountry.includes(countryLower) || listingCountry === countryLower
+    })
+  }
+
   // Count videos per listing for badge
   const countMap: Record<string, number> = {}
-  ;(videos ?? []).forEach((v: any) => {
+  filteredVideos.forEach((v: any) => {
     countMap[v.listing_id] = (countMap[v.listing_id] || 0) + 1
   })
 
   // Add video count to each video
-  const videosWithCount = (videos ?? []).map((v: any) => ({
+  const videosWithCount = filteredVideos.map((v: any) => ({
     ...v,
     video_count: countMap[v.listing_id] || 1
   }))

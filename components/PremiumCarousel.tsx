@@ -276,11 +276,6 @@ export default function PremiumCarousel({
     const countryFromTLD = TLD_TO_COUNTRY[tld]
     const effectiveCountry = countryProp ?? selectedCountry ?? countryFromTLD
     
-    // Debug: log what country we're filtering by
-    if (typeof window !== 'undefined') {
-      console.log('[PremiumCarousel] TLD:', tld, '| countryFromTLD:', countryFromTLD, '| effectiveCountry:', effectiveCountry)
-    }
-    
     const supabase = createClient()
     setLoaded(false)
 

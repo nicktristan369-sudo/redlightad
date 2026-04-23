@@ -12,6 +12,7 @@ import {
   type MarketplaceCategory,
   type SortOption,
 } from "@/lib/marketplace";
+import { getCountryFromHostname } from "@/lib/domain-country";
 import { Globe, SlidersHorizontal, MapPin } from "lucide-react";
 
 const COUNTRY_OPTIONS = [
@@ -157,6 +158,16 @@ export default function MarketplacePage() {
   const [sort, setSort] = useState<SortOption>("newest");
   const [country, setCountry] = useState("all");
   const [gender, setGender] = useState("all");
+  const [domainCountry, setDomainCountry] = useState<string | null>(null);
+
+  // Set default country from domain TLD on mount
+  useEffect(() => {
+    const detected = getCountryFromHostname();
+    if (detected) {
+      setDomainCountry(detected);
+      setCountry(detected); // Pre-select in dropdown
+    }
+  }, []);
 
   useEffect(() => {
     const fetchItems = async () => {
