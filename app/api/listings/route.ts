@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getCountryVariants } from "@/lib/countries";
 import { getLocaleFromDomain, SupportedLocale } from "@/lib/seo";
+import { searchRateLimit, getClientIP } from "@/lib/rate-limit";
 
 // Map locale to region code for filtering
 const LOCALE_TO_REGION: Partial<Record<SupportedLocale, string>> = {
@@ -50,6 +51,16 @@ const getClient = () =>
 
 export async function GET(req: NextRequest) {
   try {
+    // Rate limiting - 30 requests per minute per IP
+    const ip = getClientIP(req);
+    const { success: rateLimitOk } = await searchRateLimit.limit(ip);
+    if (!rateLimitOk) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down." },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const country      = searchParams.get("country");
     const city         = searchParams.get("city");

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { messageRateLimit, getClientIP } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -10,6 +11,16 @@ const admin = () => createClient(
 
 // POST — send besked til en profil
 export async function POST(req: NextRequest) {
+  // Rate limiting - 30 messages per minute
+  const ip = getClientIP(req)
+  const { success: rateLimitOk } = await messageRateLimit.limit(ip)
+  if (!rateLimitOk) {
+    return NextResponse.json(
+      { error: "Too many messages. Please wait a moment." },
+      { status: 429 }
+    )
+  }
+
   // Hent auth token fra Authorization header
   const authHeader = req.headers.get("authorization") ?? ""
   const token = authHeader.replace("Bearer ", "").trim()

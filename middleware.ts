@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from "next/server"
 
+// ── Bot and Scraper Detection ─────────────────────────────────────────────────────
+const BLOCKED_USER_AGENTS = [
+  'scrapy', 'python-requests', 'curl/', 'wget/', 'httpclient',
+  'java/', 'libwww', 'lwp-trivial', 'sitesucker', 'webcopier',
+  'httrack', 'webcollector', 'offline explorer', 'teleport',
+  'webzip', 'linkscan', 'larbin', 'rubyurllib', 'bbsbot',
+  'datacha0s', 'convera', 'gigabot', 'ia_archiver', 'nutch',
+  'spbot', 'dotbot', 'semrushbot', 'ahrefsbot', 'mj12bot',
+  'blexbot', 'petalbot', 'bytespider', 'gptbot', 'ccbot',
+]
+
+function isBlockedBot(userAgent: string | null): boolean {
+  if (!userAgent) return false
+  const ua = userAgent.toLowerCase()
+  return BLOCKED_USER_AGENTS.some(bot => ua.includes(bot))
+}
+
 // ── Domain to locale mapping ─────────────────────────────────────────────────
 const DOMAIN_LOCALE_MAP: Record<string, string> = {
   'redlightad.nl': 'nl',
@@ -75,6 +92,12 @@ const SKIP_TRACKING = ["/api/", "/_next/", "/admin/", "/favicon.ico", "/opengrap
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+  const userAgent = req.headers.get('user-agent')
+
+  // ── Block known scrapers and bots ──────────────────────────────────────────
+  if (isBlockedBot(userAgent)) {
+    return new NextResponse('Access Denied', { status: 403 })
+  }
 
   // Allow public paths and static assets
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
