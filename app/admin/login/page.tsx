@@ -7,11 +7,14 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [requires2FA, setRequires2FA] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [emailFocus, setEmailFocus] = useState(false);
   const [pwFocus, setPwFocus] = useState(false);
+  const [totpFocus, setTotpFocus] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -25,10 +28,21 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          email, 
+          password,
+          totp_code: totpCode || undefined,
+        }),
       });
 
       const data = await res.json();
+
+      // Check if 2FA is required
+      if (data.requires_2fa) {
+        setRequires2FA(true);
+        setLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         setError(data.error ?? "Invalid credentials");
@@ -201,6 +215,44 @@ export default function AdminLoginPage() {
                 </button>
               </div>
             </div>
+
+            {/* 2FA Code */}
+            {requires2FA && (
+              <div>
+                <label
+                  htmlFor="totp"
+                  className="block text-[12px] font-medium mb-2"
+                  style={{ color: "#888" }}
+                >
+                  2FA Code
+                </label>
+                <input
+                  id="totp"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  required
+                  autoComplete="one-time-code"
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                  onFocus={() => setTotpFocus(true)}
+                  onBlur={() => setTotpFocus(false)}
+                  placeholder="000000"
+                  className="w-full px-4 py-3 text-[14px] outline-none transition-all text-center tracking-[0.5em] font-mono"
+                  style={{
+                    background: "#1A1A1A",
+                    border: `1px solid ${totpFocus ? "#444" : "#252525"}`,
+                    borderRadius: "10px",
+                    color: "#F5F5F5",
+                    letterSpacing: "0.5em",
+                  }}
+                />
+                <p className="text-[11px] mt-2" style={{ color: "#666" }}>
+                  Enter the 6-digit code from your authenticator app
+                </p>
+              </div>
+            )}
 
             {/* Error */}
             {error && (

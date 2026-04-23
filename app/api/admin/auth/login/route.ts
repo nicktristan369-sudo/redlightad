@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { SignJWT } from "jose";
+import { verifyTOTP } from "@/lib/totp";
 
 const MAX_ATTEMPTS = 5;
 const BLOCK_MINUTES = 15;
@@ -36,10 +37,13 @@ export async function POST(req: NextRequest) {
 
   let email = "";
   let password = "";
+  let totpCode = "";
+  
   try {
     const body = await req.json();
     email = (body.email ?? "").trim().toLowerCase();
     password = body.password ?? "";
+    totpCode = (body.totp_code ?? "").trim();
   } catch {
     return NextResponse.json(INVALID_CREDS, { status: 401 });
   }
@@ -61,7 +65,6 @@ export async function POST(req: NextRequest) {
       action: "login_blocked",
       detail: `Rate limited after ${recentFails} failed attempts`,
     });
-    // Return generic error — don't reveal rate limiting
     return NextResponse.json(INVALID_CREDS, { status: 401 });
   }
 
@@ -77,7 +80,6 @@ export async function POST(req: NextRequest) {
   });
 
   if (authError || !authData.user) {
-    // Log failed attempt
     await db.from("admin_login_attempts").insert({ ip, success: false });
     await db.from("admin_audit_log").insert({
       email,
@@ -89,15 +91,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(INVALID_CREDS, { status: 401 });
   }
 
-  // ── Role check ──────────────────────────────────────────────────────────
+  // ── Role & 2FA check ────────────────────────────────────────────────────
   const { data: profile } = await db
     .from("profiles")
-    .select("role, is_admin")
+    .select("role, is_admin, totp_secret, totp_enabled")
     .eq("id", authData.user.id)
     .single();
 
   if (profile?.role !== "admin") {
-    // Valid user, not an admin — log as failed, same generic error
     await db.from("admin_login_attempts").insert({ ip, success: false });
     await db.from("admin_audit_log").insert({
       user_id: authData.user.id,
@@ -110,11 +111,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(INVALID_CREDS, { status: 401 });
   }
 
-  // ── Success ─────────────────────────────────────────────────────────────
-  // Clear failed attempts for this IP
-  await db.from("admin_login_attempts").delete().eq("ip", ip).eq("success", false);
+  // ── 2FA verification ────────────────────────────────────────────────────
+  if (profile?.totp_enabled && profile?.totp_secret) {
+    // If no code provided, tell client 2FA is required
+    if (!totpCode) {
+      return NextResponse.json({ 
+        requires_2fa: true, 
+        message: "Enter your 2FA code" 
+      }, { status: 200 });
+    }
 
-  // Log success
+    // Verify TOTP code
+    if (!verifyTOTP(profile.totp_secret, totpCode)) {
+      await db.from("admin_login_attempts").insert({ ip, success: false });
+      await db.from("admin_audit_log").insert({
+        user_id: authData.user.id,
+        email,
+        ip,
+        user_agent: ua,
+        action: "login_2fa_failed",
+        detail: "Invalid TOTP code",
+      });
+      return NextResponse.json({ error: "Invalid 2FA code" }, { status: 401 });
+    }
+  }
+
+  // ── Success ─────────────────────────────────────────────────────────────
+  await db.from("admin_login_attempts").delete().eq("ip", ip).eq("success", false);
   await db.from("admin_login_attempts").insert({ ip, success: true });
   await db.from("admin_audit_log").insert({
     user_id: authData.user.id,
@@ -122,6 +145,7 @@ export async function POST(req: NextRequest) {
     ip,
     user_agent: ua,
     action: "login_success",
+    detail: profile?.totp_enabled ? "with 2FA" : "without 2FA",
   });
 
   // Sign session JWT
