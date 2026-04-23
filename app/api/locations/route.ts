@@ -163,9 +163,13 @@ export async function GET(req: NextRequest) {
       ? listings?.filter(l => {
           if (!l.country) return false;
           const listingCountry = l.country.toLowerCase().trim();
-          return countryVariants.some(v => listingCountry === v || listingCountry.includes(v));
+          const matches = countryVariants.some(v => listingCountry === v || listingCountry.includes(v));
+          return matches;
         })
       : listings;
+
+    // Debug log
+    console.log(`[Locations API] country=${countryParam}, variants=${countryVariants.join(',')}, total=${listings?.length}, filtered=${filteredListings?.length}`);
 
     // Count cities
     const cityCounts: Record<string, { count: number; region?: string }> = {};
