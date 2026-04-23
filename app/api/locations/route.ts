@@ -163,7 +163,16 @@ export async function GET(req: NextRequest) {
       ? listings?.filter(l => {
           if (!l.country) return false;
           const listingCountry = l.country.toLowerCase().trim();
-          const matches = countryVariants.some(v => listingCountry === v || listingCountry.includes(v));
+          // Only exact matches or full word matches (not substring like 'de' in 'denmark')
+          const matches = countryVariants.some(v => {
+            if (listingCountry === v) return true;
+            // Check if it's a word boundary match (e.g., 'germany' matches but 'de' in 'denmark' doesn't)
+            if (v.length <= 2) {
+              // For short codes, require exact match only
+              return listingCountry === v;
+            }
+            return listingCountry.includes(v);
+          });
           return matches;
         })
       : listings;
