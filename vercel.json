@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/expire-premium",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/premium-reminder",
+      "schedule": "0 9 * * *"
     }
   ]
 }
