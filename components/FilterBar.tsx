@@ -340,23 +340,54 @@ function LocationMenu({
   const [dynamicCities, setDynamicCities] = useState<{ name: string; count: number; region?: string }[]>([])
   const [loadingCities, setLoadingCities] = useState(false)
 
-  // Fetch cities dynamically when country is selected
+  // Fetch cities dynamically from GeoNames system
   useEffect(() => {
     if (!selCode || step !== "city") return
     
     setLoadingCities(true)
-    fetch(`/api/locations?country=${selCode}`)
+    // Try new GeoNames API first, fallback to old API
+    fetch(`/api/geo/regions?country=${selCode}&with_cities=true`)
       .then(r => r.json())
       .then(data => {
-        // Combine top cities and all cities from regions
-        const allCities = [
-          ...(data.topCities || []),
-          ...(data.regions?.flatMap((r: any) => r.cities) || [])
-        ].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i)
-        setDynamicCities(allCities)
+        if (data.regions && data.regions.length > 0) {
+          // Use GeoNames data
+          const allCities = data.regions.flatMap((r: any) => 
+            (r.cities || []).map((c: any) => ({
+              name: c.name,
+              count: 0,
+              region: r.name,
+              population: c.population
+            }))
+          ).sort((a: any, b: any) => (b.population || 0) - (a.population || 0))
+          setDynamicCities(allCities)
+        } else {
+          // Fallback to old API
+          return fetch(`/api/locations?country=${selCode}`)
+            .then(r => r.json())
+            .then(fallbackData => {
+              const allCities = [
+                ...(fallbackData.topCities || []),
+                ...(fallbackData.regions?.flatMap((r: any) => r.cities) || [])
+              ].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i)
+              setDynamicCities(allCities)
+            })
+        }
         setLoadingCities(false)
       })
-      .catch(() => setLoadingCities(false))
+      .catch(() => {
+        // Fallback on error
+        fetch(`/api/locations?country=${selCode}`)
+          .then(r => r.json())
+          .then(data => {
+            const allCities = [
+              ...(data.topCities || []),
+              ...(data.regions?.flatMap((r: any) => r.cities) || [])
+            ].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i)
+            setDynamicCities(allCities)
+            setLoadingCities(false)
+          })
+          .catch(() => setLoadingCities(false))
+      })
   }, [selCode, step])
 
   // Filter cities by search
