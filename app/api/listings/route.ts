@@ -107,13 +107,23 @@ export async function GET(req: NextRequest) {
       .limit(limit);
 
     // Region/country filtering priority:
-    // 1. Explicit country param from user
-    // 2. Domain-based region (unless user explicitly searches)
+    // 1. Explicit country param from user - ALWAYS use this if provided
+    // 2. Domain-based region (only if no country param and no search query)
     if (country) {
-      query = query.in("country", getCountryVariants(country));
+      // User explicitly selected a country - use expanded variants
+      const variants = getCountryVariants(country);
+      // Also add common variations
+      const expandedVariants = [
+        ...variants,
+        // Handle "Denmark" vs "Danmark" etc.
+        country.charAt(0).toUpperCase() + country.slice(1).toLowerCase(),
+      ].filter((v, i, a) => a.indexOf(v) === i);
+      
+      console.log(`[Listings API] Country filter: ${country} -> variants: ${expandedVariants.join(', ')}`);
+      query = query.in("country", expandedVariants);
     } else if (domainCountries && !q) {
       // Filter by domain's country if no explicit search
-      // Use .in() for country names
+      console.log(`[Listings API] Domain filter: ${domainCountries.join(', ')}`);
       query = query.in("country", domainCountries);
     }
     if (city)     query = query.ilike("city", city);
