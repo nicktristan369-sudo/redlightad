@@ -368,9 +368,21 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
     if (gender)   params.set("gender",   gender)
     if (q)        params.set("q",        q)
     fetch(`/api/listings?${params}`)
-      .then(r => r.json())
-      .then(d => { setListings(d.listings ?? []); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(r => {
+        if (!r.ok) {
+          console.error("[AdList] API error:", r.status, r.statusText);
+          return { listings: [] };
+        }
+        return r.json();
+      })
+      .then(d => { 
+        setListings(d.listings ?? []); 
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("[AdList] Fetch error:", err);
+        setLoading(false);
+      })
   }, [country, city, category, gender, q, limit])
 
   if (loading) {
