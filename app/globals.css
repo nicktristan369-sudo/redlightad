@@ -45,6 +45,7 @@
   --footer-text: #D1D5DB;
 }
 
+.dark,
 [data-theme="dark"] {
   /* Dark mode */
   --bg-primary: #0d0d0d;

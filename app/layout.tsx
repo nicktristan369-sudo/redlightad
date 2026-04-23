@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import CookieBanner from "@/components/CookieBanner";
 import PWARegister from "@/components/PWARegister";
+import { ThemeProvider } from "@/lib/theme-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -58,15 +59,17 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body
-        className={`${inter.variable} antialiased bg-[#F5F5F7] text-[#1D1D1F] flex flex-col min-h-screen`}
+        className={`${inter.variable} antialiased theme-bg theme-text flex flex-col min-h-screen`}
       >
-        <LanguageProvider>
-          <AgeVerificationModal />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <CookieBanner />
-          <PWARegister />
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <AgeVerificationModal />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <CookieBanner />
+            <PWARegister />
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

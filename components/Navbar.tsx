@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare, Home, Star, Zap, Play, ShoppingBag, Heart, Video, CircleDollarSign, LifeBuoy, ExternalLink } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare, Home, Star, Zap, Play, ShoppingBag, Heart, Video, CircleDollarSign, LifeBuoy, ExternalLink, Moon, Sun } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { useTheme } from "@/lib/theme-context";
 
 interface UserState {
   email: string;
@@ -25,6 +26,7 @@ interface NavbarProps {
 export default function Navbar({ variant = "light" }: NavbarProps) {
   const isDark = variant === "dark";
   const { t } = useLanguage();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [navSearch, setNavSearch] = useState("");
@@ -204,6 +206,14 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
               onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
               <Search size={20} color={isDark ? "#fff" : "#374151"} />
+            </button>
+
+            {/* Theme Toggle - Desktop */}
+            <button onClick={toggleTheme} style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
+              onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+              title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+              {resolvedTheme === "dark" ? <Sun size={20} color="#fbbf24" /> : <Moon size={20} color="#374151" />}
             </button>
 
             {user ? (
@@ -480,6 +490,20 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
               </div>
               <LanguageSelector />
             </div>
+
+            {/* Theme Toggle */}
+            <button onClick={toggleTheme}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "4px 14px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#F7F7F7"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                {resolvedTheme === "dark" ? <Sun size={14} color="#8E8E93" strokeWidth={2} /> : <Moon size={14} color="#8E8E93" strokeWidth={2} />}
+                <span style={{ fontSize: 13, color: "#555", fontWeight: 450 }}>Theme</span>
+              </div>
+              <span style={{ fontSize: 13, color: "#1A1A1A", fontWeight: 500 }}>
+                {resolvedTheme === "dark" ? "Dark" : "Light"}
+              </span>
+            </button>
 
             {/* Location */}
             {selectedCountry && (
