@@ -126,7 +126,21 @@ export async function GET(req: NextRequest) {
       console.log(`[Listings API] Domain filter: ${domainCountries.join(', ')}`);
       query = query.in("country", domainCountries);
     }
-    if (city)     query = query.ilike("city", city);
+    if (city) {
+      // Handle URL-safe city names: "kbenhavn" should match "København"
+      // Remove special chars and use partial match
+      const cleanCity = city
+        .replace(/-/g, ' ')           // kebab-case to spaces
+        .replace(/ae/gi, '(æ|ae)')    // ae -> æ
+        .replace(/oe/gi, '(ø|oe|o)')  // oe -> ø (also plain o for kbenhavn)
+        .replace(/aa/gi, '(å|aa)')    // aa -> å
+        .replace(/ue/gi, '(ü|ue)')    // ue -> ü (German)
+      
+      // For "kbenhavn", extract key part and do partial match
+      // København contains "benhavn", kbenhavn contains "benhavn" 
+      const searchTerm = city.length > 3 ? city.slice(-6) : city; // Last 6 chars for matching
+      query = query.ilike("city", `%${searchTerm}%`);
+    }
     if (category) {
       if (category.toLowerCase() === "trans") {
         // Trans profiler kan have gender=trans ELLER category=trans
