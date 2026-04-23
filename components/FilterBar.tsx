@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, Suspense } from "react"
+import { useState, useEffect, useRef, Suspense, useMemo } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Check, Video } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
@@ -10,7 +10,7 @@ import {
   ORIENTATION_OPTIONS,
 } from "@/lib/listingOptions"
 import { GENDERS, GENDER_LABELS } from "@/lib/constants/genders"
-import { SUPPORTED_COUNTRIES, getCountryByName, slugify, COUNTRIES, getCountryEntryByCode, getCountryEntryByName, COUNTRY_CITIES } from "@/lib/countries"
+import { SUPPORTED_COUNTRIES, getCountryByName, slugify, COUNTRIES, getCountryEntryByCode, getCountryEntryByName } from "@/lib/countries"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 // ── Filter Drawer ─────────────────────────────────────────────────────────────
@@ -337,8 +337,32 @@ function LocationMenu({
   })
   const [step, setStep] = useState<"country" | "city">(currentCountry ? "city" : "country")
   const [search, setSearch] = useState("")
+  const [dynamicCities, setDynamicCities] = useState<{ name: string; count: number; region?: string }[]>([])
+  const [loadingCities, setLoadingCities] = useState(false)
 
-  const cities = selCode ? (COUNTRY_CITIES[selCode] ?? []) : []
+  // Fetch cities dynamically when country is selected
+  useEffect(() => {
+    if (!selCode || step !== "city") return
+    
+    setLoadingCities(true)
+    fetch(`/api/locations?country=${selCode}`)
+      .then(r => r.json())
+      .then(data => {
+        // Combine top cities and all cities from regions
+        const allCities = [
+          ...(data.topCities || []),
+          ...(data.regions?.flatMap((r: any) => r.cities) || [])
+        ].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i)
+        setDynamicCities(allCities)
+        setLoadingCities(false)
+      })
+      .catch(() => setLoadingCities(false))
+  }, [selCode, step])
+
+  // Filter cities by search
+  const cities = search 
+    ? dynamicCities.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+    : dynamicCities
 
   const allCountries = [...COUNTRIES.europe, ...COUNTRIES.worldwide]
   const filteredEurope = COUNTRIES.europe.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
@@ -379,7 +403,7 @@ function LocationMenu({
               {filteredEurope.map(c => (
                 <button
                   key={c.code}
-                  onClick={() => { const hasCities = (COUNTRY_CITIES[c.code] ?? []).length > 0; if (hasCities) { setSelCountry(c.name); setSelCode(c.code); setStep("city"); setSearch("") } else { onSelect({ country: c.name, city: "" }) } }}
+                  onClick={() => { setSelCountry(c.name); setSelCode(c.code); setStep("city"); setSearch(""); setDynamicCities([]) }}
                   className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
                     currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
                   }`}
@@ -398,7 +422,7 @@ function LocationMenu({
               {filteredWorldwide.map(c => (
                 <button
                   key={c.code}
-                  onClick={() => { const hasCities = (COUNTRY_CITIES[c.code] ?? []).length > 0; if (hasCities) { setSelCountry(c.name); setSelCode(c.code); setStep("city"); setSearch("") } else { onSelect({ country: c.name, city: "" }) } }}
+                  onClick={() => { setSelCountry(c.name); setSelCode(c.code); setStep("city"); setSearch(""); setDynamicCities([]) }}
                   className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
                     currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
                   }`}
@@ -435,17 +459,40 @@ function LocationMenu({
         >
           {t.filter_all_cities} {selCountry}
         </button>
-        {cities.length === 0 ? (
-          <p className="px-4 py-4 text-sm text-gray-400 text-center">{t.filter_no_cities}</p>
-        ) : cities.map(city => (
+        {/* Search box for cities */}
+        <div className="p-2 border-b border-gray-100 flex-shrink-0 sticky top-0 bg-white z-10">
+          <input
+            placeholder="Search city..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full px-3 py-1.5 border border-gray-200 outline-none focus:border-gray-400 text-sm"
+            style={{ borderRadius: 0 }}
+          />
+        </div>
+        {loadingCities ? (
+          <div className="flex justify-center py-8">
+            <div className="w-5 h-5 border-2 border-gray-200 border-t-red-600 rounded-full animate-spin" />
+          </div>
+        ) : cities.length === 0 ? (
+          <p className="px-4 py-4 text-sm text-gray-400 text-center">
+            {search ? `No cities found for "${search}"` : "No profiles in this country yet"}
+          </p>
+        ) : cities.slice(0, 50).map((city, i) => (
           <button
-            key={city}
-            onClick={() => onSelect({ country: selCountry, city })}
-            className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
-              currentCity === city ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+            key={`${city.name}-${i}`}
+            onClick={() => onSelect({ country: selCountry, city: city.name })}
+            className={`w-full flex items-center justify-between gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
+              currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
             }`}
           >
-            <MapPin size={11} /> {city}
+            <span className="flex items-center gap-2">
+              <MapPin size={11} className="text-gray-400" />
+              <span>{city.name}</span>
+              {city.region && <span className="text-xs text-gray-400">({city.region})</span>}
+            </span>
+            {city.count > 0 && (
+              <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{city.count}</span>
+            )}
           </button>
         ))}
       </div>
