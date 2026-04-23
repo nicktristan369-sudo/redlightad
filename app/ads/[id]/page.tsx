@@ -142,6 +142,20 @@ export default function AdDetailPage() {
 
       setAd(data ?? null);
 
+      // Track profile view (fire and forget)
+      if (data?.id) {
+        const session = await supabase.auth.getSession();
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (session.data.session?.access_token) {
+          headers.Authorization = `Bearer ${session.data.session.access_token}`;
+        }
+        fetch("/api/track/view", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ listing_id: data.id }),
+        }).catch(() => {});
+      }
+
       // Trigger travel check
       fetch("/api/travel/check").catch(() => {});
 
