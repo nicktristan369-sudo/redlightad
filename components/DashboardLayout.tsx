@@ -25,6 +25,8 @@ import {
   Radio,
   Film,
   Share2,
+  Receipt,
+  BarChart3,
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
@@ -39,6 +41,8 @@ const NAV_ITEMS = [
   { href: "/dashboard/wallet",         label: "Wallet",              icon: Wallet },
   { href: "/dashboard/buy-coins",      label: "Buy Coins",           icon: Coins },
   { href: "/dashboard/boost",          label: "Premium & Boost",     icon: Zap },
+  { href: "/dashboard/analytics",      label: "Analytics",           icon: BarChart3 },
+  { href: "/dashboard/invoices",       label: "Invoices",            icon: Receipt },
   { href: "/dashboard/profil",         label: "Profile Settings",    icon: Settings },
 ]
 
