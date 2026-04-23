@@ -59,7 +59,7 @@ export default async function CityPage({ params }: Props) {
           </div>
         </div>
         <PremiumCarousel country={displayCountry} title={`Premium i ${cityName}`} subtitle="Top verificerede profiler" />
-        <AdList country={code} city={cityName} limit={40} />
+        <AdList country={displayCountry} city={cityName} limit={40} />
       </main>
     </>
   )

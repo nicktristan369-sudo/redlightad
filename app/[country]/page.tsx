@@ -58,7 +58,7 @@ export default async function CountryPage({ params }: Props) {
           </div>
           <StoryCircles country={code} />
           <PremiumCarousel country={displayName} title={`Premium i ${displayName}`} subtitle="Top verificerede profiler" />
-          <AdList country={code} limit={40} />
+          <AdList country={displayName} limit={40} />
         </main>
       )}
     </>
