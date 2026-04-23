@@ -11,6 +11,7 @@ import {
 const NAV = [
   { href: "/kunde",           label: "Overview",     icon: LayoutDashboard },
   { href: "/kunde/feed",      label: "Feed",          icon: Heart },
+  { href: "/kunde/favoritter", label: "Favorites",    icon: Heart },
   { href: "/kunde/beskeder",  label: "Messages",      icon: MessageSquare },
   { href: "/kunde/mine-kob",  label: "My Purchases",  icon: ShoppingBag },
   { href: "/kunde/coins",     label: "RedCoins",      icon: Coins },
