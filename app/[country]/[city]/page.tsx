@@ -49,13 +49,11 @@ export default async function CityPage({ params }: Props) {
       <main className="bg-[#F5F5F7] min-h-screen">
         {/* Minimal Location Header */}
         <div className="bg-white border-b border-gray-100">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4">
-            <div className="flex items-center gap-3">
-              <span className={`fi fi-${code} fis`} style={{ width: 24, height: 18, display: 'inline-block', flexShrink: 0 }} />
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">{cityName}, {displayCountry}</h1>
-                <p className="text-sm text-gray-400">Verified profiles</p>
-              </div>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold text-gray-900">{cityName}, {displayCountry}</h1>
+              <span className="text-gray-300">·</span>
+              <p className="text-sm text-gray-400">Verified ads</p>
             </div>
           </div>
         </div>
