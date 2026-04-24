@@ -25,19 +25,11 @@ jobs:
         run: |
           echo "Disabling X/Twitter OAuth Provider..."
           curl -X PATCH \
-            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/auth/config" \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/config/auth/external/twitter" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{
-              "auth": {
-                "external": {
-                  "twitter": {
-                    "enabled": false
-                  }
-                }
-              }
-            }' \
-            -w "\nHTTP Status: %{http_code}\n"
+            -d '{"enabled": false}' \
+            -w "\nHTTP Status: %{http_code}\n" -v
           
           sleep 3
 
@@ -46,30 +38,24 @@ jobs:
         run: |
           echo "Re-enabling X/Twitter OAuth Provider..."
           curl -X PATCH \
-            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/auth/config" \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/config/auth/external/twitter" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{
-              "auth": {
-                "external": {
-                  "twitter": {
-                    "enabled": true
-                  }
-                }
-              }
-            }' \
-            -w "\nHTTP Status: %{http_code}\n"
+            -d '{"enabled": true}' \
+            -w "\nHTTP Status: %{http_code}\n" -v
 
       - name: Verify Provider Status
         run: |
           echo "Verifying X/Twitter OAuth Provider status..."
           curl -s -X GET \
-            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/auth/config" \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/config/auth/external/twitter" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" | \
-            jq '.auth.external.twitter // "Provider config not found"'
+            jq '.' || echo "Could not verify provider status"
 
       - name: Notify Success
         if: success()
         run: |
           echo "✅ X/Twitter OAuth Provider has been successfully reset!"
           echo "Login should now work at: https://redlightad.com/login"
+          echo ""
+          echo "If login still fails, try logging out and clearing browser cache, then try again."
