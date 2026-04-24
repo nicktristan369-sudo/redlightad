@@ -793,36 +793,15 @@ function FilterBarInner() {
 
             {/* Filters drawer button */}
             <div className="relative">
-              <button
+              <Pill
+                icon={<SlidersHorizontal size={13} />}
+                label={t.filter_filters}
+                active={!!(ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow)}
                 onClick={() => setDrawerOpen(true)}
-                className="flex items-center justify-center gap-1.5 w-full h-full px-3 md:px-2.5 py-2 md:py-1.5 text-sm md:text-[13px] font-medium border transition-colors"
-                style={{
-                  borderRadius: 0,
-                  border: (ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) ? "1px solid #DC2626" : "1px solid #E5E7EB",
-                  background: (ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) ? "#FEF2F2" : "#fff",
-                  color: (ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) ? "#DC2626" : "#374151",
-                }}
-              >
-                <SlidersHorizontal size={13} />
-                {t.filter_filters}
-                {(ageMin || ageMax || premiumOnly || hasVideo || sort || nationality || bodyBuild || hairColor || ethnicity || orientation || languages || heightMin || heightMax || outcall || hasOwnPlace || verifiedParam || availableNow) && (
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#DC2626", flexShrink: 0 }} />
-                )}
-              </button>
+              />
             </div>
 
-            {/* Clear all — shown when any filter active */}
-            {hasFilters && (
-              <div className="relative">
-                <button
-                  onClick={() => { router.push("/"); setQ("") }}
-                  className="flex items-center justify-center gap-1.5 w-full h-full px-3 py-2 text-sm font-medium text-gray-400 bg-white hover:text-gray-700 transition-colors"
-                  style={{ borderRadius: 0, border: "none", borderLeft: "1px solid #E5E7EB" }}
-                >
-                  <X size={12} /> Clear
-                </button>
-              </div>
-            )}
+
 
           </div>
         </div>
