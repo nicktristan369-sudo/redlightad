@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase"
 
 interface LocationValue {
   country: string

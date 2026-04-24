@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase"
 import { getLocaleFromDomain } from "@/lib/seo"
 import { SUPPORTED_COUNTRIES, getCountry } from "@/lib/countries"
 
