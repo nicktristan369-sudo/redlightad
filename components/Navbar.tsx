@@ -201,12 +201,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
           {/* Right icons */}
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 
-            {/* Search */}
-            <button onClick={() => setSearchOpen(!searchOpen)} style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
-              onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              <Search size={20} color={isDark ? "#fff" : "#374151"} />
-            </button>
+
 
             {/* Theme Toggle - Desktop */}
             <button onClick={toggleTheme} style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
