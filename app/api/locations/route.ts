@@ -116,6 +116,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const countryParam = searchParams.get("country") || "";
+    const includeGeo = searchParams.get("includeGeo") !== "false"; // Default true
     
     const supabase = getClient();
 
@@ -220,13 +221,33 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.totalCount - a.totalCount)
       .map(({ totalCount, ...r }) => r);
 
+    // If no cities found from listings, fetch from geo_cities as fallback
+    let geoCities: { name: string; count: number; region?: string }[] = [];
+    if (includeGeo && cities.length === 0 && countryParam) {
+      const { data: geoData } = await supabase
+        .from("geo_cities")
+        .select("name, population, country_id!inner(iso_code)")
+        .eq("country_id.iso_code", countryParam.toUpperCase())
+        .order("population", { ascending: false })
+        .limit(50);
+      
+      if (geoData) {
+        geoCities = geoData.map(c => ({
+          name: c.name,
+          count: 0,
+          region: undefined,
+        }));
+      }
+    }
+
     return NextResponse.json({
       country: countryParam,
       countryCode: countryParam.toUpperCase(),
-      topCities,
+      topCities: topCities.length > 0 ? topCities : geoCities.slice(0, 10),
       regions,
-      totalCities: cities.length,
+      totalCities: cities.length || geoCities.length,
       totalListings: filteredListings?.length || 0,
+      fromGeo: cities.length === 0 && geoCities.length > 0,
     });
   } catch (err) {
     console.error("[Locations API] Error:", err);
