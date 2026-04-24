@@ -279,9 +279,7 @@ function CountryButton({ code, name, onClick }: {
         className={`fi fi-${flagCode} fis`} 
         style={{ 
           width: 20, 
-          height: 15, 
-          borderRadius: 2,
-          boxShadow: '0 0 0 1px rgba(255,255,255,0.1)'
+          height: 15
         }} 
       />
       <span className="text-sm text-gray-300 group-hover:text-white truncate">{name}</span>
