@@ -387,7 +387,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
   if (loading) {
     return (
-      <section className="py-8 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 16px' }}>
         <div className="flex justify-center py-16">
           <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
         </div>
@@ -397,7 +397,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
   if (listings.length === 0) {
     return (
-      <section className="py-8 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 16px' }}>
         <div className="text-center py-16 text-gray-400">
           <FileText size={40} color="#D1D5DB" className="mx-auto mb-4" />
           <p className="text-lg">No active listings yet</p>
@@ -407,7 +407,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
   }
 
   return (
-    <section className="py-6 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <section style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 16px' }}>
       {/* ── View toggle bar ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
         <span style={{ fontSize: "13px", color: "#6B7280" }}>{listings.length} profiles</span>
@@ -593,7 +593,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 export default function AdList(props: Props) {
   return (
     <Suspense fallback={
-      <section className="py-8 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 16px' }}>
         <div className="flex justify-center py-16">
           <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
         </div>
