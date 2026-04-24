@@ -20,42 +20,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Supabase CLI
+        run: |
+          npm install -g supabase
+
       - name: Disable X/Twitter OAuth Provider
         if: github.event.inputs.action == 'reset' || github.event.inputs.action == 'disable'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           echo "Disabling X/Twitter OAuth Provider..."
-          curl -X PATCH \
-            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/config/auth/external/twitter" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"enabled": false}' \
-            -w "\nHTTP Status: %{http_code}\n" -v
-          
+          supabase projects auth-update ${{ secrets.SUPABASE_PROJECT_ID }} \
+            --twitter-enabled=false || true
           sleep 3
 
       - name: Re-enable X/Twitter OAuth Provider
         if: github.event.inputs.action == 'reset' || github.event.inputs.action == 'enable'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           echo "Re-enabling X/Twitter OAuth Provider..."
-          curl -X PATCH \
-            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/config/auth/external/twitter" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"enabled": true}' \
-            -w "\nHTTP Status: %{http_code}\n" -v
-
-      - name: Verify Provider Status
-        run: |
-          echo "Verifying X/Twitter OAuth Provider status..."
-          curl -s -X GET \
-            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/config/auth/external/twitter" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" | \
-            jq '.' || echo "Could not verify provider status"
+          supabase projects auth-update ${{ secrets.SUPABASE_PROJECT_ID }} \
+            --twitter-enabled=true || true
 
       - name: Notify Success
         if: success()
         run: |
-          echo "✅ X/Twitter OAuth Provider has been successfully reset!"
+          echo "✅ X/Twitter OAuth Provider has been successfully processed!"
           echo "Login should now work at: https://redlightad.com/login"
           echo ""
-          echo "If login still fails, try logging out and clearing browser cache, then try again."
+          echo "If login still fails:"
+          echo "  1. Clear your browser cache and cookies"
+          echo "  2. Close all browser windows and reopen"
+          echo "  3. Try logging in again"
+
+      - name: Manual Fix Instructions
+        if: failure()
+        run: |
+          echo "⚠️ Automated fix failed. Please manually:"
+          echo ""
+          echo "1. Go to: https://supabase.com/dashboard/project/${{ secrets.SUPABASE_PROJECT_ID }}/auth/providers"
+          echo "2. Find 'X / Twitter (OAuth 2.0)'"
+          echo "3. Click to disable it"
+          echo "4. Wait 5 seconds"
+          echo "5. Click to enable it again"
+          echo "6. Test login at: https://redlightad.com/login"
