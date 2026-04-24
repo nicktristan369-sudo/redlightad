@@ -24,20 +24,10 @@ export default function TurnstileCaptcha({
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   if (!siteKey) {
-    // In development without key, show placeholder
-    if (process.env.NODE_ENV === "development") {
-      return (
-        <div className="bg-zinc-800 border border-zinc-700 rounded p-4 text-center text-sm text-zinc-400">
-          CAPTCHA disabled in development
-          <button
-            type="button"
-            onClick={() => onVerify("dev-bypass-token")}
-            className="block mx-auto mt-2 text-red-500 underline"
-          >
-            Bypass for testing
-          </button>
-        </div>
-      );
+    // No site key - auto-verify and return nothing visible
+    // This makes CAPTCHA optional when not configured
+    if (typeof window !== 'undefined') {
+      setTimeout(() => onVerify('no-captcha-configured'), 100);
     }
     return null;
   }
