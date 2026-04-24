@@ -49,7 +49,7 @@ export default async function CityPage({ params }: Props) {
       <main className="bg-[#F5F5F7] min-h-screen">
         {/* Minimal Location Header */}
         <div className="bg-white border-b border-gray-100">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 16px' }}>
             <div className="flex items-center gap-2">
               <h1 className="text-base font-semibold text-gray-900">{cityName}, {displayCountry}</h1>
               <span className="text-gray-300">·</span>
