@@ -33,32 +33,37 @@ export default function CustomerRegisterPage() {
     e.preventDefault();
     setError("");
     
-    // Require CAPTCHA
-    if (!captchaToken) {
-      setError("Please complete the security check");
-      return;
-    }
+    // CAPTCHA is optional - allow if not configured
+    // Only require CAPTCHA verification if one was actually collected
+    const hasCaptchaKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
     
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
     if (password !== confirm) { setError("Passwords do not match"); return; }
     setLoading(true);
 
-    // Verify CAPTCHA server-side
-    try {
-      const captchaRes = await fetch("/api/auth/verify-captcha", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: captchaToken }),
-      });
-      const captchaData = await captchaRes.json();
-      if (!captchaData.success) {
-        setError("Security check failed. Please try again.");
-        setCaptchaToken(null);
-        setLoading(false);
-        return;
+    // Verify CAPTCHA server-side if configured
+    if (hasCaptchaKey && captchaToken) {
+      try {
+        const captchaRes = await fetch("/api/auth/verify-captcha", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: captchaToken }),
+        });
+        const captchaData = await captchaRes.json();
+        if (!captchaData.success) {
+          setError("Security check failed. Please try again.");
+          setCaptchaToken(null);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Continue if captcha API fails
       }
-    } catch {
-      // Continue if captcha API fails
+    } else if (hasCaptchaKey && !captchaToken) {
+      // Only require CAPTCHA if it's configured
+      setError("Please complete the security check");
+      setLoading(false);
+      return;
     }
 
     const supabase = createClient();

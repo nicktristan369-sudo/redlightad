@@ -325,33 +325,37 @@ export default function RegisterProviderPage() {
     e.preventDefault();
     setError("");
 
-    // Require CAPTCHA
-    if (!captchaToken) {
-      setError("Please complete the security check");
-      return;
-    }
+    // CAPTCHA is optional - allow if not configured
+    const hasCaptchaKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
     const err = validateStep3();
     if (err) { setError(err); return; }
 
     setLoading(true);
 
-    // Verify CAPTCHA server-side
-    try {
-      const captchaRes = await fetch("/api/auth/verify-captcha", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: captchaToken }),
-      });
-      const captchaData = await captchaRes.json();
-      if (!captchaData.success) {
-        setError("Security check failed. Please try again.");
-        setCaptchaToken(null);
-        setLoading(false);
-        return;
+    // Verify CAPTCHA server-side if configured
+    if (hasCaptchaKey && captchaToken) {
+      try {
+        const captchaRes = await fetch("/api/auth/verify-captcha", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: captchaToken }),
+        });
+        const captchaData = await captchaRes.json();
+        if (!captchaData.success) {
+          setError("Security check failed. Please try again.");
+          setCaptchaToken(null);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Continue if captcha API fails (graceful degradation)
       }
-    } catch {
-      // Continue if captcha API fails (graceful degradation)
+    } else if (hasCaptchaKey && !captchaToken) {
+      // Only require CAPTCHA if it's configured
+      setError("Please complete the security check");
+      setLoading(false);
+      return;
     }
 
     try {
