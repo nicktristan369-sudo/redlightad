@@ -34,12 +34,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // CAPTCHA is optional - only require if site key is configured
-    const hasCaptcha = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-    if (hasCaptcha && !captchaToken) {
-      setError("Please complete the security check");
-      return;
-    }
+    // CAPTCHA is optional - graceful degradation if not completed
     
     setLoading(true);
     setError("");

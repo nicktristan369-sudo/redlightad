@@ -59,12 +59,8 @@ export default function CustomerRegisterPage() {
       } catch {
         // Continue if captcha API fails
       }
-    } else if (hasCaptchaKey && !captchaToken) {
-      // Only require CAPTCHA if it's configured
-      setError("Please complete the security check");
-      setLoading(false);
-      return;
     }
+    // Note: CAPTCHA is optional - if not completed, we still allow signup
 
     const supabase = createClient();
     const { data, error: authError } = await supabase.auth.signUp({
