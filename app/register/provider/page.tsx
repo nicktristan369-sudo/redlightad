@@ -807,7 +807,7 @@ export default function RegisterProviderPage() {
             <div className="space-y-8 animate-in fade-in">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                  Almost there
+                  Almost there — Add location & photos
                 </h1>
                 <p className="text-[15px] text-gray-500 mt-1">
                   Add your location, contact info, and photos.
