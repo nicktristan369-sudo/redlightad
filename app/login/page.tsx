@@ -16,11 +16,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<"google" | "twitter" | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<"google" | null>(null);
   const [error, setError] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
-  const handleOAuth = async (provider: "google" | "twitter") => {
+  const handleOAuth = async (provider: "google") => {
     setOauthLoading(provider);
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
@@ -148,20 +148,7 @@ export default function LoginPage() {
                   )}
                 </button>
 
-                <button
-                  onClick={() => handleOAuth("twitter")}
-                  disabled={oauthLoading !== null}
-                  className="flex items-center justify-center w-[140px] h-[52px] bg-black border border-gray-700 hover:bg-gray-900 disabled:opacity-50 transition-all"
-                  style={{ borderRadius: "4px" }}
-                >
-                  {oauthLoading === "twitter" ? (
-                    <div className="w-6 h-6 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                  )}
-                </button>
+
               </div>
 
               {/* Divider */}
