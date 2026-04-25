@@ -351,12 +351,8 @@ export default function RegisterProviderPage() {
       } catch {
         // Continue if captcha API fails (graceful degradation)
       }
-    } else if (hasCaptchaKey && !captchaToken) {
-      // Only require CAPTCHA if it's configured
-      setError("Please complete the security check");
-      setLoading(false);
-      return;
     }
+    // CAPTCHA is optional - don't block if not completed
 
     try {
       setSubmittingText("Creating your account...");
