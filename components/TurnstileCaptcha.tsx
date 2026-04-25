@@ -1,6 +1,6 @@
 "use client";
 
-import { Turnstile } from "@marsidev/react-turnstile";
+// import { Turnstile } from "@marsidev/react-turnstile"; // Temporarily disabled
 
 interface TurnstileCaptchaProps {
   onVerify: (token: string) => void;
@@ -23,15 +23,24 @@ export default function TurnstileCaptcha({
 }: TurnstileCaptchaProps) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
+  // TEMPORARILY DISABLED - Turnstile is causing signup issues
+  // Auto-verify to allow signup to proceed
+  if (typeof window !== 'undefined') {
+    setTimeout(() => onVerify('captcha-disabled-temporary'), 100);
+  }
+  return null;
+  
+  /* Original code - re-enable when Turnstile is fixed
   if (!siteKey) {
     // No site key - auto-verify and return nothing visible
-    // This makes CAPTCHA optional when not configured
     if (typeof window !== 'undefined') {
       setTimeout(() => onVerify('no-captcha-configured'), 100);
     }
     return null;
   }
+  */
 
+  /* Original component - disabled
   return (
     <Turnstile
       siteKey={siteKey}
@@ -44,4 +53,5 @@ export default function TurnstileCaptcha({
       }}
     />
   );
+  */
 }
