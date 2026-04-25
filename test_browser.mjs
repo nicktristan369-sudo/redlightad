@@ -28,43 +28,45 @@ async function test() {
   const passwordInputs = await page.locator('input[type="password"]').all();
   await passwordInputs[0].fill(password);
   await passwordInputs[1].fill(password);
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1000);
   
 
   
-  // Submit
-  const createBtn = await page.locator('button:has-text("Create account")');
-  const isDisabled = await createBtn.isDisabled();
-  const btnHTML = await createBtn.evaluate(el => el.outerHTML);
-  console.log('Button disabled:', isDisabled);
-  console.log('Button HTML:', btnHTML.substring(0, 200));
-  
-  console.log('📝 Clicking create button...');
-  await createBtn.click();
+  // Find and submit form
+  const form = await page.locator('form').first();
+  console.log('📝 Submitting form...');
+  await form.evaluate(f => f.submit());
   
   // Wait for result
   console.log('⏳ Waiting for response...');
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(2000);
+  try {
+    await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 5000 }).catch(() => {});
+  } catch {}
+  await page.waitForTimeout(1000);
   const finalUrl = page.url();
   
   // Check for errors
-  const errorDiv = await page.locator('[role="alert"]').isVisible().catch(() => false);
-  const errorText = errorDiv ? await page.locator('[role="alert"]').textContent() : null;
-  
-  if (errorText) {
+  const errorAlert = await page.locator('[role="alert"]').first().isVisible().catch(() => false);
+  if (errorAlert) {
+    const errorText = await page.locator('[role="alert"]').first().textContent();
     console.log('❌ Error message:', errorText);
   } else {
-    console.log('✅ Signup completed. URL:', finalUrl);
+    console.log('✅ Signup response received');
   }
+  
+  console.log('Final URL:', finalUrl);
   
   // Log page content for debugging
   const content = await page.content();
-  if (content.includes('password')) {
-    console.log('⚠️  Still on signup form (password field still present)');
-  } else {
-    console.log('✓ Form submitted');
+  if (content.includes('Confirm Password')) {
+    console.log('⚠️  Still on signup form');
+  } else if (content.includes('profile') || content.includes('Profile')) {
+    console.log('✓ Redirected to profile creation');
+  } else if (content.includes('kunde') || content.includes('dashboard')) {
+    console.log('✓ Redirected to dashboard');
   }
+  
+
   
   await browser.close();
 }

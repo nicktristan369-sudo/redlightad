@@ -24,7 +24,7 @@ export default function CustomerRegisterPage() {
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/register/provider`,
       },
     });
   };
@@ -68,13 +68,13 @@ export default function CustomerRegisterPage() {
       password,
       options: {
         data: { account_type: "customer" },
-        emailRedirectTo: `${window.location.origin}/kunde`,
+        emailRedirectTo: `${window.location.origin}/register/provider`,
       },
     });
 
     if (authError) { setError(authError.message); setLoading(false); return; }
     await supabase.auth.signInWithPassword({ email, password });
-    router.push("/kunde");
+    router.push("/register/provider");
   };
 
   return (
