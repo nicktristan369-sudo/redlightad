@@ -1014,15 +1014,7 @@ export default function RegisterProviderPage() {
                 </div>
               </div>
 
-              {/* CAPTCHA */}
-              <div className="bg-white border border-gray-100 p-6 flex justify-center">
-                <TurnstileCaptcha
-                  onVerify={(token) => setCaptchaToken(token)}
-                  onError={() => setCaptchaToken(null)}
-                  onExpire={() => setCaptchaToken(null)}
-                  theme="light"
-                />
-              </div>
+              {/* CAPTCHA - Disabled */}
 
               {/* Terms */}
               <div className="bg-white border border-gray-100 p-6">
