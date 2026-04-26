@@ -70,8 +70,7 @@ export default function AnnouncersPage() {
               {displayName}
             </button>
           )
-        })
-        ))}
+        })}
       </div>
 
       {/* Loading */}
@@ -123,7 +122,7 @@ export default function AnnouncersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        listing.status === 'published'
+                        listing.status === 'active'
                           ? 'bg-green-100 text-green-800'
                           : listing.status === 'draft'
                           ? 'bg-yellow-100 text-yellow-800'
@@ -146,7 +145,7 @@ export default function AnnouncersPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {listing.rating ? `${listing.rating}⭐` : '-'}
+                      {listing.review_count ? `${listing.review_count} reviews` : '-'}
                     </td>
                     <td className="px-6 py-4 text-sm space-x-2">
                       <a
@@ -182,7 +181,7 @@ export default function AnnouncersPage() {
                 <p className="text-2xl font-bold text-gray-900">{listings.length}</p>
               </div>
               <div>
-                <p className="text-gray-600 text-sm">Published</p>
+                <p className="text-gray-600 text-sm">Active</p>
                 <p className="text-2xl font-bold text-green-600">
                   {listings.filter(l => l.status === 'active').length}
                 </p>
@@ -194,10 +193,10 @@ export default function AnnouncersPage() {
                 </p>
               </div>
               <div>
-                <p className="text-gray-600 text-sm">Average Rating</p>
+                <p className="text-gray-600 text-sm">Average Reviews</p>
                 <p className="text-2xl font-bold text-yellow-600">
                   {listings.length > 0
-                    ? (listings.reduce((sum, l) => sum + (l.rating || 0), 0) / listings.length).toFixed(1)
+                    ? (listings.reduce((sum, l) => sum + (l.review_count || 0), 0) / listings.length).toFixed(0)
                     : '-'}
                 </p>
               </div>
