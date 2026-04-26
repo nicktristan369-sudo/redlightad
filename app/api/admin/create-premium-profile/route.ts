@@ -64,7 +64,7 @@ export async function POST(req: Request) {
         profile_image: 'https://via.placeholder.com/400x500/FF69B4/FFFFFF?text=Scarlett+Premium',
         video_url: 'https://via.placeholder.com/640x480/FF1493/FFFFFF?text=Scarlett+Video+Demo',
         premium_tier: 'vip',
-        status: 'published',
+        status: 'active',
         display_name: 'Scarlett',
       })
       .select()
