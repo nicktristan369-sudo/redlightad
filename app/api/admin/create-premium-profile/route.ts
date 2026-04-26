@@ -65,10 +65,7 @@ export async function POST(req: Request) {
         video_url: 'https://via.placeholder.com/640x480/FF1493/FFFFFF?text=Scarlett+Video+Demo',
         premium_tier: 'vip',
         status: 'published',
-        is_featured: true,
-        in_carousel: true,
         display_name: 'Scarlett',
-        boost_score: 100,
       })
       .select()
 
