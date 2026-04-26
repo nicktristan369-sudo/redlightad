@@ -11,11 +11,7 @@ export default function AgeVerificationModal() {
   useEffect(() => {
     try {
       const verified = localStorage.getItem("age_verified")
-      if (!verified) {
-        setVisible(true)
-      } else {
-        setVisible(false)
-      }
+      if (!verified) setVisible(true)
     } catch {
       setVisible(true)
     }
@@ -88,8 +84,6 @@ export default function AgeVerificationModal() {
           <button
             onClick={handleEnter}
             className="flex-1 py-4 px-8 border-2 border-white/80 text-white font-bold text-sm hover:bg-white hover:text-black transition-all"
-            autoFocus
-            id="age-verify-btn"
           >
             I am 18 or older - Enter
           </button>
