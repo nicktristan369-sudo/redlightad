@@ -75,7 +75,10 @@ const COUNTRY_NAMES: Record<string, string> = {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const countryParam = (searchParams.get("country") || "").toUpperCase();
+    const countryParam = (searchParams.get("country") || "").trim().toUpperCase();
+    
+    // Debug log
+    console.log(`[Locations API] country param=${countryParam}, available keys=${Object.keys(COUNTRY_CITIES).join(',')}`);
 
     // Return cities for the requested country
     const cities = COUNTRY_CITIES[countryParam] || [];
