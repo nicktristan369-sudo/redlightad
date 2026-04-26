@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
-export default function ListingPage() {
-  const params = useParams()
+export default function ListingPage({ params }: { params: { id: string } }) {
   const [listing, setListing] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +19,7 @@ export default function ListingPage() {
         const { data, error: fetchError } = await supabase
           .from('listings')
           .select('*')
-          .eq('id', params.id)
+          .eq('id', params?.id)
           .single()
 
         if (fetchError) {
@@ -37,10 +35,10 @@ export default function ListingPage() {
       }
     }
 
-    if (params.id) {
+    if (params?.id) {
       fetchListing()
     }
-  }, [params.id])
+  }, [])
 
   if (loading) {
     return (
