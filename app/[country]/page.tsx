@@ -11,7 +11,7 @@ import { getCountry, EXTENDED_SUPPORTED_CODES, getCountryEntryByCode, codeToEmoj
 // Reserved routes that should NOT be handled by [country] dynamic route
 const RESERVED_ROUTES = new Set([
   'escort', 'massage', 'fetish', 'transgender', 'bdsm', 'pornstar',
-  'europe', 'asia', 'scandinavia',
+  'europe', 'asia', 'scandinavia', 'middle-east',
   'cam', 'coins', 'premium', 'reviews', 'marketplace', 'videos', 'onlyfans',
   'faq', 'contact', 'safety', 'terms', 'report', 'help',
   'about', 'press', 'advertise', 'privacy', 'cookies',

@@ -5,6 +5,7 @@ import PremiumCarousel from "@/components/PremiumCarousel"
 import AdList from "@/components/AdList"
 import StoryCircles from "@/components/StoryCircles"
 import Link from "next/link"
+import Image from "next/image"
 
 export const metadata: Metadata = {
   title: "Escorts in Europe | RedLightAD",
@@ -12,18 +13,24 @@ export const metadata: Metadata = {
 }
 
 const EUROPE_COUNTRIES = [
-  { name: "Germany", code: "de", flag: "🇩🇪" },
-  { name: "United Kingdom", code: "gb", flag: "🇬🇧" },
-  { name: "France", code: "fr", flag: "🇫🇷" },
-  { name: "Spain", code: "es", flag: "🇪🇸" },
-  { name: "Italy", code: "it", flag: "🇮🇹" },
-  { name: "Netherlands", code: "nl", flag: "🇳🇱" },
-  { name: "Belgium", code: "be", flag: "🇧🇪" },
-  { name: "Switzerland", code: "ch", flag: "🇨🇭" },
-  { name: "Austria", code: "at", flag: "🇦🇹" },
-  { name: "Poland", code: "pl", flag: "🇵🇱" },
-  { name: "Czech Republic", code: "cz", flag: "🇨🇿" },
-  { name: "Portugal", code: "pt", flag: "🇵🇹" },
+  { name: "Germany", code: "de" },
+  { name: "United Kingdom", code: "gb" },
+  { name: "France", code: "fr" },
+  { name: "Spain", code: "es" },
+  { name: "Italy", code: "it" },
+  { name: "Netherlands", code: "nl" },
+  { name: "Belgium", code: "be" },
+  { name: "Switzerland", code: "ch" },
+  { name: "Austria", code: "at" },
+  { name: "Poland", code: "pl" },
+  { name: "Czech Republic", code: "cz" },
+  { name: "Portugal", code: "pt" },
+  { name: "Greece", code: "gr" },
+  { name: "Sweden", code: "se" },
+  { name: "Norway", code: "no" },
+  { name: "Denmark", code: "dk" },
+  { name: "Finland", code: "fi" },
+  { name: "Ireland", code: "ie" },
 ]
 
 export default function EuropePage() {
@@ -33,26 +40,33 @@ export default function EuropePage() {
       <FilterBar />
       <main className="bg-[#F5F5F7] min-h-screen">
         <div className="bg-white border-b border-gray-100">
-          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 16px' }}>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-semibold text-gray-900">🌍 Europe</h1>
-              <span className="text-gray-300">·</span>
-              <p className="text-sm text-gray-400">Browse by country</p>
-            </div>
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '16px 16px' }}>
+            <h1 className="text-xl font-bold text-gray-900">Europe</h1>
+            <p className="text-sm text-gray-500 mt-1">Browse escorts by country</p>
           </div>
         </div>
         
         {/* Country Grid */}
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 16px' }}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {EUROPE_COUNTRIES.map(country => (
               <Link
                 key={country.code}
                 href={`/${country.code}`}
-                className="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-sm transition-all"
+                className="group flex flex-col items-center p-4 bg-white rounded-2xl border border-gray-100 hover:border-red-300 hover:shadow-lg transition-all duration-200"
               >
-                <span className="text-xl">{country.flag}</span>
-                <span className="text-sm font-medium text-gray-800">{country.name}</span>
+                <div className="w-12 h-9 rounded-md overflow-hidden shadow-sm mb-3 ring-1 ring-gray-200">
+                  <Image
+                    src={`https://flagcdn.com/w80/${country.code}.png`}
+                    alt={country.name}
+                    width={48}
+                    height={36}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-sm font-medium text-gray-800 group-hover:text-red-600 transition-colors text-center">
+                  {country.name}
+                </span>
               </Link>
             ))}
           </div>

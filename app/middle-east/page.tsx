@@ -8,26 +8,24 @@ import Link from "next/link"
 import Image from "next/image"
 
 export const metadata: Metadata = {
-  title: "Escorts in Asia | RedLightAD",
-  description: "Browse verified escort profiles across Asia. Find premium services in Thailand, Japan, Singapore, and more.",
+  title: "Escorts in Middle East | RedLightAD",
+  description: "Browse verified escort profiles in the Middle East. Find premium services in Dubai, Qatar, Bahrain, and more.",
 }
 
-const ASIA_COUNTRIES = [
-  { name: "Thailand", code: "th" },
-  { name: "Japan", code: "jp" },
-  { name: "Singapore", code: "sg" },
-  { name: "Malaysia", code: "my" },
-  { name: "Philippines", code: "ph" },
-  { name: "Indonesia", code: "id" },
-  { name: "South Korea", code: "kr" },
-  { name: "Vietnam", code: "vn" },
-  { name: "Hong Kong", code: "hk" },
-  { name: "Taiwan", code: "tw" },
-  { name: "India", code: "in" },
-  { name: "China", code: "cn" },
+const MIDDLE_EAST_COUNTRIES = [
+  { name: "UAE (Dubai)", code: "ae" },
+  { name: "Qatar", code: "qa" },
+  { name: "Bahrain", code: "bh" },
+  { name: "Kuwait", code: "kw" },
+  { name: "Saudi Arabia", code: "sa" },
+  { name: "Oman", code: "om" },
+  { name: "Jordan", code: "jo" },
+  { name: "Lebanon", code: "lb" },
+  { name: "Israel", code: "il" },
+  { name: "Turkey", code: "tr" },
 ]
 
-export default function AsiaPage() {
+export default function MiddleEastPage() {
   return (
     <>
       <Navbar />
@@ -35,14 +33,14 @@ export default function AsiaPage() {
       <main className="bg-[#F5F5F7] min-h-screen">
         <div className="bg-white border-b border-gray-100">
           <div style={{ maxWidth: 1280, margin: '0 auto', padding: '16px 16px' }}>
-            <h1 className="text-xl font-bold text-gray-900">Asia</h1>
+            <h1 className="text-xl font-bold text-gray-900">Middle East</h1>
             <p className="text-sm text-gray-500 mt-1">Browse escorts by country</p>
           </div>
         </div>
         
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 16px' }}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {ASIA_COUNTRIES.map(country => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {MIDDLE_EAST_COUNTRIES.map(country => (
               <Link
                 key={country.code}
                 href={`/${country.code}`}
@@ -66,7 +64,7 @@ export default function AsiaPage() {
         </div>
 
         <StoryCircles />
-        <PremiumCarousel title="Premium in Asia" subtitle="Top verified profiles" />
+        <PremiumCarousel title="Premium in Middle East" subtitle="Top verified profiles" />
         <AdList limit={40} />
       </main>
     </>

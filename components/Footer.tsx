@@ -102,6 +102,7 @@ export default function Footer() {
                 { label: "Australia",      href: "/au" },
                 { label: "Canada",         href: "/ca" },
                 { label: "Asia",           href: "/asia" },
+                { label: "Middle East",    href: "/middle-east" },
                 { label: "Scandinavia",    href: "/scandinavia" },
               ].map((item) => (
                 <li key={item.href}>
