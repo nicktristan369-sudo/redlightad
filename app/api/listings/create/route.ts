@@ -72,17 +72,16 @@ export async function POST(req: NextRequest) {
       .select();
 
     if (error) {
-      console.error("[listings/create] Supabase error:", error);
+      console.error("[listings/create] Supabase error:", JSON.stringify(error, null, 2));
+      console.error("[listings/create] Error code:", error.code);
+      console.error("[listings/create] Error details:", error.details);
+      console.error("[listings/create] Error hint:", error.hint);
       
-      // Handle FK constraint - user doesn't exist in auth.users
-      if (error.message?.includes("violates foreign key")) {
-        return NextResponse.json(
-          { error: "User not found. Please sign up again." },
-          { status: 400 }
-        );
-      }
-      
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      // Return the actual error message for debugging
+      return NextResponse.json(
+        { error: error.message || "Database error", code: error.code, details: error.details },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ ok: true, listing });
