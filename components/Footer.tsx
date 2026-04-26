@@ -31,12 +31,12 @@ export default function Footer() {
             <h3 className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Categories</h3>
             <ul className="space-y-2.5">
               {[
-                { label: "Escort",       href: "/category/escort" },
-                { label: "Massage",      href: "/category/massage" },
-                { label: "Fetish",       href: "/category/fetish" },
-                { label: "Transgender",  href: "/category/transgender" },
-                { label: "BDSM",         href: "/category/bdsm" },
-                { label: "Pornstar",     href: "/category/pornstar" },
+                { label: "Escort",       href: "/escort" },
+                { label: "Massage",      href: "/massage" },
+                { label: "Fetish",       href: "/fetish" },
+                { label: "Transgender",  href: "/transgender" },
+                { label: "BDSM",         href: "/bdsm" },
+                { label: "Pornstar",     href: "/pornstar" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
@@ -96,13 +96,13 @@ export default function Footer() {
             <h3 className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-4">Locations</h3>
             <ul className="space-y-2.5">
               {[
-                { label: "Europe",         href: "/location/europe" },
-                { label: "United Kingdom", href: "/location/united-kingdom" },
-                { label: "United States",  href: "/location/united-states" },
-                { label: "Australia",      href: "/location/australia" },
-                { label: "Canada",         href: "/location/canada" },
-                { label: "Asia",           href: "/location/asia" },
-                { label: "Scandinavia",    href: "/location/scandinavia" },
+                { label: "Europe",         href: "/europe" },
+                { label: "United Kingdom", href: "/gb" },
+                { label: "United States",  href: "/us" },
+                { label: "Australia",      href: "/au" },
+                { label: "Canada",         href: "/ca" },
+                { label: "Asia",           href: "/asia" },
+                { label: "Scandinavia",    href: "/scandinavia" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">

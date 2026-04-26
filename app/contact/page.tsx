@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import Navbar from "@/components/Navbar"
-import Footer from "@/components/Footer"
+
 import { Mail, MessageSquare, Clock, CheckCircle } from "lucide-react"
 
 const SUBJECTS = [
@@ -124,7 +124,6 @@ export default function ContactPage() {
           )}
         </div>
       </main>
-      <Footer />
     </>
   )
 }
