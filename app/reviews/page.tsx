@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar"
 import ReviewsClient from "@/components/ReviewsClient"
 import { getCountryFromHeaders } from "@/lib/domain-country"
 
-export const revalidate = 120
+export const dynamic = "force-dynamic"
 
 export const metadata = {
   title: "Reviews | RedLightAD",
