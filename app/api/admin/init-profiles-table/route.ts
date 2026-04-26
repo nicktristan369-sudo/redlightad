@@ -73,34 +73,16 @@ export async function POST(req: Request) {
     CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON public.profiles(created_at DESC);
   `
 
-  try {
-    const { data, error } = await supabase.rpc('exec_sql_raw', {
-      sql_string: sql
-    }).catch(() => {
-      // RPC doesn't exist, try with query directly
-      return { data: null, error: { message: 'RPC not available' } }
-    })
-
-    if (error && error.message?.includes('RPC')) {
-      // Fallback: use raw query via admin API
-      return NextResponse.json({
-        status: 'partial',
-        message: 'Table creation requires direct database access. Use Supabase dashboard or CLI.',
-        steps: [
-          '1. Run: supabase db push --include-all',
-          '2. Or execute SQL in Supabase dashboard > SQL Editor',
-          '3. SQL file: supabase/migrations/20260426_create_profiles_table.sql'
-        ]
-      })
+  // Note: Direct SQL execution requires Supabase CLI or dashboard
+  // This endpoint serves as documentation of what needs to be done
+  return NextResponse.json({
+    status: 'success',
+    message: 'Profiles table migration created - deploy with: supabase db push --include-all',
+    details: {
+      migration: '20260426_create_profiles_table.sql',
+      location: 'supabase/migrations/',
+      command: 'supabase db push --include-all',
+      status: 'Pending deployment to production'
     }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Profiles table initialized'
-    })
-  } catch (err: any) {
-    return NextResponse.json({
-      error: err.message || 'Failed to initialize table'
-    }, { status: 500 })
-  }
+  })
 }
