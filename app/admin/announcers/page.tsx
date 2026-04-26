@@ -22,12 +22,12 @@ export default function AnnouncersPage() {
           .order('created_at', { ascending: false })
 
         if (filter === 'published') {
-          query = query.eq('status', 'published')
+          query = query.eq('status', 'active')
         } else if (filter === 'pending') {
           query = query.eq('status', 'draft')
         }
 
-        const { data, error } = await query.limit(100)
+        const { data, error } = await query.limit(500)
 
         if (error) {
           console.error('Error:', error)
@@ -54,18 +54,23 @@ export default function AnnouncersPage() {
 
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
-        {['all', 'published', 'pending'].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filter === f
-                ? 'bg-pink-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
+        {['all', 'published', 'pending'].map(f => {
+          const displayName = f === 'published' ? 'Active' : f === 'pending' ? 'Draft' : 'All'
+          const queryValue = f === 'published' ? 'active' : f === 'pending' ? 'draft' : f
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(queryValue)}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filter === queryValue
+                  ? 'bg-pink-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {displayName}
+            </button>
+          )
+        })
         ))}
       </div>
 
@@ -179,7 +184,7 @@ export default function AnnouncersPage() {
               <div>
                 <p className="text-gray-600 text-sm">Published</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {listings.filter(l => l.status === 'published').length}
+                  {listings.filter(l => l.status === 'active').length}
                 </p>
               </div>
               <div>
