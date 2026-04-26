@@ -111,14 +111,14 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.totalCount - a.totalCount)
       .map(({ totalCount, ...r }) => r);
 
-    const topCities = cities.slice(0, 10);
+    const topCities = [...cities].sort((a, b) => b.count - a.count).slice(0, 10);
     const totalListings = cities.reduce((sum, c) => sum + c.count, 0);
 
     return NextResponse.json({
       country: countryName,
       countryCode: countryParam,
-      topCities,
-      regions,
+      topCities: topCities.length > 0 ? topCities : cities.slice(0, 10),
+      regions: regions.length > 0 ? regions : [],
       totalCities: cities.length,
       totalListings,
       fromGeo: false,
