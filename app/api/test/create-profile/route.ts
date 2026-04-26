@@ -8,7 +8,7 @@ import { createClient } from "@supabase/supabase-js";
  * Security: Only works locally or with admin key
  */
 
-export async function POST(req: NextRequest) {
+async function createProfile(req: NextRequest) {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -94,4 +94,12 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(req: NextRequest) {
+  return createProfile(req);
+}
+
+export async function POST(req: NextRequest) {
+  return createProfile(req);
 }
