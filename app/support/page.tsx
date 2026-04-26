@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Navbar from "@/components/Navbar"
-import Footer from "@/components/Footer"
 
 const FAQ_ITEMS = [
   {
@@ -378,7 +377,6 @@ export default function SupportPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   )
 }

@@ -1,7 +1,6 @@
 "use client"
 import { useState } from "react"
 import Navbar from "@/components/Navbar"
-import Footer from "@/components/Footer"
 import { ChevronDown } from "lucide-react"
 import Link from "next/link"
 
@@ -122,7 +121,6 @@ export default function FAQPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   )
 }
