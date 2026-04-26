@@ -26,6 +26,7 @@ import {
   AVAILABLE_FOR_OPTIONS,
 } from "@/lib/listingOptions";
 import Logo from "@/components/Logo";
+import { findNearestMajorCity, getDisplayLocation } from "@/lib/majorCities";
 
 const GENDER_OPTIONS = [
   { value: "Woman", label: "Woman" },
@@ -214,9 +215,18 @@ export default function RegisterProviderPage() {
   const [languages, setLanguages] = useState<string[]>([]);
   const [about, setAbout] = useState("");
 
-  // Step 3
+  // Step 3 - Location
   const [country, setCountry] = useState("");
+  const [countryCode, setCountryCode] = useState("");
   const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [majorCity, setMajorCity] = useState<string | null>(null);
+  const [placeId, setPlaceId] = useState("");
+  const [citySearch, setCitySearch] = useState("");
+  const [cityResults, setCityResults] = useState<{name: string, region?: string}[]>([]);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [availableFor, setAvailableFor] = useState("");
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -233,7 +243,54 @@ export default function RegisterProviderPage() {
 
   // Cities for selected country
   const selectedCountryObj = SUPPORTED_COUNTRIES.find((c) => c.name === country);
-  const cityOptions = selectedCountryObj ? COUNTRY_CITIES[selectedCountryObj.code] || [] : [];
+  
+  // City search effect
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const searchCities = async (query: string) => {
+    if (!countryCode || query.length < 2) {
+      setCityResults([]);
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/locations?country=${countryCode}&q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setCityResults(data.topCities || []);
+      setShowCityDropdown(true);
+    } catch (err) {
+      console.error('City search error:', err);
+    }
+  };
+  
+  const handleCitySearchChange = (value: string) => {
+    setCitySearch(value);
+    setCity(""); // Clear selected city when typing
+    
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      searchCities(value);
+    }, 300);
+  };
+  
+  const selectCity = (cityName: string, region?: string) => {
+    setCity(cityName);
+    setCitySearch(cityName);
+    setShowCityDropdown(false);
+    
+    // For now, set majorCity to the region if available, or the city itself
+    // In production, this would use Google Places coordinates
+    if (region) {
+      // Check if the region is a known major city
+      const regionLower = region.toLowerCase();
+      setMajorCity(region.includes('Region') || region.includes('Province') ? cityName : region);
+    } else {
+      setMajorCity(cityName);
+    }
+  };
 
   // ── Photo handlers ───────────────────────────────────────────────────
 
@@ -412,7 +469,12 @@ export default function RegisterProviderPage() {
           about,
           country,
           city,
-          location: `${city}, ${country}`,
+          location: majorCity && majorCity !== city ? `${majorCity}, ${city}` : `${city}, ${country}`,
+          major_city: majorCity || city,
+          postal_code: postalCode || null,
+          latitude: latitude || null,
+          longitude: longitude || null,
+          place_id: placeId || null,
           available_for: availableFor || null,
           phone,
           whatsapp: whatsapp || null,
@@ -823,8 +885,13 @@ export default function RegisterProviderPage() {
                   label="Country"
                   value={country}
                   onChange={(v) => {
+                    const selected = SUPPORTED_COUNTRIES.find(c => c.name === v);
                     setCountry(v);
+                    setCountryCode(selected?.code || "");
                     setCity("");
+                    setCitySearch("");
+                    setCityResults([]);
+                    setMajorCity(null);
                   }}
                   options={SUPPORTED_COUNTRIES.map((c) => ({
                     value: c.name,
@@ -833,46 +900,58 @@ export default function RegisterProviderPage() {
                   placeholder="Select country..."
                   required
                 />
-                {cityOptions.length > 0 ? (
-                  <div>
-                    <label className="block text-[13px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                      City <span className="text-red-600">*</span>
-                    </label>
-                    <select
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 bg-white text-gray-900 focus:outline-none focus:border-[#DC2626] transition-colors text-[15px]"
-                      style={{ borderRadius: 0 }}
-                      required
-                    >
-                      <option value="">Select city...</option>
-                      {cityOptions.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                      <option value="__other">Other...</option>
-                    </select>
-                    {city === "__other" && (
-                      <input
-                        type="text"
-                        className="w-full px-4 py-3 mt-2 border border-gray-200 bg-white text-gray-900 focus:outline-none focus:border-[#DC2626] transition-colors text-[15px]"
-                        style={{ borderRadius: 0 }}
-                        placeholder="Enter city name..."
-                        onChange={(e) => setCity(e.target.value)}
-                        autoFocus
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <InputField
-                    label="City"
-                    value={city}
-                    onChange={setCity}
-                    placeholder="e.g. Copenhagen"
+                
+                {/* City Search */}
+                <div className="relative">
+                  <label className="block text-[13px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">
+                    City <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={citySearch}
+                    onChange={(e) => handleCitySearchChange(e.target.value)}
+                    onFocus={() => cityResults.length > 0 && setShowCityDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
+                    placeholder={country ? "Search city..." : "Select country first"}
+                    disabled={!country}
+                    className="w-full px-4 py-3 border border-gray-200 bg-white text-gray-900 focus:outline-none focus:border-[#DC2626] transition-colors text-[15px] disabled:bg-gray-50 disabled:text-gray-400"
+                    style={{ borderRadius: 0 }}
                     required
                   />
-                )}
+                  
+                  {/* City Dropdown */}
+                  {showCityDropdown && cityResults.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                      {cityResults.map((c, i) => (
+                        <button
+                          key={`${c.name}-${i}`}
+                          type="button"
+                          onClick={() => selectCity(c.name, c.region)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                        >
+                          <span className="font-medium text-gray-900">{c.name}</span>
+                          {c.region && (
+                            <span className="text-gray-500 text-sm ml-2">({c.region})</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {city && majorCity && majorCity !== city && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Will be shown in: <span className="font-medium">{majorCity}</span> area
+                    </p>
+                  )}
+                </div>
+                
+                {/* Postal Code */}
+                <InputField
+                  label="Postal Code"
+                  value={postalCode}
+                  onChange={setPostalCode}
+                  placeholder="e.g. 29620"
+                />
                 <SelectField
                   label="Available For"
                   value={availableFor}
