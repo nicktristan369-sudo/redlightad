@@ -26,8 +26,8 @@ export default function BDSMPage() {
           </div>
         </div>
         <StoryCircles />
-        <PremiumCarousel category="bdsm" title="Premium BDSM" subtitle="Top verified profiles" />
-        <AdList category="bdsm" limit={40} />
+        <PremiumCarousel title="Premium BDSM" subtitle="Top verified profiles" />
+        <AdList limit={40} />
       </main>
     </>
   )

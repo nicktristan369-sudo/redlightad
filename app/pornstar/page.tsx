@@ -26,8 +26,8 @@ export default function PornstarPage() {
           </div>
         </div>
         <StoryCircles />
-        <PremiumCarousel category="pornstar" title="Pornstar Profiles" subtitle="Real adult film stars" />
-        <AdList category="pornstar" limit={40} />
+        <PremiumCarousel title="Pornstar Profiles" subtitle="Real adult film stars" />
+        <AdList limit={40} />
       </main>
     </>
   )

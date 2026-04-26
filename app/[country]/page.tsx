@@ -8,6 +8,16 @@ import CountryNotAvailable from "@/components/CountryNotAvailable"
 import StoryCircles from "@/components/StoryCircles"
 import { getCountry, EXTENDED_SUPPORTED_CODES, getCountryEntryByCode, codeToEmoji } from "@/lib/countries"
 
+// Reserved routes that should NOT be handled by [country] dynamic route
+const RESERVED_ROUTES = new Set([
+  'escort', 'massage', 'fetish', 'transgender', 'bdsm', 'pornstar',
+  'europe', 'asia', 'scandinavia',
+  'cam', 'coins', 'premium', 'reviews', 'marketplace', 'videos', 'onlyfans',
+  'faq', 'contact', 'safety', 'terms', 'report', 'help',
+  'about', 'press', 'advertise', 'privacy', 'cookies',
+  'login', 'register', 'dashboard', 'admin', 'api', 'listing'
+])
+
 interface Props {
   params: Promise<{ country: string }>
 }
@@ -29,6 +39,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CountryPage({ params }: Props) {
   const { country } = await params
   const code = country.toLowerCase()
+  
+  // Let reserved routes fall through to their static pages
+  if (RESERVED_ROUTES.has(code)) {
+    notFound()
+  }
+  
   const countryData = getCountry(code)
 
   if (!EXTENDED_SUPPORTED_CODES.has(code)) {

@@ -26,8 +26,8 @@ export default function MassagePage() {
           </div>
         </div>
         <StoryCircles />
-        <PremiumCarousel category="massage" title="Premium Massage" subtitle="Top verified profiles" />
-        <AdList category="massage" limit={40} />
+        <PremiumCarousel title="Premium Massage" subtitle="Top verified profiles" />
+        <AdList limit={40} />
       </main>
     </>
   )

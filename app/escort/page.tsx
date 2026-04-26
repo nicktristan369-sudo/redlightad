@@ -30,8 +30,8 @@ export default function EscortPage() {
           </div>
         </div>
         <StoryCircles />
-        <PremiumCarousel category="escort" title="Premium Escorts" subtitle="Top verified profiles" />
-        <AdList category="escort" limit={40} />
+        <PremiumCarousel title="Premium Escorts" subtitle="Top verified profiles" />
+        <AdList limit={40} />
       </main>
     </>
   )

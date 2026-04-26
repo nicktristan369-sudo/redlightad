@@ -51,8 +51,8 @@ export default function ScandinaviaPage() {
         </div>
 
         <StoryCircles />
-        <PremiumCarousel region="scandinavia" title="Premium in Scandinavia" subtitle="Top verified profiles" />
-        <AdList region="scandinavia" limit={40} />
+        <PremiumCarousel title="Premium in Scandinavia" subtitle="Top verified profiles" />
+        <AdList limit={40} />
       </main>
     </>
   )

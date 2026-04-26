@@ -26,8 +26,8 @@ export default function TransgenderPage() {
           </div>
         </div>
         <StoryCircles />
-        <PremiumCarousel category="transgender" title="Transgender Profiles" subtitle="Top verified profiles" />
-        <AdList category="transgender" limit={40} />
+        <PremiumCarousel title="Transgender Profiles" subtitle="Top verified profiles" />
+        <AdList limit={40} />
       </main>
     </>
   )

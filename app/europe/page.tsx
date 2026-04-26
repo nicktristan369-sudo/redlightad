@@ -59,8 +59,8 @@ export default function EuropePage() {
         </div>
 
         <StoryCircles />
-        <PremiumCarousel region="europe" title="Premium in Europe" subtitle="Top verified profiles" />
-        <AdList region="europe" limit={40} />
+        <PremiumCarousel title="Premium in Europe" subtitle="Top verified profiles" />
+        <AdList limit={40} />
       </main>
     </>
   )

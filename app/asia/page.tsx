@@ -56,8 +56,8 @@ export default function AsiaPage() {
         </div>
 
         <StoryCircles />
-        <PremiumCarousel region="asia" title="Premium in Asia" subtitle="Top verified profiles" />
-        <AdList region="asia" limit={40} />
+        <PremiumCarousel title="Premium in Asia" subtitle="Top verified profiles" />
+        <AdList limit={40} />
       </main>
     </>
   )

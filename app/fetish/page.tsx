@@ -26,8 +26,8 @@ export default function FetishPage() {
           </div>
         </div>
         <StoryCircles />
-        <PremiumCarousel category="fetish" title="Premium Fetish" subtitle="Top verified profiles" />
-        <AdList category="fetish" limit={40} />
+        <PremiumCarousel title="Premium Fetish" subtitle="Top verified profiles" />
+        <AdList limit={40} />
       </main>
     </>
   )
