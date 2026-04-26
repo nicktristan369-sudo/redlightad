@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 // ── Bot and Scraper Detection ─────────────────────────────────────────────────────
 const BLOCKED_USER_AGENTS = [
-  'scrapy', 'python-requests', 'curl/', 'wget/', 'httpclient',
+  'scrapy', 'python-requests', 'wget/', 'httpclient',
   'java/', 'libwww', 'lwp-trivial', 'sitesucker', 'webcopier',
   'httrack', 'webcollector', 'offline explorer', 'teleport',
   'webzip', 'linkscan', 'larbin', 'rubyurllib', 'bbsbot',
