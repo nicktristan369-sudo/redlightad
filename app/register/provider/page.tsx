@@ -516,7 +516,7 @@ export default function RegisterProviderPage() {
         <form onSubmit={handleSubmit}>
           {/* ── STEP 1: Basic Info ──────────────────────────────────── */}
           {step === 1 && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="space-y-8">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                   Let&apos;s get started
@@ -620,7 +620,7 @@ export default function RegisterProviderPage() {
 
           {/* ── STEP 2: Details & Services ──────────────────────────── */}
           {step === 2 && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="space-y-8">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                   Your details
@@ -804,7 +804,7 @@ export default function RegisterProviderPage() {
 
           {/* ── STEP 3: Location, Contact & Photos ──────────────────── */}
           {step === 3 && (
-            <div className="space-y-8 animate-in fade-in">
+            <div className="space-y-8">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                   Almost there — Add location & photos
