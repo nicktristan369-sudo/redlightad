@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 export default function AnnouncersPage() {
   const [listings, setListings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState('published') // Default to 'Active' (published)
 
   useEffect(() => {
     const fetchListings = async () => {
