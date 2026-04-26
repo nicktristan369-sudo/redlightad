@@ -345,48 +345,21 @@ function LocationMenu({
     if (!selCode || step !== "city") return
     
     setLoadingCities(true)
-    // Try new GeoNames API first, fallback to old API
-    fetch(`/api/geo/regions?country=${selCode}&with_cities=true`)
+    
+    // Fetch from locations API (which uses country-state-city package with all countries)
+    fetch(`/api/locations?country=${selCode}`)
       .then(r => r.json())
       .then(data => {
-        if (data.regions && data.regions.length > 0) {
-          // Use GeoNames data
-          const allCities = data.regions.flatMap((r: any) => 
-            (r.cities || []).map((c: any) => ({
-              name: c.name,
-              count: 0,
-              region: r.name,
-              population: c.population
-            }))
-          ).sort((a: any, b: any) => (b.population || 0) - (a.population || 0))
-          setDynamicCities(allCities)
-        } else {
-          // Fallback to old API
-          return fetch(`/api/locations?country=${selCode}`)
-            .then(r => r.json())
-            .then(fallbackData => {
-              const allCities = [
-                ...(fallbackData.topCities || []),
-                ...(fallbackData.regions?.flatMap((r: any) => r.cities) || [])
-              ].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i)
-              setDynamicCities(allCities)
-            })
-        }
+        const allCities = [
+          ...(data.topCities || []),
+          ...(data.regions?.flatMap((r: any) => r.cities) || [])
+        ].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i)
+        setDynamicCities(allCities)
         setLoadingCities(false)
       })
       .catch(() => {
-        // Fallback on error
-        fetch(`/api/locations?country=${selCode}`)
-          .then(r => r.json())
-          .then(data => {
-            const allCities = [
-              ...(data.topCities || []),
-              ...(data.regions?.flatMap((r: any) => r.cities) || [])
-            ].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i)
-            setDynamicCities(allCities)
-            setLoadingCities(false)
-          })
-          .catch(() => setLoadingCities(false))
+        setDynamicCities([])
+        setLoadingCities(false)
       })
   }, [selCode, step])
 
