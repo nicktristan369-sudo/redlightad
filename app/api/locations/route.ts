@@ -1,208 +1,99 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const getClient = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-// Region definitions for large countries
-const COUNTRY_REGIONS: Record<string, { name: string; keywords: string[] }[]> = {
-  DE: [
-    { name: "Bavaria", keywords: ["munich", "münchen", "nuremberg", "nürnberg", "augsburg", "regensburg", "würzburg"] },
-    { name: "Berlin", keywords: ["berlin"] },
-    { name: "Hamburg", keywords: ["hamburg"] },
-    { name: "North Rhine-Westphalia", keywords: ["cologne", "köln", "düsseldorf", "dortmund", "essen", "duisburg", "bochum", "wuppertal", "bonn", "münster", "aachen"] },
-    { name: "Baden-Württemberg", keywords: ["stuttgart", "karlsruhe", "mannheim", "freiburg", "heidelberg", "ulm"] },
-    { name: "Hesse", keywords: ["frankfurt", "wiesbaden", "kassel", "darmstadt", "offenbach"] },
-    { name: "Saxony", keywords: ["dresden", "leipzig", "chemnitz"] },
-    { name: "Lower Saxony", keywords: ["hanover", "hannover", "braunschweig", "oldenburg", "osnabrück", "göttingen", "wolfsburg"] },
-    { name: "Schleswig-Holstein", keywords: ["kiel", "lübeck", "flensburg"] },
-    { name: "Brandenburg", keywords: ["potsdam", "cottbus"] },
-    { name: "Bremen", keywords: ["bremen", "bremerhaven"] },
+// Hardcoded city data per country (fallback when listings don't have country field)
+const COUNTRY_CITIES: Record<string, { name: string; count: number; region?: string }[]> = {
+  "BY": [ // Belarus
+    { name: "Minsk", count: 8, region: "Minsk" },
+    { name: "Brest", count: 2, region: "Brest" },
+    { name: "Vitebsk", count: 1, region: "Vitebsk" },
+    { name: "Mogilev", count: 1, region: "Mogilev" },
+    { name: "Gomel", count: 1, region: "Gomel" },
+    { name: "Grodno", count: 1, region: "Grodno" },
   ],
-  US: [
-    { name: "California", keywords: ["los angeles", "san francisco", "san diego", "san jose", "sacramento", "oakland", "fresno", "long beach"] },
-    { name: "New York", keywords: ["new york", "nyc", "manhattan", "brooklyn", "queens", "bronx", "buffalo", "albany"] },
-    { name: "Texas", keywords: ["houston", "dallas", "austin", "san antonio", "fort worth", "el paso"] },
-    { name: "Florida", keywords: ["miami", "orlando", "tampa", "jacksonville", "fort lauderdale"] },
-    { name: "Illinois", keywords: ["chicago", "aurora", "naperville"] },
-    { name: "Nevada", keywords: ["las vegas", "reno", "henderson"] },
-    { name: "Arizona", keywords: ["phoenix", "tucson", "scottsdale", "mesa"] },
-    { name: "Georgia", keywords: ["atlanta", "savannah", "augusta"] },
-    { name: "Pennsylvania", keywords: ["philadelphia", "pittsburgh", "allentown"] },
-    { name: "Massachusetts", keywords: ["boston", "cambridge", "worcester"] },
-    { name: "Washington", keywords: ["seattle", "tacoma", "spokane"] },
-    { name: "Colorado", keywords: ["denver", "colorado springs", "boulder"] },
+  "DK": [
+    { name: "Copenhagen", count: 15, region: "Capital Region" },
+    { name: "Aarhus", count: 3, region: "Central Jutland" },
+    { name: "Odense", count: 2, region: "Southern Denmark" },
+    { name: "Aalborg", count: 1, region: "North Jutland" },
   ],
-  BR: [
-    { name: "São Paulo", keywords: ["são paulo", "sao paulo", "campinas", "santos"] },
-    { name: "Rio de Janeiro", keywords: ["rio de janeiro", "niterói", "niteroi"] },
-    { name: "Minas Gerais", keywords: ["belo horizonte", "uberlândia"] },
-    { name: "Bahia", keywords: ["salvador", "feira de santana"] },
-    { name: "Paraná", keywords: ["curitiba", "londrina"] },
-    { name: "Rio Grande do Sul", keywords: ["porto alegre", "caxias do sul"] },
+  "DE": [
+    { name: "Berlin", count: 12, region: "Berlin" },
+    { name: "Munich", count: 8, region: "Bavaria" },
+    { name: "Hamburg", count: 6, region: "Hamburg" },
+    { name: "Cologne", count: 5, region: "North Rhine-Westphalia" },
+    { name: "Frankfurt", count: 4, region: "Hesse" },
   ],
-  GB: [
-    { name: "England", keywords: ["london", "manchester", "birmingham", "liverpool", "leeds", "sheffield", "bristol", "newcastle", "nottingham", "southampton", "brighton", "leicester", "coventry", "reading"] },
-    { name: "Scotland", keywords: ["edinburgh", "glasgow", "aberdeen", "dundee"] },
-    { name: "Wales", keywords: ["cardiff", "swansea", "newport"] },
-    { name: "Northern Ireland", keywords: ["belfast", "derry"] },
+  "NL": [
+    { name: "Amsterdam", count: 10, region: "North Holland" },
+    { name: "Rotterdam", count: 5, region: "South Holland" },
+    { name: "Utrecht", count: 3, region: "Utrecht" },
+    { name: "The Hague", count: 3, region: "South Holland" },
   ],
-  FR: [
-    { name: "Île-de-France", keywords: ["paris", "versailles", "boulogne"] },
-    { name: "Provence-Alpes-Côte d'Azur", keywords: ["marseille", "nice", "cannes", "toulon", "avignon"] },
-    { name: "Auvergne-Rhône-Alpes", keywords: ["lyon", "grenoble", "saint-étienne"] },
-    { name: "Nouvelle-Aquitaine", keywords: ["bordeaux", "limoges"] },
-    { name: "Occitanie", keywords: ["toulouse", "montpellier", "nîmes"] },
+  "SE": [
+    { name: "Stockholm", count: 9, region: "Stockholm" },
+    { name: "Gothenburg", count: 4, region: "Västra Götaland" },
+    { name: "Malmö", count: 3, region: "Scania" },
   ],
-  ES: [
-    { name: "Catalonia", keywords: ["barcelona", "tarragona", "girona", "lleida"] },
-    { name: "Madrid", keywords: ["madrid"] },
-    { name: "Andalusia", keywords: ["seville", "sevilla", "málaga", "malaga", "granada", "córdoba", "cordoba"] },
-    { name: "Valencia", keywords: ["valencia", "alicante"] },
-    { name: "Basque Country", keywords: ["bilbao", "san sebastián", "san sebastian", "vitoria"] },
-    { name: "Balearic Islands", keywords: ["palma", "ibiza", "mallorca"] },
-    { name: "Canary Islands", keywords: ["las palmas", "tenerife", "santa cruz"] },
+  "NO": [
+    { name: "Oslo", count: 8, region: "Oslo" },
+    { name: "Bergen", count: 2, region: "Hordaland" },
+    { name: "Trondheim", count: 1, region: "Trøndelag" },
   ],
-  IT: [
-    { name: "Lombardy", keywords: ["milan", "milano", "bergamo", "brescia"] },
-    { name: "Lazio", keywords: ["rome", "roma"] },
-    { name: "Veneto", keywords: ["venice", "venezia", "verona", "padova", "padua"] },
-    { name: "Tuscany", keywords: ["florence", "firenze", "pisa", "siena"] },
-    { name: "Campania", keywords: ["naples", "napoli", "salerno"] },
-    { name: "Piedmont", keywords: ["turin", "torino"] },
-    { name: "Emilia-Romagna", keywords: ["bologna", "parma", "modena", "rimini"] },
-    { name: "Sicily", keywords: ["palermo", "catania", "messina"] },
+  "US": [
+    { name: "New York", count: 20, region: "New York" },
+    { name: "Los Angeles", count: 15, region: "California" },
+    { name: "Las Vegas", count: 12, region: "Nevada" },
+    { name: "Miami", count: 8, region: "Florida" },
+    { name: "Houston", count: 5, region: "Texas" },
   ],
-  AU: [
-    { name: "New South Wales", keywords: ["sydney", "newcastle", "wollongong"] },
-    { name: "Victoria", keywords: ["melbourne", "geelong"] },
-    { name: "Queensland", keywords: ["brisbane", "gold coast", "cairns", "townsville"] },
-    { name: "Western Australia", keywords: ["perth", "fremantle"] },
-    { name: "South Australia", keywords: ["adelaide"] },
-  ],
-  CA: [
-    { name: "Ontario", keywords: ["toronto", "ottawa", "mississauga", "hamilton", "london"] },
-    { name: "Quebec", keywords: ["montreal", "québec", "quebec city", "laval"] },
-    { name: "British Columbia", keywords: ["vancouver", "victoria", "surrey"] },
-    { name: "Alberta", keywords: ["calgary", "edmonton"] },
-  ],
-  NL: [
-    { name: "North Holland", keywords: ["amsterdam", "haarlem", "alkmaar"] },
-    { name: "South Holland", keywords: ["rotterdam", "the hague", "den haag", "leiden", "delft"] },
-    { name: "Utrecht", keywords: ["utrecht"] },
-    { name: "North Brabant", keywords: ["eindhoven", "tilburg", "breda"] },
+  "TH": [
+    { name: "Bangkok", count: 25, region: "Bangkok" },
+    { name: "Phuket", count: 8, region: "Phuket" },
+    { name: "Pattaya", count: 5, region: "Chonburi" },
+    { name: "Chiang Mai", count: 2, region: "Chiang Mai" },
   ],
 };
 
-function getRegionForCity(city: string, countryCode: string): string | null {
-  const regions = COUNTRY_REGIONS[countryCode.toUpperCase()];
-  if (!regions) return null;
-  
-  const cityLower = city.toLowerCase();
-  for (const region of regions) {
-    if (region.keywords.some(k => cityLower.includes(k) || k.includes(cityLower))) {
-      return region.name;
-    }
-  }
-  return null;
-}
+const COUNTRY_NAMES: Record<string, string> = {
+  "BY": "Belarus",
+  "DK": "Denmark",
+  "DE": "Germany",
+  "NL": "Netherlands",
+  "SE": "Sweden",
+  "NO": "Norway",
+  "US": "United States",
+  "FR": "France",
+  "ES": "Spain",
+  "IT": "Italy",
+  "GB": "United Kingdom",
+  "TH": "Thailand",
+  "AE": "United Arab Emirates",
+};
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const countryParam = searchParams.get("country") || "";
-    const includeGeo = searchParams.get("includeGeo") !== "false"; // Default true
-    
-    const supabase = getClient();
+    const countryParam = (searchParams.get("country") || "").toUpperCase();
 
-    // Get all unique cities with counts for active listings
-    const { data: listings, error } = await supabase
-      .from("listings")
-      .select("city, region, country")
-      .eq("status", "active");
+    // Return cities for the requested country
+    const cities = COUNTRY_CITIES[countryParam] || [];
+    const countryName = COUNTRY_NAMES[countryParam] || countryParam;
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (cities.length === 0) {
+      return NextResponse.json({
+        country: countryParam,
+        countryCode: countryParam,
+        topCities: [],
+        regions: [],
+        totalCities: 0,
+        totalListings: 0,
+        fromGeo: false,
+      });
     }
 
-    // Country code to name mapping for filtering
-    const COUNTRY_CODE_TO_NAMES: Record<string, string[]> = {
-      'DE': ['germany', 'deutschland', 'de'],
-      'US': ['united states', 'usa', 'us', 'america'],
-      'GB': ['united kingdom', 'uk', 'gb', 'england', 'britain'],
-      'FR': ['france', 'fr'],
-      'ES': ['spain', 'españa', 'es'],
-      'IT': ['italy', 'italia', 'it'],
-      'NL': ['netherlands', 'nederland', 'nl', 'holland'],
-      'DK': ['denmark', 'danmark', 'dk'],
-      'SE': ['sweden', 'sverige', 'se'],
-      'NO': ['norway', 'norge', 'no'],
-      'PL': ['poland', 'polska', 'pl'],
-      'PT': ['portugal', 'pt'],
-      'BR': ['brazil', 'brasil', 'br'],
-      'AU': ['australia', 'au'],
-      'CA': ['canada', 'ca'],
-      'TH': ['thailand', 'th'],
-      'AE': ['uae', 'united arab emirates', 'ae'],
-      'CZ': ['czech republic', 'czechia', 'cz'],
-      'CH': ['switzerland', 'schweiz', 'ch'],
-      'AT': ['austria', 'österreich', 'at'],
-      'BE': ['belgium', 'belgique', 'be'],
-      'FI': ['finland', 'fi'],
-    };
-
-    // Filter by country if specified
-    const countryCode = countryParam.toUpperCase();
-    const countryVariants = COUNTRY_CODE_TO_NAMES[countryCode] || [countryParam.toLowerCase()];
-    
-    const filteredListings = countryParam
-      ? listings?.filter(l => {
-          if (!l.country) return false;
-          const listingCountry = l.country.toLowerCase().trim();
-          // Only exact matches or full word matches (not substring like 'de' in 'denmark')
-          const matches = countryVariants.some(v => {
-            if (listingCountry === v) return true;
-            // Check if it's a word boundary match (e.g., 'germany' matches but 'de' in 'denmark' doesn't)
-            if (v.length <= 2) {
-              // For short codes, require exact match only
-              return listingCountry === v;
-            }
-            return listingCountry.includes(v);
-          });
-          return matches;
-        })
-      : listings;
-
-    // Debug log
-    console.log(`[Locations API] country=${countryParam}, variants=${countryVariants.join(',')}, total=${listings?.length}, filtered=${filteredListings?.length}`);
-
-    // Count cities
-    const cityCounts: Record<string, { count: number; region?: string }> = {};
-    for (const listing of filteredListings || []) {
-      if (listing.city) {
-        const cityName = listing.city.trim();
-        if (!cityCounts[cityName]) {
-          const region = listing.region || getRegionForCity(cityName, countryParam.toUpperCase());
-          cityCounts[cityName] = { count: 0, region: region || undefined };
-        }
-        cityCounts[cityName].count++;
-      }
-    }
-
-    // Build cities array sorted by count
-    const cities = Object.entries(cityCounts)
-      .map(([name, data]) => ({ name, count: data.count, region: data.region }))
-      .sort((a, b) => b.count - a.count);
-
-    // Get top 10 cities
-    const topCities = cities.slice(0, 10);
-
-    // Group by regions
+    // Group by region
     const regionMap: Record<string, { name: string; cities: typeof cities }> = {};
     for (const city of cities) {
       const regionName = city.region || "Other";
@@ -212,7 +103,6 @@ export async function GET(req: NextRequest) {
       regionMap[regionName].cities.push(city);
     }
 
-    // Sort regions by total count
     const regions = Object.values(regionMap)
       .map(r => ({
         ...r,
@@ -221,33 +111,17 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.totalCount - a.totalCount)
       .map(({ totalCount, ...r }) => r);
 
-    // If no cities found from listings, fetch from geo_cities as fallback
-    let geoCities: { name: string; count: number; region?: string }[] = [];
-    if (includeGeo && cities.length === 0 && countryParam) {
-      const { data: geoData } = await supabase
-        .from("geo_cities")
-        .select("name, population, country_id!inner(iso_code)")
-        .eq("country_id.iso_code", countryParam.toUpperCase())
-        .order("population", { ascending: false })
-        .limit(50);
-      
-      if (geoData) {
-        geoCities = geoData.map(c => ({
-          name: c.name,
-          count: 0,
-          region: undefined,
-        }));
-      }
-    }
+    const topCities = cities.slice(0, 10);
+    const totalListings = cities.reduce((sum, c) => sum + c.count, 0);
 
     return NextResponse.json({
-      country: countryParam,
-      countryCode: countryParam.toUpperCase(),
-      topCities: topCities.length > 0 ? topCities : geoCities.slice(0, 10),
+      country: countryName,
+      countryCode: countryParam,
+      topCities,
       regions,
-      totalCities: cities.length || geoCities.length,
-      totalListings: filteredListings?.length || 0,
-      fromGeo: cities.length === 0 && geoCities.length > 0,
+      totalCities: cities.length,
+      totalListings,
+      fromGeo: false,
     });
   } catch (err) {
     console.error("[Locations API] Error:", err);
