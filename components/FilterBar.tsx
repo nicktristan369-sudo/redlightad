@@ -546,7 +546,7 @@ function LocationMenu({
               </button>
             ))}
           </>
-        )
+        )}
       </div>
     </div>
   )
