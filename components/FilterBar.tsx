@@ -340,7 +340,7 @@ function LocationMenu({
   const [loadingCities, setLoadingCities] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Global city search
+  // Global city search using GeoNames
   const searchCities = async (query: string) => {
     if (query.length < 2) {
       setResults([])
@@ -350,22 +350,43 @@ function LocationMenu({
     setLoading(true)
     
     try {
-      const res = await fetch(`/api/cities/search?q=${encodeURIComponent(query)}&limit=20`)
+      // Use GeoNames API - search globally or within selected country
+      const url = selCode 
+        ? `/api/geo/search?q=${encodeURIComponent(query)}&country=${selCode}&limit=20`
+        : `/api/geo/search?q=${encodeURIComponent(query)}&limit=20`
+      const res = await fetch(url)
       const data = await res.json()
-      setResults(data.results || [])
+      // Map to expected format
+      const mapped = (data.results || []).map((c: any) => ({
+        name: c.name,
+        region: c.admin1_name || '',
+        country: COUNTRIES.europe.find(x => x.code.toUpperCase() === c.country_code)?.name ||
+                 COUNTRIES.worldwide.find(x => x.code.toUpperCase() === c.country_code)?.name ||
+                 c.country_code,
+        countryCode: c.country_code,
+        isMajor: c.is_major_city,
+      }))
+      setResults(mapped)
     } catch (err) {
       setResults([])
     }
     setLoading(false)
   }
 
-  // Load cities for selected country
+  // Load MAJOR cities for selected country using GeoNames
   const loadCountryCities = async (code: string) => {
     setLoadingCities(true)
     try {
-      const res = await fetch(`/api/locations?country=${code}`)
+      const res = await fetch(`/api/geo/major-cities?country=${code}`)
       const data = await res.json()
-      setCountryCities(data.topCities || [])
+      // Map to expected format - these are already sorted by population
+      const mapped = (data.cities || []).map((c: any) => ({
+        name: c.name,
+        region: c.admin1_name || '',
+        isMajor: true,
+        population: c.population,
+      }))
+      setCountryCities(mapped)
     } catch (err) {
       setCountryCities([])
     }
@@ -431,7 +452,7 @@ function LocationMenu({
             autoFocus
             placeholder={`Search city in ${selCountry}...`}
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 outline-none focus:border-red-400"
             style={{ borderRadius: 0, fontSize: 15 }}
           />
@@ -447,60 +468,63 @@ function LocationMenu({
         
         {/* City list */}
         <div className="overflow-y-auto flex-1">
-          {loadingCities ? (
+          {loading || loadingCities ? (
             <div className="flex justify-center py-8">
               <div className="w-5 h-5 border-2 border-gray-200 border-t-red-600 rounded-full animate-spin" />
             </div>
-          ) : filteredCountryCities.length === 0 ? (
+          ) : isSearching ? (
+            /* Show search results when searching */
+            results.length === 0 ? (
+              <p className="px-4 py-4 text-sm text-gray-400 text-center">
+                No cities found for "{search}"
+              </p>
+            ) : (
+              <>
+                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
+                  Search Results
+                </div>
+                {results.map((city, i) => (
+                  <button
+                    key={`search-${city.name}-${i}`}
+                    onClick={() => onSelect({ country: selCountry, city: city.name })}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 ${
+                      currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                    }`}
+                  >
+                    <MapPin size={14} className={city.isMajor ? "text-red-500" : "text-gray-400"} />
+                    <div className="text-left">
+                      <span className={city.isMajor ? "font-medium" : ""}>{city.name}</span>
+                      {city.region && <span className="text-xs text-gray-400 ml-1">({city.region})</span>}
+                    </div>
+                  </button>
+                ))}
+              </>
+            )
+          ) : countryCities.length === 0 ? (
             <p className="px-4 py-4 text-sm text-gray-400 text-center">
-              {search ? `No cities found for "${search}"` : "No cities found"}
+              No major cities found
             </p>
           ) : (
+            /* Show major cities when not searching */
             <>
-              {/* Major cities first */}
-              {filteredCountryCities.filter(c => c.isMajor).length > 0 && (
-                <>
-                  <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
-                    Major Cities
+              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
+                Major Cities
+              </div>
+              {countryCities.map((city, i) => (
+                <button
+                  key={`major-${city.name}-${i}`}
+                  onClick={() => onSelect({ country: selCountry, city: city.name })}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 ${
+                    currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                  }`}
+                >
+                  <MapPin size={14} className="text-red-500" />
+                  <div className="text-left">
+                    <span className="font-medium">{city.name}</span>
+                    {city.region && <span className="text-xs text-gray-400 ml-1">({city.region})</span>}
                   </div>
-                  {filteredCountryCities.filter(c => c.isMajor).map((city, i) => (
-                    <button
-                      key={`major-${city.name}-${i}`}
-                      onClick={() => onSelect({ country: selCountry, city: city.name })}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 ${
-                        currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
-                      }`}
-                    >
-                      <MapPin size={14} className="text-red-500" />
-                      <span className="font-medium">{city.name}</span>
-                    </button>
-                  ))}
-                </>
-              )}
-              
-              {/* Other cities */}
-              {filteredCountryCities.filter(c => !c.isMajor).length > 0 && (
-                <>
-                  <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
-                    Cities
-                  </div>
-                  {filteredCountryCities.filter(c => !c.isMajor).slice(0, 50).map((city, i) => (
-                    <button
-                      key={`city-${city.name}-${i}`}
-                      onClick={() => onSelect({ country: selCountry, city: city.name })}
-                      className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 ${
-                        currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
-                      }`}
-                    >
-                      <MapPin size={12} className="text-gray-400" />
-                      <div className="text-left">
-                        <span>{city.name}</span>
-                        {city.region && <span className="text-xs text-gray-400 ml-1">({city.region})</span>}
-                      </div>
-                    </button>
-                  ))}
-                </>
-              )}
+                </button>
+              ))}
             </>
           )}
         </div>
