@@ -128,6 +128,18 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // ── Dashboard requires login ──────────────────────────────────────────────
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/kunde")) {
+    const supabaseToken = req.cookies.get("sb-kkkqvhfgjofppimwxtub-auth-token")?.value
+      || req.cookies.get("sb-access-token")?.value
+    if (!supabaseToken) {
+      const url = req.nextUrl.clone()
+      url.pathname = "/login"
+      url.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(url)
+    }
+  }
+
   // ── Domain-based locale detection ────────────────────────────────────────
   const host = req.headers.get('host') || ''
   const domainLocale = getLocaleFromDomain(host)
