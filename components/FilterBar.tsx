@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useMemo } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ChevronDown, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Check, Video } from "lucide-react"
+import { ChevronDown, ChevronRight, X, MapPin, Grid3X3, Users, Search, SlidersHorizontal, Check, Video } from "lucide-react"
 import { CATEGORIES } from "@/lib/constants/categories"
 import {
   BODY_BUILD_OPTIONS, HAIR_COLOR_OPTIONS,
@@ -333,6 +333,11 @@ function LocationMenu({
   const [search, setSearch] = useState("")
   const [results, setResults] = useState<{ name: string; region: string; country: string; countryCode: string; display: string; isMajor: boolean }[]>([])
   const [loading, setLoading] = useState(false)
+  const [step, setStep] = useState<"main" | "country">("main")
+  const [selCountry, setSelCountry] = useState("")
+  const [selCode, setSelCode] = useState("")
+  const [countryCities, setCountryCities] = useState<{ name: string; region?: string; isMajor?: boolean }[]>([])
+  const [loadingCities, setLoadingCities] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Global city search
@@ -345,13 +350,26 @@ function LocationMenu({
     setLoading(true)
     
     try {
-      const res = await fetch(`/api/cities/search?q=${encodeURIComponent(query)}&limit=15`)
+      const res = await fetch(`/api/cities/search?q=${encodeURIComponent(query)}&limit=20`)
       const data = await res.json()
       setResults(data.results || [])
     } catch (err) {
       setResults([])
     }
     setLoading(false)
+  }
+
+  // Load cities for selected country
+  const loadCountryCities = async (code: string) => {
+    setLoadingCities(true)
+    try {
+      const res = await fetch(`/api/locations?country=${code}`)
+      const data = await res.json()
+      setCountryCities(data.topCities || [])
+    } catch (err) {
+      setCountryCities([])
+    }
+    setLoadingCities(false)
   }
 
   const handleSearchChange = (value: string) => {
@@ -371,11 +389,126 @@ function LocationMenu({
     }, 300)
   }
 
+  const selectCountry = (name: string, code: string) => {
+    setSelCountry(name)
+    setSelCode(code)
+    setStep("country")
+    setSearch("")
+    setResults([])
+    loadCountryCities(code)
+  }
+
   // Show search results if searching, otherwise show country list
   const isSearching = search.length >= 2
   const filteredEurope = COUNTRIES.europe.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
   const filteredWorldwide = COUNTRIES.worldwide.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
 
+  // Filter country cities by search
+  const filteredCountryCities = search 
+    ? countryCities.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+    : countryCities
+
+  // Step 2: Show cities in selected country
+  if (step === "country") {
+    return (
+      <div
+        className="absolute top-full mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
+        style={{ width: "min(320px, calc(100vw - 16px))", maxHeight: "420px", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0, right: 0, left: "auto" }}
+      >
+        {/* Back button */}
+        <button
+          onClick={() => { setStep("main"); setSearch(""); setResults([]) }}
+          className="flex-shrink-0 w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 border-b border-gray-200"
+        >
+          <span>←</span>
+          <span className={`fi fi-${selCode.toLowerCase()} fis`} style={{ width: 18, height: 18, display: "inline-block", borderRadius: 2 }} />
+          {selCountry}
+        </button>
+        
+        {/* Search cities */}
+        <div className="p-2 border-b border-gray-100 flex-shrink-0">
+          <input
+            autoFocus
+            placeholder={`Search city in ${selCountry}...`}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-200 outline-none focus:border-red-400"
+            style={{ borderRadius: 0, fontSize: 15 }}
+          />
+        </div>
+        
+        {/* All cities in country */}
+        <button
+          onClick={() => onSelect({ country: selCountry, city: "" })}
+          className="flex-shrink-0 w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 border-b border-gray-100"
+        >
+          <MapPin size={14} /> All cities in {selCountry}
+        </button>
+        
+        {/* City list */}
+        <div className="overflow-y-auto flex-1">
+          {loadingCities ? (
+            <div className="flex justify-center py-8">
+              <div className="w-5 h-5 border-2 border-gray-200 border-t-red-600 rounded-full animate-spin" />
+            </div>
+          ) : filteredCountryCities.length === 0 ? (
+            <p className="px-4 py-4 text-sm text-gray-400 text-center">
+              {search ? `No cities found for "${search}"` : "No cities found"}
+            </p>
+          ) : (
+            <>
+              {/* Major cities first */}
+              {filteredCountryCities.filter(c => c.isMajor).length > 0 && (
+                <>
+                  <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
+                    Major Cities
+                  </div>
+                  {filteredCountryCities.filter(c => c.isMajor).map((city, i) => (
+                    <button
+                      key={`major-${city.name}-${i}`}
+                      onClick={() => onSelect({ country: selCountry, city: city.name })}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 ${
+                        currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                      }`}
+                    >
+                      <MapPin size={14} className="text-red-500" />
+                      <span className="font-medium">{city.name}</span>
+                    </button>
+                  ))}
+                </>
+              )}
+              
+              {/* Other cities */}
+              {filteredCountryCities.filter(c => !c.isMajor).length > 0 && (
+                <>
+                  <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
+                    Cities
+                  </div>
+                  {filteredCountryCities.filter(c => !c.isMajor).slice(0, 50).map((city, i) => (
+                    <button
+                      key={`city-${city.name}-${i}`}
+                      onClick={() => onSelect({ country: selCountry, city: city.name })}
+                      className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 ${
+                        currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                      }`}
+                    >
+                      <MapPin size={12} className="text-gray-400" />
+                      <div className="text-left">
+                        <span>{city.name}</span>
+                        {city.region && <span className="text-xs text-gray-400 ml-1">({city.region})</span>}
+                      </div>
+                    </button>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Step 1: Main menu - countries + global search
   return (
     <div
       className="absolute top-full mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
@@ -385,7 +518,7 @@ function LocationMenu({
       <div className="p-2 border-b border-gray-100 flex-shrink-0">
         <input
           autoFocus
-          placeholder="Search city or country..."
+          placeholder="Search any city worldwide..."
           value={search}
           onChange={e => handleSearchChange(e.target.value)}
           className="w-full px-3 py-2 border border-gray-200 outline-none focus:border-red-400"
@@ -455,12 +588,13 @@ function LocationMenu({
                 {filteredEurope.map(c => (
                   <button
                     key={c.code}
-                    onClick={() => onSelect({ country: c.name, city: "" })}
+                    onClick={() => selectCountry(c.name, c.code)}
                     className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
                       currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
                     }`}
                   >
                     <span className={`fi fi-${c.code} fis`} style={{ width: 18, height: 18, display: "inline-block", flexShrink: 0, borderRadius: 2 }} />{" "}{c.name}
+                    <ChevronRight size={14} className="ml-auto text-gray-400" />
                   </button>
                 ))}
               </>
@@ -474,12 +608,13 @@ function LocationMenu({
                 {filteredWorldwide.map(c => (
                   <button
                     key={c.code}
-                    onClick={() => onSelect({ country: c.name, city: "" })}
+                    onClick={() => selectCountry(c.name, c.code)}
                     className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
                       currentCountry === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
                     }`}
                   >
                     <span className={`fi fi-${c.code} fis`} style={{ width: 18, height: 18, display: "inline-block", flexShrink: 0, borderRadius: 2 }} />{" "}{c.name}
+                    <ChevronRight size={14} className="ml-auto text-gray-400" />
                   </button>
                 ))}
               </>
