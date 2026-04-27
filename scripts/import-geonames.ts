@@ -1,459 +1,392 @@
 /**
- * GeoNames Import Script for RedLightAD
+ * GeoNames Import Script
  * 
- * Downloads and imports city data from GeoNames into Supabase.
- * Supports both full import and country-specific imports.
- * 
- * Usage:
- *   npx ts-node scripts/import-geonames.ts --countries DK,DE,NL,GB,US
- *   npx ts-node scripts/import-geonames.ts --all
+ * Imports cities15000.txt into Supabase for the location system
+ * Run with: npx tsx scripts/import-geonames.ts
  */
 
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import { execSync } from 'child_process';
 
-// ============================================================================
-// Configuration
-// ============================================================================
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://kkkqvhfgjofppimwxtub.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const GEONAMES_BASE_URL = 'https://download.geonames.org/export/dump';
-const DATA_DIR = path.join(process.cwd(), 'data', 'geonames');
-
-// Feature codes for populated places
-const VALID_FEATURE_CODES = [
-  'PPLC',   // Capital
-  'PPLA',   // Capital of admin1 (regional capital)
-  'PPLA2',  // Capital of admin2 (county seat)
-  'PPLA3',  // Capital of admin3
-  'PPLA4',  // Capital of admin4
-  'PPL',    // Populated place
-  'PPLX',   // Section of populated place (neighborhood)
-  'PPLS',   // Populated places
-  'PPLG',   // Seat of government
-  'PPLF',   // Farm village
-  'PPLL',   // Populated locality
-  'PPLQ',   // Abandoned populated place (for historical data)
-  'PPLR',   // Religious populated place
-  'PPLU',   // Unsurveyed area
-  'PPLW',   // Destroyed populated place
-];
-
-// Minimum population to include (0 = all)
-const MIN_POPULATION = 0;
-
-// ============================================================================
-// Supabase Client
-// ============================================================================
+if (!SUPABASE_SERVICE_KEY) {
+  console.error('SUPABASE_SERVICE_ROLE_KEY environment variable required');
+  process.exit(1);
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// ============================================================================
-// Download Functions
-// ============================================================================
+// Country population thresholds for major cities
+const COUNTRY_THRESHOLDS: Record<string, { maxCities: number; minPop: number }> = {
+  // Tiny countries (< 1M population) - top 5-10 cities
+  AD: { maxCities: 5, minPop: 5000 },
+  LI: { maxCities: 5, minPop: 5000 },
+  MC: { maxCities: 3, minPop: 5000 },
+  SM: { maxCities: 3, minPop: 5000 },
+  VA: { maxCities: 1, minPop: 0 },
+  MT: { maxCities: 10, minPop: 10000 },
+  LU: { maxCities: 10, minPop: 10000 },
+  IS: { maxCities: 10, minPop: 10000 },
+  
+  // Small countries (1-5M) - top 15 cities
+  DK: { maxCities: 15, minPop: 30000 },
+  NO: { maxCities: 15, minPop: 25000 },
+  FI: { maxCities: 15, minPop: 30000 },
+  IE: { maxCities: 15, minPop: 25000 },
+  NZ: { maxCities: 15, minPop: 30000 },
+  HR: { maxCities: 15, minPop: 25000 },
+  SI: { maxCities: 10, minPop: 20000 },
+  SK: { maxCities: 15, minPop: 30000 },
+  LT: { maxCities: 15, minPop: 25000 },
+  LV: { maxCities: 15, minPop: 25000 },
+  EE: { maxCities: 10, minPop: 20000 },
+  
+  // Medium-small countries (5-15M) - top 25-30 cities
+  NL: { maxCities: 30, minPop: 50000 },
+  BE: { maxCities: 25, minPop: 40000 },
+  PT: { maxCities: 25, minPop: 40000 },
+  GR: { maxCities: 25, minPop: 40000 },
+  CZ: { maxCities: 25, minPop: 40000 },
+  HU: { maxCities: 25, minPop: 40000 },
+  SE: { maxCities: 25, minPop: 40000 },
+  AT: { maxCities: 20, minPop: 40000 },
+  CH: { maxCities: 25, minPop: 30000 },
+  BG: { maxCities: 20, minPop: 40000 },
+  RS: { maxCities: 20, minPop: 40000 },
+  
+  // Medium countries (15-50M) - top 40-60 cities
+  ES: { maxCities: 60, minPop: 60000 },
+  PL: { maxCities: 50, minPop: 60000 },
+  RO: { maxCities: 40, minPop: 50000 },
+  UA: { maxCities: 50, minPop: 60000 },
+  CA: { maxCities: 50, minPop: 70000 },
+  AU: { maxCities: 40, minPop: 60000 },
+  
+  // Large countries (50-100M) - top 80-100 cities
+  GB: { maxCities: 80, minPop: 80000 },
+  FR: { maxCities: 80, minPop: 80000 },
+  IT: { maxCities: 80, minPop: 70000 },
+  DE: { maxCities: 100, minPop: 80000 },
+  TR: { maxCities: 80, minPop: 100000 },
+  TH: { maxCities: 60, minPop: 80000 },
+  
+  // Very large countries (100M+) - top 150-200 cities
+  US: { maxCities: 200, minPop: 100000 },
+  RU: { maxCities: 150, minPop: 100000 },
+  JP: { maxCities: 150, minPop: 100000 },
+  MX: { maxCities: 100, minPop: 100000 },
+  BR: { maxCities: 150, minPop: 100000 },
+  
+  // Mega countries - top 200+ cities
+  CN: { maxCities: 250, minPop: 200000 },
+  IN: { maxCities: 250, minPop: 200000 },
+  ID: { maxCities: 150, minPop: 150000 },
+  PK: { maxCities: 100, minPop: 150000 },
+  NG: { maxCities: 100, minPop: 150000 },
+};
 
-async function ensureDataDir(): Promise<void> {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
+// Default threshold for countries not listed
+const DEFAULT_THRESHOLD = { maxCities: 30, minPop: 50000 };
 
-async function downloadFile(url: string, filename: string): Promise<string> {
-  const filepath = path.join(DATA_DIR, filename);
-  
-  if (fs.existsSync(filepath)) {
-    console.log(`  ✓ ${filename} already exists, skipping download`);
-    return filepath;
-  }
-  
-  console.log(`  ↓ Downloading ${filename}...`);
-  execSync(`wget -q -O "${filepath}" "${url}"`, { stdio: 'inherit' });
-  
-  // Unzip if it's a zip file
-  if (filename.endsWith('.zip')) {
-    const unzippedPath = filepath.replace('.zip', '.txt');
-    console.log(`  ↓ Extracting ${filename}...`);
-    execSync(`unzip -o -q "${filepath}" -d "${DATA_DIR}"`, { stdio: 'inherit' });
-    return unzippedPath;
-  }
-  
-  return filepath;
-}
-
-async function downloadGeoNamesData(countries: string[]): Promise<void> {
-  await ensureDataDir();
-  
-  console.log('\n📥 Downloading GeoNames data...\n');
-  
-  // Download admin codes
-  await downloadFile(`${GEONAMES_BASE_URL}/admin1CodesASCII.txt`, 'admin1CodesASCII.txt');
-  await downloadFile(`${GEONAMES_BASE_URL}/admin2Codes.txt`, 'admin2Codes.txt');
-  
-  // Download country-specific files
-  for (const country of countries) {
-    await downloadFile(`${GEONAMES_BASE_URL}/${country}.zip`, `${country}.zip`);
-  }
-  
-  // Download alternate names for better search
-  await downloadFile(`${GEONAMES_BASE_URL}/alternateNamesV2.zip`, 'alternateNamesV2.zip');
-  
-  console.log('\n✓ All downloads complete!\n');
-}
-
-// ============================================================================
-// Import Functions
-// ============================================================================
-
-interface GeoNameRecord {
+interface GeoCity {
   geoname_id: number;
   name: string;
   ascii_name: string;
-  alternate_names: string;
-  latitude: number;
-  longitude: number;
-  feature_class: string;
-  feature_code: string;
   country_code: string;
   admin1_code: string;
-  admin2_code: string;
-  admin3_code: string;
-  admin4_code: string;
+  latitude: number;
+  longitude: number;
   population: number;
-  elevation: number | null;
   timezone: string;
 }
 
-interface Admin1Record {
-  code: string;
+interface Admin1 {
+  code: string; // e.g., "ES.51"
   name: string;
   ascii_name: string;
   geoname_id: number;
 }
 
-async function importAdmin1Codes(): Promise<Map<string, Admin1Record>> {
-  console.log('📍 Importing admin1 codes (regions/states)...');
+async function loadAdmin1Codes(): Promise<Map<string, string>> {
+  const admin1Map = new Map<string, string>();
+  const filePath = path.join(__dirname, '../data/geonames/admin1CodesASCII.txt');
   
-  const filepath = path.join(DATA_DIR, 'admin1CodesASCII.txt');
-  const admin1Map = new Map<string, Admin1Record>();
-  
-  if (!fs.existsSync(filepath)) {
-    console.log('  ⚠ admin1CodesASCII.txt not found, skipping');
-    return admin1Map;
-  }
-  
-  const fileStream = fs.createReadStream(filepath);
+  const fileStream = fs.createReadStream(filePath);
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
-  
-  const regions: any[] = [];
   
   for await (const line of rl) {
     const parts = line.split('\t');
-    if (parts.length < 4) continue;
-    
-    const [code, name, ascii_name, geoname_id] = parts;
-    const [country_code, admin1_code] = code.split('.');
-    
-    admin1Map.set(code, {
-      code,
-      name,
-      ascii_name,
-      geoname_id: parseInt(geoname_id),
-    });
-    
-    // Get country_id
-    const { data: country } = await supabase
-      .from('geo_countries')
-      .select('id')
-      .eq('iso_code', country_code)
-      .single();
-    
-    if (country) {
-      regions.push({
-        geoname_id: parseInt(geoname_id),
-        country_id: country.id,
-        name,
-        ascii_name,
-        admin1_code,
-      });
+    if (parts.length >= 2) {
+      admin1Map.set(parts[0], parts[1]); // e.g., "ES.51" -> "Andalusia"
     }
   }
   
-  // Batch insert regions
-  if (regions.length > 0) {
-    const { error } = await supabase
-      .from('geo_regions')
-      .upsert(regions, { onConflict: 'geoname_id' });
-    
-    if (error) {
-      console.error('  ✗ Error inserting regions:', error.message);
-    } else {
-      console.log(`  ✓ Imported ${regions.length} regions`);
-    }
-  }
-  
+  console.log(`Loaded ${admin1Map.size} admin1 codes`);
   return admin1Map;
 }
 
-async function importCitiesForCountry(
-  countryCode: string,
-  admin1Map: Map<string, Admin1Record>
-): Promise<number> {
-  const filepath = path.join(DATA_DIR, `${countryCode}.txt`);
+async function parseCities(admin1Map: Map<string, string>): Promise<GeoCity[]> {
+  const cities: GeoCity[] = [];
+  const filePath = path.join(__dirname, '../data/geonames/cities15000.txt');
   
-  if (!fs.existsSync(filepath)) {
-    console.log(`  ⚠ ${countryCode}.txt not found, skipping`);
-    return 0;
-  }
-  
-  console.log(`\n📍 Importing cities for ${countryCode}...`);
-  
-  // Get country_id
-  const { data: country } = await supabase
-    .from('geo_countries')
-    .select('id')
-    .eq('iso_code', countryCode)
-    .single();
-  
-  if (!country) {
-    console.log(`  ⚠ Country ${countryCode} not found in database`);
-    return 0;
-  }
-  
-  // Get regions for this country
-  const { data: regions } = await supabase
-    .from('geo_regions')
-    .select('id, admin1_code')
-    .eq('country_id', country.id);
-  
-  const regionMap = new Map(regions?.map(r => [r.admin1_code, r.id]) || []);
-  
-  const fileStream = fs.createReadStream(filepath);
+  const fileStream = fs.createReadStream(filePath);
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
-  
-  let batch: any[] = [];
-  let totalImported = 0;
-  const BATCH_SIZE = 500;
   
   for await (const line of rl) {
     const parts = line.split('\t');
-    if (parts.length < 19) continue;
+    if (parts.length < 15) continue;
     
-    const record: GeoNameRecord = {
+    const city: GeoCity = {
       geoname_id: parseInt(parts[0]),
       name: parts[1],
       ascii_name: parts[2],
-      alternate_names: parts[3],
-      latitude: parseFloat(parts[4]),
-      longitude: parseFloat(parts[5]),
-      feature_class: parts[6],
-      feature_code: parts[7],
       country_code: parts[8],
       admin1_code: parts[10],
-      admin2_code: parts[11],
-      admin3_code: parts[12],
-      admin4_code: parts[13],
+      latitude: parseFloat(parts[4]),
+      longitude: parseFloat(parts[5]),
       population: parseInt(parts[14]) || 0,
-      elevation: parts[15] ? parseInt(parts[15]) : null,
-      timezone: parts[17],
+      timezone: parts[17] || '',
     };
     
-    // Only import populated places
-    if (record.feature_class !== 'P') continue;
-    if (!VALID_FEATURE_CODES.includes(record.feature_code)) continue;
-    if (record.population < MIN_POPULATION) continue;
+    cities.push(city);
+  }
+  
+  console.log(`Parsed ${cities.length} cities`);
+  return cities;
+}
+
+function determineMajorCities(cities: GeoCity[]): Set<number> {
+  const majorCityIds = new Set<number>();
+  
+  // Group cities by country
+  const citiesByCountry = new Map<string, GeoCity[]>();
+  for (const city of cities) {
+    const existing = citiesByCountry.get(city.country_code) || [];
+    existing.push(city);
+    citiesByCountry.set(city.country_code, existing);
+  }
+  
+  // For each country, select top N cities by population
+  for (const [countryCode, countryCities] of citiesByCountry) {
+    const threshold = COUNTRY_THRESHOLDS[countryCode] || DEFAULT_THRESHOLD;
     
-    // Skip if coordinates are invalid
-    if (isNaN(record.latitude) || isNaN(record.longitude)) continue;
+    // Sort by population descending
+    const sorted = [...countryCities].sort((a, b) => b.population - a.population);
     
-    const region_id = regionMap.get(record.admin1_code) || null;
+    // Take top N cities with minimum population
+    let count = 0;
+    for (const city of sorted) {
+      if (count >= threshold.maxCities) break;
+      if (city.population >= threshold.minPop) {
+        majorCityIds.add(city.geoname_id);
+        count++;
+      }
+    }
     
-    const city = {
-      geoname_id: record.geoname_id,
-      country_id: country.id,
-      region_id,
-      name: record.name,
-      ascii_name: record.ascii_name,
-      latitude: record.latitude,
-      longitude: record.longitude,
-      population: record.population,
-      elevation: record.elevation,
-      feature_code: record.feature_code,
-      timezone: record.timezone,
-      admin1_code: record.admin1_code,
-      admin2_code: record.admin2_code,
-      admin3_code: record.admin3_code,
-      admin4_code: record.admin4_code,
-      is_capital: record.feature_code === 'PPLC',
-      is_regional_capital: ['PPLA', 'PPLA2'].includes(record.feature_code),
-      is_major_city: record.population >= 100000,
-      search_rank: calculateSearchRank(record),
-    };
-    
-    batch.push(city);
-    
-    if (batch.length >= BATCH_SIZE) {
-      await insertCityBatch(batch);
-      totalImported += batch.length;
-      process.stdout.write(`\r  → Imported ${totalImported} cities...`);
-      batch = [];
+    // Always include at least the largest city
+    if (count === 0 && sorted.length > 0) {
+      majorCityIds.add(sorted[0].geoname_id);
     }
   }
   
-  // Insert remaining batch
-  if (batch.length > 0) {
-    await insertCityBatch(batch);
-    totalImported += batch.length;
-  }
-  
-  console.log(`\n  ✓ Imported ${totalImported} cities for ${countryCode}`);
-  return totalImported;
+  console.log(`Marked ${majorCityIds.size} major cities`);
+  return majorCityIds;
 }
 
-function calculateSearchRank(record: GeoNameRecord): number {
-  let rank = 0;
+async function createTable() {
+  console.log('Creating geonames_cities table...');
   
-  // Capital cities get highest rank
-  if (record.feature_code === 'PPLC') rank += 100;
-  if (record.feature_code === 'PPLA') rank += 80;
-  if (record.feature_code === 'PPLA2') rank += 60;
-  
-  // Population bonus (log scale)
-  if (record.population > 0) {
-    rank += Math.min(Math.floor(Math.log10(record.population) * 10), 50);
-  }
-  
-  return rank;
-}
-
-async function insertCityBatch(batch: any[]): Promise<void> {
-  // First, insert without geom
-  const citiesWithoutGeom = batch.map(city => {
-    const { geom, ...rest } = city;
-    return rest;
-  });
-  
-  const { error } = await supabase
-    .from('geo_cities')
-    .upsert(citiesWithoutGeom, { onConflict: 'geoname_id' });
-  
-  if (error) {
-    console.error('\n  ✗ Error inserting batch:', error.message);
-  }
-}
-
-async function updateCityGeometries(countryCode: string): Promise<void> {
-  console.log(`\n📐 Updating geometries for ${countryCode}...`);
-  
-  // Use raw SQL to update geometries
   const { error } = await supabase.rpc('exec_sql', {
     sql: `
-      UPDATE geo_cities 
-      SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography
-      WHERE geom IS NULL 
-        AND latitude IS NOT NULL 
-        AND longitude IS NOT NULL
-        AND country_id = (SELECT id FROM geo_countries WHERE iso_code = '${countryCode}')
+      -- Drop existing table if exists
+      DROP TABLE IF EXISTS geonames_cities CASCADE;
+      
+      -- Create table
+      CREATE TABLE geonames_cities (
+        geoname_id INT PRIMARY KEY,
+        name TEXT NOT NULL,
+        ascii_name TEXT,
+        country_code CHAR(2) NOT NULL,
+        admin1_code TEXT,
+        admin1_name TEXT,
+        latitude DOUBLE PRECISION NOT NULL,
+        longitude DOUBLE PRECISION NOT NULL,
+        population INT NOT NULL DEFAULT 0,
+        timezone TEXT,
+        is_major_city BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      
+      -- Create indexes
+      CREATE INDEX idx_geonames_country ON geonames_cities(country_code);
+      CREATE INDEX idx_geonames_ascii ON geonames_cities(ascii_name);
+      CREATE INDEX idx_geonames_major ON geonames_cities(country_code, is_major_city) WHERE is_major_city = true;
+      CREATE INDEX idx_geonames_search ON geonames_cities USING gin(to_tsvector('simple', ascii_name));
+      CREATE INDEX idx_geonames_pop ON geonames_cities(country_code, population DESC);
     `
   });
   
   if (error) {
-    // Fallback: geometries will be null, but basic functionality works
-    console.log('  ⚠ Geometry update requires PostGIS, will be done via SQL');
-  } else {
-    console.log('  ✓ Geometries updated');
-  }
-}
-
-// ============================================================================
-// Main Import Function
-// ============================================================================
-
-async function importGeoNames(countries: string[]): Promise<void> {
-  console.log('\n═══════════════════════════════════════════════════════════════');
-  console.log('  REDLIGHTAD GEONAMES IMPORT');
-  console.log('  Importing location data for: ' + countries.join(', '));
-  console.log('═══════════════════════════════════════════════════════════════\n');
-  
-  const startTime = Date.now();
-  
-  // Step 1: Download data
-  await downloadGeoNamesData(countries);
-  
-  // Step 2: Import admin1 codes
-  const admin1Map = await importAdmin1Codes();
-  
-  // Step 3: Import cities for each country
-  let totalCities = 0;
-  for (const country of countries) {
-    const count = await importCitiesForCountry(country, admin1Map);
-    totalCities += count;
-    await updateCityGeometries(country);
+    console.error('Error creating table via RPC, trying direct SQL...');
+    // The RPC might not exist, we'll handle this differently
+    return false;
   }
   
-  const duration = Math.round((Date.now() - startTime) / 1000);
+  return true;
+}
+
+async function insertCities(cities: GeoCity[], majorCityIds: Set<number>, admin1Map: Map<string, string>) {
+  console.log('Inserting cities in batches...');
   
-  console.log('\n═══════════════════════════════════════════════════════════════');
-  console.log(`  ✓ IMPORT COMPLETE`);
-  console.log(`  → Total cities imported: ${totalCities.toLocaleString()}`);
-  console.log(`  → Duration: ${duration} seconds`);
-  console.log('═══════════════════════════════════════════════════════════════\n');
+  const BATCH_SIZE = 500;
+  let inserted = 0;
+  
+  for (let i = 0; i < cities.length; i += BATCH_SIZE) {
+    const batch = cities.slice(i, i + BATCH_SIZE);
+    
+    const records = batch.map(city => ({
+      geoname_id: city.geoname_id,
+      name: city.name,
+      ascii_name: city.ascii_name,
+      country_code: city.country_code,
+      admin1_code: city.admin1_code,
+      admin1_name: admin1Map.get(`${city.country_code}.${city.admin1_code}`) || null,
+      latitude: city.latitude,
+      longitude: city.longitude,
+      population: city.population,
+      timezone: city.timezone,
+      is_major_city: majorCityIds.has(city.geoname_id),
+    }));
+    
+    const { error } = await supabase
+      .from('geonames_cities')
+      .upsert(records, { onConflict: 'geoname_id' });
+    
+    if (error) {
+      console.error(`Error inserting batch ${i / BATCH_SIZE + 1}:`, error.message);
+    } else {
+      inserted += batch.length;
+      if (inserted % 5000 === 0 || inserted === cities.length) {
+        console.log(`  Inserted ${inserted} / ${cities.length} cities`);
+      }
+    }
+  }
+  
+  return inserted;
 }
 
-// ============================================================================
-// CLI Entry Point
-// ============================================================================
-
-const args = process.argv.slice(2);
-
-if (args.includes('--help')) {
-  console.log(`
-GeoNames Import Script
-
-Usage:
-  npx ts-node scripts/import-geonames.ts --countries DK,DE,NL,GB
-  npx ts-node scripts/import-geonames.ts --priority
-  npx ts-node scripts/import-geonames.ts --all
-
-Options:
-  --countries XX,YY  Import specific countries (ISO codes)
-  --priority         Import priority countries (DK,DE,NL,GB,US,FR,ES,IT)
-  --all              Import all countries (very slow!)
-  --help             Show this help
-  `);
-  process.exit(0);
-}
-
-let countries: string[] = [];
-
-if (args.includes('--all')) {
-  countries = [
-    'DK', 'DE', 'NL', 'GB', 'US', 'FR', 'ES', 'IT', 'SE', 'NO',
-    'BE', 'AT', 'CH', 'PL', 'CZ', 'PT', 'TH', 'BR', 'AU', 'CA',
-    'MX', 'AE', 'RU', 'JP', 'IN', 'CO', 'AR', 'FI', 'IE', 'GR',
-    'TR', 'HU', 'RO', 'BG', 'HR', 'SK', 'SI', 'LT', 'LV', 'EE'
-  ];
-} else if (args.includes('--priority')) {
-  countries = ['DK', 'DE', 'NL', 'GB', 'US', 'FR', 'ES', 'IT'];
-} else {
-  const countryArg = args.find(a => a.startsWith('--countries='));
-  if (countryArg) {
-    countries = countryArg.split('=')[1].split(',').map(c => c.trim().toUpperCase());
-  } else {
-    const countryIndex = args.indexOf('--countries');
-    if (countryIndex !== -1 && args[countryIndex + 1]) {
-      countries = args[countryIndex + 1].split(',').map(c => c.trim().toUpperCase());
+async function printStats() {
+  const { data: total } = await supabase
+    .from('geonames_cities')
+    .select('*', { count: 'exact', head: true });
+  
+  const { data: majorCount } = await supabase
+    .from('geonames_cities')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_major_city', true);
+  
+  const { data: topCountries } = await supabase
+    .from('geonames_cities')
+    .select('country_code')
+    .eq('is_major_city', true);
+  
+  console.log('\n=== IMPORT COMPLETE ===');
+  console.log(`Total cities: ${total}`);
+  console.log(`Major cities: ${majorCount}`);
+  
+  // Count by country
+  if (topCountries) {
+    const countryCount = new Map<string, number>();
+    for (const row of topCountries) {
+      countryCount.set(row.country_code, (countryCount.get(row.country_code) || 0) + 1);
+    }
+    console.log('\nMajor cities by country (sample):');
+    const sorted = [...countryCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15);
+    for (const [code, count] of sorted) {
+      console.log(`  ${code}: ${count} major cities`);
     }
   }
 }
 
-if (countries.length === 0) {
-  console.log('No countries specified. Use --help for usage.');
-  process.exit(1);
+async function main() {
+  console.log('=== GeoNames Import Script ===\n');
+  
+  // 1. Load admin1 codes for region names
+  const admin1Map = await loadAdmin1Codes();
+  
+  // 2. Parse cities file
+  const cities = await parseCities(admin1Map);
+  
+  // 3. Determine which are major cities
+  const majorCityIds = determineMajorCities(cities);
+  
+  // 4. Create table (this will need to be done manually via SQL editor)
+  console.log('\n--- TABLE CREATION ---');
+  console.log('Run this SQL in Supabase SQL Editor first:\n');
+  console.log(`
+DROP TABLE IF EXISTS geonames_cities CASCADE;
+
+CREATE TABLE geonames_cities (
+  geoname_id INT PRIMARY KEY,
+  name TEXT NOT NULL,
+  ascii_name TEXT,
+  country_code CHAR(2) NOT NULL,
+  admin1_code TEXT,
+  admin1_name TEXT,
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  population INT NOT NULL DEFAULT 0,
+  timezone TEXT,
+  is_major_city BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_geonames_country ON geonames_cities(country_code);
+CREATE INDEX idx_geonames_ascii ON geonames_cities(ascii_name);
+CREATE INDEX idx_geonames_major ON geonames_cities(country_code, is_major_city) WHERE is_major_city = true;
+CREATE INDEX idx_geonames_pop ON geonames_cities(country_code, population DESC);
+
+-- Enable RLS but allow all for now
+ALTER TABLE geonames_cities ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow read access" ON geonames_cities FOR SELECT USING (true);
+  `);
+  
+  console.log('\nPress Enter after running the SQL to continue with import...');
+  
+  // For now, export to JSON for import
+  console.log('\n--- GENERATING IMPORT DATA ---');
+  
+  const records = cities.map(city => ({
+    geoname_id: city.geoname_id,
+    name: city.name,
+    ascii_name: city.ascii_name,
+    country_code: city.country_code,
+    admin1_code: city.admin1_code,
+    admin1_name: admin1Map.get(`${city.country_code}.${city.admin1_code}`) || null,
+    latitude: city.latitude,
+    longitude: city.longitude,
+    population: city.population,
+    timezone: city.timezone,
+    is_major_city: majorCityIds.has(city.geoname_id),
+  }));
+  
+  // Save to JSON file for manual import if needed
+  const outputPath = path.join(__dirname, '../data/geonames/cities_processed.json');
+  fs.writeFileSync(outputPath, JSON.stringify(records, null, 2));
+  console.log(`Saved processed data to ${outputPath}`);
+  
+  // 5. Insert into database
+  console.log('\n--- INSERTING DATA ---');
+  const inserted = await insertCities(cities, majorCityIds, admin1Map);
+  
+  // 6. Print stats
+  if (inserted > 0) {
+    await printStats();
+  }
 }
 
-importGeoNames(countries).catch(console.error);
+main().catch(console.error);
