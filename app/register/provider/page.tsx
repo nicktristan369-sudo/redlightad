@@ -244,8 +244,9 @@ export default function RegisterProviderPage() {
   // Cities for selected country
   const selectedCountryObj = SUPPORTED_COUNTRIES.find((c) => c.name === country);
   
-  // Global city search (Booking.com style)
+  // Global city search using GeoNames
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [majorCityId, setMajorCityId] = useState<number | null>(null);
   
   const searchCities = async (query: string) => {
     if (query.length < 2) {
@@ -254,17 +255,14 @@ export default function RegisterProviderPage() {
     }
     
     try {
-      // Use global search - works with or without country selected
+      // Use GeoNames API - search globally or within country
       const url = countryCode 
-        ? `/api/locations?country=${countryCode}&q=${encodeURIComponent(query)}`
-        : `/api/cities/search?q=${encodeURIComponent(query)}&limit=15`;
+        ? `/api/geo/search?q=${encodeURIComponent(query)}&country=${countryCode}&limit=15`
+        : `/api/geo/search?q=${encodeURIComponent(query)}&limit=15`;
       
       const res = await fetch(url);
       const data = await res.json();
-      
-      // Global search returns { results: [...] }, country search returns { topCities: [...] }
-      const cities = data.results || data.topCities || [];
-      setCityResults(cities);
+      setCityResults(data.results || []);
       setShowCityDropdown(true);
     } catch (err) {
       console.error('City search error:', err);
@@ -274,6 +272,8 @@ export default function RegisterProviderPage() {
   const handleCitySearchChange = (value: string) => {
     setCitySearch(value);
     setCity(""); // Clear selected city when typing
+    setMajorCity(null);
+    setMajorCityId(null);
     
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -284,23 +284,42 @@ export default function RegisterProviderPage() {
     }, 300);
   };
   
-  const selectCity = (cityData: { name: string; region?: string; country?: string; countryCode?: string }) => {
+  const selectCity = async (cityData: any) => {
     setCity(cityData.name);
     setCitySearch(cityData.name);
     setShowCityDropdown(false);
+    setLatitude(cityData.latitude);
+    setLongitude(cityData.longitude);
     
-    // If global search result includes country, auto-fill it
-    if (cityData.country && !country) {
-      setCountry(cityData.country);
-      setCountryCode(cityData.countryCode || "");
+    // Auto-fill country if from global search
+    if (cityData.country_code && !countryCode) {
+      const foundCountry = SUPPORTED_COUNTRIES.find(c => c.code.toUpperCase() === cityData.country_code);
+      if (foundCountry) {
+        setCountry(foundCountry.name);
+        setCountryCode(foundCountry.code);
+      }
     }
     
-    // Set majorCity based on region
-    if (cityData.region) {
-      const regionLower = cityData.region.toLowerCase();
-      setMajorCity(regionLower.includes('region') || regionLower.includes('province') ? cityData.name : cityData.region);
-    } else {
+    // Find nearest major city using GeoNames API
+    if (cityData.is_major_city) {
+      // This city IS a major city
       setMajorCity(cityData.name);
+      setMajorCityId(cityData.geoname_id);
+    } else if (cityData.latitude && cityData.longitude) {
+      // Find nearest major city
+      try {
+        const res = await fetch(
+          `/api/geo/nearest-major?lat=${cityData.latitude}&lng=${cityData.longitude}&country=${cityData.country_code || countryCode}`
+        );
+        const data = await res.json();
+        if (data.major_city) {
+          setMajorCity(data.major_city.name);
+          setMajorCityId(data.major_city.geoname_id);
+        }
+      } catch (err) {
+        console.error('Error finding major city:', err);
+        setMajorCity(cityData.name);
+      }
     }
   };
 
@@ -935,14 +954,17 @@ export default function RegisterProviderPage() {
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
                       {cityResults.map((c: any, i: number) => (
                         <button
-                          key={`${c.name}-${i}`}
+                          key={`${c.geoname_id || c.name}-${i}`}
                           type="button"
-                          onClick={() => selectCity({ name: c.name, region: c.region, country: c.country, countryCode: c.countryCode })}
+                          onClick={() => selectCity(c)}
                           className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0"
                         >
-                          <div className="font-medium text-gray-900">{c.name}</div>
+                          <div className={`${c.is_major_city ? 'font-semibold' : 'font-medium'} text-gray-900`}>
+                            {c.name}
+                          </div>
                           <div className="text-gray-500 text-sm">
-                            {c.region && `${c.region}, `}{c.country || country}
+                            {c.admin1_name && `${c.admin1_name}, `}
+                            {SUPPORTED_COUNTRIES.find(x => x.code.toUpperCase() === c.country_code)?.name || c.country_code || country}
                           </div>
                         </button>
                       ))}
