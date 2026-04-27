@@ -100,10 +100,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: "sentry",
+// Skip source map upload without auth token
+const sentryConfig = {
+  org: "tristan-02",
   project: "redlightad",
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  silent: false,
-  widenClientFileUpload: true,
-});
+  authToken: process.env.SENTRY_AUTH_TOKEN || "",
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  skipSourceMapUpload: !process.env.SENTRY_AUTH_TOKEN,
+};
+
+export default withSentryConfig(nextConfig, sentryConfig);
