@@ -244,19 +244,27 @@ export default function RegisterProviderPage() {
   // Cities for selected country
   const selectedCountryObj = SUPPORTED_COUNTRIES.find((c) => c.name === country);
   
-  // City search effect
+  // Global city search (Booking.com style)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const searchCities = async (query: string) => {
-    if (!countryCode || query.length < 2) {
+    if (query.length < 2) {
       setCityResults([]);
       return;
     }
     
     try {
-      const res = await fetch(`/api/locations?country=${countryCode}&q=${encodeURIComponent(query)}`);
+      // Use global search - works with or without country selected
+      const url = countryCode 
+        ? `/api/locations?country=${countryCode}&q=${encodeURIComponent(query)}`
+        : `/api/cities/search?q=${encodeURIComponent(query)}&limit=15`;
+      
+      const res = await fetch(url);
       const data = await res.json();
-      setCityResults(data.topCities || []);
+      
+      // Global search returns { results: [...] }, country search returns { topCities: [...] }
+      const cities = data.results || data.topCities || [];
+      setCityResults(cities);
       setShowCityDropdown(true);
     } catch (err) {
       console.error('City search error:', err);
@@ -276,19 +284,23 @@ export default function RegisterProviderPage() {
     }, 300);
   };
   
-  const selectCity = (cityName: string, region?: string) => {
-    setCity(cityName);
-    setCitySearch(cityName);
+  const selectCity = (cityData: { name: string; region?: string; country?: string; countryCode?: string }) => {
+    setCity(cityData.name);
+    setCitySearch(cityData.name);
     setShowCityDropdown(false);
     
-    // For now, set majorCity to the region if available, or the city itself
-    // In production, this would use Google Places coordinates
-    if (region) {
-      // Check if the region is a known major city
-      const regionLower = region.toLowerCase();
-      setMajorCity(region.includes('Region') || region.includes('Province') ? cityName : region);
+    // If global search result includes country, auto-fill it
+    if (cityData.country && !country) {
+      setCountry(cityData.country);
+      setCountryCode(cityData.countryCode || "");
+    }
+    
+    // Set majorCity based on region
+    if (cityData.region) {
+      const regionLower = cityData.region.toLowerCase();
+      setMajorCity(regionLower.includes('region') || regionLower.includes('province') ? cityData.name : cityData.region);
     } else {
-      setMajorCity(cityName);
+      setMajorCity(cityData.name);
     }
   };
 
@@ -912,9 +924,8 @@ export default function RegisterProviderPage() {
                     onChange={(e) => handleCitySearchChange(e.target.value)}
                     onFocus={() => cityResults.length > 0 && setShowCityDropdown(true)}
                     onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
-                    placeholder={country ? "Search city..." : "Select country first"}
-                    disabled={!country}
-                    className="w-full px-4 py-3 border border-gray-200 bg-white text-gray-900 focus:outline-none focus:border-[#DC2626] transition-colors text-[15px] disabled:bg-gray-50 disabled:text-gray-400"
+                    placeholder={country ? `Search city in ${country}...` : "Search any city worldwide..."}
+                    className="w-full px-4 py-3 border border-gray-200 bg-white text-gray-900 focus:outline-none focus:border-[#DC2626] transition-colors text-[15px]"
                     style={{ borderRadius: 0 }}
                     required
                   />
@@ -922,17 +933,17 @@ export default function RegisterProviderPage() {
                   {/* City Dropdown */}
                   {showCityDropdown && cityResults.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
-                      {cityResults.map((c, i) => (
+                      {cityResults.map((c: any, i: number) => (
                         <button
                           key={`${c.name}-${i}`}
                           type="button"
-                          onClick={() => selectCity(c.name, c.region)}
+                          onClick={() => selectCity({ name: c.name, region: c.region, country: c.country, countryCode: c.countryCode })}
                           className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0"
                         >
-                          <span className="font-medium text-gray-900">{c.name}</span>
-                          {c.region && (
-                            <span className="text-gray-500 text-sm ml-2">({c.region})</span>
-                          )}
+                          <div className="font-medium text-gray-900">{c.name}</div>
+                          <div className="text-gray-500 text-sm">
+                            {c.region && `${c.region}, `}{c.country || country}
+                          </div>
                         </button>
                       ))}
                     </div>
