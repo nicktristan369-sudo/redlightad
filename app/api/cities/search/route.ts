@@ -4,21 +4,24 @@ import { MAJOR_CITIES } from "@/lib/majorCities";
 
 export const dynamic = "force-dynamic";
 
-// Cache for all cities globally (loaded once)
-let globalCityCache: {
+// Type for city entry
+type CityEntry = {
   name: string;
   region: string;
   country: string;
   countryCode: string;
   isMajor: boolean;
-}[] | null = null;
+};
+
+// Cache for all cities globally (loaded once)
+let globalCityCache: CityEntry[] | null = null;
 
 // Build global city index
-function buildGlobalCityIndex() {
+function buildGlobalCityIndex(): CityEntry[] {
   if (globalCityCache) return globalCityCache;
   
   const majorCitySet = new Set(MAJOR_CITIES.map(c => `${c.name.toLowerCase()}-${c.countryCode.toLowerCase()}`));
-  const cities: typeof globalCityCache = [];
+  const cities: CityEntry[] = [];
   
   // Get all countries
   const countries = Country.getAllCountries();
