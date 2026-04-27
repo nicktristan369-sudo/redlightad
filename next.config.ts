@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
@@ -33,7 +34,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https: http:",
               "media-src 'self' blob: https: http:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://challenges.cloudflare.com https://*.livekit.cloud wss://*.livekit.cloud",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://challenges.cloudflare.com https://*.livekit.cloud wss://*.livekit.cloud https://*.sentry.io",
               "frame-src https://challenges.cloudflare.com https://*.stripe.com",
               "frame-ancestors 'self'",
               "form-action 'self'",
@@ -99,4 +100,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "sentry",
+  project: "redlightad",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: false,
+  widenClientFileUpload: true,
+});
