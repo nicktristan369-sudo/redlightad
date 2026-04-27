@@ -5,6 +5,18 @@ import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 import { Trash2, Eye, EyeOff, Play, Clock, Coins } from "lucide-react"
 
+// HTML entity encoder to prevent XSS
+const escapeHtml = (text: string): string => {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (char) => map[char]);
+}
+
 interface Recording {
   id: string
   title: string
@@ -136,7 +148,7 @@ export default function RecordingsPage() {
 
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{rec.title}</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={rec.title}>{escapeHtml(rec.title)}</p>
                     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 12, color: "#6B7280", display: "flex", alignItems: "center", gap: 4 }}>
                         <Clock size={12} /> {formatDuration(rec.duration_seconds)}

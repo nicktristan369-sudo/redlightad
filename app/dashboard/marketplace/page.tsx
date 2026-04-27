@@ -6,6 +6,18 @@ import { createClient } from "@/lib/supabase";
 import { MARKETPLACE_CATEGORIES, CATEGORY_LABELS, eurToCoins, coinsToEur, type MarketplaceItem, type MarketplaceCategory, type ContentType } from "@/lib/marketplace";
 import { Plus, Upload, Trash2, Eye, Clock, CheckCircle, XCircle, ShoppingBag } from "lucide-react";
 
+// HTML entity encoder to prevent XSS
+const escapeHtml = (text: string): string => {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (char) => map[char]);
+};
+
 const STATUS_BADGE = {
   pending:  { label: "Pending",  bg: "#FEF3C7", color: "#92400E", icon: <Clock size={12} /> },
   approved: { label: "Approved", bg: "#D1FAE5", color: "#065F46", icon: <CheckCircle size={12} /> },
@@ -361,7 +373,7 @@ export default function DashboardMarketplacePage() {
                           <img src={item.thumbnail_url} alt="" className="w-10 h-10 object-cover flex-shrink-0"
                             style={{ borderRadius: "6px" }} />
                         )}
-                        <span className="text-[14px] font-medium text-gray-900 line-clamp-1">{item.title}</span>
+                        <span className="text-[14px] font-medium text-gray-900 line-clamp-1" title={item.title}>{escapeHtml(item.title)}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-[13px] text-gray-600">{CATEGORY_LABELS[item.category]}</td>

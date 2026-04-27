@@ -6,6 +6,18 @@ import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 import { uploadMedia } from "@/lib/uploadImages"
 
+// HTML entity encoder to prevent XSS
+const escapeHtml = (text: string): string => {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (char) => map[char]);
+}
+
 interface Listing {
   id: string
   title: string
@@ -182,9 +194,9 @@ export default function LockedContentPage() {
                   </div>
                 )}
                 <div className="p-4">
-                  <p className="font-semibold text-gray-900 text-sm mb-0.5">{item.title}</p>
+                  <p className="font-semibold text-gray-900 text-sm mb-0.5">{escapeHtml(item.title)}</p>
                   <p className="text-xs text-gray-400 mb-3">
-                    {(item.listings as { title: string } | null)?.title || "No listing"} · {new Date(item.created_at).toLocaleDateString("en-US")}
+                    {escapeHtml((item.listings as { title: string } | null)?.title || "No listing")} · {new Date(item.created_at).toLocaleDateString("en-US")}
                   </p>
                   <button
                     onClick={() => handleDelete(item.id)}
