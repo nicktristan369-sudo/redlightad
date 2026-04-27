@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { City, State, Country } from "country-state-city";
+import { MAJOR_CITIES } from "@/lib/majorCities";
 
 export const dynamic = "force-dynamic";
 
 // Cache for ALL cities per country
 const cityCache = new Map<string, { name: string; region?: string; stateCode?: string }[]>();
+
+// Get major cities for a country
+function getMajorCitiesForCountry(countryCode: string): string[] {
+  return MAJOR_CITIES
+    .filter(c => c.countryCode === countryCode.toUpperCase())
+    .map(c => c.name);
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -95,13 +103,30 @@ export async function GET(req: NextRequest) {
     // Build response
     const countryName = country.name;
     
-    // For display: limit to 50 results when searching, 15 for initial display
-    const displayLimit = query ? 50 : 15;
-    const topCities = filteredCities.slice(0, displayLimit).map(c => ({
-      name: c.name,
-      count: 0,
-      region: c.region,
-    }));
+    // Get major cities for this country
+    const majorCityNames = getMajorCitiesForCountry(countryCode);
+    const majorCitySet = new Set(majorCityNames.map(n => n.toLowerCase()));
+    
+    // Separate major cities from other cities
+    const majorCitiesFound = filteredCities.filter(c => majorCitySet.has(c.name.toLowerCase()));
+    const otherCities = filteredCities.filter(c => !majorCitySet.has(c.name.toLowerCase()));
+    
+    // For display: show major cities first, then others
+    const displayLimit = query ? 50 : 30;
+    const topCities = [
+      ...majorCitiesFound.map(c => ({
+        name: c.name,
+        count: 0,
+        region: c.region,
+        isMajor: true,
+      })),
+      ...otherCities.slice(0, displayLimit - majorCitiesFound.length).map(c => ({
+        name: c.name,
+        count: 0,
+        region: c.region,
+        isMajor: false,
+      }))
+    ];
 
     // Group by region (only for non-search)
     let regions: { name: string; cities: { name: string; count: number; region?: string }[] }[] = [];

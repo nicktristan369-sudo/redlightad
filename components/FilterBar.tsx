@@ -337,7 +337,8 @@ function LocationMenu({
   })
   const [step, setStep] = useState<"country" | "city">(currentCountry ? "city" : "country")
   const [search, setSearch] = useState("")
-  const [dynamicCities, setDynamicCities] = useState<{ name: string; count: number; region?: string }[]>([])
+  const [dynamicCities, setDynamicCities] = useState<{ name: string; count: number; region?: string; isMajor?: boolean }[]>([])
+  const [regions, setRegions] = useState<{ name: string; cities: { name: string; count: number }[] }[]>([])
   const [loadingCities, setLoadingCities] = useState(false)
 
   // Fetch cities dynamically from GeoNames system
@@ -350,15 +351,14 @@ function LocationMenu({
     fetch(`/api/locations?country=${selCode}`)
       .then(r => r.json())
       .then(data => {
-        const allCities = [
-          ...(data.topCities || []),
-          ...(data.regions?.flatMap((r: any) => r.cities) || [])
-        ].filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i)
-        setDynamicCities(allCities)
+        // Use topCities which now includes major cities first
+        setDynamicCities(data.topCities || [])
+        setRegions(data.regions || [])
         setLoadingCities(false)
       })
       .catch(() => {
         setDynamicCities([])
+        setRegions([])
         setLoadingCities(false)
       })
   }, [selCode, step])
@@ -481,24 +481,72 @@ function LocationMenu({
           <p className="px-4 py-4 text-sm text-gray-400 text-center">
             {search ? `No cities found for "${search}"` : "No profiles in this country yet"}
           </p>
-        ) : cities.slice(0, 50).map((city, i) => (
-          <button
-            key={`${city.name}-${i}`}
-            onClick={() => onSelect({ country: selCountry, city: city.name })}
-            className={`w-full flex items-center justify-between gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
-              currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <MapPin size={11} className="text-gray-400" />
-              <span>{city.name}</span>
-              {city.region && <span className="text-xs text-gray-400">({city.region})</span>}
-            </span>
-            {city.count > 0 && (
-              <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{city.count}</span>
+        ) : (
+          <>
+            {/* Major Cities Section */}
+            {cities.filter(c => c.isMajor).length > 0 && (
+              <>
+                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
+                  Major Cities
+                </div>
+                {cities.filter(c => c.isMajor).map((city, i) => (
+                  <button
+                    key={`major-${city.name}-${i}`}
+                    onClick={() => onSelect({ country: selCountry, city: city.name })}
+                    className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 ${
+                      currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <MapPin size={12} className="text-red-500" />
+                      <span className="font-medium">{city.name}</span>
+                    </span>
+                  </button>
+                ))}
+              </>
             )}
-          </button>
-        ))}
+            
+            {/* Regions with Cities */}
+            {!search && regions.slice(0, 10).map((region) => (
+              <div key={region.name}>
+                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
+                  {region.name}
+                </div>
+                {region.cities.slice(0, 8).map((city, i) => (
+                  <button
+                    key={`${region.name}-${city.name}-${i}`}
+                    onClick={() => onSelect({ country: selCountry, city: city.name })}
+                    className={`w-full flex items-center justify-between gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 ${
+                      currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <MapPin size={11} className="text-gray-400" />
+                      <span>{city.name}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ))}
+            
+            {/* Search results (non-major cities) */}
+            {search && cities.filter(c => !c.isMajor).slice(0, 30).map((city, i) => (
+              <button
+                key={`search-${city.name}-${i}`}
+                onClick={() => onSelect({ country: selCountry, city: city.name })}
+                className={`w-full flex items-center justify-between gap-2 px-4 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 ${
+                  currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <MapPin size={11} className="text-gray-400" />
+                  <span>{city.name}</span>
+                  {city.region && <span className="text-xs text-gray-400">({city.region})</span>}
+                </span>
+              </button>
+            ))}
+          </>
+        )
       </div>
     </div>
   )
