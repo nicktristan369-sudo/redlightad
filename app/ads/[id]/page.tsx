@@ -313,17 +313,19 @@ export default function AdDetailPage() {
               <TravelScheduleSection listingId={ad.id} />
 
               {ad.about && (
-                <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
+                <div className="rounded bg-white p-6 shadow-sm overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
                   <h3 className="mb-3 text-lg font-bold text-gray-900">{t.ad_about_me}</h3>
-                  <ReadMoreText text={ad.about} maxChars={300} />
+                  <div className="overflow-hidden">
+                    <ReadMoreText text={ad.about} maxChars={300} />
+                  </div>
                 </div>
               )}
 
               {/* Services */}
               {ad.services && ad.services.length > 0 && (
-                <div className="rounded bg-white p-6 shadow-sm" style={{ border: "1px solid #E5E5E5" }}>
+                <div className="rounded bg-white p-6 shadow-sm overflow-hidden" style={{ border: "1px solid #E5E5E5" }}>
                   <h3 className="mb-4 text-lg font-bold text-gray-900">{t.ad_services}</h3>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 overflow-hidden">
                     {ad.services.map(s => (
                       <span key={s} className="rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">{s}</span>
                     ))}

@@ -11,12 +11,12 @@ export default function ReadMoreText({ text, maxChars = 300, className = "" }: R
   const [expanded, setExpanded] = useState(false)
 
   if (text.length <= maxChars) {
-    return <p className={`text-sm leading-relaxed text-gray-600 whitespace-pre-wrap ${className}`}>{text}</p>
+    return <p className={`text-sm leading-relaxed text-gray-600 whitespace-pre-wrap break-words overflow-hidden ${className}`}>{text}</p>
   }
 
   return (
     <div>
-      <p className={`text-sm leading-relaxed text-gray-600 whitespace-pre-wrap ${className}`}>
+      <p className={`text-sm leading-relaxed text-gray-600 whitespace-pre-wrap break-words overflow-hidden ${className}`}>
         {expanded ? text : text.slice(0, maxChars).trimEnd() + "..."}
       </p>
       <button
