@@ -108,6 +108,72 @@ export type TranslationKeys = {
   premium_choose: string
   premium_test_mode: string
 
+  // ── Choose-plan page ─────────────────────────────────────────────────────
+  cp_banner: string
+  cp_standard: string
+  cp_premium: string
+  cp_recommended: string
+  cp_max_exposure: string
+  cp_basic_plan: string
+  cp_months_1: string
+  cp_months_3: string
+  cp_months_12: string
+  cp_off: string
+  cp_best: string
+  cp_get_membership: string
+  cp_total: string
+  cp_normal_price: string
+  cp_you_save: string
+  cp_compare: string
+  cp_per_month: string
+  cp_no_adult: string
+  cp_ssl: string
+  cp_instant: string
+  // features
+  cp_f_photos: string
+  cp_f_video: string
+  cp_f_videopfp: string
+  cp_f_voice: string
+  cp_f_reviews: string
+  cp_f_search: string
+  cp_f_carousel: string
+  cp_f_location: string
+  cp_f_social: string
+  cp_f_onlyfans: string
+  cp_f_stories: string
+  cp_f_marketplace: string
+  cp_f_redcoins: string
+  cp_f_payme: string
+  cp_f_geo: string
+  cp_f_messages: string
+  cp_f_videos50: string
+  cp_f_photos_standard: string
+  cp_f_reviews_standard: string
+  cp_f_search_standard: string
+  cp_f_location_standard: string
+  cp_f_photos_premium: string
+  cp_f_reviews_premium: string
+  cp_f_location_premium: string
+  cp_f_marketplace_premium: string
+  cp_f_payme_premium: string
+  // payment page
+  pay_title: string
+  pay_membership: string
+  pay_method: string
+  pay_card: string
+  pay_paypal: string
+  pay_bank: string
+  pay_bank_sub: string
+  pay_paysafe: string
+  pay_crypto: string
+  pay_crypto_sub: string
+  pay_card_number: string
+  pay_expiry: string
+  pay_name: string
+  pay_get_membership: string
+  pay_processing: string
+  pay_no_adult: string
+
   // ── Listing form ─────────────────────────────────────────────────────────────
   listing_title: string
   listing_category: string
@@ -499,6 +565,32 @@ const en: TranslationKeys = {
   premium_title: "Choose your Premium plan", premium_subtitle: "Reach more customers and get more visibility",
   premium_most_popular: "MOST POPULAR", premium_per_month: "/month", premium_choose: "Choose",
   premium_test_mode: "Secure payment via Stripe • Test mode active • Use card 4242 4242 4242 4242",
+  // choose-plan & payment
+  cp_banner: "50% OFF for You!", cp_standard: "Standard", cp_premium: "Premium",
+  cp_recommended: "Recommended", cp_max_exposure: "Max exposure · Top placement",
+  cp_basic_plan: "Basic · 4 photos only",
+  cp_months_1: "1 month", cp_months_3: "3 months", cp_months_12: "12 months",
+  cp_off: "OFF", cp_best: "BEST", cp_get_membership: "GET MEMBERSHIP",
+  cp_total: "Total", cp_normal_price: "Normal price", cp_you_save: "You save",
+  cp_compare: "Compare plans", cp_per_month: "per mo",
+  cp_no_adult: "No adult-related transaction in your bank statement",
+  cp_ssl: "SSL encrypted · Secure payment", cp_instant: "Profile activated instantly after payment",
+  cp_f_photos: "Profile photos", cp_f_video: "Video on profile", cp_f_videopfp: "Video profile picture",
+  cp_f_voice: "Voice message", cp_f_reviews: "Reviews", cp_f_search: "Search placement",
+  cp_f_carousel: "Premium carousel", cp_f_location: "Change location", cp_f_social: "Social media links",
+  cp_f_onlyfans: "OnlyFans promotion", cp_f_stories: "Post stories", cp_f_marketplace: "Sell on marketplace",
+  cp_f_redcoins: "Receive RedCoins", cp_f_payme: "Pay Me section", cp_f_geo: "Block geolocation",
+  cp_f_messages: "Private messages", cp_f_videos50: "50+ videos",
+  cp_f_photos_standard: "4 photos", cp_f_reviews_standard: "All clients", cp_f_search_standard: "Standard",
+  cp_f_location_standard: "1 location", cp_f_photos_premium: "Unlimited", cp_f_reviews_premium: "You decide",
+  cp_f_location_premium: "Any country", cp_f_marketplace_premium: "Global", cp_f_payme_premium: "Coins/Revolut/Crypto",
+  pay_title: "Complete your order", pay_membership: "membership", pay_method: "Payment Method",
+  pay_card: "Credit or debit card", pay_paypal: "PayPal", pay_bank: "Instant Bank Transfer",
+  pay_bank_sub: "Revolut, N26, Wise and more", pay_paysafe: "PaysafeCard",
+  pay_crypto: "CryptoCoins", pay_crypto_sub: "Bitcoin, Ethereum & more",
+  pay_card_number: "Card number", pay_expiry: "Expiry", pay_name: "Name on card",
+  pay_get_membership: "GET MEMBERSHIP", pay_processing: "Processing...",
+  pay_no_adult: "No adult-related transaction in your bank statement",
   // Listing form
   listing_title: "Listing title", listing_category: "Category", listing_gender: "Gender",
   listing_age: "Age", listing_location: "Location", listing_about: "About me",
@@ -772,6 +864,31 @@ const da: TranslationKeys = {
   premium_title: "Vælg din Premium pakke", premium_subtitle: "Nå flere kunder og få mere synlighed",
   premium_most_popular: "MEST POPULÆR", premium_per_month: "/måned", premium_choose: "Vælg",
   premium_test_mode: "Sikker betaling via Stripe • Test mode aktiv • Brug kort 4242 4242 4242 4242",
+  cp_banner: "50% RABAT til dig!", cp_standard: "Standard", cp_premium: "Premium",
+  cp_recommended: "Anbefalet", cp_max_exposure: "Maks synlighed · Top placering",
+  cp_basic_plan: "Basic · Kun 4 fotos",
+  cp_months_1: "1 måned", cp_months_3: "3 måneder", cp_months_12: "12 måneder",
+  cp_off: "RABAT", cp_best: "BEDST", cp_get_membership: "FÅ MEDLEMSKAB",
+  cp_total: "Total", cp_normal_price: "Normal pris", cp_you_save: "Du sparer",
+  cp_compare: "Sammenlign planer", cp_per_month: "pr. md",
+  cp_no_adult: "Ingen voksenrelateret transaktion på dit kontoudtog",
+  cp_ssl: "SSL krypteret · Sikker betaling", cp_instant: "Profil aktiveres straks efter betaling",
+  cp_f_photos: "Profilbilleder", cp_f_video: "Video på profil", cp_f_videopfp: "Video profilbillede",
+  cp_f_voice: "Talbesked", cp_f_reviews: "Anmeldelser", cp_f_search: "Søgeplacering",
+  cp_f_carousel: "Premium karrusel", cp_f_location: "Skift lokation", cp_f_social: "Sociale medier links",
+  cp_f_onlyfans: "OnlyFans promovering", cp_f_stories: "Del historier", cp_f_marketplace: "Sælg på markedsplads",
+  cp_f_redcoins: "Modtag RedCoins", cp_f_payme: "Betal mig sektion", cp_f_geo: "Blokér geolocation",
+  cp_f_messages: "Private beskeder", cp_f_videos50: "50+ videoer",
+  cp_f_photos_standard: "4 fotos", cp_f_reviews_standard: "Alle kunder", cp_f_search_standard: "Standard",
+  cp_f_location_standard: "1 lokation", cp_f_photos_premium: "Ubegrænset", cp_f_reviews_premium: "Du beslutter",
+  cp_f_location_premium: "Ethvert land", cp_f_marketplace_premium: "Global", cp_f_payme_premium: "Coins/Revolut/Crypto",
+  pay_title: "Gennemfør din ordre", pay_membership: "medlemskab", pay_method: "Betalingsmetode",
+  pay_card: "Kredit- eller debetkort", pay_paypal: "PayPal", pay_bank: "Øjeblikkelig bankoverførsel",
+  pay_bank_sub: "Revolut, N26, Wise og mere", pay_paysafe: "PaysafeCard",
+  pay_crypto: "KryptoMønter", pay_crypto_sub: "Bitcoin, Ethereum og mere",
+  pay_card_number: "Kortnummer", pay_expiry: "Udløb", pay_name: "Navn på kort",
+  pay_get_membership: "FÅ MEDLEMSKAB", pay_processing: "Behandler...",
+  pay_no_adult: "Ingen voksenrelateret transaktion på dit kontoudtog",
   // Listing form
   listing_title: "Annonce titel", listing_category: "Kategori", listing_gender: "Køn",
   listing_age: "Alder", listing_location: "Lokation", listing_about: "Om mig",
@@ -1038,6 +1155,31 @@ const de: TranslationKeys = {
   premium_title: "Premium-Plan wählen", premium_subtitle: "Mehr Kunden erreichen, mehr Sichtbarkeit",
   premium_most_popular: "BELIEBTESTE", premium_per_month: "/Monat", premium_choose: "Wählen",
   premium_test_mode: "Sichere Zahlung via Stripe • Testmodus aktiv",
+  cp_banner: "50% RABATT für dich!", cp_standard: "Standard", cp_premium: "Premium",
+  cp_recommended: "Empfohlen", cp_max_exposure: "Maximale Sichtbarkeit · Top-Platzierung",
+  cp_basic_plan: "Basic · Nur 4 Fotos",
+  cp_months_1: "1 Monat", cp_months_3: "3 Monate", cp_months_12: "12 Monate",
+  cp_off: "RABATT", cp_best: "BESTES", cp_get_membership: "MITGLIED WERDEN",
+  cp_total: "Gesamt", cp_normal_price: "Normalpreis", cp_you_save: "Sie sparen",
+  cp_compare: "Pläne vergleichen", cp_per_month: "pro Mo",
+  cp_no_adult: "Keine erwachsenenbezogene Transaktion auf Ihrem Kontoauszug",
+  cp_ssl: "SSL-verschlüsselt · Sichere Zahlung", cp_instant: "Profil sofort nach Zahlung aktiviert",
+  cp_f_photos: "Profilfotos", cp_f_video: "Video im Profil", cp_f_videopfp: "Video-Profilbild",
+  cp_f_voice: "Sprachnachricht", cp_f_reviews: "Bewertungen", cp_f_search: "Suchplatzierung",
+  cp_f_carousel: "Premium-Karussell", cp_f_location: "Standort ändern", cp_f_social: "Social-Media-Links",
+  cp_f_onlyfans: "OnlyFans-Werbung", cp_f_stories: "Stories posten", cp_f_marketplace: "Auf Marktplatz verkaufen",
+  cp_f_redcoins: "RedCoins empfangen", cp_f_payme: "Bezahl-mich-Sektion", cp_f_geo: "Geolocation blockieren",
+  cp_f_messages: "Private Nachrichten", cp_f_videos50: "50+ Videos",
+  cp_f_photos_standard: "4 Fotos", cp_f_reviews_standard: "Alle Kunden", cp_f_search_standard: "Standard",
+  cp_f_location_standard: "1 Standort", cp_f_photos_premium: "Unbegrenzt", cp_f_reviews_premium: "Sie entscheiden",
+  cp_f_location_premium: "Jedes Land", cp_f_marketplace_premium: "Global", cp_f_payme_premium: "Coins/Revolut/Crypto",
+  pay_title: "Bestellung abschließen", pay_membership: "Mitgliedschaft", pay_method: "Zahlungsmethode",
+  pay_card: "Kredit- oder Debitkarte", pay_paypal: "PayPal", pay_bank: "Sofortüberweisung",
+  pay_bank_sub: "Revolut, N26, Wise und mehr", pay_paysafe: "PaysafeCard",
+  pay_crypto: "KryptoMünzen", pay_crypto_sub: "Bitcoin, Ethereum & mehr",
+  pay_card_number: "Kartennummer", pay_expiry: "Ablaufdatum", pay_name: "Name auf der Karte",
+  pay_get_membership: "MITGLIED WERDEN", pay_processing: "Verarbeitung...",
+  pay_no_adult: "Keine erwachsenenbezogene Transaktion auf Ihrem Kontoauszug",
   listing_title: "Anzeigentitel", listing_category: "Kategorie", listing_gender: "Geschlecht",
   listing_age: "Alter", listing_location: "Standort", listing_about: "Über mich",
   listing_services: "Services", listing_languages: "Sprachen", listing_prices: "Preise",
@@ -1259,6 +1401,31 @@ const fr: TranslationKeys = {
   premium_title: "Choisissez votre plan Premium", premium_subtitle: "Atteignez plus de clients",
   premium_most_popular: "PLUS POPULAIRE", premium_per_month: "/mois", premium_choose: "Choisir",
   premium_test_mode: "Paiement sécurisé via Stripe • Mode test actif",
+  cp_banner: "50% de RÉDUCTION pour vous!", cp_standard: "Standard", cp_premium: "Premium",
+  cp_recommended: "Recommandé", cp_max_exposure: "Exposition maximale · Top placement",
+  cp_basic_plan: "Basique · 4 photos seulement",
+  cp_months_1: "1 mois", cp_months_3: "3 mois", cp_months_12: "12 mois",
+  cp_off: "RÉDUC", cp_best: "MEILLEUR", cp_get_membership: "OBTENIR L'ABONNEMENT",
+  cp_total: "Total", cp_normal_price: "Prix normal", cp_you_save: "Vous économisez",
+  cp_compare: "Comparer les plans", cp_per_month: "par mois",
+  cp_no_adult: "Aucune transaction pour adultes sur votre relevé bancaire",
+  cp_ssl: "Chiffrement SSL · Paiement sécurisé", cp_instant: "Profil activé instantanément après paiement",
+  cp_f_photos: "Photos de profil", cp_f_video: "Vidéo sur profil", cp_f_videopfp: "Photo de profil vidéo",
+  cp_f_voice: "Message vocal", cp_f_reviews: "Avis", cp_f_search: "Placement recherche",
+  cp_f_carousel: "Carrousel Premium", cp_f_location: "Changer de lieu", cp_f_social: "Liens réseaux sociaux",
+  cp_f_onlyfans: "Promotion OnlyFans", cp_f_stories: "Publier des stories", cp_f_marketplace: "Vendre sur marketplace",
+  cp_f_redcoins: "Recevoir RedCoins", cp_f_payme: "Section Payez-moi", cp_f_geo: "Bloquer géolocalisation",
+  cp_f_messages: "Messages privés", cp_f_videos50: "50+ vidéos",
+  cp_f_photos_standard: "4 photos", cp_f_reviews_standard: "Tous les clients", cp_f_search_standard: "Standard",
+  cp_f_location_standard: "1 lieu", cp_f_photos_premium: "Illimité", cp_f_reviews_premium: "Vous décidez",
+  cp_f_location_premium: "N'importe quel pays", cp_f_marketplace_premium: "Global", cp_f_payme_premium: "Coins/Revolut/Crypto",
+  pay_title: "Finaliser votre commande", pay_membership: "abonnement", pay_method: "Méthode de paiement",
+  pay_card: "Carte de crédit ou débit", pay_paypal: "PayPal", pay_bank: "Virement bancaire instantané",
+  pay_bank_sub: "Revolut, N26, Wise et plus", pay_paysafe: "PaysafeCard",
+  pay_crypto: "CryptoMonnaies", pay_crypto_sub: "Bitcoin, Ethereum & plus",
+  pay_card_number: "Numéro de carte", pay_expiry: "Expiration", pay_name: "Nom sur la carte",
+  pay_get_membership: "OBTENIR L'ABONNEMENT", pay_processing: "Traitement...",
+  pay_no_adult: "Aucune transaction pour adultes sur votre relevé bancaire",
   listing_title: "Titre de l'annonce", listing_category: "Catégorie", listing_gender: "Genre",
   listing_age: "Âge", listing_location: "Lieu", listing_about: "À propos de moi",
   listing_services: "Services", listing_languages: "Langues", listing_prices: "Tarifs",

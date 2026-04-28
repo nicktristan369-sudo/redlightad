@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
     }
 
-    const { plan, months, amount, userId } = await req.json();
+    const { plan, months, amount, currency, userId } = await req.json();
 
     if (!plan || !months || !amount) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const params = new URLSearchParams();
     params.append("payment_method_types[]", "card");
     params.append("mode", "payment");
-    params.append("line_items[0][price_data][currency]", "dkk");
+    params.append("line_items[0][price_data][currency]", (currency as string || "usd").toLowerCase());
     params.append("line_items[0][price_data][product_data][name]", `RedLightAD ${planLabel} — ${monthLabel}`);
     params.append("line_items[0][price_data][product_data][description]", `RedLightAD ${planLabel} subscription for ${monthLabel}`);
     params.append("line_items[0][price_data][unit_amount]", String(amount * 100)); // øre
