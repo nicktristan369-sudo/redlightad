@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const PAYMENT_METHODS_CONFIG = [
   { id: "card",    labelKey: "pay_card",    subKey: null,           icons: [
@@ -94,10 +95,11 @@ function PaymentContent() {
 
       {/* Hero */}
       <div
-        className="relative h-20 flex items-center justify-center"
+        className="relative h-20 flex flex-col items-center justify-center gap-0.5"
         style={{ background: "linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%)" }}
       >
-        <p className="text-lg font-black">RedLightAD — <span className="text-[#f5a623]">{t.cp_banner}</span></p>
+        <Logo variant="dark" height={22} />
+        <p className="text-xs font-bold text-[#f5a623]">{t.cp_banner}</p>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
@@ -111,7 +113,7 @@ function PaymentContent() {
             <p className="text-sm font-black">{months} {monthLabel} {planLabel} {t.pay_membership}</p>
           </div>
           <p className="text-sm font-black tabular-nums">
-            ${ppm}<span className="text-xs font-normal text-gray-500">/{t.cp_per_month}</span>
+            ${ppm}<span className="text-xs font-normal text-gray-500">/month</span>
           </p>
         </div>
 

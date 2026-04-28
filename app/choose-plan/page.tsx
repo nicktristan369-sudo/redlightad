@@ -3,7 +3,8 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { Check, X, Camera, Video, Image, Mic, Star, Search, Gem, Globe, Link, Flame, BookOpen, ShoppingCart, Coins, CreditCard, ShieldOff, MessageCircle, Film } from "lucide-react";
+import Logo from "@/components/Logo";
+import { Check, X, Camera, Video, Mic, Star, Search, Gem, Globe, Link, Flame, BookOpen, ShoppingCart, Coins, CreditCard, ShieldOff, MessageCircle, Film } from "lucide-react";
 
 // ─── Pricing in USD ───────────────────────────────────────────────────────────
 const MONTHLY_USD: Record<"standard" | "premium", number> = {
@@ -86,12 +87,11 @@ function ChoosePlanContent() {
 
       {/* ── Hero ── */}
       <div
-        className="relative h-24 flex items-center justify-center"
+        className="relative h-24 flex flex-col items-center justify-center gap-1.5"
         style={{ background: "linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%)" }}
       >
-        <p className="text-xl font-black tracking-tight">
-          RedLightAD — <span className="text-[#f5a623]">{t.cp_banner}</span>
-        </p>
+        <Logo variant="dark" height={26} />
+        <p className="text-sm font-bold text-[#f5a623]">{t.cp_banner}</p>
       </div>
 
       <div className="max-w-lg mx-auto px-4 pb-16 pt-5">
@@ -134,7 +134,7 @@ function ChoosePlanContent() {
                 </p>
                 <p className="text-xl font-black text-white">
                   ${pricePerMonth(plan, dur.discountPct)}
-                  <span className="text-xs font-normal text-gray-500">/{t.cp_per_month}</span>
+                  <span className="text-xs font-normal text-gray-500">/month</span>
                 </p>
               </button>
             );
@@ -173,7 +173,7 @@ function ChoosePlanContent() {
                   )}
                 </div>
                 <span className={`text-base font-black ${isSel ? "text-black" : "text-white"}`}>
-                  ${p2}<span className={`text-xs font-normal ${isSel ? "text-black/60" : "text-gray-500"}`}>/{t.cp_per_month}</span>
+                  ${p2}<span className={`text-xs font-normal ${isSel ? "text-black/60" : "text-gray-500"}`}>/month</span>
                 </span>
               </button>
             );
