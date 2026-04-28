@@ -23,16 +23,10 @@ export function MastercardIcon({ className = "" }: { className?: string }) {
   );
 }
 
-// ─── PayPal — blue wordmark ───────────────────────────────────────────────────
+// ─── PayPal — official white PNG (horizontal one color) ─────────────────────
 export function PayPalIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg className={className} height="22" viewBox="0 0 100 26" xmlns="http://www.w3.org/2000/svg" aria-label="PayPal">
-      <path fill="#009CDE" d="M24.1 3.6h-7.8L11.7 23h5.2l1.5-9.4h4.5c4.7 0 7.2-2.4 7.2-6.5 0-2.1-.8-3.5-6-.5zm-1 5.4c0 1.7-1.1 2.6-3.1 2.6h-3.3l1-5.4h3.4c1.5 0 2 .8 2 2.8z"/>
-      <path fill="#003087" d="M36.5 8.5c-4.5 0-7.5 3.3-7.5 7.8 0 3 1.9 5 5.2 5 1.8 0 3.3-.7 4.4-1.9L38.2 23h4.7l2.5-12.3H41l-.4 1.5c-.9-1.3-2.3-1.7-4.1-1.7zm.8 8.8c-1.4 0-2.2-.8-2.2-2.2 0-2 1.2-3.4 3-3.4 1.4 0 2.2.8 2.2 2.2 0 2-1.1 3.4-3 3.4z"/>
-      <path fill="#009CDE" d="M55.5 8.5c-4.5 0-7.5 3.3-7.5 7.8 0 3 1.9 5 5.2 5 1.8 0 3.3-.7 4.4-1.9L57.2 23h4.7l2.5-12.3H60l-.4 1.5c-.9-1.3-2.3-1.7-4.1-1.7zm.8 8.8c-1.4 0-2.2-.8-2.2-2.2 0-2 1.2-3.4 3-3.4 1.4 0 2.2.8 2.2 2.2 0 2-1.1 3.4-3 3.4z"/>
-      <path fill="#003087" d="M70 3.6L65.5 23h5.1l4.5-19.4H70z"/>
-    </svg>
-  );
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/pay/paypal-white.png" alt="PayPal" height={22} className={className} style={{ objectFit: "contain" }} />;
 }
 
 // ─── Revolut Pay — R logo + "Pay" wordmark ────────────────────────────────────
