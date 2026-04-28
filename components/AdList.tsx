@@ -31,6 +31,7 @@ interface Listing {
 }
 
 import { isAvailableNow } from "@/lib/isAvailableNow"
+import { formatLocation } from "@/lib/getRegionForCity"
 
 // ── Mobile listing card with auto-cycling images ──────────────────────────
 function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 }: { // i18n-ready
@@ -175,7 +176,7 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
-          <span className="truncate">{[displayLocation, ad.country].filter(Boolean).join(", ")}</span>
+          <span className="truncate">{displayLocation}</span>
         </div>
         {/* SE PROFIL */}
         <div className="flex items-center justify-center py-3.5 text-[11px] sm:text-[12px] font-black min-w-0"
@@ -531,7 +532,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
       ) : (
         <div className="space-y-3">
           {listings.map((ad, idx) => {
-            const displayLocation = ad.city || ad.location || ""
+            const displayLocation = formatLocation(ad.city, ad.country) || ad.location || ""
             const description = ad.about || ""
             return (
               <Link key={ad.id} href={`/ads/${ad.slug || ad.id}`} className="block">
