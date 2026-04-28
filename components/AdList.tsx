@@ -302,11 +302,26 @@ function tierBadge(tier: string | null | undefined) {
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins} minutes ago`
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`
+  if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
-  return `${days} day${days > 1 ? "s" : ""} ago`
+  if (days < 7) return `${days}d ago`
+  if (days < 30) return `${Math.floor(days / 7)}w ago`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months}mo ago`
+  return `${Math.floor(months / 12)}y ago`
+}
+
+function cleanDescription(text: string): string {
+  if (!text) return ""
+  return text
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/#+[A-Z\s]+#+/g, "")
+    .replace(/\*{2,}/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
 }
 
 function MiniVoiceChip({ url }: { url: string }) {
@@ -533,10 +548,10 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
         <div className="space-y-3">
           {listings.map((ad, idx) => {
             const displayLocation = formatLocation(ad.city, ad.country) || ad.location || ""
-            const description = ad.about || ""
+            const description = cleanDescription(ad.about || "")
             return (
               <Link key={ad.id} href={`/ads/${ad.slug || ad.id}`} className="block">
-                <div className="bg-white rounded-none shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                <div className="bg-white rounded-none border border-gray-100 overflow-hidden transition-all duration-200 hover:border-gray-300 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)]" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
 
                   {/* ── MOBILE layout — MobileAdCard component ── */}
                   <MobileAdCard
@@ -631,19 +646,22 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       })()}
 
                       {/* Action bar */}
-                      <div className="flex items-center gap-3 mt-auto flex-wrap">
+                      <div className="flex items-center gap-3 mt-auto flex-wrap pt-2 border-t border-gray-50">
                         {/* Call Me */}
                         <a
                           href={`tel:${ad.id}`}
                           onClick={e => e.stopPropagation()}
-                          className="border border-gray-300 rounded px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+                          className="flex items-center gap-1.5 border border-red-200 rounded px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 whitespace-nowrap transition-colors"
                         >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                          </svg>
                           Call Me
                         </a>
 
                         {/* View Profile */}
-                        <span className="border border-gray-300 rounded px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap">
-                          View Profile
+                        <span className="border border-gray-200 rounded px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-colors cursor-pointer">
+                          View Profile →
                         </span>
 
                         {/* OnlyFans */}
@@ -653,20 +671,12 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
                         {/* Gender */}
                         <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            {ad.gender?.toLowerCase() === "male" ? (
-                              <>
-                                <circle cx="10" cy="10" r="6"/>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M20 4l-6 6M20 4h-5M20 4v5"/>
-                              </>
-                            ) : (
-                              <>
-                                <circle cx="12" cy="10" r="6"/>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v6M9 19h6"/>
-                              </>
-                            )}
-                          </svg>
-                          {ad.gender}
+                          <span className="text-[13px] leading-none">
+                            {ad.gender?.toLowerCase() === "male" ? "♂" :
+                             ad.gender?.toLowerCase() === "female" ? "♀" :
+                             ad.gender?.toLowerCase() === "trans" ? "⚧" : "⚥"}
+                          </span>
+                          <span className="capitalize">{ad.gender}</span>
                         </span>
 
                         {/* Age */}
