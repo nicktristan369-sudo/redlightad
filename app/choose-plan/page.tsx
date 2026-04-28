@@ -12,8 +12,8 @@ import {
 
 // ─── Pricing Config ───────────────────────────────────────────────────────────
 const PRICES = {
-  standard: 150, // DKK per month (normal)
-  premium: 300,  // DKK per month (normal)
+  standard: 21, // USD per month (normal)
+  premium: 42,  // USD per month (normal)
 };
 
 const DURATIONS = [
@@ -62,11 +62,17 @@ export default function ChoosePlanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#111] text-white">
+    <div className="min-h-screen bg-[#111] text-white relative">
+      {/* Background image with dark overlay */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-20 pointer-events-none"
+        style={{ backgroundImage: "url('/choose-plan-bg.jpg')" }}
+      />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black/90 pointer-events-none" />
 
       {/* ─── Hero Banner ─────────────────────────────────────────────────────── */}
       <div
-        className="relative py-8 flex flex-col items-center justify-center gap-2 overflow-hidden"
+        className="relative z-10 py-8 flex flex-col items-center justify-center gap-2 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%)" }}
       >
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10" />
@@ -77,7 +83,7 @@ export default function ChoosePlanPage() {
         </p>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="relative z-10 max-w-2xl mx-auto px-4 py-6 space-y-6">
 
         {/* ─── Plan Toggle ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
@@ -159,7 +165,7 @@ export default function ChoosePlanPage() {
                 </div>
                 {/* Price */}
                 <span className={`font-bold tabular-nums ${isActive ? "text-black" : "text-white"}`}>
-                  {price} kr<span className="text-xs font-normal opacity-60">/month</span>
+                  ${price}<span className="text-xs font-normal opacity-60">/month</span>
                 </span>
               </button>
             );
@@ -177,8 +183,8 @@ export default function ChoosePlanPage() {
         {/* ─── Price Summary ─────────────────────────────────────────────────── */}
         <p className="text-center text-sm text-gray-500">
           {plan === "premium" ? "Premium" : "Standard"} · {dur.label} ·{" "}
-          <span className="line-through opacity-50">{PRICES[plan] * dur.months} kr</span>{" "}
-          <strong className="text-[#f5a623]">{totalPrice} kr</strong>
+          <span className="line-through opacity-50">${PRICES[plan] * dur.months}</span>{" "}
+          <strong className="text-[#f5a623]">${totalPrice}</strong>
         </p>
 
         {/* ─── Compare Plans Table ───────────────────────────────────────────── */}

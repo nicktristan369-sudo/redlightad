@@ -159,7 +159,7 @@ function PaymentContent() {
         const res = await fetch("/api/payment/crypto", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan, months, amount: finalAmount, currency: "DKK" }),
+          body: JSON.stringify({ plan, months, amount: finalAmount, currency: "USD" }),
         });
         const data = await res.json();
         if (data.payment_url) { window.location.href = data.payment_url; return; }
@@ -224,7 +224,7 @@ function PaymentContent() {
           </button>
           <p className="flex-1 text-sm font-black">{monthLabel} {planLabel}</p>
           <p className="text-sm font-black tabular-nums">
-            {ppm} kr<span className="text-xs font-normal text-gray-500">/month</span>
+            ${ppm}<span className="text-xs font-normal text-gray-500">/month</span>
           </p>
         </div>
 
@@ -325,9 +325,9 @@ function PaymentContent() {
           <p className="text-xs text-gray-500">
             {planLabel} · {monthLabel} ·{" "}
             {discount > 0 ? (
-              <><span className="line-through">{amount} kr</span> <strong className="text-green-400">{finalAmount} kr</strong></>
+              <><span className="line-through">${amount}</span> <strong className="text-green-400">${finalAmount}</strong></>
             ) : (
-              <strong className="text-white">{amount} kr</strong>
+              <strong className="text-white">${amount}</strong>
             )}
           </p>
           <p className="text-[10px] text-gray-600">Test card: 4242 4242 4242 4242 · 12/34 · 123</p>
