@@ -583,7 +583,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     {/* Right: content */}
                     <div className="flex-1 p-3 flex flex-col min-w-0">
                       {/* Title */}
-                      <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-1 min-w-0">
                         {isAvailableNow(ad.opening_hours, ad.timezone) && (
                           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
                         )}
@@ -591,10 +591,39 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       </div>
 
                       {/* Timestamp */}
-                      <p className="text-xs text-gray-400 mb-1.5">{timeAgo(ad.created_at)}</p>
+                      <p className="text-xs text-gray-400 mb-2">{timeAgo(ad.created_at)}</p>
 
                       {/* Description */}
                       <p className="text-sm text-gray-600 line-clamp-3 mb-2">{description}</p>
+
+                      {/* Photo/video count chips */}
+                      {(() => {
+                        const photoCount = (ad.images?.length ?? 0) + (ad.profile_image ? 1 : 0)
+                        const videoCount = (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0) + ((ad as any).video_count ?? 0)
+                        if (photoCount === 0 && videoCount === 0) return null
+                        return (
+                          <div className="flex items-center gap-2 mb-2">
+                            {photoCount > 0 && (
+                              <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                {photoCount}
+                              </span>
+                            )}
+                            {videoCount > 0 && (
+                              <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                  <circle cx="12" cy="12" r="9"/>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 9l5 3-5 3V9z"/>
+                                </svg>
+                                {videoCount}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })()}
 
                       {/* Action bar */}
                       <div className="flex items-center gap-3 mt-auto flex-wrap">
@@ -658,34 +687,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                         )}
                       </div>
 
-                      {/* Photo/video count chips */}
-                      {(() => {
-                        const photoCount = (ad.images?.length ?? 0) + (ad.profile_image ? 1 : 0)
-                        const videoCount = (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0)
-                        if (photoCount === 0 && videoCount === 0) return null
-                        return (
-                          <div className="flex items-center gap-2 mt-1.5">
-                            {photoCount > 0 && (
-                              <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                </svg>
-                                {photoCount}
-                              </span>
-                            )}
-                            {videoCount > 0 && (
-                              <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                  <circle cx="12" cy="12" r="9"/>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 9l5 3-5 3V9z"/>
-                                </svg>
-                                {videoCount}
-                              </span>
-                            )}
-                          </div>
-                        )
-                      })()}
+
                     </div>
                   </div>
 
