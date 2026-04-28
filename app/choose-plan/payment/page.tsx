@@ -49,50 +49,138 @@ function TextBadge({ text, bg, color }: { text: string; bg: string; color: strin
   );
 }
 
-// ─── CDN URLs ─────────────────────────────────────────────────────────────────
-const CDN_FLAT = "https://cdn.jsdelivr.net/npm/payment-icons/svg/flat";
-const CDN_SI   = "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons";
+// ─── CDN ─────────────────────────────────────────────────────────────────────
+const CDN_FLAT = "https://cdn.jsdelivr.net/npm/payment-icons/min/flat";
+
+// ─── Inline SVG brand badges ─────────────────────────────────────────────────
+// White pill badge with brand icon inside — exactly like Faphouse
+function WBadge({ children, w = 56 }: { children: React.ReactNode; w?: number }) {
+  return (
+    <span className="inline-flex items-center justify-center bg-white rounded flex-shrink-0"
+      style={{ width: w, height: 28, padding: "3px 6px" }}>
+      {children}
+    </span>
+  );
+}
+
+// Revolut "R" badge — white pill, black R
+function RevolutBadge() {
+  return (
+    <WBadge w={52}>
+      <svg height="16" viewBox="0 0 40 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#191C1F" d="M0 0h5.6c2.8 0 4.4 1.4 4.4 3.7 0 1.7-.9 2.9-2.2 3.4L10.4 11H7L5 7.5H3V11H0V0zm3 5H5.3c1 0 1.5-.5 1.5-1.4S6.3 2.1 5.3 2.1H3V5z"/>
+        <path fill="#191C1F" d="M14 0h3v11h-3V0z"/>
+        <text x="19" y="10.5" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="700" fill="#191C1F">Pay</text>
+      </svg>
+    </WBadge>
+  );
+}
+
+// N26 badge — dark teal
+function N26Badge() {
+  return (
+    <WBadge w={44}>
+      <svg height="14" viewBox="0 0 36 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#0E2A3B" d="M0 0h3.2L9 8.2V0h3.2v14H9L3.2 5.8V14H0V0z"/>
+        <path fill="#0E2A3B" d="M15 14V0h3.2v14H15z"/>
+        <path fill="#0E2A3B" d="M21 7c0-4 2.7-7 6.5-7 1.8 0 3.4.7 4.5 1.9l-2 1.8a2.9 2.9 0 0 0-2.5-1c-2 0-3.2 1.4-3.2 3.3s1.2 3.3 3.2 3.3c.8 0 1.4-.2 1.9-.7V7.6h-2.6V5.5H35v5C33.7 11.8 32 12.9 29.9 12.9 24.5 13 21 9.8 21 7z"/>
+      </svg>
+    </WBadge>
+  );
+}
+
+// Wise badge — green bg, dark arrow+WISE
+function WiseBadge() {
+  return (
+    <span className="inline-flex items-center justify-center rounded flex-shrink-0"
+      style={{ background: "#9FE870", height: 28, padding: "3px 8px", minWidth: 52 }}>
+      <svg height="14" viewBox="0 0 40 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#163300" d="M0 2h3l3 8.5L9 2h2.5L15 10.5 18 2h3L16 14h-3L9.5 5.5 7 14H4L0 2z"/>
+        <path fill="#163300" d="M22.5 2H25v12h-2.5V2z"/>
+        <path fill="#163300" d="M27.5 2h8.8c2 0 3.2 1 3.2 2.7 0 1-.5 1.8-1.4 2.2 1 .4 1.7 1.3 1.7 2.5 0 1.9-1.3 3.1-3.3 3.1H27.5V2zm2.5 4h4.7c.6 0 .9-.3.9-.9s-.3-.9-.9-.9H30v1.8zm0 5.2h4.8c.7 0 1-.3 1-.9 0-.7-.3-1-.9-1H30v1.9z"/>
+      </svg>
+    </span>
+  );
+}
+
+// Paysafecard badge — blue pill
+function PaysafeBadge() {
+  return (
+    <span className="inline-flex items-center justify-center rounded flex-shrink-0"
+      style={{ background: "#003082", height: 28, padding: "3px 8px" }}>
+      <svg height="13" viewBox="0 0 80 13" xmlns="http://www.w3.org/2000/svg">
+        <text y="11" fontFamily="Arial Rounded MT Bold, Arial, sans-serif" fontSize="11" fontWeight="800" fill="white">paysafe</text>
+        <text x="49" y="11" fontFamily="Arial Rounded MT Bold, Arial, sans-serif" fontSize="11" fontWeight="800" fill="#009EE2">card</text>
+      </svg>
+    </span>
+  );
+}
+
+// Bitcoin circle badge
+function BtcBadge() {
+  return (
+    <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
+      style={{ background: "#F7931A", width: 28, height: 28 }}>
+      <svg height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="white" d="M11.1 6.9c.1-1-.6-1.5-1.7-1.9l.3-1.3-.8-.2-.3 1.3-.6-.1.3-1.4-.9-.2-.3 1.4-1.5-.4-.2.9.6.1c.3.1.4.3.3.5L5.3 9.8c-.1.2-.2.3-.5.3l-.6-.2-.4.9 1.5.4.2.1-.3 1.4.9.2.3-1.4.6.2-.3 1.3.9.2.3-1.4c1.4.3 2.4.1 2.8-1.1.3-.9 0-1.5-.7-1.8.5-.1.8-.5.9-1.1zm-1.6 2.2c-.3 1-2 .5-2.5.3l.4-1.7c.5.1 2.2.4 2.1 1.4zm.3-2.2c-.3.9-1.6.4-2 .3l.4-1.6c.4.1 1.8.4 1.6 1.3z"/>
+      </svg>
+    </span>
+  );
+}
+
+// USDT circle badge
+function UsdtBadge() {
+  return (
+    <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
+      style={{ background: "#26A17B", width: 28, height: 28 }}>
+      <svg height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="white" d="M9 6.9V5.4h2.3V4H4.7v1.4H7v1.5C4.7 7.2 3 7.9 3 8.9c0 1.3 2 2.3 5 2.3s5-1 5-2.3c0-1-1.7-1.7-4-2zm-1 3c-1.9 0-3-.6-3-1.5s1.1-1.5 3-1.5 3 .6 3 1.5-1.1 1.5-3 1.5z"/>
+      </svg>
+    </span>
+  );
+}
 
 // ─── Payment method definitions ───────────────────────────────────────────────
 type MethodId = "card" | "paypal" | "bank" | "paysafe" | "crypto";
 
 function MethodLogos({ id, selected }: { id: MethodId; selected: boolean }) {
-  const opacity = selected ? 1 : 0.65;
-  const style   = { opacity };
+  const opacity = selected ? 1 : 0.7;
 
   if (id === "card") return (
-    <div className="flex items-center gap-1.5" style={style}>
-      <LogoBadge src={`${CDN_FLAT}/visa.svg`}       alt="Visa"       />
-      <LogoBadge src={`${CDN_FLAT}/mastercard.svg`} alt="Mastercard" />
+    <div className="flex items-center gap-1.5" style={{ opacity }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`${CDN_FLAT}/visa.svg`}       alt="Visa"       height={28} style={{ borderRadius: 4 }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`${CDN_FLAT}/mastercard.svg`} alt="Mastercard" height={28} style={{ borderRadius: 4 }} />
     </div>
   );
 
   if (id === "paypal") return (
-    <div className="flex items-center gap-1.5" style={style}>
-      <LogoBadge src="/pay/paypal-white.png" alt="PayPal" bg="#003087" />
+    <div className="flex items-center" style={{ opacity }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/pay/paypal-white.png" alt="PayPal" height={28}
+        style={{ borderRadius: 4, background: "#003087", padding: "4px 8px", boxSizing: "content-box" }} />
     </div>
   );
 
   if (id === "bank") return (
-    <div className="flex flex-wrap items-center gap-1.5 justify-end max-w-[160px]" style={style}>
-      <TextBadge text="Instant Bank" bg="#0065FF" color="white" />
-      <SimpleIconBadge src={`${CDN_SI}/revolut.svg`} alt="Revolut" bg="#191C1F" />
-      <TextBadge text="N26" bg="#111" color="#00d4b4" />
-      <SimpleIconBadge src={`${CDN_SI}/wise.svg`} alt="Wise" bg="#9FE870" size={28} />
+    <div className="flex flex-wrap items-center gap-1.5 justify-end max-w-[150px]" style={{ opacity }}>
+      <RevolutBadge />
+      <N26Badge />
+      <WiseBadge />
     </div>
   );
 
   if (id === "paysafe") return (
-    <div className="flex items-center gap-1.5" style={style}>
-      <TextBadge text="paysafe" bg="#003082" color="white" />
-      <TextBadge text="card" bg="#003082" color="#00a0e0" />
+    <div className="flex items-center" style={{ opacity }}>
+      <PaysafeBadge />
     </div>
   );
 
   if (id === "crypto") return (
-    <div className="flex items-center gap-1.5" style={style}>
-      <SimpleIconBadge src={`${CDN_SI}/bitcoin.svg`}  alt="Bitcoin" bg="#F7931A" />
-      <SimpleIconBadge src={`${CDN_SI}/tether.svg`}   alt="USDT"    bg="#26A17B" />
+    <div className="flex items-center gap-1.5" style={{ opacity }}>
+      <BtcBadge />
+      <UsdtBadge />
     </div>
   );
 
