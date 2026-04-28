@@ -215,8 +215,38 @@ function PaymentContent() {
   const [name,       setName]       = useState("");
 
   const planLabel  = plan === "premium" ? t.cp_premium : t.cp_standard;
-  const monthLabel = months === 1 ? t.cp_months_1 : months === 3 ? t.cp_months_3 : t.cp_months_12;
-  const ppm        = Math.round(amount / months * 100) / 100;
+  const monthLabel = months === 1 ? "1 month" : `${months} months`;
+  const ppm        = amount > 0 ? Math.round(amount / months * 100) / 100 : 0;
+
+  // Promo code
+  const [promoCode,    setPromoCode]    = useState("");
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoError,   setPromoError]   = useState("");
+  const [discount,     setDiscount]     = useState(0); // 0-100 %
+  const finalAmount = discount > 0 ? Math.round(amount * (1 - discount / 100) * 100) / 100 : amount;
+  const finalPpm    = finalAmount > 0 ? Math.round(finalAmount / months * 100) / 100 : 0;
+
+  const applyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoError("");
+    try {
+      const res  = await fetch("/api/promo/validate", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ code: promoCode, plan, months }) });
+      const data = await res.json();
+      if (data.valid && data.discount_type === "percent") {
+        setDiscount(data.discount_percent || 0);
+        setPromoApplied(true);
+      } else if (data.valid && data.discount_type === "fixed") {
+        // Convert fixed to percent for simplicity
+        const pct = Math.min(100, Math.round((data.discount_fixed / amount) * 100));
+        setDiscount(pct);
+        setPromoApplied(true);
+      } else {
+        setPromoError(data.error || "Invalid promo code");
+      }
+    } catch {
+      setPromoError("Could not validate code. Try again.");
+    }
+  };
 
   const fmtCard = (v: string) => v.replace(/\D/g,"").slice(0,16).replace(/(.{4})/g,"$1 ").trim();
   const fmtExp  = (v: string) => { const d = v.replace(/\D/g,"").slice(0,4); return d.length > 2 ? `${d.slice(0,2)}/${d.slice(2)}` : d; };
@@ -232,7 +262,7 @@ function PaymentContent() {
         throw new Error(data.error || "Crypto payment failed");
       }
       if (method === "card") {
-        const res  = await fetch("/api/payment/stripe", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({plan,months,amount,currency:"usd",userId:uid}) });
+        const res  = await fetch("/api/payment/stripe", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({plan,months,amount:finalAmount,currency:"usd",userId:uid}) });
         const data = await res.json();
         if (data.url) { window.location.href = data.url; return; }
         throw new Error(data.error || "Card payment failed");
@@ -263,9 +293,9 @@ function PaymentContent() {
           <button onClick={() => router.back()} className="p-1 -ml-1 hover:bg-white/10 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-400" />
           </button>
-          <p className="flex-1 text-sm font-black">{months} {monthLabel} {planLabel}</p>
+          <p className="flex-1 text-sm font-black">{monthLabel} {planLabel}</p>
           <p className="text-sm font-black tabular-nums">
-            ${ppm}<span className="text-xs font-normal text-gray-500">/month</span>
+            ${finalPpm}<span className="text-xs font-normal text-gray-500">/month</span>
           </p>
         </div>
 
@@ -322,6 +352,32 @@ function PaymentContent() {
           </div>
         )}
 
+        {/* Promo code */}
+        <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-4">
+          <p className="text-xs text-gray-500 font-semibold uppercase tracking-widest mb-2">Promo code</p>
+          {promoApplied ? (
+            <div className="flex items-center gap-2 text-green-400 text-sm">
+              <span>✓ {promoCode.toUpperCase()} — {discount}% discount applied</span>
+              <button onClick={() => { setPromoApplied(false); setDiscount(0); setPromoCode(""); }} className="ml-auto text-gray-500 hover:text-white text-xs">Remove</button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter promo code"
+                value={promoCode}
+                onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === "Enter" && applyPromo()}
+                className="flex-1 bg-[#111] border border-[#333] rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] uppercase tracking-widest"
+              />
+              <button onClick={applyPromo} className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-bold transition-colors flex-shrink-0">
+                Apply
+              </button>
+            </div>
+          )}
+          {promoError && <p className="mt-1.5 text-xs text-red-400">{promoError}</p>}
+        </div>
+
         {error && (
           <div className="rounded-xl bg-red-900/30 border border-red-800/50 px-4 py-3 text-sm text-red-400">{error}</div>
         )}
@@ -335,8 +391,14 @@ function PaymentContent() {
         {/* Trust */}
         <div className="text-center space-y-1.5 pb-4">
           <p className="text-xs text-gray-500">
-            {planLabel} · {monthLabel} · <strong className="text-white">${amount} USD</strong>
+            {planLabel} · {monthLabel} ·{" "}
+            {discount > 0 ? (
+              <><span className="line-through">${amount}</span> <strong className="text-green-400">${finalAmount} USD</strong></>
+            ) : (
+              <strong className="text-white">${amount} USD</strong>
+            )}
           </p>
+          <p className="text-[11px] text-gray-600 mt-1">Test card: 4242 4242 4242 4242 · 12/34 · 123</p>
           <div className="flex items-center justify-center gap-1.5 mt-1.5">
             <ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
             <p className="text-xs text-gray-500">{t.pay_no_adult}</p>
