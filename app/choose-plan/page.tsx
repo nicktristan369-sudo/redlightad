@@ -1,250 +1,242 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import Logo from "@/components/Logo";
-import { Check, X, Camera, Video, Mic, Star, Search, Gem, Globe, Link, Flame, BookOpen, ShoppingCart, Coins, CreditCard, ShieldOff, MessageCircle, Film } from "lucide-react";
+import {
+  Crown, Camera, Video, Mic, MapPin, Globe, Link2, Star,
+  ShoppingBag, Coins, CreditCard, ShieldOff, MessageSquare,
+  Image, X, Check
+} from "lucide-react";
 
-// ─── Pricing in USD ───────────────────────────────────────────────────────────
-const MONTHLY_USD: Record<"standard" | "premium", number> = {
-  standard: 21, // ~150 DKK
-  premium:  42, // ~300 DKK
+// ─── Pricing Config ───────────────────────────────────────────────────────────
+const PRICES = {
+  standard: 150, // DKK per month (normal)
+  premium: 300,  // DKK per month (normal)
 };
 
 const DURATIONS = [
-  { months: 12, discountPct: 50, popular: true  },
-  { months: 3,  discountPct: 30, popular: false },
-  { months: 1,  discountPct: 25, popular: false },
+  { months: 12, discount: 50, label: "12 months", badge: "50% OFF" },
+  { months: 6,  discount: 40, label: "6 months",  badge: "40% OFF" },
+  { months: 3,  discount: 30, label: "3 months",  badge: "30% OFF" },
+  { months: 1,  discount: 25, label: "1 month",   badge: "25% OFF" },
 ];
 
-function pricePerMonth(plan: "standard" | "premium", discountPct: number) {
-  return Math.round(MONTHLY_USD[plan] * (1 - discountPct / 100) * 100) / 100;
-}
-function totalPrice(plan: "standard" | "premium", months: number, discountPct: number) {
-  return Math.round(pricePerMonth(plan, discountPct) * months * 100) / 100;
-}
+// ─── Features ─────────────────────────────────────────────────────────────────
+const FEATURES: { icon: React.ElementType; label: string; standard: string | boolean; premium: string | boolean }[] = [
+  { icon: Crown,        label: "Always in top section",         standard: false,       premium: true },
+  { icon: Star,         label: "Premium carousel placement",    standard: false,       premium: true },
+  { icon: Image,        label: "Profile pictures",              standard: "4 only",    premium: "Unlimited" },
+  { icon: Video,        label: "Video profile picture",         standard: false,       premium: true },
+  { icon: Camera,       label: "Videos on profile",             standard: false,       premium: "50+" },
+  { icon: Mic,          label: "Voice messages",                standard: false,       premium: true },
+  { icon: Star,         label: "Control your reviews",          standard: false,       premium: true },
+  { icon: MapPin,       label: "Locations",                     standard: "1 only",    premium: "Multiple countries" },
+  { icon: Globe,        label: "Change location anytime",       standard: false,       premium: true },
+  { icon: Link2,        label: "Social media links",            standard: false,       premium: true },
+  { icon: Star,         label: "OnlyFans promotion",            standard: false,       premium: true },
+  { icon: Camera,       label: "Post stories",                  standard: false,       premium: true },
+  { icon: ShoppingBag,  label: "Sell on Marketplace",           standard: false,       premium: "Global" },
+  { icon: Coins,        label: "Receive RedCoins",              standard: false,       premium: true },
+  { icon: CreditCard,   label: "Pay Me section",                standard: false,       premium: "Coins, Revolut, Crypto" },
+  { icon: ShieldOff,    label: "Block geolocation",             standard: false,       premium: true },
+  { icon: MessageSquare,label: "Private messages",              standard: true,        premium: true },
+];
 
-type Plan = "standard" | "premium";
-
-function FeatureCell({ val }: { val: string | boolean }) {
-  if (val === true)  return <Check className="w-5 h-5 text-green-400 mx-auto" strokeWidth={2.5} />;
-  if (val === false) return <X     className="w-4 h-4 text-red-500  mx-auto" strokeWidth={2.5} />;
-  return <span className="text-xs text-gray-300 leading-tight">{val}</span>;
-}
-
-function ChoosePlanContent() {
+// ─── Component ────────────────────────────────────────────────────────────────
+export default function ChoosePlanPage() {
   const router = useRouter();
-  const params = useSearchParams();
-  const uid = params?.get("uid") || "";
   const { t } = useLanguage();
 
-  const [activePlan, setActivePlan]   = useState<Plan>("premium");
-  const [activeMonths, setActiveMonths] = useState(12);
+  const [plan, setPlan] = useState<"standard" | "premium">("premium");
+  const [duration, setDuration] = useState(12);
 
-  const dur    = DURATIONS.find(d => d.months === activeMonths)!;
-  const ppm    = pricePerMonth(activePlan, dur.discountPct);
-  const total  = totalPrice(activePlan, activeMonths, dur.discountPct);
-  const normal = Math.round(MONTHLY_USD[activePlan] * activeMonths * 100) / 100;
+  const basePrice = PRICES[plan];
+  const dur = DURATIONS.find(d => d.months === duration) || DURATIONS[0];
+  const discountedPrice = Math.round(basePrice * (1 - dur.discount / 100));
+  const totalPrice = discountedPrice * dur.months;
 
-  // Feature table — uses translation keys for labels
-  const FEATURES: { icon: React.ReactNode; label: string; standard: string | boolean; premium: string | boolean }[] = [
-    { icon: <Camera  size={15}/>, label: t.cp_f_photos,     standard: t.cp_f_photos_standard,  premium: t.cp_f_photos_premium },
-    { icon: <Video   size={15}/>, label: t.cp_f_video,      standard: false,                    premium: true },
-    { icon: <Film    size={15}/>, label: t.cp_f_videopfp,   standard: false,                    premium: true },
-    { icon: <Mic     size={15}/>, label: t.cp_f_voice,      standard: false,                    premium: true },
-    { icon: <Star    size={15}/>, label: t.cp_f_reviews,    standard: t.cp_f_reviews_standard,  premium: t.cp_f_reviews_premium },
-    { icon: <Search  size={15}/>, label: t.cp_f_search,     standard: t.cp_f_search_standard,   premium: "Always Top" },
-    { icon: <Gem     size={15}/>, label: t.cp_f_carousel,   standard: false,                    premium: true },
-    { icon: <Globe   size={15}/>, label: t.cp_f_location,   standard: t.cp_f_location_standard, premium: t.cp_f_location_premium },
-    { icon: <Link    size={15}/>, label: t.cp_f_social,     standard: false,                    premium: true },
-    { icon: <Flame   size={15}/>, label: t.cp_f_onlyfans,   standard: false,                    premium: true },
-    { icon: <BookOpen size={15}/>, label: t.cp_f_stories,   standard: false,                    premium: true },
-    { icon: <ShoppingCart size={15}/>, label: t.cp_f_marketplace, standard: false,              premium: t.cp_f_marketplace_premium },
-    { icon: <Coins   size={15}/>, label: t.cp_f_redcoins,   standard: false,                    premium: true },
-    { icon: <CreditCard size={15}/>, label: t.cp_f_payme,   standard: false,                    premium: t.cp_f_payme_premium },
-    { icon: <ShieldOff size={15}/>, label: t.cp_f_geo,      standard: false,                    premium: true },
-    { icon: <MessageCircle size={15}/>, label: t.cp_f_messages, standard: true,                 premium: true },
-    { icon: <Video   size={15}/>, label: t.cp_f_videos50,   standard: false,                    premium: true },
-  ];
-
-  const durationLabel = (months: number) =>
-    months === 1 ? t.cp_months_1 : months === 3 ? t.cp_months_3 : t.cp_months_12;
-
-  const handleGetMembership = () => {
-    const p = new URLSearchParams({
-      plan: activePlan,
-      months: String(activeMonths),
-      amount: String(total),
-      currency: "usd",
-      ...(uid ? { userId: uid } : {}),
-    });
-    router.push(`/choose-plan/payment?${p}`);
+  const handleContinue = () => {
+    router.push(`/choose-plan/payment?plan=${plan}&months=${duration}&amount=${totalPrice}`);
   };
 
   return (
     <div className="min-h-screen bg-[#111] text-white">
 
-      {/* ── Hero ── */}
+      {/* ─── Hero Banner ─────────────────────────────────────────────────────── */}
       <div
-        className="relative h-24 flex flex-col items-center justify-center gap-1.5"
+        className="relative py-8 flex flex-col items-center justify-center gap-2 overflow-hidden"
         style={{ background: "linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%)" }}
       >
-        <Logo variant="dark" height={26} />
-        <p className="text-sm font-bold text-[#f5a623]">{t.cp_banner}</p>
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10" />
+        <Logo variant="dark" height={32} />
+        <p className="text-lg md:text-xl font-black tracking-wide">
+          <span className="text-white">REDLIGHT DISCOUNT</span>{" "}
+          <span className="text-[#f5a623]">50% OFF for You!</span>
+        </p>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 pb-16 pt-5">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
-        {/* ── Plan toggle ── */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {(["standard", "premium"] as Plan[]).map((plan) => {
-            const isActive = activePlan === plan;
-            return (
-              <button
-                key={plan}
-                onClick={() => setActivePlan(plan)}
-                className={`relative rounded-2xl border-2 p-4 text-left transition-all ${
-                  isActive
-                    ? plan === "premium"
-                      ? "border-[#f5a623] bg-[#f5a623]/10"
-                      : "border-white bg-white/10"
-                    : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#444]"
-                }`}
-              >
-                {plan === "premium" && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#f5a623] text-black text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wide">
-                    {t.cp_recommended}
-                  </div>
-                )}
-                <div className="flex items-start justify-between mb-2">
-                  <p className={`text-sm font-black uppercase ${isActive ? "text-white" : "text-gray-500"}`}>
-                    {plan === "premium" ? t.cp_premium : t.cp_standard}
-                  </p>
-                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                    isActive
-                      ? plan === "premium" ? "border-[#f5a623] bg-[#f5a623]" : "border-white bg-white"
-                      : "border-[#555]"
-                  }`}>
-                    {isActive && <div className="w-2 h-2 rounded-full bg-black" />}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">
-                  {plan === "premium" ? t.cp_max_exposure : t.cp_basic_plan}
-                </p>
-                <p className="text-xl font-black text-white">
-                  ${pricePerMonth(plan, dur.discountPct)}
-                  <span className="text-xs font-normal text-gray-500">/month</span>
-                </p>
-              </button>
-            );
-          })}
+        {/* ─── Plan Toggle ───────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Standard */}
+          <button
+            onClick={() => setPlan("standard")}
+            className={`relative rounded-2xl p-4 text-left transition-all ${
+              plan === "standard"
+                ? "bg-white text-black"
+                : "bg-[#1a1a1a] border border-[#333] hover:border-[#555]"
+            }`}
+          >
+            <p className="font-bold text-base">Standard</p>
+            <p className={`text-xs mt-0.5 ${plan === "standard" ? "text-gray-600" : "text-gray-500"}`}>
+              4 pictures · 1 location
+            </p>
+            <div className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+              plan === "standard" ? "border-black bg-black" : "border-[#555]"
+            }`}>
+              {plan === "standard" && <div className="w-2 h-2 rounded-full bg-white" />}
+            </div>
+          </button>
+
+          {/* Premium */}
+          <button
+            onClick={() => setPlan("premium")}
+            className={`relative rounded-2xl p-4 text-left transition-all ${
+              plan === "premium"
+                ? "bg-[#f5a623] text-black ring-2 ring-[#f5a623] ring-offset-2 ring-offset-[#111]"
+                : "bg-[#1a1a1a] border border-[#333] hover:border-[#555]"
+            }`}
+          >
+            {/* Recommended badge */}
+            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#f5a623] text-black text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+              Recommended
+            </span>
+            <p className="font-bold text-base flex items-center gap-1.5">
+              Premium <Crown className="w-4 h-4" />
+            </p>
+            <p className={`text-xs mt-0.5 ${plan === "premium" ? "text-black/70" : "text-gray-500"}`}>
+              Unlimited · All features
+            </p>
+            <div className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+              plan === "premium" ? "border-black bg-black" : "border-[#555]"
+            }`}>
+              {plan === "premium" && <div className="w-2 h-2 rounded-full bg-[#f5a623]" />}
+            </div>
+          </button>
         </div>
 
-        {/* ── Duration list ── */}
-        <div className="rounded-2xl overflow-hidden border border-[#2a2a2a] mb-4">
+        {/* ─── Duration Selector ─────────────────────────────────────────────── */}
+        <div className="rounded-2xl border border-[#2a2a2a] overflow-hidden">
           {DURATIONS.map((d, i) => {
-            const p2 = pricePerMonth(activePlan, d.discountPct);
-            const isSel = activeMonths === d.months;
+            const isActive = duration === d.months;
+            const price = Math.round(PRICES[plan] * (1 - d.discount / 100));
             return (
               <button
                 key={d.months}
-                onClick={() => setActiveMonths(d.months)}
+                onClick={() => setDuration(d.months)}
                 className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors ${
                   i > 0 ? "border-t border-[#222]" : ""
-                } ${isSel ? "bg-white" : "bg-[#1a1a1a] hover:bg-[#222]"}`}
+                } ${isActive ? "bg-white" : "bg-[#1a1a1a] hover:bg-[#222]"}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                    isSel ? "border-black bg-black" : "border-[#555]"
+                  {/* Radio */}
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                    isActive ? "border-black bg-black" : "border-[#555]"
                   }`}>
-                    {isSel && <div className="w-2 h-2 rounded-full bg-white" />}
+                    {isActive && <div className="w-2 h-2 rounded-full bg-white" />}
                   </div>
-                  <span className={`text-sm font-bold ${isSel ? "text-black" : "text-white"}`}>
-                    {durationLabel(d.months)}
+                  {/* Label */}
+                  <span className={`font-semibold ${isActive ? "text-black" : "text-white"}`}>
+                    {d.label}
                   </span>
-                  <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-red-600 text-white">
-                    {d.discountPct}% {t.cp_off}
+                  {/* Discount badge */}
+                  <span className="bg-[#e53935] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                    {d.badge}
                   </span>
-                  {d.popular && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isSel ? "bg-black/20 text-black" : "bg-white/10 text-gray-400"}`}>
-                      {t.cp_best}
-                    </span>
-                  )}
                 </div>
-                <span className={`text-base font-black ${isSel ? "text-black" : "text-white"}`}>
-                  ${p2}<span className={`text-xs font-normal ${isSel ? "text-black/60" : "text-gray-500"}`}>/month</span>
+                {/* Price */}
+                <span className={`font-bold tabular-nums ${isActive ? "text-black" : "text-white"}`}>
+                  {price} kr<span className="text-xs font-normal opacity-60">/month</span>
                 </span>
               </button>
             );
           })}
         </div>
 
-        {/* ── CTA ── */}
+        {/* ─── CTA Button ────────────────────────────────────────────────────── */}
         <button
-          onClick={handleGetMembership}
-          className="w-full py-4 rounded-xl bg-[#f5a623] hover:bg-[#e69520] text-black font-black text-base tracking-widest uppercase mb-3 shadow-lg shadow-[#f5a623]/20"
+          onClick={handleContinue}
+          className="w-full py-4 rounded-xl bg-[#f5a623] hover:bg-[#e69520] text-black font-black text-base uppercase tracking-widest shadow-lg shadow-[#f5a623]/20 transition-colors"
         >
-          {t.cp_get_membership}
+          GET MEMBERSHIP
         </button>
 
-        {/* Summary */}
-        <p className="text-center text-xs text-gray-500 mb-6">
-          {t.cp_total}: <strong className="text-white">${total}</strong> ·{" "}
-          {t.cp_normal_price}: <span className="line-through">${normal}</span> ·{" "}
-          <span className="text-green-400">{t.cp_you_save} ${Math.round((normal - total) * 100) / 100}</span>
+        {/* ─── Price Summary ─────────────────────────────────────────────────── */}
+        <p className="text-center text-sm text-gray-500">
+          {plan === "premium" ? "Premium" : "Standard"} · {dur.label} ·{" "}
+          <span className="line-through opacity-50">{PRICES[plan] * dur.months} kr</span>{" "}
+          <strong className="text-[#f5a623]">{totalPrice} kr</strong>
         </p>
 
-        {/* ── Feature table ── */}
-        <div className="rounded-2xl overflow-hidden border border-[#2a2a2a]">
-          <div className="grid grid-cols-[1fr_80px_80px] bg-[#1a1a1a] border-b border-[#2a2a2a]">
-            <div className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">{t.cp_compare}</div>
-            <button onClick={() => setActivePlan("standard")}
-              className={`py-3 text-xs font-black text-center transition-colors ${activePlan === "standard" ? "bg-[#f5a623]/20 text-[#f5a623]" : "text-gray-500 hover:text-white"}`}>
-              {t.cp_standard}
-            </button>
-            <button onClick={() => setActivePlan("premium")}
-              className={`py-3 text-xs font-black text-center rounded-t-lg transition-colors ${activePlan === "premium" ? "bg-[#f5a623]/20 text-[#f5a623]" : "text-gray-500 hover:text-white"}`}>
-              {t.cp_premium} ★
-            </button>
-          </div>
-          {FEATURES.map((f, i) => (
-            <div key={i} className={`grid grid-cols-[1fr_80px_80px] items-center border-b border-[#1e1e1e] ${i % 2 === 0 ? "bg-[#161616]" : "bg-[#111]"}`}>
-              <div className="flex items-center gap-2 px-4 py-3">
-                <span className={`flex-shrink-0 ${activePlan === "premium" ? "text-[#f5a623]" : "text-gray-500"}`}>{f.icon}</span>
-                <span className="text-xs text-gray-400 leading-tight">{f.label}</span>
-              </div>
-              <div className={`py-3 text-center ${activePlan === "standard" ? "bg-[#f5a623]/5" : ""}`}><FeatureCell val={f.standard} /></div>
-              <div className={`py-3 text-center ${activePlan === "premium"  ? "bg-[#f5a623]/5" : ""}`}><FeatureCell val={f.premium}  /></div>
+        {/* ─── Compare Plans Table ───────────────────────────────────────────── */}
+        <div className="rounded-2xl border border-[#2a2a2a] overflow-hidden">
+          {/* Header */}
+          <div className="grid grid-cols-[1fr_90px_90px] bg-[#1a1a1a]">
+            <div className="px-4 py-3 text-sm font-semibold text-gray-400">Compare plans</div>
+            <div className={`px-2 py-3 text-center text-sm font-bold ${plan === "standard" ? "bg-[#f5a623]/10 text-[#f5a623] border-t-2 border-[#f5a623]" : "text-white"}`}>
+              Standard
             </div>
-          ))}
+            <div className={`px-2 py-3 text-center text-sm font-bold ${plan === "premium" ? "bg-[#f5a623]/10 text-[#f5a623] border-t-2 border-[#f5a623]" : "text-white"}`}>
+              Premium <Crown className="inline w-3.5 h-3.5 ml-0.5" />
+            </div>
+          </div>
+
+          {/* Rows */}
+          {FEATURES.map((f, i) => {
+            const Icon = f.icon;
+            return (
+              <div
+                key={i}
+                className={`grid grid-cols-[1fr_90px_90px] border-t border-[#222] ${i % 2 === 0 ? "bg-[#151515]" : "bg-[#1a1a1a]"}`}
+              >
+                {/* Feature label */}
+                <div className="flex items-center gap-2.5 px-4 py-2.5">
+                  <Icon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                  <span className="text-sm text-gray-300">{f.label}</span>
+                </div>
+                {/* Standard value */}
+                <div className={`flex items-center justify-center text-sm ${plan === "standard" ? "bg-[#f5a623]/5" : ""}`}>
+                  {f.standard === true ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : f.standard === false ? (
+                    <X className="w-4 h-4 text-red-500/70" />
+                  ) : (
+                    <span className="text-gray-400 text-xs">{f.standard}</span>
+                  )}
+                </div>
+                {/* Premium value */}
+                <div className={`flex items-center justify-center text-sm ${plan === "premium" ? "bg-[#f5a623]/5" : ""}`}>
+                  {f.premium === true ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : f.premium === false ? (
+                    <X className="w-4 h-4 text-red-500/70" />
+                  ) : (
+                    <span className="text-[#f5a623] text-xs font-medium">{f.premium}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Bottom CTA */}
-        <button onClick={handleGetMembership}
-          className="w-full mt-5 py-4 rounded-xl bg-[#f5a623] hover:bg-[#e69520] text-black font-black text-base tracking-widest uppercase shadow-lg shadow-[#f5a623]/20">
-          {t.cp_get_membership}
-        </button>
-
-        {/* Trust */}
-        <div className="mt-4 space-y-1.5">
-          {[t.cp_no_adult, t.cp_instant, t.cp_ssl].map(txt => (
-            <p key={txt} className="text-[11px] text-gray-600 text-center">🔒 {txt}</p>
-          ))}
-        </div>
+        {/* ─── Trust Footer ──────────────────────────────────────────────────── */}
+        <p className="text-center text-xs text-gray-600 pb-4">
+          Secure payment · Cancel anytime · No adult-related transaction in your bank statement
+        </p>
       </div>
     </div>
-  );
-}
-
-export default function ChoosePlanPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#111] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#f5a623] border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
-      <ChoosePlanContent />
-    </Suspense>
   );
 }
