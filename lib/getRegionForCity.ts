@@ -41,26 +41,18 @@ export function getRegionForCity(cityName: string, countryName: string): string 
 }
 
 /**
- * Strips country name from a region string to avoid duplication.
- * e.g. "North Denmark Region" → "North Denmark"
- * e.g. "Capital Region of Denmark" → "Capital Region"
+ * Returns true if the region string contains the country name.
+ * e.g. "North Denmark Region" contains "Denmark" → true
+ * e.g. "Capital Region of Denmark" contains "Denmark" → true
  */
-function stripCountryFromRegion(region: string, country: string): string {
-  // Remove " of <Country>" suffix
-  const ofPattern = new RegExp(`\\s+of\\s+${country.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i")
-  let clean = region.replace(ofPattern, "").trim()
-  // Remove " <Country>" suffix (e.g. "North Denmark Region" where country="Denmark" is embedded)
-  // Only strip if country appears as a whole word at end (e.g. "North Denmark Region" → don't strip "Denmark" mid-string)
-  const suffixPattern = new RegExp(`\\s+${country.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i")
-  clean = clean.replace(suffixPattern, "").trim()
-  // Remove trailing " Region" if it remains standalone
-  clean = clean.replace(/\s+Region$/i, "").trim()
-  return clean || region
+function regionContainsCountry(region: string, country: string): boolean {
+  return region.toLowerCase().includes(country.toLowerCase())
 }
 
 /**
  * Returns formatted location string, e.g.:
- * "Tønder, South Denmark, Denmark" or "Copenhagen, Capital Region, Denmark"
+ * "Aalborg, North Denmark Region, Denmark" → but if region contains country → "Aalborg, North Denmark Region"
+ * "London, England, United Kingdom"
  * Falls back to "city, country" if no region found.
  */
 export function formatLocation(cityName: string | null | undefined, countryName: string | null | undefined): string {
@@ -72,8 +64,11 @@ export function formatLocation(cityName: string | null | undefined, countryName:
 
   const region = getRegionForCity(city, country)
   if (region && region !== city && region !== country) {
-    const cleanRegion = stripCountryFromRegion(region, country)
-    return `${city}, ${cleanRegion}, ${country}`
+    // If the region name already contains the country name, don't append country again
+    if (regionContainsCountry(region, country)) {
+      return `${city}, ${region}`
+    }
+    return `${city}, ${region}, ${country}`
   }
   return `${city}, ${country}`
 }
