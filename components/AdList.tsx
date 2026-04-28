@@ -300,18 +300,17 @@ function tierBadge(tier: string | null | undefined) {
 }
 
 function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
+  const date = new Date(dateStr)
+  const diff = Date.now() - date.getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return "just now"
   if (mins < 60) return `${mins}m ago`
   const hours = Math.floor(mins / 60)
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  if (days < 30) return `${Math.floor(days / 7)}w ago`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}mo ago`
-  return `${Math.floor(months / 12)}y ago`
+  if (days < 30) return `${days}d ago`
+  // After 30 days: show full date
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
 }
 
 function cleanDescription(text: string): string {
@@ -671,11 +670,27 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
 
                         {/* Gender */}
                         <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <span className="text-[13px] leading-none">
-                            {ad.gender?.toLowerCase() === "male" ? "♂" :
-                             ad.gender?.toLowerCase() === "female" ? "♀" :
-                             ad.gender?.toLowerCase() === "trans" ? "⚧" : "⚥"}
-                          </span>
+                          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                            {ad.gender?.toLowerCase() === "male" ? (
+                              // Male: circle with arrow top-right
+                              <>
+                                <circle cx="10" cy="11" r="5"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 4l-5.5 5.5M19 4h-5M19 4v5"/>
+                              </>
+                            ) : ad.gender?.toLowerCase() === "trans" ? (
+                              // Trans: circle with both arrow up and cross down
+                              <>
+                                <circle cx="12" cy="10" r="4.5"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14.5v5M9.5 17h5M17 3l-3 3M17 3h-3M17 3v3M7 3l3 3M7 3h3M7 3v3"/>
+                              </>
+                            ) : (
+                              // Female: circle with cross below
+                              <>
+                                <circle cx="12" cy="9.5" r="5"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14.5v5M9.5 17h5"/>
+                              </>
+                            )}
+                          </svg>
                           <span className="capitalize">{ad.gender}</span>
                         </span>
 
