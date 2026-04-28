@@ -1,7 +1,7 @@
 "use client"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, Suspense, useRef } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { FileText, LayoutList, LayoutGrid } from "lucide-react"
@@ -308,6 +308,65 @@ function timeAgo(dateStr: string): string {
   return `${days} day${days > 1 ? "s" : ""} ago`
 }
 
+function MiniVoiceChip({ url }: { url: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [playing, setPlaying] = useState(false)
+  const [duration, setDuration] = useState(0)
+  const [current, setCurrent] = useState(0)
+
+  const toggle = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const a = audioRef.current
+    if (!a) return
+    if (playing) { a.pause(); setPlaying(false) }
+    else { a.play(); setPlaying(true) }
+  }
+
+  return (
+    <div className="flex items-center gap-1.5" onClick={e => { e.preventDefault(); e.stopPropagation() }}>
+      <audio
+        ref={audioRef}
+        src={url}
+        onLoadedMetadata={e => setDuration((e.target as HTMLAudioElement).duration)}
+        onTimeUpdate={e => setCurrent((e.target as HTMLAudioElement).currentTime)}
+        onEnded={() => setPlaying(false)}
+      />
+      <button
+        onClick={toggle}
+        className="flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 transition-colors"
+        style={{ width: 22, height: 22, border: "1px solid #FECACA", flexShrink: 0 }}
+        title="Play voice message"
+      >
+        {playing ? (
+          <svg className="w-2.5 h-2.5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+          </svg>
+        ) : (
+          <svg className="w-2.5 h-2.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4M9 11V7a3 3 0 116 0v4a3 3 0 11-6 0z"/>
+          </svg>
+        )}
+      </button>
+      <div className="flex items-center gap-[1.5px]">
+        {[3,5,7,5,9,6,4,8,5,7,4,6,8,5,3].map((h, i) => {
+          const pct = duration > 0 ? current / duration : 0
+          const filled = i / 15 < pct
+          return (
+            <div key={i} className="w-[2px] rounded-full"
+              style={{ height: h, background: filled ? "#EF4444" : "#E5E7EB" }} />
+          )
+        })}
+      </div>
+      {duration > 0 && (
+        <span className="text-[10px] text-gray-400 tabular-nums">
+          {Math.floor(duration / 60)}:{String(Math.floor(duration % 60)).padStart(2, "0")}
+        </span>
+      )}
+    </div>
+  )
+}
+
 interface Props {
   country?: string
   category?: string
@@ -470,7 +529,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {listings.map((ad, idx) => {
             const displayLocation = ad.city || ad.location || ""
             const description = ad.about || ""
@@ -490,7 +549,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                   {/* ── DESKTOP layout (hidden below md) ── */}
                   <div className="hidden md:flex">
                     {/* Left: thumbnail */}
-                    <div className="relative flex-shrink-0 w-[200px] h-[240px] bg-gray-100">
+                    <div className="relative flex-shrink-0 w-[200px] h-[220px] bg-gray-100">
                       {ad.video_url ? (
                         <>
                           <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />
@@ -522,9 +581,9 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     </div>
 
                     {/* Right: content */}
-                    <div className="flex-1 p-4 flex flex-col min-w-0">
+                    <div className="flex-1 p-3 flex flex-col min-w-0">
                       {/* Title */}
-                      <div className="flex items-center gap-1.5 mb-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
                         {isAvailableNow(ad.opening_hours, ad.timezone) && (
                           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
                         )}
@@ -532,10 +591,10 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       </div>
 
                       {/* Timestamp */}
-                      <p className="text-xs text-gray-400 mb-2">{timeAgo(ad.created_at)}</p>
+                      <p className="text-xs text-gray-400 mb-1.5">{timeAgo(ad.created_at)}</p>
 
                       {/* Description */}
-                      <p className="text-sm text-gray-600 line-clamp-3 mb-3">{description}</p>
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-2">{description}</p>
 
                       {/* Action bar */}
                       <div className="flex items-center gap-3 mt-auto flex-wrap">
@@ -592,7 +651,41 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                           </svg>
                           {displayLocation}
                         </span>
+
+                        {/* Voice message chip */}
+                        {ad.voice_message_url && (
+                          <MiniVoiceChip url={ad.voice_message_url} />
+                        )}
                       </div>
+
+                      {/* Photo/video count chips */}
+                      {(() => {
+                        const photoCount = (ad.images?.length ?? 0) + (ad.profile_image ? 1 : 0)
+                        const videoCount = (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0)
+                        if (photoCount === 0 && videoCount === 0) return null
+                        return (
+                          <div className="flex items-center gap-2 mt-1.5">
+                            {photoCount > 0 && (
+                              <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                {photoCount}
+                              </span>
+                            )}
+                            {videoCount > 0 && (
+                              <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                  <circle cx="12" cy="12" r="9"/>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 9l5 3-5 3V9z"/>
+                                </svg>
+                                {videoCount}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
 
