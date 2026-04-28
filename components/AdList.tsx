@@ -506,6 +506,8 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                         <DesktopThumb ad={ad} staggerDelay={idx * 600} />
                       )}
 
+                      {/* Tier badge */}
+                      {tierBadge(ad.premium_tier)}
 
                       {/* Available Now bar - bottom of thumbnail */}
                       {isAvailableNow(ad.opening_hours, ad.timezone) && (
@@ -519,62 +521,76 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       )}
                     </div>
 
-                    {/* Right: details */}
-                    <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
-                      <div>
-                        {/* Title */}
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
-                            )}
-                            <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">{ad.title}</h3>
-                          </div>
-                        </div>
+                    {/* Right: content */}
+                    <div className="flex-1 p-4 flex flex-col min-w-0">
+                      {/* Title */}
+                      <div className="flex items-center gap-1.5 mb-1 min-w-0">
+                        {isAvailableNow(ad.opening_hours, ad.timezone) && (
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
+                        )}
+                        <h3 className="font-bold text-[17px] text-gray-900 leading-tight line-clamp-2">{ad.title}</h3>
+                      </div>
 
-                        {/* Location with pin */}
-                        <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                          <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      {/* Timestamp */}
+                      <p className="text-xs text-gray-400 mb-2">{timeAgo(ad.created_at)}</p>
+
+                      {/* Description */}
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-3">{description}</p>
+
+                      {/* Action bar */}
+                      <div className="flex items-center gap-3 mt-auto flex-wrap">
+                        {/* Call Me */}
+                        <a
+                          href={`tel:${ad.id}`}
+                          onClick={e => e.stopPropagation()}
+                          className="border border-gray-300 rounded px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+                        >
+                          Call Me
+                        </a>
+
+                        {/* View Profile */}
+                        <span className="border border-gray-300 rounded px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+                          View Profile
+                        </span>
+
+                        {/* OnlyFans */}
+                        {((ad as any).social_links?.onlyfans?.url || (ad as any).onlyfans_username) && (
+                          <img src="/onlyfans-logo.svg" style={{ height: 18, width: "auto" }} alt="OnlyFans" />
+                        )}
+
+                        {/* Gender */}
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            {ad.gender?.toLowerCase() === "male" ? (
+                              <>
+                                <circle cx="10" cy="10" r="6"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M20 4l-6 6M20 4h-5M20 4v5"/>
+                              </>
+                            ) : (
+                              <>
+                                <circle cx="12" cy="10" r="6"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v6M9 19h6"/>
+                              </>
+                            )}
+                          </svg>
+                          {ad.gender}
+                        </span>
+
+                        {/* Age */}
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                          </svg>
+                          {ad.age} Years
+                        </span>
+
+                        {/* Location */}
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                           </svg>
-                          {displayLocation}{ad.country ? `, ${ad.country}` : ""}
-                        </p>
-
-                        {/* Inline stats: age · gender · category */}
-                        <p className="text-xs text-gray-500 mb-2">
-                          <span className="font-medium text-gray-700">{ad.age} years</span>
-                          <span className="mx-2 text-gray-300">·</span>
-                          <span className="capitalize">{ad.gender}</span>
-                          <span className="mx-2 text-gray-300">·</span>
-                          <span className="capitalize">{ad.category}</span>
-                        </p>
-
-                        {/* Description */}
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">{description}</p>
-                      </div>
-
-                      {/* Stats grid */}
-                      <div className="grid grid-cols-5 gap-x-3 gap-y-1 text-xs border-t border-gray-100 pt-3 mb-3">
-                        {[
-                          { label: "AGE",      value: ad.age },
-                          { label: "GENDER",   value: ad.gender },
-                          { label: "CATEGORY", value: ad.category },
-                          { label: "LOCATION", value: displayLocation },
-                          { label: "LANGUAGE", value: ad.languages?.[0] || "—" },
-                        ].map(({ label, value }) => (
-                          <div key={label}>
-                            <p className="text-[9px] font-semibold tracking-widest text-gray-400 uppercase">{label}</p>
-                            <p className="font-semibold text-gray-800 truncate">{value}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {((ad as any).social_links?.onlyfans?.url || (ad as any).onlyfans_username) && (
-                          <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 16, width: "auto", objectFit: "contain", flexShrink: 0 }} />
-                        )}
-                        <span className="flex-1 bg-gray-900 hover:bg-black text-white text-sm font-semibold py-2.5 rounded-none text-center transition-colors">
-                          View Profile
+                          {displayLocation}
                         </span>
                       </div>
                     </div>
