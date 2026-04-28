@@ -57,7 +57,7 @@ const CDN_FLAT = "https://cdn.jsdelivr.net/npm/payment-icons/min/flat";
 function WBadge({ children, w = 56 }: { children: React.ReactNode; w?: number }) {
   return (
     <span className="inline-flex items-center justify-center bg-white rounded flex-shrink-0"
-      style={{ width: w, height: 28, padding: "3px 6px" }}>
+      style={{ width: w, height: 28, minHeight: 28, maxHeight: 28, padding: "0 6px", overflow: "hidden" }}>
       {children}
     </span>
   );
@@ -93,7 +93,7 @@ function N26Badge() {
 function WiseBadge() {
   return (
     <span className="inline-flex items-center justify-center rounded flex-shrink-0"
-      style={{ background: "#9FE870", height: 28, padding: "3px 8px", minWidth: 52 }}>
+      style={{ background: "#9FE870", height: 28, minHeight: 28, maxHeight: 28, padding: "0 8px", overflow: "hidden", minWidth: 52 }}>
       <svg height="14" viewBox="0 0 40 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path fill="#163300" d="M0 2h3l3 8.5L9 2h2.5L15 10.5 18 2h3L16 14h-3L9.5 5.5 7 14H4L0 2z"/>
         <path fill="#163300" d="M22.5 2H25v12h-2.5V2z"/>
@@ -146,25 +146,28 @@ type MethodId = "card" | "paypal" | "bank" | "paysafe" | "crypto";
 function MethodLogos({ id, selected }: { id: MethodId; selected: boolean }) {
   const opacity = selected ? 1 : 0.7;
 
+  // H=28 strict: explicit CSS height + width:auto, never bigger
+  const imgStyle: React.CSSProperties = { height: 28, width: "auto", display: "block", borderRadius: 4, flexShrink: 0 };
+
   if (id === "card") return (
     <div className="flex items-center gap-1.5" style={{ opacity }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`${CDN_FLAT}/visa.svg`}       alt="Visa"       height={28} style={{ borderRadius: 4 }} />
+      <img src={`${CDN_FLAT}/visa.svg`}       alt="Visa"       style={imgStyle} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`${CDN_FLAT}/mastercard.svg`} alt="Mastercard" height={28} style={{ borderRadius: 4 }} />
+      <img src={`${CDN_FLAT}/mastercard.svg`} alt="Mastercard" style={imgStyle} />
     </div>
   );
 
   if (id === "paypal") return (
     <div className="flex items-center" style={{ opacity }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/pay/paypal-white.png" alt="PayPal" height={28}
-        style={{ borderRadius: 4, background: "#003087", padding: "4px 8px", boxSizing: "content-box" }} />
+      <img src="/pay/paypal-white.png" alt="PayPal"
+        style={{ ...imgStyle, background: "#003087", padding: "4px 8px", height: 28, boxSizing: "border-box" }} />
     </div>
   );
 
   if (id === "bank") return (
-    <div className="flex flex-wrap items-center gap-1.5 justify-end max-w-[150px]" style={{ opacity }}>
+    <div className="flex flex-wrap items-center gap-1.5 justify-end max-w-[160px]" style={{ opacity }}>
       <RevolutBadge />
       <N26Badge />
       <WiseBadge />
