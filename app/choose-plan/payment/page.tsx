@@ -6,8 +6,8 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import Logo from "@/components/Logo";
 import {
-  VisaIcon, MastercardIcon, RevolutIcon, N26Icon, WiseIcon,
-  PaysafecardIcon, BitcoinIcon, USDTIcon, BankTransferIcon,
+  VisaIcon, MastercardIcon, PayPalIcon, RevolutIcon, N26Icon, WiseIcon,
+  PaysafecardIcon, BitcoinIcon, USDTIcon, BankIcon,
 } from "@/components/PaymentIcons";
 
 // ─── Payment method definitions ───────────────────────────────────────────────
@@ -30,11 +30,7 @@ const METHODS: {
     labelKey: "pay_paypal",
     subKey: null,
     icons: [
-      // PayPal inline SVG (no simple-icons)
-      <svg key="pp" height="24" viewBox="0 0 80 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="PayPal">
-        <path d="M20.1 3H13.4L9 20h5.3l1-4.3h3c4.5 0 7.6-2.3 7.6-6.4C25.9 5.8 23.7 3 20.1 3zm-.7 6.3c0 1.8-1.2 2.8-3.3 2.8h-2.2l.9-4h2.3c1.5 0 2.3.6 2.3 1.8zM34.5 9c-3.8 0-6.4 2.8-6.4 6.5 0 2.6 1.7 4.2 4.5 4.2 1.7 0 3.1-.6 4-1.8l-.3 1.6h4.8l2.2-10.2H39l-.3 1.4C37.8 9.6 36.3 9 34.5 9zm1.2 7.2c-1.2 0-1.9-.7-1.9-1.9 0-1.7 1-2.9 2.6-2.9 1.2 0 1.9.7 1.9 1.9 0 1.7-1 2.9-2.6 2.9zM52 9c-3.8 0-6.4 2.8-6.4 6.5 0 2.6 1.7 4.2 4.5 4.2 1.7 0 3.1-.6 4-1.8L53.8 19h4.8L60.8 9H56l-.3 1.4C54.8 9.6 53.3 9 52 9zm1.2 7.2c-1.2 0-1.9-.7-1.9-1.9 0-1.7 1-2.9 2.6-2.9 1.2 0 1.9.7 1.9 1.9 0 1.7-1 2.9-2.6 2.9z" fill="white"/>
-        <path d="M65 3l-4 16h5.3l4-16H65z" fill="#009cde"/>
-      </svg>,
+      <PayPalIcon key="pp" className="opacity-90" />,
     ],
   },
   {
@@ -42,10 +38,10 @@ const METHODS: {
     labelKey: "pay_bank",
     subKey: "pay_bank_sub",
     icons: [
-      <BankTransferIcon key="bank" className="h-6 opacity-90" />,
-      <RevolutIcon key="revolut" className="h-5 opacity-90" />,
-      <N26Icon key="n26" className="h-5 opacity-90" />,
-      <WiseIcon key="wise" className="h-5 opacity-90" />,
+      <BankIcon key="bank" className="opacity-90" />,
+      <RevolutIcon key="revolut" className="opacity-90" />,
+      <N26Icon key="n26" className="opacity-90" />,
+      <WiseIcon key="wise" className="opacity-90" />,
     ],
   },
   {
