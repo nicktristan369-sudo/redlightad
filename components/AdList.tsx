@@ -351,7 +351,7 @@ function MiniVoiceChip({ url }: { url: string }) {
       </button>
       <div className="flex items-center gap-[1.5px]">
         {[3,5,7,5,9,6,4,8,5,7,4,6,8,5,3].map((h, i) => {
-          const pct = duration > 0 ? current / duration : 0
+          const pct = (duration > 0 && isFinite(duration)) ? current / duration : 0
           const filled = i / 15 < pct
           return (
             <div key={i} className="w-[2px] rounded-full"
@@ -359,7 +359,7 @@ function MiniVoiceChip({ url }: { url: string }) {
           )
         })}
       </div>
-      {duration > 0 && (
+      {(duration > 0 && isFinite(duration)) && (
         <span className="text-[10px] text-gray-400 tabular-nums">
           {Math.floor(duration / 60)}:{String(Math.floor(duration % 60)).padStart(2, "0")}
         </span>
@@ -597,11 +597,12 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       {/* Description */}
                       <p className="text-sm text-gray-600 line-clamp-3 mb-2">{description}</p>
 
-                      {/* Photo/video count chips */}
+                      {/* Photo/video/voice count chips */}
                       {(() => {
                         const photoCount = (ad.images?.length ?? 0) + (ad.profile_image ? 1 : 0)
                         const videoCount = (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0) + ((ad as any).video_count ?? 0)
-                        if (photoCount === 0 && videoCount === 0) return null
+                        const hasVoice = !!ad.voice_message_url
+                        if (photoCount === 0 && videoCount === 0 && !hasVoice) return null
                         return (
                           <div className="flex items-center gap-2 mb-2">
                             {photoCount > 0 && (
@@ -621,6 +622,9 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                                 </svg>
                                 {videoCount}
                               </span>
+                            )}
+                            {hasVoice && (
+                              <MiniVoiceChip url={ad.voice_message_url!} />
                             )}
                           </div>
                         )
@@ -682,10 +686,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                           {displayLocation}
                         </span>
 
-                        {/* Voice message chip */}
-                        {ad.voice_message_url && (
-                          <MiniVoiceChip url={ad.voice_message_url} />
-                        )}
+
                       </div>
 
 
