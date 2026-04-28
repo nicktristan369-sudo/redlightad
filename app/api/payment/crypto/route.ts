@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// DKK to EUR conversion (approximate, for NowPayments)
-const DKK_TO_EUR = 0.134;
-
 export async function POST(req: NextRequest) {
   try {
-    const { plan, months, amount, userId } = await req.json();
+    const { plan, months, amount, currency } = await req.json();
 
-    if (!plan || !months || !amount || !userId) {
+    if (!plan || !months || !amount) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -17,10 +14,13 @@ export async function POST(req: NextRequest) {
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://redlightad.com";
-    const orderId = `plan_${plan}_${userId}_${Date.now()}`;
+    const orderId = `plan_${plan}_${months}mo_${Date.now()}`;
     const monthLabel = months === 1 ? "1 Month" : `${months} Months`;
     const planLabel = plan === "premium" ? "Premium" : "Standard";
-    const amountEur = Math.round(amount * DKK_TO_EUR * 100) / 100;
+
+    // NowPayments supports USD directly
+    const priceCurrency = (currency || "USD").toLowerCase();
+    const priceAmount = Number(amount);
 
     const res = await fetch("https://api.nowpayments.io/v1/invoice", {
       method: "POST",
@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        price_amount: amountEur,
-        price_currency: "eur",
+        price_amount: priceAmount,
+        price_currency: priceCurrency,
         order_id: orderId,
         order_description: `RedLightAD ${planLabel} Profile — ${monthLabel}`,
         ipn_callback_url: `${siteUrl}/api/payments/plan-webhook`,
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      console.error("NowPayments error:", err);
       return NextResponse.json({ error: err?.message || "Crypto payment error" }, { status: 500 });
     }
 
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ payment_url: data.invoice_url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Crypto route error:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
