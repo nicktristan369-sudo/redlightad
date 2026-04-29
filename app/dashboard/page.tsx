@@ -7,6 +7,7 @@ import DashboardLayout from "@/components/DashboardLayout"
 import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { PUSH_POINT_PACKAGES } from "@/lib/spendPackages"
 
 const STATS = [
   { label: "Active listings", value: "0", Icon: FileText },
@@ -59,6 +60,7 @@ function DashboardContent() {
   const tier = searchParams.get("tier")
   const [checking, setChecking] = useState(true)
   const [listingId, setListingId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [camStatus, setCamStatus] = useState<"offline"|"available"|"scheduled">("offline")
   const [camAvailableUntil, setCamAvailableUntil] = useState<string|null>(null)
   const [camScheduledAt, setCamScheduledAt] = useState<string|null>(null)
@@ -70,6 +72,7 @@ function DashboardContent() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
+      setUserId(user.id)
 
       // Check if user has a listing and whether they have paid
       const { data: listing } = await supabase
@@ -229,6 +232,11 @@ function DashboardContent() {
           )}
         </div>
 
+        {/* Push to Top widget */}
+        {listingId !== null && userId !== null && (
+          <PushToTopWidget listingId={listingId} userId={userId} />
+        )}
+
         {/* REDLIGHTCAM availability widget */}
         {listingId !== null && (
           <div style={{ background: "#fff", border: "1px solid #E5E5E5", borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
@@ -369,6 +377,165 @@ function DashboardContent() {
         )}
       </div>
     </DashboardLayout>
+  )
+}
+
+function PushToTopWidget({ listingId, userId }: { listingId: string; userId: string }) {
+  const [points, setPoints] = useState<number | null>(null)
+  const [pushing, setPushing] = useState(false)
+  const [buying, setBuying] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from("wallets")
+      .select("push_points")
+      .eq("user_id", userId)
+      .single()
+      .then(({ data }) => setPoints(data?.push_points ?? 0))
+  }, [userId])
+
+  const showToast = (type: "success" | "error", msg: string) => {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  const handlePush = async () => {
+    if (!listingId) return
+    setPushing(true)
+    const supabase = createClient()
+    const token = (await supabase.auth.getSession()).data.session?.access_token
+    const res = await fetch("/api/push-points/push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ listingId }),
+    })
+    const data = await res.json()
+    setPushing(false)
+    if (res.ok) {
+      setPoints(data.points_remaining)
+      showToast("success", "\uD83D\uDE80 Your profile is now at the top!")
+    } else if (data.error === "insufficient_points") {
+      showToast("error", "No push points. Buy a package below.")
+    } else {
+      showToast("error", data.error || "Something went wrong")
+    }
+  }
+
+  const handleBuy = async (packageId: string, pts: number) => {
+    if (!userId) return
+    setBuying(packageId)
+    const res = await fetch("/api/push-points/buy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ packageId, userId }),
+    })
+    const data = await res.json()
+    setBuying(null)
+    if (res.ok) {
+      setPoints((prev) => (prev ?? 0) + pts)
+      showToast("success", `\u2705 ${pts} push points added!`)
+    } else {
+      showToast("error", data.error || "Purchase failed")
+    }
+  }
+
+  return (
+    <div
+      className="bg-white border border-gray-100 rounded-none p-5 mb-6"
+      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+    >
+      {toast && (
+        <div
+          className={`mb-4 px-4 py-2.5 rounded text-sm font-medium ${
+            toast.type === "success"
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}
+        >
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <svg
+              className="w-4 h-4 text-red-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+            Push to Top
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Move your profile to the top of search results instantly. 1 push = 1 point.
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-gray-900">{points ?? "\u2014"}</div>
+          <div className="text-[11px] text-gray-400">points left</div>
+        </div>
+      </div>
+
+      {/* Push button */}
+      {(points ?? 0) > 0 ? (
+        <button
+          onClick={handlePush}
+          disabled={pushing}
+          className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-2.5 rounded transition-colors disabled:opacity-60 mb-5"
+        >
+          {pushing ? (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="40" strokeDashoffset="10" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+          )}
+          {pushing ? "Pushing..." : "Push to Top Now"}
+        </button>
+      ) : (
+        <div className="text-center py-3 mb-5 bg-gray-50 border border-gray-100 rounded text-sm text-gray-500">
+          No push points \u2014 buy a package below to get started
+        </div>
+      )}
+
+      {/* Packages */}
+      <div className="grid grid-cols-3 gap-2">
+        {PUSH_POINT_PACKAGES.map((pkg) => (
+          <button
+            key={pkg.id}
+            onClick={() => handleBuy(pkg.id, pkg.points)}
+            disabled={buying === pkg.id}
+            className={`relative border rounded p-3 text-left transition-all hover:border-red-300 hover:bg-red-50 ${
+              pkg.popular ? "border-red-400 bg-red-50" : "border-gray-200"
+            }`}
+          >
+            {pkg.popular && (
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                POPULAR
+              </span>
+            )}
+            <div className="font-bold text-gray-900 text-lg">{pkg.points}</div>
+            <div className="text-[10px] text-gray-500 font-medium">pushes</div>
+            <div className="text-sm font-semibold text-red-600 mt-1">&euro;{pkg.price_usd}</div>
+            <div className="text-[10px] text-gray-400 mt-0.5">{pkg.description}</div>
+            {buying === pkg.id && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
+                <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 

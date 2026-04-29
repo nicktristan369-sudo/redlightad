@@ -15,3 +15,10 @@ export const BOOST_PACKAGES = [
   { id: "boost_500",  coins: 500,  label: "Stor Push",   popular: true,  description: "Dominér din by og kategori" },
   { id: "boost_1000", coins: 1000, label: "Mega Push",   popular: false, description: "Absolut topplacering — #1 på forsiden" },
 ] as const
+
+// Push Points pakker (købes med rigtige penge via Stripe/crypto — separat fra Red Coins)
+export const PUSH_POINT_PACKAGES = [
+  { id: "push_50",  points: 50,  price_usd: 4.99,  label: "Starter",  popular: false, description: "50 pushes — €0.10/push" },
+  { id: "push_100", points: 100, price_usd: 7.99,  label: "Popular",  popular: true,  description: "100 pushes — €0.08/push" },
+  { id: "push_200", points: 200, price_usd: 12.99, label: "Pro",      popular: false, description: "200 pushes — €0.065/push" },
+] as const

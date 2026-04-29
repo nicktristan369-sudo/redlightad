@@ -57,6 +57,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [listingChecked, setListingChecked] = useState(false)
   const [isPremium, setIsPremium] = useState(false)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [pushPoints, setPushPoints] = useState<number>(0)
+  const [quickPushing, setQuickPushing] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -85,6 +87,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setIsPremium(!!listing?.premium_tier && ["basic", "featured", "vip"].includes(listing.premium_tier))
       setListingChecked(true)
 
+      const { data: walletData } = await supabase
+        .from("wallets")
+        .select("push_points")
+        .eq("user_id", user.id)
+        .single()
+      setPushPoints(walletData?.push_points ?? 0)
+
       const { data: adminStatus } = await supabase.rpc("get_my_admin_status")
       setIsAdmin(!!adminStatus)
 
@@ -102,6 +111,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setLoading(false)
     })
   }, [router])
+
+  const handleQuickPush = async () => {
+    if (!listingId || pushPoints < 1) {
+      router.push("/dashboard")
+      return
+    }
+    setQuickPushing(true)
+    const supabase = createClient()
+    const token = (await supabase.auth.getSession()).data.session?.access_token
+    const res = await fetch("/api/push-points/push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ listingId }),
+    })
+    const data = await res.json()
+    setQuickPushing(false)
+    if (res.ok) setPushPoints(data.points_remaining)
+  }
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -200,6 +227,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )
           })}
         </nav>
+
+        {/* Quick Push to Top */}
+        {listingId && (
+          <div className="px-3 pb-3">
+            <button
+              onClick={handleQuickPush}
+              disabled={quickPushing}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                className={`w-3.5 h-3.5 flex-shrink-0 ${quickPushing ? "animate-spin" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                {quickPushing ? (
+                  <circle cx="12" cy="12" r="10" strokeDasharray="40" strokeDashoffset="10" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                )}
+              </svg>
+              <span className="truncate">
+                {pushPoints > 0 ? `Push to Top (${pushPoints})` : "Buy Push Points"}
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Sign out */}
         <div className="px-3 pb-4" style={{ borderTop: "1px solid #F3F4F6", paddingTop: "12px" }}>
