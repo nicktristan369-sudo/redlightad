@@ -64,7 +64,7 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
     : [null, null, null]
 
   const photoCount = allImgs.length
-  const videoCount = ad.video_url ? 1 : 0
+  const videoCount = (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0)
 
   return (
     <div className="md:hidden bg-white overflow-hidden rounded-none"
@@ -135,13 +135,14 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
           </svg>
           <span className="font-medium">{photoCount}</span>
         </div>
-        {/* Video play icon */}
+        {/* Video play icon + count */}
         {videoCount > 0 && (
-          <div className="flex items-center">
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-1 text-[12px] text-gray-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="9" strokeWidth={1.8}/>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 9l5 3-5 3V9z"/>
             </svg>
+            <span className="font-medium">{videoCount}</span>
           </div>
         )}
         {/* Posted time — right */}
