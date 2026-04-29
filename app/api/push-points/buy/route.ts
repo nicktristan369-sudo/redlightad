@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // Update wallet
     const { error: walletErr } = await supabase
       .from("wallets")
-      .upsert({ user_id: userId, push_points: current + pkg.points })
+      .upsert({ user_id: userId, push_points: current + pkg.points }, { onConflict: "user_id" })
 
     if (walletErr) {
       return NextResponse.json({ error: walletErr.message }, { status: 500 })
