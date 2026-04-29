@@ -564,7 +564,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                   {/* ── DESKTOP layout (hidden below md) ── */}
                   <div className="hidden md:flex">
                     {/* Left: thumbnail */}
-                    <div className="relative flex-shrink-0 w-[200px] h-[220px] bg-gray-100">
+                    <div className="relative flex-shrink-0 w-[200px] h-[305px] bg-gray-100">
                       {ad.video_url ? (
                         <>
                           <video src={ad.video_url} autoPlay muted loop playsInline className="w-full h-full object-cover" />

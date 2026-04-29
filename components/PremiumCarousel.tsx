@@ -161,7 +161,7 @@ interface PremiumListing {
   onlyfans_username?: string | null
 }
 
-const VISIBLE_COUNT = 7
+const VISIBLE_COUNT = 6
 
 function timeAgo(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
