@@ -38,6 +38,9 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
   const [showCountrySelector, setShowCountrySelector] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [hasActivePlan, setHasActivePlan] = useState(false);
+  const [pushPoints, setPushPoints] = useState<number>(0);
+  const [providerListingId, setProviderListingId] = useState<string | null>(null);
+  const [quickPushing, setQuickPushing] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
@@ -72,12 +75,19 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
         // Fallback: første listing profile_image + check active plan
         const { data: listing } = await supabase
           .from("listings")
-          .select("profile_image, premium_tier")
+          .select("id, profile_image, premium_tier")
           .eq("user_id", authUser.id)
           .limit(1)
           .single();
         if (!avatar) avatar = listing?.profile_image || null;
         setHasActivePlan(!!(listing?.premium_tier));
+        if (listing) setProviderListingId((listing as any).id || null);
+      }
+
+      // Push points (provider only)
+      if (accountType === "provider") {
+        supabase.from("wallets").select("push_points").eq("user_id", authUser.id).single()
+          .then(({ data }) => { if (data) setPushPoints(data.push_points ?? 0); });
       }
 
       setUser({ email, id: authUser.id, accountType, avatar, initials });
@@ -440,6 +450,40 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
           <div style={{ padding: "6px 16px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
             {user ? (
               <>
+                {/* Push to Top — kun for providers med listing */}
+                {user.accountType === "provider" && providerListingId && (
+                  <button
+                    onClick={async () => {
+                      if (pushPoints < 1) { router.push("/dashboard"); closeDrawer(); return; }
+                      setQuickPushing(true);
+                      const supabase = createClient();
+                      const token = (await supabase.auth.getSession()).data.session?.access_token;
+                      const res = await fetch("/api/push-points/push", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                        body: JSON.stringify({ listingId: providerListingId }),
+                      });
+                      const data = await res.json();
+                      setQuickPushing(false);
+                      if (res.ok) { setPushPoints(data.points_remaining); closeDrawer(); }
+                      else { router.push("/dashboard"); closeDrawer(); }
+                    }}
+                    disabled={quickPushing}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      padding: "11px", borderRadius: 10, border: "none",
+                      background: pushPoints > 0 ? "#DC2626" : "#F5F5F5",
+                      color: pushPoints > 0 ? "#fff" : "#9CA3AF",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: "-0.01em",
+                      opacity: quickPushing ? 0.7 : 1,
+                    }}>
+                    <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/>
+                    </svg>
+                    {quickPushing ? "Pushing..." : pushPoints > 0 ? `Push to Top  ·  ${pushPoints} pts` : "Buy Push Points"}
+                  </button>
+                )}
+
                 {(hasActivePlan || user?.accountType === "customer") ? (
                   <Link href={dashboardHref} onClick={closeDrawer}
                     style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "11px", borderRadius: 10, background: "#111", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none", letterSpacing: "-0.01em" }}>
