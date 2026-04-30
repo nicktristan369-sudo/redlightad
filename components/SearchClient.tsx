@@ -10,6 +10,7 @@ interface Listing {
   title: string
   profile_image: string | null
   video_url: string | null
+  profile_video_url: string | null
   age: number
   gender: string
   category: string
@@ -142,6 +143,7 @@ export default function SearchClient({
                 voiceUrl={listing.voice_message_url}
                 hasVideo={!!listing.video_url}
                 videoUrl={listing.video_url || undefined}
+                profileVideoUrl={listing.profile_video_url || undefined}
                 age={listing.age || 0}
                 gender={listing.gender || ""}
                 category={listing.category || ""}
@@ -177,6 +179,7 @@ export default function SearchClient({
                       voiceUrl={listing.voice_message_url}
                       hasVideo={!!listing.video_url}
                       videoUrl={listing.video_url || undefined}
+                      profileVideoUrl={listing.profile_video_url || undefined}
                       age={listing.age || 0}
                       gender={listing.gender || ""}
                       category={listing.category || ""}

@@ -1,8 +1,8 @@
 "use client"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { CheckCircle, Mic, Play, MapPin } from "lucide-react"
+import { CheckCircle, Mic, MapPin } from "lucide-react"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import VoiceMessagePlayer from "@/components/VoiceMessagePlayer"
 
@@ -17,6 +17,7 @@ interface AdCardProps {
   voiceUrl?: string | null;
   hasVideo?: boolean;
   videoUrl?: string;
+  profileVideoUrl?: string | null;
   age: number;
   gender: string;
   category: string;
@@ -40,6 +41,7 @@ export default function AdCard({
   voiceUrl,
   hasVideo,
   videoUrl,
+  profileVideoUrl,
   age,
   gender,
   category,
@@ -52,6 +54,7 @@ export default function AdCard({
   onlyfans_username,
 }: AdCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoFailed, setVideoFailed] = useState(false)
   const { t } = useLanguage()
 
   const locationDisplay = city && country
@@ -83,35 +86,38 @@ export default function AdCard({
         )}
 
         {/* Image */}
-        <div
-          className="relative h-[200px] sm:h-[180px] w-full sm:w-[180px] flex-shrink-0 overflow-hidden rounded-none"
-          onMouseEnter={() => {
-            if (hasVideo && videoRef.current) {
-              videoRef.current.style.display = "block"
-              videoRef.current.play()
-            }
-          }}
-          onMouseLeave={() => {
-            if (hasVideo && videoRef.current) {
-              videoRef.current.pause()
-              videoRef.current.style.display = "none"
-            }
-          }}
-        >
-          <Image
-            src={image}
-            alt={title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            unoptimized
-          />
-          {hasVideo && videoUrl && (
-            <video ref={videoRef} src={videoUrl} muted loop playsInline className="absolute inset-0 w-full h-full object-cover" style={{ display: "none" }} />
+        <div className="relative h-[200px] sm:h-[180px] w-full sm:w-[180px] flex-shrink-0 overflow-hidden rounded-none">
+          {/* Autoplay profile video if available */}
+          {profileVideoUrl && !videoFailed ? (
+            <video
+              key={profileVideoUrl}
+              src={profileVideoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={() => setVideoFailed(true)}
+            />
+          ) : (
+            <Image
+              src={image}
+              alt={title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              unoptimized
+            />
           )}
-          {hasVideo && (
-            <div className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center backdrop-blur-sm">
-              <Play className="w-3 h-3 fill-white" />
-            </div>
+          {/* Hover-to-play for regular video (non-profile) */}
+          {!profileVideoUrl && hasVideo && videoUrl && (
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              muted loop playsInline
+              className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity"
+              onMouseEnter={() => videoRef.current?.play()}
+            />
           )}
           {/* OnlyFans badge */}
           {(social_links?.onlyfans?.url || onlyfans_username) && (

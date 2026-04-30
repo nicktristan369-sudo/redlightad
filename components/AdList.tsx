@@ -192,26 +192,14 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
 
 // ── Desktop thumbnail cycling ─────────────────────────────────────────────
 function DesktopThumb({ ad, staggerDelay = 0 }: { ad: Listing; staggerDelay?: number }) {
-  // Levende profilbillede — vis video direkte
-  if (ad.profile_video_url) {
-    return (
-      <video
-        src={ad.profile_video_url}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="w-full h-full object-cover"
-      />
-    )
-  }
-
+  // ALL hooks first — no conditional returns before hooks
+  const [videoFailed, setVideoFailed] = useState(false)
   const pool = [ad.profile_image, ...(ad.images ?? [])].filter((v): v is string => !!v).filter((v, i, a) => a.indexOf(v) === i)
   const [current, setCurrent] = useState(0)
   const [fading, setFading] = useState(false)
 
   useEffect(() => {
-    if (pool.length <= 1) return
+    if (pool.length <= 1 || (ad.profile_video_url && !videoFailed)) return
     const start = setTimeout(() => {
       const t = setInterval(() => {
         setFading(true)
@@ -228,7 +216,24 @@ function DesktopThumb({ ad, staggerDelay = 0 }: { ad: Listing; staggerDelay?: nu
     }, staggerDelay)
     return () => clearTimeout(start)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pool.length, staggerDelay])
+  }, [pool.length, staggerDelay, videoFailed])
+
+  // Levende profilbillede — autoplay video
+  if (ad.profile_video_url && !videoFailed) {
+    return (
+      <video
+        key={ad.profile_video_url}
+        src={ad.profile_video_url}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        className="w-full h-full object-cover"
+        onError={() => setVideoFailed(true)}
+      />
+    )
+  }
 
   if (pool.length === 0) {
     return (

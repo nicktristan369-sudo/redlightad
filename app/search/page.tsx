@@ -36,7 +36,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
   let query = supabase
     .from("listings")
-    .select("id, title, profile_image, video_url, age, gender, category, location, city, country, about, languages, premium_tier, created_at, voice_message_url, images", { count: "exact" })
+    .select("id, title, profile_image, video_url, profile_video_url, age, gender, category, location, city, country, about, languages, premium_tier, created_at, voice_message_url, images", { count: "exact" })
     .eq("status", "active")
 
   if (q) {
@@ -73,7 +73,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   if (listings?.length === 0 && q) {
     const { data } = await supabase
       .from("listings")
-      .select("id, title, profile_image, video_url, age, gender, category, location, city, country, about, languages, premium_tier, created_at, voice_message_url, images")
+      .select("id, title, profile_image, video_url, profile_video_url, age, gender, category, location, city, country, about, languages, premium_tier, created_at, voice_message_url, images")
       .eq("status", "active")
       .eq("premium_tier", "featured")
       .limit(6)
