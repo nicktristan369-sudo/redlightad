@@ -268,11 +268,11 @@ function getCountryEmoji(name: string): string {
 }
 
 // ── Simple dropdown container ─────────────────────────────────────────
-function DropMenu({ children }: { children: React.ReactNode }) {
+function DropMenu({ children, maxH }: { children: React.ReactNode; maxH?: number }) {
   return (
     <div
       className="absolute top-full left-0 mt-1 bg-white border border-gray-200 z-[100] overflow-hidden"
-      style={{ minWidth: "200px", maxWidth: "calc(100vw - 32px)", boxShadow: "0 4px 12px rgba(0,0,0,0.10)", borderRadius: 0 }}
+      style={{ minWidth: "220px", maxWidth: "calc(100vw - 32px)", boxShadow: "0 4px 16px rgba(0,0,0,0.12)", borderRadius: 8, overflowY: maxH ? "auto" : "hidden", maxHeight: maxH ? maxH : undefined }}
     >
       {children}
     </div>
@@ -313,6 +313,145 @@ function GenderMenu({ current, onSelect }: { current: string; onSelect: (v: stri
           }`}
         >
           {g ? (GENDER_LABELS[g] ?? g) : t.common_all}
+        </button>
+      ))}
+    </DropMenu>
+  )
+}
+
+
+// ── CountryOnlyMenu ──────────────────────────────────────────────────────────
+function CountryOnlyMenu({
+  current,
+  onSelect,
+}: {
+  current: string
+  onSelect: (country: string) => void
+}) {
+  const [search, setSearch] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 50) }, [])
+
+  const allCountries = [...COUNTRIES.europe, ...COUNTRIES.worldwide]
+  const filtered = search
+    ? allCountries.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20)
+    : allCountries.slice(0, 80)
+
+  return (
+    <DropMenu maxH={320}>
+      <div className="px-3 py-2 border-b border-gray-100">
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search country..."
+            className="w-full pl-8 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-gray-400"
+          />
+        </div>
+      </div>
+      <button
+        onClick={() => onSelect("")}
+        className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 flex items-center gap-2 hover:bg-gray-50 ${
+          !current ? "text-red-600 font-semibold bg-red-50" : "text-gray-500"
+        }`}
+      >
+        <MapPin size={13} /> All countries
+      </button>
+      {filtered.map(c => (
+        <button
+          key={c.code}
+          onClick={() => onSelect(c.name)}
+          className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-0 flex items-center gap-2.5 hover:bg-gray-50 ${
+            current === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
+          }`}
+        >
+          <span className={`fi fi-${c.code.toLowerCase()} fis`} style={{ width: 16, height: 16, borderRadius: 2, flexShrink: 0 }} />
+          {c.name}
+          {current === c.name && <Check size={13} className="ml-auto text-red-500" />}
+        </button>
+      ))}
+    </DropMenu>
+  )
+}
+
+// ── CityOnlyMenu ─────────────────────────────────────────────────────────────
+function CityOnlyMenu({
+  countryName,
+  countryCode,
+  current,
+  onSelect,
+}: {
+  countryName: string
+  countryCode: string
+  current: string
+  onSelect: (city: string) => void
+}) {
+  const [search, setSearch] = useState("")
+  const [cities, setCities] = useState<{ name: string; isMajor?: boolean }[]>([])
+  const [loading, setLoading] = useState(true)
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 50) }, [])
+
+  useEffect(() => {
+    if (!countryCode) return
+    setLoading(true)
+    fetch(`/api/locations?country=${countryCode}`)
+      .then(r => r.json())
+      .then(data => {
+        const major = (data.topCities || []) as { name: string; isMajor?: boolean }[]
+        const majorNames = new Set(major.map((c: { name: string }) => c.name))
+        const all = data.regions?.flatMap((r: { cities: { name: string }[] }) => r.cities) || []
+        const others = all.filter((c: { name: string }) => !majorNames.has(c.name))
+        setCities([...major, ...others])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [countryCode])
+
+  const filtered = search
+    ? cities.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20)
+    : cities.slice(0, 40)
+
+  return (
+    <DropMenu maxH={320}>
+      <div className="px-3 py-2 border-b border-gray-100">
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={`Search city in ${countryName}...`}
+            className="w-full pl-8 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-gray-400"
+          />
+        </div>
+      </div>
+      <button
+        onClick={() => onSelect("")}
+        className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 flex items-center gap-2 hover:bg-gray-50 ${
+          !current ? "text-red-600 font-semibold bg-red-50" : "text-gray-500"
+        }`}
+      >
+        <MapPin size={13} /> All cities in {countryName}
+      </button>
+      {loading ? (
+        <div className="px-4 py-6 text-sm text-gray-400 text-center">Loading cities...</div>
+      ) : filtered.map(c => (
+        <button
+          key={c.name}
+          onClick={() => onSelect(c.name)}
+          className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-0 flex items-center gap-2.5 hover:bg-gray-50 ${
+            current === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
+          }`}
+        >
+          <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+          <span className="flex-1">{c.name}</span>
+          {c.isMajor && <span className="text-[10px] text-gray-400">Popular</span>}
+          {current === c.name && <Check size={13} className="text-red-500" />}
         </button>
       ))}
     </DropMenu>
@@ -880,22 +1019,49 @@ function FilterBarInner() {
               )}
             </div>
 
-            {/* Location */}
+            {/* Country pill */}
             <div className="relative">
               <Pill
-                icon={locationIcon}
-                label={locationLabel}
-                active={!!(countryCode || citySlug)}
-                onClick={() => toggle("location")}
+                icon={countryCode
+                  ? <span className={`fi fi-${countryCode} fis`} style={{ width: 14, height: 14, display: "inline-block", flexShrink: 0, borderRadius: 2 }} />
+                  : <MapPin size={13} />}
+                label={currentCountryName || t.filter_location}
+                active={!!countryCode}
+                onClick={() => toggle("country")}
               />
-              {open === "location" && (
-                <LocationMenu
-                  currentCountry={currentCountryName}
-                  currentCity={currentCityName}
-                  onSelect={navigateLocation}
+              {open === "country" && (
+                <CountryOnlyMenu
+                  current={currentCountryName}
+                  onSelect={country => {
+                    navigateLocation({ country, city: "" })
+                    setOpen(null)
+                  }}
                 />
               )}
             </div>
+
+            {/* City pill — only shown when country is selected */}
+            {countryCode && (
+              <div className="relative">
+                <Pill
+                  icon={<MapPin size={13} />}
+                  label={currentCityName || "All cities"}
+                  active={!!citySlug}
+                  onClick={() => toggle("city")}
+                />
+                {open === "city" && (
+                  <CityOnlyMenu
+                    countryName={currentCountryName}
+                    countryCode={countryCode.toUpperCase()}
+                    current={currentCityName}
+                    onSelect={city => {
+                      navigateLocation({ country: currentCountryName, city })
+                      setOpen(null)
+                    }}
+                  />
+                )}
+              </div>
+            )}
 
             {/* Gender */}
             <div className="relative">
