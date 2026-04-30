@@ -380,10 +380,267 @@ function DashboardContent() {
   )
 }
 
+// ─── Payment Modal for Push Points ────────────────────────────────────────────
+const CDN = "https://cdn.jsdelivr.net/npm/payment-icons/min/flat"
+type PayMethod = "card" | "paypal" | "bank" | "paysafe" | "crypto"
+const PAY_METHODS: { id: PayMethod; label: string; sub?: string }[] = [
+  { id: "card",    label: "Credit or debit card" },
+  { id: "paypal",  label: "PayPal" },
+  { id: "bank",    label: "Instant Bank Transfer", sub: "Revolut, N26, Wise and more" },
+  { id: "paysafe", label: "PaysafeCard" },
+  { id: "crypto",  label: "CryptoCoins", sub: "Bitcoin, Ethereum & more" },
+]
+
+function PushPayModal({ pkg, userId, onClose }: {
+  pkg: { id: string; points: number; price_usd: number; label: string }
+  userId: string
+  onClose: () => void
+}) {
+  const [method, setMethod] = useState<PayMethod>("card")
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [cardNum, setCardNum] = useState("")
+  const [expiry, setExpiry] = useState("")
+  const [cvc, setCvc] = useState("")
+  const [name, setName] = useState("")
+  const [promoCode, setPromoCode] = useState("")
+  const [promoApplied, setPromoApplied] = useState(false)
+  const [discount, setDiscount] = useState(0)
+  const finalPrice = discount > 0 ? Math.max(0, pkg.price_usd * (1 - discount / 100)) : pkg.price_usd
+
+  const fmtCard = (v: string) => v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim()
+  const fmtExp  = (v: string) => { const d = v.replace(/\D/g, "").slice(0, 4); return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d }
+
+  const applyPromo = async () => {
+    if (!promoCode.trim()) return
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode }),
+      })
+      const data = await res.json()
+      if (data.valid && data.discount_percent) {
+        setDiscount(data.discount_percent)
+        setPromoApplied(true)
+      } else {
+        setError(data.error || "Invalid promo code")
+      }
+    } catch { setError("Could not validate code") }
+  }
+
+  const handlePay = async () => {
+    setProcessing(true)
+    setError(null)
+    try {
+      if (method === "crypto") {
+        const res = await fetch("/api/push-points/crypto-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ packageId: pkg.id, userId }),
+        })
+        const data = await res.json()
+        if (data.url) { window.location.href = data.url; return }
+        throw new Error(data.error || "Crypto payment failed")
+      }
+      if (method === "card") {
+        const res = await fetch("/api/push-points/stripe-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ packageId: pkg.id, userId }),
+        })
+        const data = await res.json()
+        if (data.url) { window.location.href = data.url; return }
+        throw new Error(data.error || "Card payment failed")
+      }
+      setError(`${method} coming soon. Use card or crypto.`)
+      setProcessing(false)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Payment error. Try again.")
+      setProcessing(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      {/* Modal */}
+      <div
+        className="relative w-full sm:max-w-md max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-[#111] text-white"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4 rounded-t-3xl"
+          style={{ background: "linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%)" }}
+        >
+          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="flex-1">
+            <p className="text-sm font-black text-white">{pkg.points} Push Points</p>
+            <p className="text-xs text-[#f5a623] font-semibold">{pkg.points} × Push to Top</p>
+          </div>
+          <p className="text-sm font-black tabular-nums text-white">€{finalPrice.toFixed(2)}</p>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          {/* Payment methods */}
+          <div className="rounded-2xl overflow-hidden border border-[#2a2a2a]">
+            {PAY_METHODS.map((m, i) => {
+              const isSel = method === m.id
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setMethod(m.id)}
+                  className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${
+                    i > 0 ? "border-t border-[#222]" : ""
+                  } ${isSel ? "bg-white" : "bg-[#1a1a1a] hover:bg-[#222]"}`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                      isSel ? "border-black bg-black" : "border-[#555]"
+                    }`}>
+                      {isSel && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                    <div className="text-left min-w-0">
+                      <p className={`text-sm font-semibold leading-tight ${isSel ? "text-black" : "text-white"}`}>{m.label}</p>
+                      {m.sub && <p className="text-xs text-gray-500 leading-tight mt-0.5">{m.sub}</p>}
+                    </div>
+                  </div>
+                  {/* Method icons */}
+                  <div className="flex-shrink-0 ml-2 flex items-center gap-1">
+                    {m.id === "card" && (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`${CDN}/visa.svg`} alt="Visa" style={{ height: 20, width: "auto", borderRadius: 3 }} />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`${CDN}/mastercard.svg`} alt="MC" style={{ height: 20, width: "auto", borderRadius: 3 }} />
+                      </>
+                    )}
+                    {m.id === "paypal" && (
+                      <span className="inline-flex items-center justify-center bg-white rounded px-2" style={{ height: 22 }}>
+                        <svg height="12" viewBox="0 0 60 16" fill="none">
+                          <text y="12" fontFamily="Arial" fontSize="11" fontWeight="800" fill="#003087">Pay</text>
+                          <text x="22" y="12" fontFamily="Arial" fontSize="11" fontWeight="800" fill="#009CDE">Pal</text>
+                        </svg>
+                      </span>
+                    )}
+                    {m.id === "bank" && (
+                      <span className="inline-flex items-center justify-center bg-[#9FE870] rounded px-2" style={{ height: 20 }}>
+                        <svg height="9" viewBox="0 0 28 9"><text y="8" fontFamily="Arial Black" fontSize="8" fontWeight="900" fill="#163300">WISE</text></svg>
+                      </span>
+                    )}
+                    {m.id === "paysafe" && (
+                      <span className="inline-flex items-center justify-center bg-white rounded px-2" style={{ height: 20 }}>
+                        <svg height="9" viewBox="0 0 55 9">
+                          <text y="8" fontFamily="Arial" fontSize="8" fontWeight="800" fill="#003082">paysafe</text>
+                          <text x="38" y="8" fontFamily="Arial" fontSize="8" fontWeight="800" fill="#009EE2">card</text>
+                        </svg>
+                      </span>
+                    )}
+                    {m.id === "crypto" && (
+                      <>
+                        <span className="inline-flex items-center justify-center rounded-full" style={{ width: 20, height: 20, background: "#F7931A" }}>
+                          <svg height="10" viewBox="0 0 12 12"><text x="2" y="9" fontFamily="Arial Black" fontSize="9" fontWeight="900" fill="white">₿</text></svg>
+                        </span>
+                        <span className="inline-flex items-center justify-center rounded-full" style={{ width: 20, height: 20, background: "#26A17B" }}>
+                          <svg height="10" viewBox="0 0 12 12"><text x="2" y="9" fontFamily="Arial Black" fontSize="9" fontWeight="900" fill="white">T</text></svg>
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Card form */}
+          {method === "card" && (
+            <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 space-y-3">
+              <input
+                type="text" inputMode="numeric" placeholder="Card number"
+                value={cardNum} onChange={e => setCardNum(fmtCard(e.target.value))}
+                className="w-full bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] font-mono tracking-widest"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text" inputMode="numeric" placeholder="MM/YY"
+                  value={expiry} onChange={e => setExpiry(fmtExp(e.target.value))}
+                  className="w-full bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] font-mono"
+                />
+                <input
+                  type="text" inputMode="numeric" placeholder="CVC"
+                  value={cvc} onChange={e => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  className="w-full bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] font-mono"
+                />
+              </div>
+              <input
+                type="text" placeholder="Name on card"
+                value={name} onChange={e => setName(e.target.value)}
+                className="w-full bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623]"
+              />
+            </div>
+          )}
+
+          {/* Promo code */}
+          <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-4">
+            <p className="text-xs text-gray-500 font-semibold uppercase tracking-widest mb-2">Promo code</p>
+            {promoApplied ? (
+              <div className="flex items-center gap-2 text-green-400 text-sm">
+                <span>✓ {promoCode.toUpperCase()} — {discount}% off</span>
+                <button onClick={() => { setPromoApplied(false); setDiscount(0); setPromoCode("") }} className="ml-auto text-gray-500 hover:text-white text-xs">Remove</button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text" placeholder="Enter promo code"
+                  value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                  onKeyDown={e => e.key === "Enter" && applyPromo()}
+                  className="flex-1 bg-[#111] border border-[#333] rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] uppercase tracking-widest"
+                />
+                <button onClick={applyPromo} className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-bold transition-colors flex-shrink-0">Apply</button>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="rounded-xl bg-red-900/30 border border-red-800/50 px-4 py-3 text-sm text-red-400">{error}</div>
+          )}
+
+          {/* CTA */}
+          <button
+            onClick={handlePay}
+            disabled={processing}
+            className="w-full py-4 rounded-xl bg-[#f5a623] hover:bg-[#e69520] text-black font-black text-base tracking-widest uppercase disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {processing ? (
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="40" strokeDashoffset="10" />
+              </svg>
+            ) : null}
+            {processing ? "Processing..." : `Buy ${pkg.points} Points — €${finalPrice.toFixed(2)}`}
+          </button>
+
+          {/* Trust */}
+          <div className="text-center pb-2">
+            <p className="text-[10px] text-gray-600">Secure payment · No subscription · Points added instantly</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Push to Top Widget ────────────────────────────────────────────────────────
 function PushToTopWidget({ listingId, userId }: { listingId: string; userId: string }) {
   const [points, setPoints] = useState<number | null>(null)
   const [pushing, setPushing] = useState(false)
-  const [buying, setBuying] = useState<string | null>(null)
+  const [modalPkg, setModalPkg] = useState<{ id: string; points: number; price_usd: number; label: string } | null>(null)
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null)
 
   useEffect(() => {
@@ -423,119 +680,100 @@ function PushToTopWidget({ listingId, userId }: { listingId: string; userId: str
     }
   }
 
-  const handleBuy = async (packageId: string, pts: number) => {
-    if (!userId) return
-    setBuying(packageId)
-    const res = await fetch("/api/push-points/buy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ packageId, userId }),
-    })
-    const data = await res.json()
-    setBuying(null)
-    if (res.ok) {
-      setPoints((prev) => (prev ?? 0) + pts)
-      showToast("success", `\u2705 ${pts} push points added!`)
-    } else {
-      showToast("error", data.error || "Purchase failed")
-    }
-  }
-
   return (
-    <div
-      className="bg-white border border-gray-100 rounded-none p-5 mb-6"
-      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-    >
-      {toast && (
-        <div
-          className={`mb-4 px-4 py-2.5 rounded text-sm font-medium ${
-            toast.type === "success"
-              ? "bg-green-50 text-green-700 border border-green-200"
-              : "bg-red-50 text-red-700 border border-red-200"
-          }`}
-        >
-          {toast.msg}
-        </div>
+    <>
+      {/* Payment modal */}
+      {modalPkg && (
+        <PushPayModal
+          pkg={modalPkg}
+          userId={userId}
+          onClose={() => setModalPkg(null)}
+        />
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <svg
-              className="w-4 h-4 text-red-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-            </svg>
-            Push to Top
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Move your profile to the top of search results instantly. 1 push = 1 point.
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-gray-900">{points ?? "\u2014"}</div>
-          <div className="text-[11px] text-gray-400">points left</div>
-        </div>
-      </div>
-
-      {/* Push button */}
-      {(points ?? 0) > 0 ? (
-        <button
-          onClick={handlePush}
-          disabled={pushing}
-          className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-2.5 rounded transition-colors disabled:opacity-60 mb-5"
-        >
-          {pushing ? (
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="40" strokeDashoffset="10" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-            </svg>
-          )}
-          {pushing ? "Pushing..." : "Push to Top Now"}
-        </button>
-      ) : (
-        <div className="text-center py-3 mb-5 bg-gray-50 border border-gray-100 rounded text-sm text-gray-500">
-          No push points \u2014 buy a package below to get started
-        </div>
-      )}
-
-      {/* Packages */}
-      <div className="grid grid-cols-3 gap-2">
-        {PUSH_POINT_PACKAGES.map((pkg) => (
-          <button
-            key={pkg.id}
-            onClick={() => handleBuy(pkg.id, pkg.points)}
-            disabled={buying === pkg.id}
-            className={`relative border rounded p-3 text-left transition-all hover:border-red-300 hover:bg-red-50 ${
-              pkg.popular ? "border-red-400 bg-red-50" : "border-gray-200"
+      <div
+        className="bg-white border border-gray-100 rounded-none p-5 mb-6"
+        style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+      >
+        {toast && (
+          <div
+            className={`mb-4 px-4 py-2.5 rounded text-sm font-medium ${
+              toast.type === "success"
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-700 border border-red-200"
             }`}
           >
-            {pkg.popular && (
-              <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                POPULAR
-              </span>
+            {toast.msg}
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+              </svg>
+              Push to Top
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Move your profile to the top of search results instantly. 1 push = 1 point.
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-gray-900">{points ?? "\u2014"}</div>
+            <div className="text-[11px] text-gray-400">points left</div>
+          </div>
+        </div>
+
+        {/* Push button */}
+        {(points ?? 0) > 0 ? (
+          <button
+            onClick={handlePush}
+            disabled={pushing}
+            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-2.5 rounded transition-colors disabled:opacity-60 mb-5"
+          >
+            {pushing ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="40" strokeDashoffset="10" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+              </svg>
             )}
-            <div className="font-bold text-gray-900 text-lg">{pkg.points}</div>
-            <div className="text-[10px] text-gray-500 font-medium">pushes</div>
-            <div className="text-sm font-semibold text-red-600 mt-1">&euro;{pkg.price_usd}</div>
-            <div className="text-[10px] text-gray-400 mt-0.5">{pkg.description}</div>
-            {buying === pkg.id && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
-                <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
+            {pushing ? "Pushing..." : "Push to Top Now"}
           </button>
-        ))}
+        ) : (
+          <div className="text-center py-3 mb-5 bg-gray-50 border border-gray-100 rounded text-sm text-gray-500">
+            No push points \u2014 buy a package below to get started
+          </div>
+        )}
+
+        {/* Packages — klik åbner betalingsmodal */}
+        <div className="grid grid-cols-3 gap-2">
+          {PUSH_POINT_PACKAGES.map((pkg) => (
+            <button
+              key={pkg.id}
+              onClick={() => setModalPkg({ id: pkg.id, points: pkg.points, price_usd: pkg.price_usd, label: pkg.label })}
+              className={`relative border rounded p-3 text-left transition-all hover:border-red-300 hover:bg-red-50 ${
+                pkg.popular ? "border-red-400 bg-red-50" : "border-gray-200"
+              }`}
+            >
+              {pkg.popular && (
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                  POPULAR
+                </span>
+              )}
+              <div className="font-bold text-gray-900 text-lg">{pkg.points}</div>
+              <div className="text-[10px] text-gray-500 font-medium">pushes</div>
+              <div className="text-sm font-semibold text-red-600 mt-1">&euro;{pkg.price_usd}</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">{pkg.description}</div>
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
