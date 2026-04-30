@@ -35,6 +35,7 @@ const FEATURES: { icon: React.ElementType; label: string; standard: string | boo
   { icon: MapPin,       label: "Locations",                     standard: "1 only",    premium: "Multiple countries" },
   { icon: Globe,        label: "Change location anytime",       standard: false,       premium: true },
   { icon: Link2,        label: "Social media links",            standard: false,       premium: true },
+  { icon: Link2,        label: "Personal share link (redlightad.com/p/you)", standard: false, premium: true },
   { icon: Star,         label: "OnlyFans promotion",            standard: false,       premium: true },
   { icon: Camera,       label: "Post stories",                  standard: false,       premium: true },
   { icon: ShoppingBag,  label: "Sell on Marketplace",           standard: false,       premium: "Global" },

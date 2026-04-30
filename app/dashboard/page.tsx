@@ -62,6 +62,8 @@ function DashboardContent() {
   const [checking, setChecking] = useState(true)
   const [showCompletion, setShowCompletion] = useState(false)
   const [listingId, setListingId] = useState<string | null>(null)
+  const [listingSlug, setListingSlug] = useState<string | null>(null)
+  const [listingPremium, setListingPremium] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [camStatus, setCamStatus] = useState<"offline"|"available"|"scheduled">("offline")
   const [camAvailableUntil, setCamAvailableUntil] = useState<string|null>(null)
@@ -79,7 +81,7 @@ function DashboardContent() {
       // Check if user has a listing and whether they have paid
       const { data: listing } = await supabase
         .from("listings")
-        .select("id, premium_tier, status")
+        .select("id, slug, premium_tier, status")
         .eq("user_id", user.id)
         .limit(1)
         .single()
@@ -102,6 +104,8 @@ function DashboardContent() {
 
       if (listing?.id) {
         setListingId(listing.id)
+        setListingSlug((listing as any).slug || null)
+        setListingPremium(listing.premium_tier || null)
         // Fetch cam availability
         const res = await fetch(`/api/cam/availability?listingId=${listing.id}`)
         const d = await res.json()
@@ -193,6 +197,63 @@ function DashboardContent() {
           <h1 className="text-[24px] font-bold text-gray-900">Overview</h1>
           <p className="text-[14px] text-gray-400 mt-0.5">Welcome to your dashboard</p>
         </div>
+
+        {/* Personal Link Card — premium only */}
+        {listingSlug && listingPremium && ["vip","featured","basic"].includes(listingPremium) && (
+          <div className="mb-8 rounded-2xl overflow-hidden border border-gray-900 bg-gray-950">
+            <div className="px-5 py-4 border-b border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-bold tracking-widest text-yellow-400 uppercase">✦ Premium Feature</span>
+              </div>
+              <h2 className="text-[17px] font-black text-white">Your personal link</h2>
+              <p className="text-[13px] text-gray-400 mt-0.5">Share this link anywhere — it shows only your profile, no navigation, no distractions.</p>
+            </div>
+            <div className="px-5 py-4">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
+                <span className="text-[13px] text-gray-300 flex-1 truncate font-mono">
+                  redlightad.com/p/{listingSlug}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://redlightad.com/p/${listingSlug}`)
+                    const el = document.getElementById("copy-feedback")
+                    if (el) { el.textContent = "Copied!"; setTimeout(() => { if (el) el.textContent = "Copy" }, 2000) }
+                  }}
+                  className="text-[12px] font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+                  id="copy-btn"
+                >
+                  <span id="copy-feedback">Copy</span>
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <a
+                  href={`/p/${listingSlug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-[13px] font-bold py-2.5 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <Eye size={14} /> Preview my page
+                </a>
+                <button
+                  onClick={async () => {
+                    const url = `https://redlightad.com/p/${listingSlug}`
+                    if (navigator.share) {
+                      await navigator.share({ title: "My RedLightAD profile", url })
+                    } else {
+                      navigator.clipboard.writeText(url)
+                    }
+                  }}
+                  className="flex items-center gap-2 bg-white/10 text-white text-[13px] font-semibold px-4 py-2.5 rounded-xl hover:bg-white/20 transition-colors"
+                >
+                  Share
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-600 mt-3 text-center">
+                Share on Instagram, Twitter, Linktree, WhatsApp, Telegram — anywhere you want
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
