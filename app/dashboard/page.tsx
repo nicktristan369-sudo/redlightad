@@ -7,6 +7,7 @@ import DashboardLayout from "@/components/DashboardLayout"
 import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import ProfileCompletionModal from "@/components/ProfileCompletionModal"
 import { PUSH_POINT_PACKAGES } from "@/lib/spendPackages"
 
 const STATS = [
@@ -59,6 +60,7 @@ function DashboardContent() {
   const plan = searchParams.get("plan")
   const tier = searchParams.get("tier")
   const [checking, setChecking] = useState(true)
+  const [showCompletion, setShowCompletion] = useState(false)
   const [listingId, setListingId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [camStatus, setCamStatus] = useState<"offline"|"available"|"scheduled">("offline")
@@ -95,6 +97,8 @@ function DashboardContent() {
       }
 
       setChecking(false)
+      // Show completion modal when redirected from payment
+      if (planActivated) setShowCompletion(true)
 
       if (listing?.id) {
         setListingId(listing.id)
@@ -135,6 +139,15 @@ function DashboardContent() {
   }
 
   return (
+    <>
+      {/* Profile Completion Modal */}
+      {showCompletion && (
+        <ProfileCompletionModal
+          listingId={listingId}
+          plan={plan}
+          onClose={() => setShowCompletion(false)}
+        />
+      )}
     <DashboardLayout>
       <div>
         {/* Plan activated banner */}
@@ -377,6 +390,7 @@ function DashboardContent() {
         )}
       </div>
     </DashboardLayout>
+    </>  
   )
 }
 
