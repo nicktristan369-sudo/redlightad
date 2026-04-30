@@ -74,7 +74,7 @@ export default function MobileBottomNav() {
   };
 
   // Don't show on dashboard/admin pages (they have their own nav)
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin") || pathname.startsWith("/kunde")) {
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin") || pathname.startsWith("/kunde") || pathname.startsWith("/p/")) {
     return null;
   }
 

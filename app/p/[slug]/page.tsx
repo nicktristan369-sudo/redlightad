@@ -392,17 +392,13 @@ export default function PersonalLinkPage() {
         </section>
       </div>
 
-      {/* Footer — powered by */}
-      <footer className="border-t border-white/10 py-8 text-center">
-        <p className="text-white/30 text-xs">
-          This profile is powered by{" "}
-          <a href="https://redlightad.com" target="_blank" rel="noopener noreferrer"
-            className="text-white/50 hover:text-white transition-colors font-semibold">
-            RedLightAD.com
-          </a>
-          {" "}— the adult advertising platform
-        </p>
-      </footer>
+      {/* Minimal powered-by */}
+      <div className="py-6 text-center">
+        <a href="https://redlightad.com" target="_blank" rel="noopener noreferrer"
+          className="text-white/20 text-[11px] hover:text-white/40 transition-colors">
+          redlightad.com
+        </a>
+      </div>
     </div>
   )
 }

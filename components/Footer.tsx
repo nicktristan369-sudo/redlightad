@@ -10,7 +10,7 @@ export default function Footer() {
   const pathname = usePathname()
 
   // Hide footer on dashboard pages and cam stream pages
-  const hideOn = ["/dashboard", "/cam/", "/admin"]
+  const hideOn = ["/dashboard", "/cam/", "/admin", "/p/"]
   if (hideOn.some(p => pathname.startsWith(p))) return null
 
   return (
