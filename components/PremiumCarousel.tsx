@@ -39,30 +39,16 @@ function CyclingImage({
   profileVideoUrl?: string | null
   staggerDelay?: number
 }) {
-  // ── Levende profilbillede (video) ─────────────────────────────────────────
-  if (profileVideoUrl) {
-    return (
-      <div className="absolute inset-0">
-        <video
-          src={profileVideoUrl}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full h-full object-cover"
-        />
-      </div>
-    )
-  }
+  // ── All hooks FIRST ─────────────────────────────────────────────────────
+  const [videoFailed, setVideoFailed] = useState(false)
+  const [current, setCurrent] = useState(0)
+  const [prev, setPrev] = useState<number | null>(null)
+  const [transitioning, setTransitioning] = useState(false)
 
   const pool = [
     ...(profileImage ? [profileImage] : []),
     ...(images ?? []),
   ].filter((v, i, a) => a.indexOf(v) === i)
-
-  const [current, setCurrent] = useState(0)
-  const [prev, setPrev] = useState<number | null>(null)
-  const [transitioning, setTransitioning] = useState(false)
 
   // Randomise starting image once on mount
   useEffect(() => {
@@ -91,6 +77,25 @@ function CyclingImage({
     return () => clearTimeout(startTimer)
   }, [pool.length, staggerDelay])
 
+  // ── Video profil: vis autoplay video direkte ────────────────────────────────
+  if (profileVideoUrl && !videoFailed) {
+    return (
+      <div className="absolute inset-0">
+        <video
+          key={profileVideoUrl}
+          src={profileVideoUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="w-full h-full object-cover"
+          onError={() => setVideoFailed(true)}
+        />
+      </div>
+    )
+  }
+
   if (pool.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -117,9 +122,9 @@ function CyclingImage({
         src={pool[current]}
         alt={alt}
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: transitioning ? 1 : 1, transition: "opacity 0.7s ease" }}
+        style={{ opacity: 1, transition: "opacity 0.7s ease" }}
       />
-      {/* Video icon */}
+      {/* Video icon overlay for profiles with video_url (not profile_video) */}
       {hasVideo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div style={{
