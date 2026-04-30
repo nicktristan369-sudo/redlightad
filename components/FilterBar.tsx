@@ -377,7 +377,7 @@ function CountryOnlyMenu({
   )
 }
 
-// ── CityOnlyMenu ─────────────────────────────────────────────────────────────
+// ── CityOnlyMenu — bruger geonames_cities via /api/geo/search ─────────────────
 function CityOnlyMenu({
   countryName,
   countryCode,
@@ -387,37 +387,69 @@ function CityOnlyMenu({
   countryName: string
   countryCode: string
   current: string
-  onSelect: (city: string) => void
+  onSelect: (city: string, majorCity?: string) => void
 }) {
   const [search, setSearch] = useState("")
-  const [cities, setCities] = useState<{ name: string; isMajor?: boolean }[]>([])
-  const [loading, setLoading] = useState(true)
+  const [results, setResults] = useState<{ name: string; ascii_name: string; admin1_name: string; is_major_city: boolean; latitude: number; longitude: number; population: number }[]>([])
+  const [majorCities, setMajorCities] = useState<{ name: string }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [loadingMajor, setLoadingMajor] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 50) }, [])
 
+  // Load major cities on mount
   useEffect(() => {
     if (!countryCode) return
-    setLoading(true)
-    fetch(`/api/locations?country=${countryCode}`)
+    setLoadingMajor(true)
+    fetch(`/api/geo/search?q=a&country=${countryCode}&limit=50`)
       .then(r => r.json())
       .then(data => {
-        const major = (data.topCities || []) as { name: string; isMajor?: boolean }[]
-        const majorNames = new Set(major.map((c: { name: string }) => c.name))
-        const all = data.regions?.flatMap((r: { cities: { name: string }[] }) => r.cities) || []
-        const others = all.filter((c: { name: string }) => !majorNames.has(c.name))
-        setCities([...major, ...others])
-        setLoading(false)
+        const major = (data.results || []).filter((c: { is_major_city: boolean }) => c.is_major_city)
+        setMajorCities(major)
+        setLoadingMajor(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => setLoadingMajor(false))
   }, [countryCode])
 
-  const filtered = search
-    ? cities.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20)
-    : cities.slice(0, 40)
+  // Search with debounce
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (search.length < 2) { setResults([]); return }
+    setLoading(true)
+    debounceRef.current = setTimeout(() => {
+      fetch(`/api/geo/search?q=${encodeURIComponent(search)}&country=${countryCode}&limit=20`)
+        .then(r => r.json())
+        .then(data => {
+          setResults(data.results || [])
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+    }, 200)
+  }, [search, countryCode])
+
+  const handleSelect = async (city: { name: string; is_major_city: boolean; latitude: number; longitude: number; ascii_name: string }) => {
+    if (city.is_major_city) {
+      onSelect(city.name)
+    } else {
+      // Snap til nærmeste major city
+      try {
+        const res = await fetch(`/api/geo/nearest-major?lat=${city.latitude}&lng=${city.longitude}&country=${countryCode}`)
+        const data = await res.json()
+        const major = data.city?.name || city.name
+        onSelect(city.name, major)
+      } catch {
+        onSelect(city.name)
+      }
+    }
+  }
+
+  const showMajor = search.length < 2
 
   return (
-    <DropMenu maxH={320}>
-      <div className="px-3 py-2 border-b border-gray-100">
+    <DropMenu maxH={340}>
+      {/* Search input */}
+      <div className="px-3 py-2 border-b border-gray-100 sticky top-0 bg-white">
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -425,11 +457,13 @@ function CityOnlyMenu({
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder={`Search city in ${countryName}...`}
+            placeholder={`Search any city in ${countryName}...`}
             className="w-full pl-8 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-gray-400"
           />
         </div>
       </div>
+
+      {/* All cities option */}
       <button
         onClick={() => onSelect("")}
         className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 flex items-center gap-2 hover:bg-gray-50 ${
@@ -438,22 +472,61 @@ function CityOnlyMenu({
       >
         <MapPin size={13} /> All cities in {countryName}
       </button>
-      {loading ? (
-        <div className="px-4 py-6 text-sm text-gray-400 text-center">Loading cities...</div>
-      ) : filtered.map(c => (
-        <button
-          key={c.name}
-          onClick={() => onSelect(c.name)}
-          className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-0 flex items-center gap-2.5 hover:bg-gray-50 ${
-            current === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
-          }`}
-        >
-          <MapPin size={12} className="text-gray-400 flex-shrink-0" />
-          <span className="flex-1">{c.name}</span>
-          {c.isMajor && <span className="text-[10px] text-gray-400">Popular</span>}
-          {current === c.name && <Check size={13} className="text-red-500" />}
-        </button>
-      ))}
+
+      {/* Major cities (default view) */}
+      {showMajor && (
+        <>
+          {loadingMajor ? (
+            <div className="px-4 py-4 text-sm text-gray-400 text-center">Loading...</div>
+          ) : (
+            <>
+              {majorCities.length > 0 && (
+                <div className="px-4 pt-2 pb-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Popular cities</span>
+                </div>
+              )}
+              {majorCities.map(c => (
+                <button
+                  key={c.name}
+                  onClick={() => onSelect(c.name)}
+                  className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-0 flex items-center gap-2.5 hover:bg-gray-50 ${
+                    current === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
+                  }`}
+                >
+                  <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                  <span className="flex-1">{c.name}</span>
+                  {current === c.name && <Check size={13} className="text-red-500" />}
+                </button>
+              ))}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Search results */}
+      {!showMajor && (
+        loading ? (
+          <div className="px-4 py-4 text-sm text-gray-400 text-center">Searching...</div>
+        ) : results.length === 0 ? (
+          <div className="px-4 py-4 text-sm text-gray-400 text-center">No cities found</div>
+        ) : results.map(c => (
+          <button
+            key={c.ascii_name + c.admin1_name}
+            onClick={() => handleSelect(c)}
+            className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-0 flex items-center gap-2.5 hover:bg-gray-50 ${
+              current === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
+            }`}
+          >
+            <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span>{c.name}</span>
+              {c.admin1_name && <span className="text-xs text-gray-400 ml-1.5">{c.admin1_name}</span>}
+            </div>
+            {c.is_major_city && <span className="text-[10px] text-gray-400 flex-shrink-0">Popular</span>}
+            {current === c.name && <Check size={13} className="text-red-500 flex-shrink-0" />}
+          </button>
+        ))
+      )}
     </DropMenu>
   )
 }
@@ -1054,8 +1127,9 @@ function FilterBarInner() {
                     countryName={currentCountryName}
                     countryCode={countryCode.toUpperCase()}
                     current={currentCityName}
-                    onSelect={city => {
-                      navigateLocation({ country: currentCountryName, city })
+                    onSelect={(city, majorCity) => {
+                      // Snap lille by til nærmeste storby
+                      navigateLocation({ country: currentCountryName, city: majorCity || city })
                       setOpen(null)
                     }}
                   />
