@@ -26,6 +26,8 @@ interface Listing {
   created_at: string
   voice_message_url?: string | null
   images?: string[] | null
+  videos?: string[] | null
+  video_count?: number | null
   opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null
   timezone?: string | null
 }
@@ -64,7 +66,7 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
     : [null, null, null]
 
   const photoCount = allImgs.length
-  const videoCount = (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0)
+  const videoCount = ad.video_count ?? ((ad.videos?.length ?? 0) > 0 ? ad.videos!.length : (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0))
 
   return (
     <div className="md:hidden bg-white overflow-hidden rounded-none"
@@ -565,7 +567,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       {/* Photo/video/voice count chips */}
                       {(() => {
                         const photoCount = (ad.images?.length ?? 0) + (ad.profile_image ? 1 : 0)
-                        const videoCount = (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0) + ((ad as any).video_count ?? 0)
+                        const videoCount = ad.video_count ?? ((ad.videos?.length ?? 0) > 0 ? ad.videos!.length : (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0))
                         const hasVoice = !!ad.voice_message_url
                         if (photoCount === 0 && videoCount === 0 && !hasVoice) return null
                         return (
