@@ -258,25 +258,8 @@ function Waveform() {
   )
 }
 
-function tierBadge(tier: string | null | undefined) {
-  if (!tier || tier === "standard") return null
-  // Clean Apple-style chip — no gold, no VIP text
-  return (
-    <span style={{
-      position: "absolute", top: 10, left: 10,
-      fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
-      padding: "3px 8px",
-      background: "rgba(255,255,255,0.92)",
-      color: "#111",
-      borderRadius: 20,
-      backdropFilter: "blur(8px)",
-      WebkitBackdropFilter: "blur(8px)",
-      border: "none",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
-    }}>
-      Featured
-    </span>
-  )
+function tierBadge(_tier: string | null | undefined) {
+  return null
 }
 
 function timeAgo(dateStr: string): string {
@@ -563,22 +546,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       {/* Tier badge */}
                       {tierBadge(ad.premium_tier)}
 
-                      {/* Available — clean pill, bottom of thumbnail */}
-                      {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                        <div style={{
-                          position: "absolute", bottom: 10, left: 10,
-                          display: "flex", alignItems: "center", gap: 5,
-                          background: "rgba(255,255,255,0.92)",
-                          backdropFilter: "blur(8px)",
-                          WebkitBackdropFilter: "blur(8px)",
-                          borderRadius: 20,
-                          padding: "3px 9px",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.10)",
-                        }}>
-                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#111", flexShrink: 0 }} />
-                          <span style={{ fontSize: 10, fontWeight: 600, color: "#111", letterSpacing: "0.02em" }}>Available</span>
-                        </div>
-                      )}
+
                     </div>
 
                     {/* Right: content */}

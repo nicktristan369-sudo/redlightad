@@ -78,22 +78,7 @@ export default function AdCard({
         }}
       >
 
-        {/* Featured chip — Apple-style */}
-        {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") && (
-          <div style={{
-            position: "absolute", top: 10, left: 10, zIndex: 10,
-            fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
-            padding: "3px 9px",
-            background: "rgba(255,255,255,0.92)",
-            color: "#111",
-            borderRadius: 20,
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
-          }}>
-            Featured
-          </div>
-        )}
+
 
         {/* Image */}
         <div className="relative h-[200px] sm:h-[180px] w-full sm:w-[180px] flex-shrink-0 overflow-hidden rounded-none">
