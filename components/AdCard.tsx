@@ -78,11 +78,20 @@ export default function AdCard({
         }}
       >
 
-        {/* Premium badge */}
+        {/* Featured chip — Apple-style */}
         {(premium_tier === "vip" || premium_tier === "featured" || premium_tier === "basic") && (
-          <div className="absolute top-3 left-3 z-10 text-[10px] font-bold tracking-widest uppercase px-2 py-0.5"
-            style={{ background: "#111", color: "#fff", fontSize: 10, fontWeight: 600, letterSpacing: "0.8px", padding: "3px 8px", textTransform: "uppercase" as const }}>
-            PREMIUM
+          <div style={{
+            position: "absolute", top: 10, left: 10, zIndex: 10,
+            fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
+            padding: "3px 9px",
+            background: "rgba(255,255,255,0.92)",
+            color: "#111",
+            borderRadius: 20,
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+          }}>
+            Featured
           </div>
         )}
 

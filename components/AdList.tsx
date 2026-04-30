@@ -259,38 +259,22 @@ function Waveform() {
 }
 
 function tierBadge(tier: string | null | undefined) {
-  if (!tier) return null
-  const labels: Record<string, { label: string; gold: boolean }> = {
-    vip:      { label: "VIP",     gold: true  },
-    featured: { label: "TOP",     gold: false },
-    basic:    { label: "PREMIUM", gold: true  },
-  }
-  const b = labels[tier]
-  if (!b) return null
-  return b.gold ? (
+  if (!tier || tier === "standard") return null
+  // Clean Apple-style chip — no gold, no VIP text
+  return (
     <span style={{
       position: "absolute", top: 10, left: 10,
-      fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
-      padding: "3px 7px",
-      background: "linear-gradient(135deg, #C9A84C, #F0D080, #C9A84C)",
-      color: "#1a0f00",
-      borderRadius: 4,
-      boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
+      fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
+      padding: "3px 8px",
+      background: "rgba(255,255,255,0.92)",
+      color: "#111",
+      borderRadius: 20,
+      backdropFilter: "blur(8px)",
+      WebkitBackdropFilter: "blur(8px)",
+      border: "none",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
     }}>
-      {b.label}
-    </span>
-  ) : (
-    <span style={{
-      position: "absolute", top: 10, left: 10,
-      fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
-      padding: "3px 7px",
-      background: "rgba(0,0,0,0.75)",
-      color: "#E5E7EB",
-      borderRadius: 4,
-      border: "1px solid rgba(255,255,255,0.15)",
-      backdropFilter: "blur(4px)",
-    }}>
-      {b.label}
+      Featured
     </span>
   )
 }
@@ -579,14 +563,20 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       {/* Tier badge */}
                       {tierBadge(ad.premium_tier)}
 
-                      {/* Available Now bar - bottom of thumbnail */}
+                      {/* Available — clean pill, bottom of thumbnail */}
                       {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                        <div className="absolute bottom-0 left-0 right-0 flex items-center gap-1.5 bg-[#1a1a1a]/90 px-3 py-2">
-                          <span className="relative flex h-1.5 w-1.5 flex-shrink-0">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400"></span>
-                          </span>
-                          <span className="text-green-400 text-[10px] font-bold tracking-widest uppercase">Available Now</span>
+                        <div style={{
+                          position: "absolute", bottom: 10, left: 10,
+                          display: "flex", alignItems: "center", gap: 5,
+                          background: "rgba(255,255,255,0.92)",
+                          backdropFilter: "blur(8px)",
+                          WebkitBackdropFilter: "blur(8px)",
+                          borderRadius: 20,
+                          padding: "3px 9px",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.10)",
+                        }}>
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#111", flexShrink: 0 }} />
+                          <span style={{ fontSize: 10, fontWeight: 600, color: "#111", letterSpacing: "0.02em" }}>Available</span>
                         </div>
                       )}
                     </div>
@@ -595,9 +585,6 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                     <div className="flex-1 p-3 flex flex-col min-w-0">
                       {/* Title */}
                       <div className="flex items-center gap-1.5 mb-1 min-w-0">
-                        {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
-                        )}
                         <h3 className="font-bold text-[17px] text-gray-900 leading-tight line-clamp-2">{ad.title}</h3>
                       </div>
 
