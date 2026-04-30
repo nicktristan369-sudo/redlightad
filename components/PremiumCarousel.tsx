@@ -426,8 +426,8 @@ export default function PremiumCarousel({
 
         {/* Cards */}
         <div
-          className={`flex gap-0.5 transition-opacity duration-300 ${fading ? "opacity-0" : "opacity-100"}`}
-          style={{ scrollbarWidth: "none" }}
+          className={`flex gap-2 transition-opacity duration-300 overflow-x-auto ${fading ? "opacity-0" : "opacity-100"}`}
+          style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
@@ -439,8 +439,13 @@ export default function PremiumCarousel({
             const isFeatured = l.premium_tier === "featured"
 
             return (
-              <Link href={`/ads/${l.slug || l.id}`} key={l.id} className="flex-1 min-w-0">
-                <div className="relative overflow-hidden cursor-pointer w-full" style={{ aspectRatio: "173/260" }}>
+              <Link
+                href={`/ads/${l.slug || l.id}`}
+                key={l.id}
+                className="flex-shrink-0"
+                style={{ width: "calc((100% - 40px) / 6)", minWidth: 120, maxWidth: 200 }}
+              >
+                <div className="relative overflow-hidden cursor-pointer w-full rounded-lg" style={{ aspectRatio: "173/260" }}>
                   {/* Cycling gallery image — staggered per card */}
                   <CyclingImage
                     profileImage={l.profile_image}
