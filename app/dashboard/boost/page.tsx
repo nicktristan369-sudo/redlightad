@@ -125,7 +125,7 @@ export default function BoostPage() {
           <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${toast.type === "success" ? "bg-green-500" : "bg-red-500"}`}>
             {toast.msg}
             {toast.type === "error" && (
-              <Link href="/dashboard/buy-coins" className="ml-2 underline font-bold">Buy coins</Link>
+              <Link href="/dashboard/buy-points" className="ml-2 underline font-bold">Buy points</Link>
             )}
           </div>
         )}
@@ -136,9 +136,17 @@ export default function BoostPage() {
             <h1 className="text-2xl font-bold text-gray-900">Premium & Boost</h1>
             <p className="text-gray-500 text-sm mt-1">Use your Red Coins to reach the top</p>
           </div>
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
-            <span className="text-red-500 text-lg font-bold">{balance.toLocaleString()}</span>
-            <span className="text-red-400 text-sm">Red Coins</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
+              <span className="text-red-500 text-lg font-bold">{balance.toLocaleString()}</span>
+              <span className="text-red-400 text-sm">Red Coins</span>
+            </div>
+            <Link
+              href="/dashboard/buy-points"
+              className="flex items-center gap-1.5 bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition-colors"
+            >
+              + Buy Points
+            </Link>
           </div>
         </div>
 
