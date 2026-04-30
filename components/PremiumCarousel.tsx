@@ -325,13 +325,14 @@ export default function PremiumCarousel({
       // Client-side country filter - strict matching for regional domains
       if (effectiveCountry) {
         const countryLower = effectiveCountry.toLowerCase()
-        filtered = filtered.filter(l => {
+        const localFiltered = filtered.filter(l => {
           const listingCountry = (l.country || '').toLowerCase()
-          // Must contain the country name (e.g. "netherlands" in country field)
           return listingCountry.includes(countryLower) || 
                  countryLower.includes(listingCountry) ||
                  listingCountry === countryLower
         })
+        // Fallback to global if fewer than 6 local premium profiles
+        filtered = localFiltered.length >= 6 ? localFiltered : filtered
       }
       const sorted = sortListings(filtered)
       setListings(sorted.slice(0, 40))
