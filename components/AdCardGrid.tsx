@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link"
+import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { CheckCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 
@@ -107,12 +108,8 @@ export default function AdCardGrid({
         {/* BILLEDE — overflow: hidden */}
         <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden", background: "#D1D5DB" }}>
           {profileVideoUrl ? (
-            <video
+            <AutoPlayVideo
               src={profileVideoUrl}
-              autoPlay
-              muted
-              loop
-              playsInline
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             />
           ) : (

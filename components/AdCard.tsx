@@ -1,5 +1,6 @@
 "use client"
 import { useRef, useState } from "react"
+import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import Image from "next/image"
 import Link from "next/link"
 import { CheckCircle, Mic, MapPin } from "lucide-react"
@@ -89,14 +90,8 @@ export default function AdCard({
         <div className="relative h-[200px] sm:h-[180px] w-full sm:w-[180px] flex-shrink-0 overflow-hidden rounded-none">
           {/* Autoplay profile video if available */}
           {profileVideoUrl && !videoFailed ? (
-            <video
-              key={profileVideoUrl}
+            <AutoPlayVideo
               src={profileVideoUrl}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
               className="absolute inset-0 w-full h-full object-cover"
               onError={() => setVideoFailed(true)}
             />

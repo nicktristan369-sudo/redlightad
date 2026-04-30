@@ -1,6 +1,6 @@
 "use client"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
-
+import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { useEffect, useState, Suspense, useRef } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -96,12 +96,8 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         {/* Center panel - LIVE video or static image */}
         <div className="relative overflow-hidden bg-gray-300 flex-1">
           {ad.profile_video_url ? (
-            <video
+            <AutoPlayVideo
               src={ad.profile_video_url}
-              autoPlay
-              muted
-              loop
-              playsInline
               className="w-full h-full object-cover"
             />
           ) : panels[1] && (
@@ -221,14 +217,8 @@ function DesktopThumb({ ad, staggerDelay = 0 }: { ad: Listing; staggerDelay?: nu
   // Levende profilbillede — autoplay video
   if (ad.profile_video_url && !videoFailed) {
     return (
-      <video
-        key={ad.profile_video_url}
+      <AutoPlayVideo
         src={ad.profile_video_url}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
         className="w-full h-full object-cover"
         onError={() => setVideoFailed(true)}
       />

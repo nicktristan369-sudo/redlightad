@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect, useRef, useCallback } from "react"
+import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { createClient } from "@/lib/supabase"
 import { getCountryVariants } from "@/lib/countries"
 import { getLocaleFromDomain } from "@/lib/seo"
@@ -81,14 +82,8 @@ function CyclingImage({
   if (profileVideoUrl && !videoFailed) {
     return (
       <div className="absolute inset-0">
-        <video
-          key={profileVideoUrl}
+        <AutoPlayVideo
           src={profileVideoUrl}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
           className="w-full h-full object-cover"
           onError={() => setVideoFailed(true)}
         />
