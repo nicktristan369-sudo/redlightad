@@ -43,7 +43,6 @@ const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }>
 const TIERS: { value: string | null; label: string; color: string }[] = [
   { value: "featured", label: "Premium",  color: "#C9A84C" },
   { value: "basic",    label: "Standard", color: "#6B7280" },
-  { value: null,       label: "Standard", color: "#9CA3AF" },
 ];
 
 const TIER_COLOR: Record<string, string> = {

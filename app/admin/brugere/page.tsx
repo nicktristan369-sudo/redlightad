@@ -59,7 +59,6 @@ const PAGE_SIZE = 25;
 const TIERS: { value: string | null; label: string; price: string; color: string }[] = [
   { value: "featured", label: "Premium",  price: "$42/mo", color: "#CA8A04" },
   { value: "basic",    label: "Standard", price: "$21/mo", color: "#6B7280" },
-  { value: null,       label: "Free",     price: "fjern",     color: "#DC2626" },
 ];
 
 function TierBadge({ tier, until }: { tier: string | null; until?: string | null }) {
