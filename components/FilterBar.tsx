@@ -377,7 +377,7 @@ function CountryOnlyMenu({
   )
 }
 
-// ── CityOnlyMenu — bruger geonames_cities via /api/geo/search ─────────────────
+// ── CityOnlyMenu — bruger geonames_cities via /api/geo/cities ─────────────────
 function CityOnlyMenu({
   countryName,
   countryCode,
@@ -398,34 +398,17 @@ function CityOnlyMenu({
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 50) }, [])
 
-  // Load popular cities on mount — use /api/locations (country-state-city) for full coverage
+  // Load popular cities on mount — use /api/geo/cities (Nominatim + country-state-city)
   useEffect(() => {
     if (!countryCode) return
     setLoadingMajor(true)
-    fetch(`/api/locations?country=${countryCode}`)
+    fetch(`/api/geo/cities?country=${countryCode}&limit=30`)
       .then(r => r.json())
       .then(data => {
-        // topCities from /api/locations — if empty fall back to regions
-        let cities = (data.topCities || [])
-        if (cities.length === 0) {
-          // flatten regions
-          const flat: { name: string }[] = []
-          for (const region of (data.regions || [])) {
-            for (const c of (region.cities || [])) flat.push({ name: c.name })
-            if (flat.length >= 30) break
-          }
-          cities = flat
-        }
-        setMajorCities(cities.slice(0, 30))
+        setMajorCities(data.results || [])
         setLoadingMajor(false)
       })
-      .catch(() => {
-        // Final fallback: geo/search with broad query
-        fetch(`/api/geo/search?q=a&country=${countryCode}&limit=30`)
-          .then(r => r.json())
-          .then(data => { setMajorCities(data.results || []); setLoadingMajor(false) })
-          .catch(() => setLoadingMajor(false))
-      })
+      .catch(() => setLoadingMajor(false))
   }, [countryCode])
 
   // Search with debounce
@@ -434,7 +417,7 @@ function CityOnlyMenu({
     if (search.length < 2) { setResults([]); return }
     setLoading(true)
     debounceRef.current = setTimeout(() => {
-      fetch(`/api/geo/search?q=${encodeURIComponent(search)}&country=${countryCode}&limit=20`)
+      fetch(`/api/geo/cities?q=${encodeURIComponent(search)}&country=${countryCode}&limit=20`)
         .then(r => r.json())
         .then(data => {
           setResults(data.results || [])
@@ -580,8 +563,8 @@ function LocationMenu({
     try {
       // Use GeoNames API - search globally or within selected country
       const url = selCode 
-        ? `/api/geo/search?q=${encodeURIComponent(query)}&country=${selCode}&limit=20`
-        : `/api/geo/search?q=${encodeURIComponent(query)}&limit=20`
+        ? `/api/geo/cities?q=${encodeURIComponent(query)}&country=${selCode}&limit=20`
+        : `/api/geo/cities?q=${encodeURIComponent(query)}&limit=20`
       const res = await fetch(url)
       const data = await res.json()
       // Map to expected format

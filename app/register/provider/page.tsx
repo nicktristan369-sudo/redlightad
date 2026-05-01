@@ -276,11 +276,9 @@ export default function RegisterProviderPage() {
           setPostalCode(results[0].postal_code);
         }
       } else {
-        // Use GeoNames API - search globally or within country
-        const url = countryCode 
-          ? `/api/geo/search?q=${encodeURIComponent(query)}&country=${countryCode}&limit=15`
-          : `/api/geo/search?q=${encodeURIComponent(query)}&limit=15`;
-        const res = await fetch(url);
+        // Use new /api/geo/cities endpoint (Nominatim + country-state-city)
+        const cc = countryCode ? `&country=${countryCode}` : "";
+        const res = await fetch(`/api/geo/cities?q=${encodeURIComponent(query)}&limit=20${cc}`);
         const data = await res.json();
         results = data.results || [];
       }
