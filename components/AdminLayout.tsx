@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck, UserPlus,
   CreditCard, Coins, ArrowDownToLine, Mail, MessageCircle,
   Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight,
-  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2,
+  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2, Contact,
 } from "lucide-react";
 
 type NavItem = {
@@ -255,6 +255,7 @@ export default function AdminLayout({
       title: "DATA",
       items: [
         { href: "/admin/statistics",  label: "Statistics",  icon: BarChart2 },
+        { href: "/admin/contacts",    label: "Contacts",    icon: Contact },
         { href: "/admin/phonebook",   label: "Phonebook",   icon: BookUser },
         { href: "/admin/invites",    label: "Invites",     icon: Link2 },
       ],
