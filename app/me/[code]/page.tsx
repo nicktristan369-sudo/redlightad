@@ -148,45 +148,44 @@ export default function PersonalLinkPage() {
     hasInstagram && {
       href: socialLinks.instagram?.url || `https://instagram.com/${socialLinks.instagram?.username}`,
       label: "Instagram",
-      bg: "linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)",
-      icon: <Instagram size={18} className="text-white" />,
+      bg: "#1a1a1a",
+      icon: <img src="/logos/instagram.jpg" alt="Instagram" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 6 }} />,
     },
     hasOnlyFans && {
       href: socialLinks.onlyfans?.url || `https://onlyfans.com/${hasOnlyFansName}`,
       label: "OnlyFans",
-      bg: "#1a9fd8",
-      icon: <img src="/onlyfans-logo.svg" alt="OnlyFans" style={{ height: 16, width: "auto", filter: "brightness(10)" }} />,
+      bg: "#1a1a1a",
+      icon: <img src="/logos/onlyfans.jpg" alt="OnlyFans" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 6 }} />,
     },
     hasSnapchat && {
       href: socialLinks.snapchat?.url || `https://snapchat.com/add/${socialLinks.snapchat?.username}`,
       label: "Snapchat",
-      bg: "#FFFC00",
-      icon: <img src="/logos/snapchat.jpg" alt="Snap" style={{ height: 18, width: 18, objectFit: "contain", borderRadius: 4 }} />,
-      dark: true,
+      bg: "#1a1a1a",
+      icon: <img src="/logos/snapchat.jpg" alt="Snapchat" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 6 }} />,
     },
     hasX && {
       href: socialLinks.x?.url || socialLinks.twitter?.url || `https://x.com/${socialLinks.x?.username}`,
       label: "X / Twitter",
-      bg: "#000",
-      icon: <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.629L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
+      bg: "#1a1a1a",
+      icon: <img src="/logos/x.jpg" alt="X" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 6 }} />,
     },
     hasViber && {
       href: socialLinks.viber?.url || `viber://chat?number=${listing.phone}`,
       label: "Viber",
       bg: "#7360f2",
-      icon: <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white"><path d="M11.4 0C5.5 0 1 4.3 1 9.6c0 2.8 1.2 5.4 3.3 7.2L3.2 21l4.5-1.4c1.2.5 2.4.7 3.7.7 5.9 0 10.4-4.3 10.4-9.6S17.3 0 11.4 0zm4.8 13.1c-.2.5-.9 1-1.5 1.1-.4.1-.9.1-1.4-.1-1.7-.6-3.2-1.7-4.3-3.1-1-1.4-1.4-2.7-1-3.9.2-.6.7-1 1.2-1.1.3 0 .5 0 .7.3.4.7.9 1.9.9 2 0 .2 0 .4-.2.6l-.3.3c-.1.1-.2.2-.1.4.3.7.8 1.3 1.4 1.7.3.2.6.4.9.5.2.1.4 0 .5-.1l.4-.5c.2-.2.3-.2.5-.1.6.3 1.3.7 1.7 1 .2.1.3.3.3.5v.5z"/></svg>,
+      icon: <span style={{ fontWeight: 900, fontSize: 14, color: "white" }}>V</span>,
     },
     hasLine && {
       href: socialLinks.line_app?.url || `https://line.me/ti/p/${socialLinks.line_app?.username}`,
       label: "LINE",
       bg: "#00B900",
-      icon: <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white"><path d="M19.952 11.022c0-4.42-4.43-8.013-9.878-8.013S.196 6.602.196 11.022c0 3.962 3.514 7.284 8.257 7.913.322.069.76.212.871.487.1.25.065.64.032.892l-.141.847c-.043.25-.198.977.855.533 1.054-.445 5.685-3.347 7.759-5.731 1.43-1.569 2.123-3.162 2.123-4.941z"/></svg>,
+      icon: <span style={{ fontWeight: 900, fontSize: 12, color: "white" }}>LINE</span>,
     },
     hasWechat && {
       href: socialLinks.wechat?.url || `weixin://dl/chat?${socialLinks.wechat?.username}`,
       label: "WeChat",
       bg: "#07C160",
-      icon: <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-7.062-6.122zm-3.318 4.233c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm6.63 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982z"/></svg>,
+      icon: <span style={{ fontWeight: 900, fontSize: 11, color: "white" }}>WeChat</span>,
     },
   ].filter(Boolean) as { href: string; label: string; bg: string; icon: React.ReactNode; dark?: boolean }[]
 
@@ -540,14 +539,11 @@ export default function PersonalLinkPage() {
                   key={link.label}
                   href={link.href}
                   target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 rounded-2xl px-3 py-3 hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-3 rounded-2xl px-3 py-3 hover:opacity-80 transition-opacity"
                   style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
                 >
-                  {/* Platform color dot */}
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: link.bg }}>
-                    {link.icon}
-                  </div>
-                  <span className={`font-semibold text-sm ${link.dark ? "text-gray-900" : "text-white"}`}>{link.label}</span>
+                  <div className="flex-shrink-0">{link.icon}</div>
+                  <span className="font-semibold text-sm text-white">{link.label}</span>
                   <ExternalLink size={11} className="ml-auto text-white/30" />
                 </a>
               ))}
