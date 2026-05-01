@@ -224,7 +224,7 @@ export default function AdDetailPage() {
       <main className="bg-gray-50 min-h-screen pb-20" style={{ paddingTop: 12 }}>
         {/* Mobile-only: full-width gallery at top */}
         <div className="md:hidden px-3">
-          <PhotoGallery images={ad.images ?? []} totalPhotos={(ad.images ?? []).length} name={ad.title} isLoggedIn={currentUserId !== null} />
+          <PhotoGallery images={[...(ad.profile_image ? [ad.profile_image] : []), ...(ad.images ?? [])]} totalPhotos={1 + (ad.images ?? []).length} name={ad.title} isLoggedIn={currentUserId !== null} />
         </div>
 
         <div className="mx-auto max-w-7xl px-4 pt-3 md:pt-8 pb-8">
@@ -365,7 +365,7 @@ export default function AdDetailPage() {
                       </span>
                     </h2>
                   </div>
-                  <PhotoGrid images={ad.images ?? []} onImageClick={(i) => setGridLightbox(i)} />
+                  <PhotoGrid images={[...(ad.profile_image ? [ad.profile_image] : []), ...(ad.images ?? [])]} onImageClick={(i) => setGridLightbox(i)} />
                 </div>
               )}
 
