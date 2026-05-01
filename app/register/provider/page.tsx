@@ -259,14 +259,33 @@ export default function RegisterProviderPage() {
     }
     
     try {
-      // Use GeoNames API - search globally or within country
-      const url = countryCode 
-        ? `/api/geo/search?q=${encodeURIComponent(query)}&country=${countryCode}&limit=15`
-        : `/api/geo/search?q=${encodeURIComponent(query)}&limit=15`;
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      setCityResults(data.results || []);
+      // Detect if query is a postal code (only digits / alphanumeric short)
+      const isPostal = /^[0-9][0-9\s\-]{1,8}$/.test(query.trim());
+
+      let results: any[] = [];
+
+      if (isPostal) {
+        // Search by postal code via Nominatim
+        const cc = countryCode ? `&country=${countryCode}` : "";
+        const res = await fetch(`/api/geo/postal-search?postal=${encodeURIComponent(query.trim())}${cc}`);
+        const data = await res.json();
+        results = data.results || [];
+
+        // Also auto-set postal code field
+        if (results.length > 0 && results[0].postal_code) {
+          setPostalCode(results[0].postal_code);
+        }
+      } else {
+        // Use GeoNames API - search globally or within country
+        const url = countryCode 
+          ? `/api/geo/search?q=${encodeURIComponent(query)}&country=${countryCode}&limit=15`
+          : `/api/geo/search?q=${encodeURIComponent(query)}&limit=15`;
+        const res = await fetch(url);
+        const data = await res.json();
+        results = data.results || [];
+      }
+
+      setCityResults(results);
       setShowCityDropdown(true);
     } catch (err) {
       console.error('City search error:', err);
@@ -295,18 +314,22 @@ export default function RegisterProviderPage() {
     setLatitude(cityData.latitude);
     setLongitude(cityData.longitude);
 
-    // Auto-fill postal code from coordinates or city name
-    try {
-      const lat = cityData.latitude;
-      const lng = cityData.longitude;
-      const cc = (cityData.country_code || "").toLowerCase();
-      const url = lat && lng
-        ? `/api/geo/postal?lat=${lat}&lng=${lng}&country=${cc}`
-        : `/api/geo/postal?city=${encodeURIComponent(cityData.name)}&country=${cc}`;
-      const posRes = await fetch(url);
-      const posData = await posRes.json();
-      if (posData.postal_code) setPostalCode(posData.postal_code);
-    } catch { /* silent fail */ }
+    // Auto-fill postal code — use existing if provided (from postal-search), else lookup
+    if (cityData.postal_code) {
+      setPostalCode(cityData.postal_code);
+    } else {
+      try {
+        const lat = cityData.latitude;
+        const lng = cityData.longitude;
+        const cc = (cityData.country_code || "").toLowerCase();
+        const url = lat && lng
+          ? `/api/geo/postal?lat=${lat}&lng=${lng}&country=${cc}`
+          : `/api/geo/postal?city=${encodeURIComponent(cityData.name)}&country=${cc}`;
+        const posRes = await fetch(url);
+        const posData = await posRes.json();
+        if (posData.postal_code) setPostalCode(posData.postal_code);
+      } catch { /* silent fail */ }
+    }
     
     // Auto-fill country if from global search
     if (cityData.country_code && !countryCode) {

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     // If we have coordinates, use reverse geocoding (more accurate)
     if (lat && lng) {
-      url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&zoom=10`
+      url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`
     } else {
       const q = country ? `${city}&countrycodes=${country.toLowerCase()}` : city
       url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=1`
