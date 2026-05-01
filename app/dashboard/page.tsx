@@ -8,6 +8,7 @@ import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import ProfileCompletionModal from "@/components/ProfileCompletionModal"
+import UpgradeToPremiumModal from "@/components/UpgradeToPremiumModal"
 import { shareCodeFromId } from "@/lib/shareCode"
 import { PUSH_POINT_PACKAGES } from "@/lib/spendPackages"
 
@@ -62,6 +63,8 @@ function DashboardContent() {
   const tier = searchParams.get("tier")
   const [checking, setChecking] = useState(true)
   const [showCompletion, setShowCompletion] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [upgradeFeatureName, setUpgradeFeatureName] = useState<string | undefined>()
   const [listingId, setListingId] = useState<string | null>(null)
   const [listingSlug, setListingSlug] = useState<string | null>(null)
   const [shareCode, setShareCode] = useState<string | null>(null)
@@ -101,8 +104,8 @@ function DashboardContent() {
       }
 
       setChecking(false)
-      // Show completion modal when redirected from payment
-      if (planActivated) setShowCompletion(true)
+      // Show completion modal when redirected from payment (only for premium)
+      if (planActivated && plan === "premium") setShowCompletion(true)
 
       if (listing?.id) {
         setListingId(listing.id)
@@ -148,12 +151,20 @@ function DashboardContent() {
 
   return (
     <>
-      {/* Profile Completion Modal */}
+      {/* Profile Completion Modal (Premium only) */}
       {showCompletion && (
         <ProfileCompletionModal
           listingId={listingId}
           plan={plan}
           onClose={() => setShowCompletion(false)}
+        />
+      )}
+
+      {/* Upgrade to Premium Modal (Standard users clicking premium features) */}
+      {showUpgradeModal && (
+        <UpgradeToPremiumModal
+          featureName={upgradeFeatureName}
+          onClose={() => { setShowUpgradeModal(false); setUpgradeFeatureName(undefined) }}
         />
       )}
     <DashboardLayout>
