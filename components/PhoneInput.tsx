@@ -223,12 +223,14 @@ interface Props {
   onChange: (val: string) => void
   placeholder?: string
   required?: boolean
+  defaultCountry?: string // ISO 2-letter code e.g. "DK", "US" — syncs when changed
 }
 
-export default function PhoneInput({ label, value, onChange, placeholder, required }: Props) {
+export default function PhoneInput({ label, value, onChange, placeholder, required, defaultCountry }: Props) {
   // Parse existing value to extract dial code
-  const detectDialEntry = (val: string): { dialCode: DialCode; local: string } => {
-    if (!val) return { dialCode: DIAL_CODES.find(d => d.code === "DK")!, local: "" }
+  const detectDialEntry = (val: string, fallbackCode?: string): { dialCode: DialCode; local: string } => {
+    const fallback = DIAL_CODES.find(d => d.code === (fallbackCode?.toUpperCase() || "DK")) || DIAL_CODES.find(d => d.code === "DK")!
+    if (!val) return { dialCode: fallback, local: "" }
     // Try to match known dial codes (sort by length desc to match +1869 before +1)
     const sorted = [...DIAL_CODES].sort((a, b) => b.dial.length - a.dial.length)
     for (const d of sorted) {
@@ -236,12 +238,24 @@ export default function PhoneInput({ label, value, onChange, placeholder, requir
         return { dialCode: d, local: val.slice(d.dial.length).trim() }
       }
     }
-    return { dialCode: DIAL_CODES.find(d => d.code === "DK")!, local: val }
+    return { dialCode: fallback, local: val }
   }
 
-  const { dialCode: initialDial, local: initialLocal } = detectDialEntry(value)
+  const { dialCode: initialDial, local: initialLocal } = detectDialEntry(value, defaultCountry)
   const [selected, setSelected] = useState<DialCode>(initialDial)
   const [localNumber, setLocalNumber] = useState(initialLocal)
+  const [lastSyncedCountry, setLastSyncedCountry] = useState(defaultCountry)
+
+  // Sync dial code when defaultCountry changes (user selects new country in location)
+  useEffect(() => {
+    if (defaultCountry && defaultCountry !== lastSyncedCountry) {
+      const match = DIAL_CODES.find(d => d.code === defaultCountry.toUpperCase())
+      if (match) {
+        setSelected(match)
+        setLastSyncedCountry(defaultCountry)
+      }
+    }
+  }, [defaultCountry, lastSyncedCountry])
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const dropRef = useRef<HTMLDivElement>(null)

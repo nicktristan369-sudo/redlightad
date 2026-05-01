@@ -1039,12 +1039,14 @@ export default function RegisterProviderPage() {
                   value={phone}
                   onChange={setPhone}
                   required
+                  defaultCountry={countryCode}
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <PhoneInput
                     label="WhatsApp"
                     value={whatsapp}
                     onChange={setWhatsapp}
+                    defaultCountry={countryCode}
                   />
                   <InputField
                     label="Telegram"
