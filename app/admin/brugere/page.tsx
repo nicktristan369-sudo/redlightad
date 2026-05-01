@@ -20,6 +20,11 @@ interface Profile {
   avatar_url: string | null;
   subscription_tier: string | null;
   created_at: string;
+  // From listings join
+  listing_id: string | null;
+  premium_tier: string | null;
+  premium_until: string | null;
+  listing_status: string | null;
 }
 
 interface ArchivedUser {
@@ -50,18 +55,34 @@ const TIERS: { value: string | null; label: string; price: string; color: string
   { value: null,       label: "Free",     price: "fjern",     color: "#DC2626" },
 ];
 
-function TierBadge({ tier }: { tier: string | null }) {
+function TierBadge({ tier, until }: { tier: string | null; until?: string | null }) {
   if (!tier) return <span className="text-[11px] text-gray-300">—</span>;
-  const map: Record<string, { bg: string; color: string }> = {
-    vip:      { bg: "#FEF9C3", color: "#92400E" },
-    featured: { bg: "#EFF6FF", color: "#1E40AF" },
-    basic:    { bg: "#F3F4F6", color: "#374151" },
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    vip:      { bg: "#FEF9C3", color: "#92400E", label: "VIP" },
+    featured: { bg: "#EFF6FF", color: "#1E40AF", label: "PREMIUM" },
+    basic:    { bg: "#F3F4F6", color: "#374151", label: "STANDARD" },
   };
   const s = map[tier];
-  if (!s) return null;
+  if (!s) return <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{tier}</span>;
+  
+  // Calculate days remaining
+  let daysLeft: number | null = null;
+  if (until) {
+    const untilDate = new Date(until);
+    const now = new Date();
+    daysLeft = Math.ceil((untilDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  }
+  
   return (
-    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-      style={{ background: s.bg, color: s.color }}>{tier}</span>
+    <div className="flex flex-col items-start gap-0.5">
+      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+        style={{ background: s.bg, color: s.color }}>{s.label}</span>
+      {daysLeft !== null && (
+        <span className={`text-[9px] ${daysLeft > 30 ? "text-green-600" : daysLeft > 7 ? "text-amber-600" : "text-red-600"}`}>
+          {daysLeft > 0 ? `${daysLeft} dage tilbage` : "Udløbet"}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -82,8 +103,116 @@ function Avatar({ url, name }: { url: string | null; name: string | null }) {
   );
 }
 
-/* ───── Premium dropdown ───── */
-function PremiumDropdown({ userId, currentTier, onSet }: {
+/* ───── Premium dropdown with months ───── */
+const MONTH_OPTIONS = [
+  { months: 1, label: "1 måned" },
+  { months: 3, label: "3 måneder" },
+  { months: 6, label: "6 måneder" },
+  { months: 12, label: "12 måneder" },
+];
+
+function PremiumDropdown({ userId, listingId, currentTier, currentUntil, onSet }: {
+  userId: string;
+  listingId: string | null;
+  currentTier: string | null;
+  currentUntil: string | null;
+  onSet: (id: string, tier: string | null, until: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<"tier" | "months">("tier");
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setStep("tier"); } };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const selectTier = (tier: string | null) => {
+    if (tier === null) {
+      // Remove premium
+      confirmSet(null, 0);
+      return;
+    }
+    setSelectedTier(tier);
+    setStep("months");
+  };
+
+  const confirmSet = async (tier: string | null, months: number) => {
+    setBusy(true);
+    const res = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, listingId, action: "set_premium", tier, months }),
+    });
+    const data = await res.json();
+    onSet(userId, tier, data.premium_until || null);
+    setBusy(false);
+    setOpen(false);
+    setStep("tier");
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen(v => !v)} disabled={busy}
+        className="p-1.5 rounded-md disabled:opacity-40 transition-colors"
+        title="Sæt premium"
+        style={{ color: currentTier ? "#CA8A04" : "#9CA3AF" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "#FEF9C3"; e.currentTarget.style.color = "#CA8A04"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = currentTier ? "#CA8A04" : "#9CA3AF"; }}>
+        <Crown size={14} />
+      </button>
+      {open && (
+        <div className="absolute z-50 right-0 mt-1 w-52 rounded-xl shadow-xl overflow-hidden"
+          style={{ background: "#fff", border: "1px solid #E5E5E5", top: "100%" }}>
+          {step === "tier" ? (
+            <>
+              <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Vælg Plan</p>
+              </div>
+              {TIERS.map(t => {
+                const active = t.value === currentTier;
+                return (
+                  <button key={String(t.value)} onClick={() => selectTier(t.value)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-left transition-colors"
+                    style={{ background: active ? "#F9FAFB" : "transparent", borderBottom: "1px solid #F9FAFB" }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#F9FAFB"; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}>
+                    <div className="flex items-center gap-2">
+                      {t.value && <Crown size={12} color={t.color} />}
+                      <span className="text-[12px] font-semibold" style={{ color: t.color }}>{t.label}</span>
+                    </div>
+                    {t.value === null && <span className="text-[10px] text-red-500">Fjern</span>}
+                  </button>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Vælg Periode</p>
+                <button onClick={() => setStep("tier")} className="text-[10px] text-gray-400 hover:text-gray-600">← Tilbage</button>
+              </div>
+              {MONTH_OPTIONS.map(m => (
+                <button key={m.months} onClick={() => confirmSet(selectedTier, m.months)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
+                  style={{ borderBottom: "1px solid #F9FAFB" }}>
+                  <span className="text-[12px] font-medium text-gray-700">{m.label}</span>
+                  <span className="text-[10px] text-gray-400">{selectedTier?.toUpperCase()}</span>
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* OLD Premium dropdown preserved for reference */
+function _OldPremiumDropdown({ userId, currentTier, onSet }: {
   userId: string; currentTier: string | null;
   onSet: (id: string, tier: string | null) => void;
 }) {
@@ -220,8 +349,8 @@ export default function AdminBrugerePage() {
     setDeleteId(null);
   };
 
-  const setPremium = (id: string, tier: string | null) =>
-    setProfiles(p => p.map(u => u.id === id ? { ...u, subscription_tier: tier } : u));
+  const setPremium = (id: string, tier: string | null, until: string | null) =>
+    setProfiles(p => p.map(u => u.id === id ? { ...u, premium_tier: tier, premium_until: until, subscription_tier: tier } : u));
 
   /* counts — server-side total for active tab, local for archived */
   const counts = {
@@ -468,7 +597,7 @@ export default function AdminBrugerePage() {
                       </span>
                     </td>
                     {/* Premium */}
-                    <td className="px-4 py-3"><TierBadge tier={u.subscription_tier} /></td>
+                    <td className="px-4 py-3"><TierBadge tier={u.premium_tier} until={u.premium_until} /></td>
                     {/* Oprettet */}
                     <td className="px-4 py-3 text-[12px] text-gray-400 whitespace-nowrap">
                       {new Date(u.created_at).toLocaleDateString("da-DK", { day: "2-digit", month: "short", year: "2-digit" })}
@@ -491,7 +620,7 @@ export default function AdminBrugerePage() {
                             <BadgeCheck size={14} />
                           </button>
                         )}
-                        <PremiumDropdown userId={u.id} currentTier={u.subscription_tier} onSet={setPremium} />
+                        <PremiumDropdown userId={u.id} listingId={u.listing_id} currentTier={u.premium_tier} currentUntil={u.premium_until} onSet={setPremium} />
                         <button onClick={() => mutate(u.id, u.is_banned ? "unban" : "ban")} disabled={busy === u.id}
                           className="p-1.5 rounded-md disabled:opacity-40 transition-colors"
                           title={u.is_banned ? "Ophæv ban" : "Ban bruger"}

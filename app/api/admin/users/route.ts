@@ -15,18 +15,21 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const page    = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
     const limit   = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "25", 10)));
-    const country = searchParams.get("country");   // optional
-    const search  = searchParams.get("search");    // optional
-    const tab     = searchParams.get("tab") ?? "all"; // all | providers | customers | banned | verified
+    const country = searchParams.get("country");
+    const search  = searchParams.get("search");
+    const tab     = searchParams.get("tab") ?? "all";
 
     const supabase = getClient();
     const from = (page - 1) * limit;
     const to   = from + limit - 1;
 
+    // Fetch profiles with their listings (for premium info)
     let query = supabase
       .from("profiles")
       .select(
-        "id, email, full_name, account_type, country, is_admin, is_banned, is_verified, phone, phone_verified, whatsapp, avatar_url, subscription_tier, created_at",
+        `id, email, full_name, account_type, country, is_admin, is_banned, is_verified, 
+         phone, phone_verified, whatsapp, avatar_url, subscription_tier, created_at,
+         listings!listings_user_id_fkey(id, premium_tier, premium_until, status)`,
         { count: "exact" }
       )
       .order("created_at", { ascending: false })
@@ -46,7 +49,20 @@ export async function GET(req: NextRequest) {
     const { data, error, count } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Also return unique countries for the filter dropdown (lightweight query)
+    // Transform data to include listing premium info
+    const users = (data ?? []).map((u: any) => {
+      const listing = Array.isArray(u.listings) ? u.listings[0] : u.listings;
+      return {
+        ...u,
+        listings: undefined, // Remove raw listings array
+        listing_id: listing?.id ?? null,
+        premium_tier: listing?.premium_tier ?? null,
+        premium_until: listing?.premium_until ?? null,
+        listing_status: listing?.status ?? null,
+      };
+    });
+
+    // Unique countries for filter dropdown
     const { data: countryRows } = await supabase
       .from("profiles")
       .select("country")
@@ -58,7 +74,7 @@ export async function GET(req: NextRequest) {
     ).sort();
 
     return NextResponse.json({
-      users: data ?? [],
+      users,
       total: count ?? 0,
       page,
       limit,
@@ -74,8 +90,14 @@ type Action = "ban" | "unban" | "verify" | "delete" | "set_premium";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { userId: string; action: Action; tier?: string | null };
-    const { userId, action, tier } = body;
+    const body = await req.json() as { 
+      userId: string; 
+      action: Action; 
+      tier?: string | null;
+      months?: number;
+      listingId?: string;
+    };
+    const { userId, action, tier, months, listingId } = body;
 
     if (!userId || !action) {
       return NextResponse.json({ error: "userId and action required" }, { status: 400 });
@@ -97,7 +119,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
 
       case "delete": {
-        // 1. Fetch user data before deletion for archive
         const { data: profile } = await supabase
           .from("profiles")
           .select("id, full_name, email, phone, whatsapp, country, account_type, subscription_tier, is_verified, avatar_url, created_at")
@@ -105,7 +126,6 @@ export async function POST(req: NextRequest) {
           .single();
 
         if (profile) {
-          // 2. Archive the user
           await supabase.from("archived_users").insert({
             original_id:       profile.id,
             full_name:         profile.full_name,
@@ -123,14 +143,10 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // 3. Delete profile + listings
         await supabase.from("listings").delete().eq("user_id", userId);
         const { error } = await supabase.from("profiles").delete().eq("id", userId);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-        // 4. Delete from auth.users so email can be re-used
         await supabase.auth.admin.deleteUser(userId);
-
         return NextResponse.json({ success: true });
       }
 
@@ -139,12 +155,54 @@ export async function POST(req: NextRequest) {
         if (!validTiers.includes(tier ?? null)) {
           return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
         }
+
+        // Find or use provided listing ID
+        let targetListingId = listingId;
+        if (!targetListingId) {
+          const { data: listing } = await supabase
+            .from("listings")
+            .select("id")
+            .eq("user_id", userId)
+            .limit(1)
+            .single();
+          targetListingId = listing?.id;
+        }
+
+        if (!targetListingId) {
+          return NextResponse.json({ error: "No listing found for user" }, { status: 404 });
+        }
+
+        // Calculate premium_until based on months
+        let premiumUntil: string | null = null;
+        if (tier && months && months > 0) {
+          const until = new Date();
+          until.setMonth(until.getMonth() + months);
+          premiumUntil = until.toISOString();
+        }
+
+        // Update listing
         const { error } = await supabase
+          .from("listings")
+          .update({ 
+            premium_tier: tier ?? null,
+            premium_until: premiumUntil,
+            status: tier ? "active" : "active", // Keep active either way
+          })
+          .eq("id", targetListingId);
+
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+        // Also update profiles.subscription_tier for backwards compat
+        await supabase
           .from("profiles")
           .update({ subscription_tier: tier ?? null })
           .eq("id", userId);
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-        return NextResponse.json({ success: true, subscription_tier: tier ?? null });
+
+        return NextResponse.json({ 
+          success: true, 
+          premium_tier: tier ?? null,
+          premium_until: premiumUntil,
+        });
       }
 
       default:
