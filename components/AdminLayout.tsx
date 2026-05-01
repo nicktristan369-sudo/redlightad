@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck, UserPlus,
   CreditCard, Coins, ArrowDownToLine, Mail, MessageCircle,
   Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight,
-  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2, Contact, CircleDot,
+  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2, Contact, CircleDot, Bitcoin,
 } from "lucide-react";
 
 type NavItem = {
@@ -239,6 +239,7 @@ export default function AdminLayout({
       title: "BUSINESS",
       items: [
         { href: "/admin/payments",     label: "Payments",    icon: CreditCard },
+        { href: "/admin/crypto",       label: "Crypto Wallet", icon: Bitcoin },
         { href: "/admin/redcoins",     label: "RedCoins",    icon: Coins },
         { href: "/admin/udbetalinger", label: "Payouts",     icon: ArrowDownToLine },
       ],
