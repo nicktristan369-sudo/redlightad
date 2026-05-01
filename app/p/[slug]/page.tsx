@@ -392,13 +392,30 @@ export default function PersonalLinkPage() {
         </section>
       </div>
 
-      {/* Minimal powered-by */}
-      <div className="py-6 text-center">
-        <a href="https://redlightad.com" target="_blank" rel="noopener noreferrer"
-          className="text-white/20 text-[11px] hover:text-white/40 transition-colors">
-          redlightad.com
+      {/* Powered by footer */}
+      <footer className="border-t border-white/10 py-8 px-6 flex flex-col items-center gap-3">
+        <a
+          href="https://redlightad.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center gap-2 group"
+        >
+          {/* Logo text */}
+          <span style={{
+            fontFamily: "'Arial Black', Arial, sans-serif",
+            fontWeight: 900,
+            fontSize: 22,
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
+          }}>
+            <span style={{ color: "#CC0000" }}>RED</span>
+            <span style={{ color: "rgba(255,255,255,0.7)" }} className="group-hover:text-white transition-colors">LIGHTAD</span>
+          </span>
+          <span className="text-white/30 text-xs group-hover:text-white/50 transition-colors">
+            This profile is powered by <strong className="text-white/50">RedLightAD.com</strong>
+          </span>
         </a>
-      </div>
+      </footer>
     </div>
   )
 }
