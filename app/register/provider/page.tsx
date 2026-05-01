@@ -36,6 +36,8 @@ const GENDER_OPTIONS = [
 ];
 
 const AGE_OPTIONS = Array.from({ length: 53 }, (_, i) => i + 18);
+const HEIGHT_OPTIONS = Array.from({ length: 81 }, (_, i) => ({ value: String(i + 140), label: `${i + 140} cm` }));
+const WEIGHT_OPTIONS = Array.from({ length: 101 }, (_, i) => ({ value: String(i + 30), label: `${i + 30} kg` }));
 
 const STEPS = [
   { num: 1, label: "Basic Info" },
@@ -743,19 +745,17 @@ export default function RegisterProviderPage() {
                   />
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <InputField
+                  <SelectField
                     label="Height (cm)"
                     value={height}
                     onChange={setHeight}
-                    type="number"
-                    placeholder="170"
+                    options={HEIGHT_OPTIONS}
                   />
-                  <InputField
+                  <SelectField
                     label="Weight (kg)"
                     value={weight}
                     onChange={setWeight}
-                    type="number"
-                    placeholder="60"
+                    options={WEIGHT_OPTIONS}
                   />
                   <SelectField
                     label="Hair Color"
