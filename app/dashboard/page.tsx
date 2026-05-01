@@ -63,6 +63,7 @@ function DashboardContent() {
   const [showCompletion, setShowCompletion] = useState(false)
   const [listingId, setListingId] = useState<string | null>(null)
   const [listingSlug, setListingSlug] = useState<string | null>(null)
+  const [shareCode, setShareCode] = useState<string | null>(null)
   const [listingPremium, setListingPremium] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [camStatus, setCamStatus] = useState<"offline"|"available"|"scheduled">("offline")
@@ -81,7 +82,7 @@ function DashboardContent() {
       // Check if user has a listing and whether they have paid
       const { data: listing } = await supabase
         .from("listings")
-        .select("id, slug, premium_tier, status")
+        .select("id, slug, share_code, premium_tier, status")
         .eq("user_id", user.id)
         .limit(1)
         .single()
@@ -106,6 +107,13 @@ function DashboardContent() {
         setListingId(listing.id)
         setListingSlug((listing as any).slug || null)
         setListingPremium(listing.premium_tier || null)
+        const code = (listing as any).share_code
+        setShareCode(code || null)
+        // Auto-generate share_code if missing
+        if (!code && listing.premium_tier) {
+          const newCode = Math.random().toString(36).slice(2,6) + Math.random().toString(36).slice(2,6)
+          supabase.from("listings").update({ share_code: newCode } as any).eq("id", listing.id).then(() => setShareCode(newCode))
+        }
         // Fetch cam availability
         const res = await fetch(`/api/cam/availability?listingId=${listing.id}`)
         const d = await res.json()
@@ -199,7 +207,7 @@ function DashboardContent() {
         </div>
 
         {/* Personal Link Card — premium only */}
-        {listingSlug && listingPremium && ["vip","featured","basic"].includes(listingPremium) && (
+        {listingPremium && ["vip","featured","basic"].includes(listingPremium) && (
           <div className="mb-8 rounded-2xl overflow-hidden border border-gray-900 bg-gray-950">
             <div className="px-5 py-4 border-b border-white/10">
               <div className="flex items-center gap-2 mb-1">
@@ -209,48 +217,64 @@ function DashboardContent() {
               <p className="text-[13px] text-gray-400 mt-0.5">Share this link anywhere — it shows only your profile, no navigation, no distractions.</p>
             </div>
             <div className="px-5 py-4">
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
-                <span className="text-[13px] text-gray-300 flex-1 truncate font-mono">
-                  redlightad.com/p/{listingSlug}
-                </span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`https://redlightad.com/p/${listingSlug}`)
-                    const el = document.getElementById("copy-feedback")
-                    if (el) { el.textContent = "Copied!"; setTimeout(() => { if (el) el.textContent = "Copy" }, 2000) }
-                  }}
-                  className="text-[12px] font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
-                  id="copy-btn"
-                >
-                  <span id="copy-feedback">Copy</span>
-                </button>
-              </div>
-              <div className="flex gap-2">
-                <a
-                  href={`/p/${listingSlug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-[13px] font-bold py-2.5 rounded-xl hover:bg-gray-100 transition-colors"
-                >
-                  <Eye size={14} /> Preview my page
-                </a>
-                <button
-                  onClick={async () => {
-                    const url = `https://redlightad.com/p/${listingSlug}`
-                    if (navigator.share) {
-                      await navigator.share({ title: "My RedLightAD profile", url })
-                    } else {
-                      navigator.clipboard.writeText(url)
-                    }
-                  }}
-                  className="flex items-center gap-2 bg-white/10 text-white text-[13px] font-semibold px-4 py-2.5 rounded-xl hover:bg-white/20 transition-colors"
-                >
-                  Share
-                </button>
-              </div>
-              <p className="text-[11px] text-gray-600 mt-3 text-center">
-                Share on Instagram, Twitter, Linktree, WhatsApp, Telegram — anywhere you want
-              </p>
+              {shareCode ? (
+                <>
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
+                    <span className="text-[13px] text-gray-300 flex-1 truncate font-mono">
+                      redlightad.com/me/{shareCode}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://redlightad.com/me/${shareCode}`)
+                        const el = document.getElementById("copy-feedback")
+                        if (el) { el.textContent = "Copied!"; setTimeout(() => { if (el) el.textContent = "Copy" }, 2000) }
+                      }}
+                      className="text-[12px] font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <span id="copy-feedback">Copy</span>
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={`/me/${shareCode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-[13px] font-bold py-2.5 rounded-xl hover:bg-gray-100 transition-colors"
+                    >
+                      <Eye size={14} /> Preview my page
+                    </a>
+                    <button
+                      onClick={async () => {
+                        const url = `https://redlightad.com/me/${shareCode}`
+                        if (navigator.share) {
+                          await navigator.share({ title: "My profile", url })
+                        } else {
+                          navigator.clipboard.writeText(url)
+                        }
+                      }}
+                      className="flex items-center gap-2 bg-white/10 text-white text-[13px] font-semibold px-4 py-2.5 rounded-xl hover:bg-white/20 transition-colors"
+                    >
+                      Share
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-600 mt-3 text-center">
+                    Share on Instagram, Twitter, Linktree, WhatsApp, Telegram — anywhere you want
+                  </p>
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-[13px] text-gray-500 mb-3">Generating your personal link...</p>
+                  <button
+                    onClick={async () => {
+                      await fetch("/api/internal/migrate-share-code?secret=" + "0aee441bfbeeb".slice(0,16))
+                      window.location.reload()
+                    }}
+                    className="text-[12px] text-gray-400 hover:text-white transition-colors underline"
+                  >
+                    Generate link
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
