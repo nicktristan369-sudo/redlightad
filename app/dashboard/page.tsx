@@ -82,7 +82,7 @@ function DashboardContent() {
       // Check if user has a listing and whether they have paid
       const { data: listing } = await supabase
         .from("listings")
-        .select("id, slug, share_code, premium_tier, status")
+        .select("id, slug, premium_tier, status")
         .eq("user_id", user.id)
         .limit(1)
         .single()
@@ -107,12 +107,27 @@ function DashboardContent() {
         setListingId(listing.id)
         setListingSlug((listing as any).slug || null)
         setListingPremium(listing.premium_tier || null)
-        const code = (listing as any).share_code
-        setShareCode(code || null)
-        // Auto-generate share_code if missing
-        if (!code && listing.premium_tier) {
-          const newCode = Math.random().toString(36).slice(2,6) + Math.random().toString(36).slice(2,6)
-          supabase.from("listings").update({ share_code: newCode } as any).eq("id", listing.id).then(() => setShareCode(newCode))
+
+        // Fetch share_code separately (column may not exist yet in older DBs)
+        try {
+          const { data: shareData } = await supabase
+            .from("listings")
+            .select("share_code")
+            .eq("id", listing.id)
+            .single()
+          const code = (shareData as any)?.share_code
+          setShareCode(code || null)
+          // Auto-generate if missing and user has premium
+          if (!code && listing.premium_tier) {
+            const newCode = Math.random().toString(36).slice(2,6) + Math.random().toString(36).slice(2,6)
+            const { error: updateErr } = await supabase
+              .from("listings")
+              .update({ share_code: newCode } as any)
+              .eq("id", listing.id)
+            if (!updateErr) setShareCode(newCode)
+          }
+        } catch {
+          // share_code column doesn't exist yet — silently skip
         }
         // Fetch cam availability
         const res = await fetch(`/api/cam/availability?listingId=${listing.id}`)
