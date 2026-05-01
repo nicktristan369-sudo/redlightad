@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { getLocaleFromDomain } from "@/lib/seo"
-import { SUPPORTED_COUNTRIES, getCountry } from "@/lib/countries"
+import { SUPPORTED_COUNTRIES } from "@/lib/countries"
 import "flag-icons/css/flag-icons.min.css"
 
 // Map locale to country code for auto-selection
@@ -13,9 +13,6 @@ const LOCALE_TO_COUNTRY: Record<string, string> = {
   pt: 'pt', sv: 'se', no: 'no', pl: 'pl', cs: 'cz', ru: 'ru',
   th: 'th', ar: 'ae', en: '',
 }
-
-// Popular countries for quick access
-const POPULAR_CODES = ["dk", "de", "nl", "gb", "fr", "es", "it", "us", "th", "ae", "se", "no", "ch", "pt", "pl"]
 
 // Continent groups
 const CONTINENT_ORDER = ["EU", "NA", "AS", "AF", "OC"]
@@ -155,27 +152,27 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
   if (!visible) return null
 
   return (
-    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-[#0f1419] rounded-2xl shadow-2xl border border-gray-800 overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 border-b border-gray-800">
+        <div className="px-5 pt-5 pb-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white">Select Your Location</h2>
+                <h2 className="text-lg font-bold text-gray-900">Select Your Location</h2>
                 <p className="text-sm text-gray-500">Choose a country to browse local listings</p>
               </div>
             </div>
             {onClose && (
               <button 
                 onClick={() => { setVisible(false); onClose() }} 
-                className="text-gray-500 hover:text-white transition-colors w-8 h-8 rounded-lg hover:bg-gray-800 flex items-center justify-center"
+                className="text-gray-400 hover:text-gray-600 transition-colors w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -186,7 +183,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
           
           {/* Search */}
           <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -195,7 +192,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
               placeholder="Search countries..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-[#1a2028] border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-red-600 transition-colors text-sm"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors text-sm"
             />
           </div>
         </div>
@@ -204,7 +201,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-gray-700 border-t-red-600 rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-gray-200 border-t-red-600 rounded-full animate-spin" />
             </div>
           ) : search ? (
             // Search results - 3 columns
@@ -232,7 +229,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
               
               return (
                 <div key={continent}>
-                  <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
                     {CONTINENT_NAMES[continent]}
                   </p>
                   <div className="grid grid-cols-3 gap-1">
@@ -252,8 +249,8 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-gray-800 bg-[#0a0d10]">
-          <p className="text-xs text-gray-600 text-center">
+        <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
+          <p className="text-xs text-gray-400 text-center">
             {countries.length} countries available
           </p>
         </div>
@@ -273,7 +270,7 @@ function CountryButton({ code, name, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-red-600/20 transition-colors text-left group"
+      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors text-left group"
     >
       <span 
         className={`fi fi-${flagCode} fis`} 
@@ -285,7 +282,7 @@ function CountryButton({ code, name, onClick }: {
           flexShrink: 0
         }} 
       />
-      <span className="text-sm text-gray-300 group-hover:text-white truncate">{name}</span>
+      <span className="text-sm text-gray-700 group-hover:text-red-600 truncate">{name}</span>
     </button>
   )
 }
