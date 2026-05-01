@@ -23,13 +23,11 @@ export async function GET(req: NextRequest) {
     const from = (page - 1) * limit;
     const to   = from + limit - 1;
 
-    // Fetch profiles with their listings (for premium info)
+    // Fetch profiles WITHOUT join (to avoid foreign key issues)
     let query = supabase
       .from("profiles")
       .select(
-        `id, email, full_name, account_type, country, is_admin, is_banned, is_verified, 
-         phone, phone_verified, whatsapp, avatar_url, subscription_tier, created_at,
-         listings(id, premium_tier, premium_until, status)`,
+        "id, email, full_name, account_type, country, is_admin, is_banned, is_verified, phone, phone_verified, whatsapp, avatar_url, subscription_tier, created_at",
         { count: "exact" }
       )
       .order("created_at", { ascending: false })
@@ -46,15 +44,32 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { data, error, count } = await query;
+    const { data: profiles, error, count } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Transform data to include listing premium info
-    const users = (data ?? []).map((u: any) => {
-      const listing = Array.isArray(u.listings) ? u.listings[0] : u.listings;
+    // Fetch listings for these users separately
+    const userIds = (profiles ?? []).map((p: any) => p.id);
+    let listingsMap: Record<string, any> = {};
+    
+    if (userIds.length > 0) {
+      const { data: listings } = await supabase
+        .from("listings")
+        .select("id, user_id, premium_tier, premium_until, status")
+        .in("user_id", userIds);
+      
+      // Create map of user_id -> listing
+      for (const l of (listings ?? [])) {
+        if (!listingsMap[l.user_id]) {
+          listingsMap[l.user_id] = l;
+        }
+      }
+    }
+
+    // Merge profiles with listing data
+    const users = (profiles ?? []).map((u: any) => {
+      const listing = listingsMap[u.id];
       return {
         ...u,
-        listings: undefined, // Remove raw listings array
         listing_id: listing?.id ?? null,
         premium_tier: listing?.premium_tier ?? null,
         premium_until: listing?.premium_until ?? null,
@@ -186,7 +201,7 @@ export async function POST(req: NextRequest) {
           .update({ 
             premium_tier: tier ?? null,
             premium_until: premiumUntil,
-            status: tier ? "active" : "active", // Keep active either way
+            status: tier ? "active" : "active",
           })
           .eq("id", targetListingId);
 
