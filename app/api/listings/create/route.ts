@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Generate SEO-friendly slug from title/display_name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special chars
+    .replace(/\s+/g, "-") // Spaces to hyphens
+    .replace(/-+/g, "-") // Multiple hyphens to single
+    .replace(/^-|-$/g, ""); // Trim hyphens
+}
+
 // Fields that exist in the listings table
 const ALLOWED_FIELDS = [
   "title",
@@ -60,12 +71,29 @@ export async function POST(req: NextRequest) {
       { auth: { persistSession: false } }
     );
 
+    // Generate slug from title or display_name
+    const baseName = (listingData.display_name || listingData.title || "profile") as string;
+    let slug = generateSlug(baseName);
+    
+    // Ensure slug is unique by adding random suffix if needed
+    const { data: existing } = await supabase
+      .from("listings")
+      .select("id")
+      .eq("slug", slug)
+      .limit(1);
+    
+    if (existing && existing.length > 0) {
+      // Add random 4-char suffix
+      slug = `${slug}-${Math.random().toString(36).substring(2, 6)}`;
+    }
+
     // Try to insert listing
     const { data: listing, error } = await supabase
       .from("listings")
       .insert({
         user_id: userId,
         ...listingData,
+        slug,
         status: "active",
         premium_tier: null,
       })
