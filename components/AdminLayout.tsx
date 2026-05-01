@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck, UserPlus,
   CreditCard, Coins, ArrowDownToLine, Mail, MessageCircle,
   Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight,
-  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2, Contact,
+  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2, Contact, CircleDot,
 } from "lucide-react";
 
 type NavItem = {
@@ -223,6 +223,7 @@ export default function AdminLayout({
       items: [
         { href: "/admin",                label: "Overview",         icon: LayoutDashboard },
         { href: "/admin/annoncer",        label: "Profiles",        icon: FileText,    badge: pendingListings },
+        { href: "/admin/stories",         label: "Stories",         icon: CircleDot },
         { href: "/admin/create-profile",  label: "Create Profile",  icon: UserPlus },
         { href: "/admin/marketplace",     label: "Marketplace",     icon: ShoppingBag, badge: pendingMarketplace },
         { href: "/admin/brugere",         label: "Users",           icon: Users },
