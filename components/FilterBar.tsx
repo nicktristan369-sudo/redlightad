@@ -398,18 +398,34 @@ function CityOnlyMenu({
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 50) }, [])
 
-  // Load major cities on mount
+  // Load popular cities on mount — use /api/locations (country-state-city) for full coverage
   useEffect(() => {
     if (!countryCode) return
     setLoadingMajor(true)
-    fetch(`/api/geo/search?q=a&country=${countryCode}&limit=50`)
+    fetch(`/api/locations?country=${countryCode}`)
       .then(r => r.json())
       .then(data => {
-        const major = (data.results || []).filter((c: { is_major_city: boolean }) => c.is_major_city)
-        setMajorCities(major)
+        // topCities from /api/locations — if empty fall back to regions
+        let cities = (data.topCities || [])
+        if (cities.length === 0) {
+          // flatten regions
+          const flat: { name: string }[] = []
+          for (const region of (data.regions || [])) {
+            for (const c of (region.cities || [])) flat.push({ name: c.name })
+            if (flat.length >= 30) break
+          }
+          cities = flat
+        }
+        setMajorCities(cities.slice(0, 30))
         setLoadingMajor(false)
       })
-      .catch(() => setLoadingMajor(false))
+      .catch(() => {
+        // Final fallback: geo/search with broad query
+        fetch(`/api/geo/search?q=a&country=${countryCode}&limit=30`)
+          .then(r => r.json())
+          .then(data => { setMajorCities(data.results || []); setLoadingMajor(false) })
+          .catch(() => setLoadingMajor(false))
+      })
   }, [countryCode])
 
   // Search with debounce
