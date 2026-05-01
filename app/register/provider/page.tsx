@@ -27,6 +27,7 @@ import {
 } from "@/lib/listingOptions";
 import Logo from "@/components/Logo";
 import PhoneInput from "@/components/PhoneInput";
+import CountrySelect from "@/components/CountrySelect";
 import { findNearestMajorCity, getDisplayLocation } from "@/lib/majorCities";
 
 const GENDER_OPTIONS = [
@@ -293,6 +294,19 @@ export default function RegisterProviderPage() {
     setShowCityDropdown(false);
     setLatitude(cityData.latitude);
     setLongitude(cityData.longitude);
+
+    // Auto-fill postal code from coordinates or city name
+    try {
+      const lat = cityData.latitude;
+      const lng = cityData.longitude;
+      const cc = (cityData.country_code || "").toLowerCase();
+      const url = lat && lng
+        ? `/api/geo/postal?lat=${lat}&lng=${lng}&country=${cc}`
+        : `/api/geo/postal?city=${encodeURIComponent(cityData.name)}&country=${cc}`;
+      const posRes = await fetch(url);
+      const posData = await posRes.json();
+      if (posData.postal_code) setPostalCode(posData.postal_code);
+    } catch { /* silent fail */ }
     
     // Auto-fill country if from global search
     if (cityData.country_code && !countryCode) {
@@ -913,23 +927,17 @@ export default function RegisterProviderPage() {
                 <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
                   Location
                 </h2>
-                <SelectField
-                  label="Country"
+                <CountrySelect
                   value={country}
-                  onChange={(v) => {
-                    const selected = SUPPORTED_COUNTRIES.find(c => c.name === v);
-                    setCountry(v);
-                    setCountryCode(selected?.code || "");
+                  onChange={(name, code) => {
+                    setCountry(name);
+                    setCountryCode(code);
                     setCity("");
                     setCitySearch("");
                     setCityResults([]);
                     setMajorCity(null);
+                    setPostalCode("");
                   }}
-                  options={SUPPORTED_COUNTRIES.map((c) => ({
-                    value: c.name,
-                    label: `${c.flag} ${c.name}`,
-                  }))}
-                  placeholder="Select country..."
                   required
                 />
                 
