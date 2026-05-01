@@ -7,6 +7,22 @@ import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { MapPin, Phone, MessageCircle, Send, Globe, Instagram, ExternalLink, ChevronLeft, ChevronRight, Play, Mic, X } from "lucide-react"
 import Link from "next/link"
 
+interface Story {
+  id: string
+  media_url: string
+  media_type: string
+  created_at: string
+}
+
+interface LockedItem {
+  id: string
+  title: string
+  description: string | null
+  coin_price: number
+  media_urls: string[]
+  media_types: string[]
+}
+
 interface Listing {
   id: string
   slug: string
@@ -49,8 +65,9 @@ export default function PersonalLinkPage() {
   const [imgIdx, setImgIdx] = useState(0)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [showVoice, setShowVoice] = useState(false)
-  const [voicePlaying, setVoicePlaying] = useState(false)
-  const audioRef = useState<HTMLAudioElement | null>(null)
+  const [stories, setStories] = useState<Story[]>([])
+  const [lockedContent, setLockedContent] = useState<LockedItem[]>([])
+  const [activeStory, setActiveStory] = useState<Story | null>(null)
 
   useEffect(() => {
     if (!slug) return
@@ -68,6 +85,24 @@ export default function PersonalLinkPage() {
         }
         setListing(data)
         setLoading(false)
+
+        // Fetch stories
+        supabase
+          .from("stories")
+          .select("id, media_url, media_type, created_at")
+          .eq("listing_id", data.id)
+          .order("created_at", { ascending: false })
+          .limit(20)
+          .then(({ data: s }) => setStories(s || []))
+
+        // Fetch locked content
+        supabase
+          .from("locked_content")
+          .select("id, title, description, coin_price, media_urls, media_types")
+          .eq("listing_id", data.id)
+          .order("created_at", { ascending: false })
+          .limit(10)
+          .then(({ data: lc }) => setLockedContent(lc || []))
       })
   }, [slug])
 
@@ -111,11 +146,30 @@ export default function PersonalLinkPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
 
-      {/* Lightbox */}
+      {/* Image lightbox */}
       {lightbox && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center" onClick={() => setLightbox(null)}>
           <button className="absolute top-4 right-4 p-2 bg-white/10 rounded-full"><X size={20} /></button>
           <img src={lightbox} alt="" className="max-w-[95vw] max-h-[90vh] object-contain rounded-lg" />
+        </div>
+      )}
+
+      {/* Story viewer */}
+      {activeStory && (
+        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center" onClick={() => setActiveStory(null)}>
+          <button className="absolute top-4 right-4 p-2 bg-white/10 rounded-full z-10"><X size={20} /></button>
+          {activeStory.media_type === "video" ? (
+            <video
+              src={activeStory.media_url}
+              autoPlay
+              controls
+              playsInline
+              className="max-w-[95vw] max-h-[90vh] rounded-2xl"
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <img src={activeStory.media_url} alt="" className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl" />
+          )}
         </div>
       )}
 
@@ -300,6 +354,46 @@ export default function PersonalLinkPage() {
           </section>
         )}
 
+        {/* Stories */}
+        {stories.length > 0 && (
+          <section>
+            <h2 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">
+              Stories <span className="text-white/20">({stories.length})</span>
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+              {stories.map((story, i) => (
+                <button
+                  key={story.id}
+                  onClick={() => setActiveStory(story)}
+                  className="relative flex-shrink-0 w-20 h-28 rounded-2xl overflow-hidden bg-gray-800 border-2 border-white/20 hover:border-white/50 transition-all"
+                >
+                  {story.media_type === "video" ? (
+                    <video
+                      src={story.media_url}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img src={story.media_url} alt="" className="w-full h-full object-cover" />
+                  )}
+                  {/* Play icon for video */}
+                  {story.media_type === "video" && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-full bg-black/50 flex items-center justify-center">
+                        <Play size={12} className="text-white ml-0.5" />
+                      </div>
+                    </div>
+                  )}
+                  {/* Story ring gradient */}
+                  <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: "inset 0 0 0 2px rgba(220,38,38,0.7)" }} />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Photo gallery */}
         {allPhotos.length > 1 && (
           <section>
@@ -329,6 +423,50 @@ export default function PersonalLinkPage() {
                   className="w-full aspect-[9/16] object-cover rounded-xl bg-gray-800" />
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Exclusive content */}
+        {lockedContent.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-xs font-bold text-white/40 uppercase tracking-widest">Exclusive content</h2>
+              <span className="text-[10px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full">🔒 Premium</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {lockedContent.map(item => (
+                <div key={item.id} className="relative rounded-2xl overflow-hidden bg-gray-900 border border-white/10">
+                  {/* Preview image blurred */}
+                  {item.media_urls?.[0] && (
+                    <div className="relative aspect-[3/4]">
+                      <img
+                        src={item.media_urls[0]}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        style={{ filter: "blur(12px)", transform: "scale(1.1)" }}
+                      />
+                      {/* Lock overlay */}
+                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        </div>
+                        <p className="text-white text-xs font-bold text-center px-2 leading-tight">{item.title}</p>
+                        <div className="flex items-center gap-1 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">RC</text></svg>
+                          {item.coin_price} coins
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-white/30 text-center mt-3">
+              Unlock exclusive content with Red Coins on{" "}
+              <a href="https://redlightad.com" className="text-white/50 hover:text-white">RedLightAD.com</a>
+            </p>
           </section>
         )}
 
