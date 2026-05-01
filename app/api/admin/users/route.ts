@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       .select(
         `id, email, full_name, account_type, country, is_admin, is_banned, is_verified, 
          phone, phone_verified, whatsapp, avatar_url, subscription_tier, created_at,
-         listings!listings_user_id_fkey(id, premium_tier, premium_until, status)`,
+         listings(id, premium_tier, premium_until, status)`,
         { count: "exact" }
       )
       .order("created_at", { ascending: false })
