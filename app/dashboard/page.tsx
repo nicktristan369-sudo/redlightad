@@ -8,6 +8,7 @@ import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import ProfileCompletionModal from "@/components/ProfileCompletionModal"
+import { shareCodeFromId } from "@/lib/shareCode"
 import { PUSH_POINT_PACKAGES } from "@/lib/spendPackages"
 
 const STATS = [
@@ -107,28 +108,8 @@ function DashboardContent() {
         setListingId(listing.id)
         setListingSlug((listing as any).slug || null)
         setListingPremium(listing.premium_tier || null)
-
-        // Fetch share_code separately (column may not exist yet in older DBs)
-        try {
-          const { data: shareData } = await supabase
-            .from("listings")
-            .select("share_code")
-            .eq("id", listing.id)
-            .single()
-          const code = (shareData as any)?.share_code
-          setShareCode(code || null)
-          // Auto-generate if missing and user has premium
-          if (!code && listing.premium_tier) {
-            const newCode = Math.random().toString(36).slice(2,6) + Math.random().toString(36).slice(2,6)
-            const { error: updateErr } = await supabase
-              .from("listings")
-              .update({ share_code: newCode } as any)
-              .eq("id", listing.id)
-            if (!updateErr) setShareCode(newCode)
-          }
-        } catch {
-          // share_code column doesn't exist yet — silently skip
-        }
+        // Generate code deterministically from listing ID — no DB column needed
+        setShareCode(shareCodeFromId(listing.id))
         // Fetch cam availability
         const res = await fetch(`/api/cam/availability?listingId=${listing.id}`)
         const d = await res.json()
@@ -232,8 +213,7 @@ function DashboardContent() {
               <p className="text-[13px] text-gray-400 mt-0.5">Share this link anywhere — it shows only your profile, no navigation, no distractions.</p>
             </div>
             <div className="px-5 py-4">
-              {shareCode ? (
-                <>
+              {shareCode && (<>
                   <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
                     <span className="text-[13px] text-gray-300 flex-1 truncate font-mono">
                       redlightad.com/me/{shareCode}
@@ -275,21 +255,7 @@ function DashboardContent() {
                   <p className="text-[11px] text-gray-600 mt-3 text-center">
                     Share on Instagram, Twitter, Linktree, WhatsApp, Telegram — anywhere you want
                   </p>
-                </>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-[13px] text-gray-500 mb-3">Generating your personal link...</p>
-                  <button
-                    onClick={async () => {
-                      await fetch("/api/internal/migrate-share-code?secret=" + "0aee441bfbeeb".slice(0,16))
-                      window.location.reload()
-                    }}
-                    className="text-[12px] text-gray-400 hover:text-white transition-colors underline"
-                  >
-                    Generate link
-                  </button>
-                </div>
-              )}
+                </>)}
             </div>
           </div>
         )}

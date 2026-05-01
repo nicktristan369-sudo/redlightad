@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
+import { hexPrefixFromCode } from "@/lib/shareCode"
 import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { MapPin, Phone, MessageCircle, Send, Globe, Instagram, ExternalLink, ChevronLeft, ChevronRight, Play, Mic, X } from "lucide-react"
 import Link from "next/link"
@@ -74,8 +75,8 @@ export default function PersonalLinkPage() {
     const supabase = createClient()
     supabase
       .from("listings")
-      .select("id, slug, title, display_name, about, age, city, country, premium_tier, profile_image, profile_video_url, images, videos, video_url, voice_message_url, phone, whatsapp, telegram, social_links, services, languages, rate_1hour, rate_2hours, rate_overnight, height_cm, body_build, ethnicity, hair_color, kyc_status, category, share_code")
-      .eq("share_code", slug)
+      .select("id, slug, title, display_name, about, age, city, country, premium_tier, profile_image, profile_video_url, images, videos, video_url, voice_message_url, phone, whatsapp, telegram, social_links, services, languages, rate_1hour, rate_2hours, rate_overnight, height_cm, body_build, ethnicity, hair_color, kyc_status, category")
+      .ilike("id", `${hexPrefixFromCode(slug)}%`)
       .eq("status", "active")
       .single()
       .then(({ data, error }) => {
