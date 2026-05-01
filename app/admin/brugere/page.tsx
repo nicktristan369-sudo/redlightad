@@ -25,6 +25,14 @@ interface Profile {
   premium_tier: string | null;
   premium_until: string | null;
   listing_status: string | null;
+  // Contact info from listing
+  listing_phone: string | null;
+  listing_whatsapp: string | null;
+  listing_telegram: string | null;
+  listing_country: string | null;
+  listing_city: string | null;
+  listing_name: string | null;
+  listing_image: string | null;
 }
 
 interface ArchivedUser {
@@ -532,7 +540,7 @@ export default function AdminBrugerePage() {
             <table className="w-full">
               <thead>
                 <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
-                  {["Billede", "Navn", "Email", "Telefon", "WhatsApp", "Land", "Status", "Premium", "Oprettet", "Handlinger"].map(h => (
+                  {["Billede", "Navn", "Email", "Telefon", "WhatsApp", "Telegram", "Land", "Status", "Premium", "Oprettet", "Handlinger"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#9CA3AF" }}>{h}</th>
                   ))}
                 </tr>
@@ -544,51 +552,46 @@ export default function AdminBrugerePage() {
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     {/* Billede */}
                     <td className="px-4 py-3">
-                      <Avatar url={u.avatar_url} name={u.full_name} />
+                      <Avatar url={u.listing_image || u.avatar_url} name={u.listing_name || u.full_name} />
                     </td>
                     {/* Navn */}
                     <td className="px-4 py-3">
                       <div>
-                        <p className="text-[13px] font-semibold text-gray-900">{u.full_name ?? "Intet navn"}</p>
+                        <p className="text-[13px] font-semibold text-gray-900">{u.listing_name || u.full_name || "Intet navn"}</p>
                         {u.is_admin && <span className="text-[10px] font-semibold" style={{ color: "#2563EB" }}>Admin</span>}
+                        {u.listing_city && <p className="text-[10px] text-gray-400">{u.listing_city}</p>}
                       </div>
                     </td>
                     {/* Email */}
                     <td className="px-4 py-3 text-[12px] text-gray-500 max-w-[180px] truncate">{u.email ?? "—"}</td>
                     {/* Telefon */}
                     <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
-                      {u.phone ? (
-                        <span className="flex items-center gap-1">
-                          {u.phone}
-                          {u.phone_verified
-                            ? <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#16A34A" }} title="Verified" />
-                            : (
-                              <button
-                                title="Manually verify phone"
-                                onClick={async () => {
-                                  if (!confirm(`Manually verify ${u.phone}?`)) return
-                                  const { createClient } = await import("@/lib/supabase")
-                  const { data: { session } } = await createClient().auth.getSession()
-                                  const res = await fetch("/api/admin/verify-phone", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-                                    body: JSON.stringify({ phone: u.phone }),
-                                  })
-                                  if (res.ok) setProfiles(p => p.map(x => x.id === u.id ? { ...x, phone_verified: true } : x))
-                                  else alert("Failed")
-                                }}
-                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1 }}
-                              >
-                                <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#F59E0B" }} title="Not verified — click to verify manually" />
-                              </button>
-                            )}
-                        </span>
+                      {(u.listing_phone || u.phone) ? (
+                        <a href={`tel:${u.listing_phone || u.phone}`} className="text-blue-600 hover:underline">
+                          {u.listing_phone || u.phone}
+                        </a>
                       ) : "—"}
                     </td>
                     {/* WhatsApp */}
-                    <td className="px-4 py-3 text-[12px] text-gray-500">{u.whatsapp ?? "—"}</td>
+                    <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
+                      {(u.listing_whatsapp || u.whatsapp) ? (
+                        <a href={`https://wa.me/${(u.listing_whatsapp || u.whatsapp || "").replace(/[^0-9]/g, "")}`} 
+                           target="_blank" rel="noopener" className="text-green-600 hover:underline">
+                          {u.listing_whatsapp || u.whatsapp}
+                        </a>
+                      ) : "—"}
+                    </td>
+                    {/* Telegram */}
+                    <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
+                      {u.listing_telegram ? (
+                        <a href={`https://t.me/${u.listing_telegram.replace("@", "")}`} 
+                           target="_blank" rel="noopener" className="text-blue-500 hover:underline">
+                          {u.listing_telegram}
+                        </a>
+                      ) : "—"}
+                    </td>
                     {/* Land */}
-                    <td className="px-4 py-3 text-[12px] text-gray-500">{u.country ?? "—"}</td>
+                    <td className="px-4 py-3 text-[12px] text-gray-500">{u.listing_country || u.country || "—"}</td>
                     {/* Status */}
                     <td className="px-4 py-3">
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"

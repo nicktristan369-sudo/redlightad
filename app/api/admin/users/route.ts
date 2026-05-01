@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     if (userIds.length > 0) {
       const { data: listings } = await supabase
         .from("listings")
-        .select("id, user_id, premium_tier, premium_until, status")
+        .select("id, user_id, premium_tier, premium_until, status, phone, whatsapp, telegram, country, city, display_name, title, profile_image")
         .in("user_id", userIds);
       
       // Create map of user_id -> listing
@@ -74,6 +74,14 @@ export async function GET(req: NextRequest) {
         premium_tier: listing?.premium_tier ?? null,
         premium_until: listing?.premium_until ?? null,
         listing_status: listing?.status ?? null,
+        // Contact info from listing
+        listing_phone: listing?.phone ?? null,
+        listing_whatsapp: listing?.whatsapp ?? null,
+        listing_telegram: listing?.telegram ?? null,
+        listing_country: listing?.country ?? null,
+        listing_city: listing?.city ?? null,
+        listing_name: listing?.display_name || listing?.title || null,
+        listing_image: listing?.profile_image ?? null,
       };
     });
 
