@@ -269,58 +269,139 @@ export default function ProfileCompletionModal({ listingId, plan, onClose }: Pro
           <X size={18} className="text-white" />
         </button>
 
-        {/* Premium header */}
-        <div className="bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 px-6 py-6 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-2 left-8 w-2 h-2 bg-white rounded-full animate-ping" />
-            <div className="absolute top-8 right-16 w-1.5 h-1.5 bg-white rounded-full animate-ping" style={{ animationDelay: "0.5s" }} />
-            <div className="absolute bottom-3 left-1/3 w-1 h-1 bg-white rounded-full animate-ping" style={{ animationDelay: "1s" }} />
-          </div>
-
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <Crown size={24} className="text-white" />
+        {/* Header - different for Premium vs Standard */}
+        {plan === "premium" ? (
+          <div className="bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 px-6 py-6 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-2 left-8 w-2 h-2 bg-white rounded-full animate-ping" />
+              <div className="absolute top-8 right-16 w-1.5 h-1.5 bg-white rounded-full animate-ping" style={{ animationDelay: "0.5s" }} />
+              <div className="absolute bottom-3 left-1/3 w-1 h-1 bg-white rounded-full animate-ping" style={{ animationDelay: "1s" }} />
             </div>
-            <div>
-              <h2 className="text-xl font-black text-white">Welcome to Premium! 🎉</h2>
-              <p className="text-amber-100 text-sm">Let's maximize your profile</p>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
+                <Crown size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white">Welcome to Premium! 🎉</h2>
+                <p className="text-amber-100 text-sm">Let's maximize your profile</p>
+              </div>
             </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs text-white/80 mb-1.5">
-              <span>Profile completion</span>
-              <span className="font-bold">{completionPct}%</span>
-            </div>
-            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${completionPct}%` }}
-              />
+            {/* Progress bar */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-xs text-white/80 mb-1.5">
+                <span>Profile completion</span>
+                <span className="font-bold">{completionPct}%</span>
+              </div>
+              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${completionPct}%` }} />
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 px-6 py-6 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-2 left-8 w-2 h-2 bg-white rounded-full animate-ping" />
+              <div className="absolute top-8 right-16 w-1.5 h-1.5 bg-white rounded-full animate-ping" style={{ animationDelay: "0.5s" }} />
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
+                <CheckCircle2 size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white">Congratulations! 🎉</h2>
+                <p className="text-green-100 text-sm">Your Standard profile is now live on RedLightAD</p>
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-100">
-          <button
-            onClick={() => setActiveTab("setup")}
-            className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === "setup" ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-400"}`}
-          >
-            Complete Profile {incompleteSteps.length > 0 && `(${incompleteSteps.length})`}
-          </button>
-          <button
-            onClick={() => setActiveTab("features")}
-            className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === "features" ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-400"}`}
-          >
-            Premium Features
-          </button>
-        </div>
+        {/* Tabs - only for Premium */}
+        {plan === "premium" && (
+          <div className="flex border-b border-gray-100">
+            <button
+              onClick={() => setActiveTab("setup")}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === "setup" ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-400"}`}
+            >
+              Complete Profile {incompleteSteps.length > 0 && `(${incompleteSteps.length})`}
+            </button>
+            <button
+              onClick={() => setActiveTab("features")}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === "features" ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-400"}`}
+            >
+              Premium Features
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div className="max-h-[50vh] overflow-y-auto">
-          {activeTab === "setup" ? (
+          {/* Standard Plan - Simple welcome */}
+          {plan !== "premium" ? (
+            <div className="p-6 space-y-5">
+              <div className="text-center">
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Your profile is now visible to clients on RedLightAD. 
+                  You can add up to 4 photos and appear in 1 location.
+                </p>
+              </div>
+
+              {/* Quick actions */}
+              <div className="space-y-2">
+                <button
+                  onClick={() => goTo("/dashboard/profil")}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all text-left"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                    <Camera size={18} className="text-gray-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">Add Photos</p>
+                    <p className="text-xs text-gray-500">Upload up to 4 profile pictures</p>
+                  </div>
+                  <ChevronRight size={16} className="text-gray-300" />
+                </button>
+
+                {listingId && (
+                  <button
+                    onClick={() => goTo(`/ads/${listingId}`)}
+                    className="w-full flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all text-left"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                      <ExternalLink size={18} className="text-gray-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900">View My Profile</p>
+                      <p className="text-xs text-gray-500">See how clients see you</p>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-300" />
+                  </button>
+                )}
+              </div>
+
+              {/* Upgrade CTA */}
+              <div className="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0">
+                    <Crown size={18} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900">Unlock Premium Features</p>
+                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                      Get unlimited photos, videos, voice messages, multiple locations, 
+                      social links, marketplace access, and always appear in top section.
+                    </p>
+                    <button
+                      onClick={() => goTo("/upgrade")}
+                      className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors"
+                    >
+                      <Zap size={14} />
+                      Upgrade to Premium
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "setup" ? (
             <div className="p-5 space-y-3">
               {/* Incomplete steps */}
               {incompleteSteps.length > 0 ? (
@@ -424,26 +505,50 @@ export default function ProfileCompletionModal({ listingId, plan, onClose }: Pro
 
         {/* Footer CTA */}
         <div className="sticky bottom-0 bg-white border-t border-gray-100 px-5 py-4">
-          {activeTab === "setup" && incompleteSteps.length > 0 ? (
-            <button
-              onClick={() => goTo(incompleteSteps[0].href)}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-200"
-            >
-              <Zap size={16} />
-              Start: {incompleteSteps[0].title}
-            </button>
+          {plan !== "premium" ? (
+            // Standard plan footer
+            <>
+              <button
+                onClick={handleClose}
+                className="w-full py-3.5 rounded-xl bg-gray-900 hover:bg-black text-white text-sm font-bold transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={16} />
+                Go to Dashboard
+              </button>
+              <button 
+                onClick={() => goTo("/upgrade")} 
+                className="w-full text-center text-xs text-amber-600 font-semibold mt-2 py-1 hover:text-amber-700 transition-colors"
+              >
+                ✨ Upgrade to Premium for more features
+              </button>
+            </>
+          ) : activeTab === "setup" && incompleteSteps.length > 0 ? (
+            <>
+              <button
+                onClick={() => goTo(incompleteSteps[0].href)}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-200"
+              >
+                <Zap size={16} />
+                Start: {incompleteSteps[0].title}
+              </button>
+              <button onClick={handleClose} className="w-full text-center text-xs text-gray-400 mt-2 py-1 hover:text-gray-600 transition-colors">
+                Remind me later
+              </button>
+            </>
           ) : (
-            <button
-              onClick={handleClose}
-              className="w-full py-3.5 rounded-xl bg-gray-900 hover:bg-black text-white text-sm font-bold transition-colors flex items-center justify-center gap-2"
-            >
-              <CheckCircle2 size={16} />
-              Got it — Start using Premium
-            </button>
+            <>
+              <button
+                onClick={handleClose}
+                className="w-full py-3.5 rounded-xl bg-gray-900 hover:bg-black text-white text-sm font-bold transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={16} />
+                Got it — Start using Premium
+              </button>
+              <button onClick={handleClose} className="w-full text-center text-xs text-gray-400 mt-2 py-1 hover:text-gray-600 transition-colors">
+                Close
+              </button>
+            </>
           )}
-          <button onClick={handleClose} className="w-full text-center text-xs text-gray-400 mt-2 py-1 hover:text-gray-600 transition-colors">
-            Remind me later
-          </button>
         </div>
       </div>
     </div>

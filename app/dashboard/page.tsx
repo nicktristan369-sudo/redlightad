@@ -83,6 +83,20 @@ function DashboardContent() {
       if (!user) return
       setUserId(user.id)
 
+      // If redirected from payment, activate the plan first
+      if (planActivated && plan) {
+        const months = searchParams.get("months") || "1"
+        try {
+          await fetch("/api/payment/activate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plan, months, userId: user.id }),
+          })
+        } catch (e) {
+          console.error("Failed to activate plan:", e)
+        }
+      }
+
       // Check if user has a listing and whether they have paid
       const { data: listing } = await supabase
         .from("listings")
@@ -104,8 +118,8 @@ function DashboardContent() {
       }
 
       setChecking(false)
-      // Show completion modal when redirected from payment (only for premium)
-      if (planActivated && plan === "premium") setShowCompletion(true)
+      // Show completion modal when redirected from payment
+      if (planActivated) setShowCompletion(true)
 
       if (listing?.id) {
         setListingId(listing.id)
