@@ -161,7 +161,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
         <div className="px-5 pt-5 pb-4 border-b border-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -195,7 +195,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
               placeholder="Search countries..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-[#1a2028] border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-rose-500 transition-colors text-sm"
+              className="w-full bg-[#1a2028] border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-red-600 transition-colors text-sm"
             />
           </div>
         </div>
@@ -204,7 +204,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-gray-700 border-t-rose-500 rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-gray-700 border-t-red-600 rounded-full animate-spin" />
             </div>
           ) : search ? (
             // Search results - 3 columns
@@ -273,7 +273,7 @@ function CountryButton({ code, name, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-800/70 transition-colors text-left group"
+      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-red-600/20 transition-colors text-left group"
     >
       <span 
         className={`fi fi-${flagCode} fis`} 
