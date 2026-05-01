@@ -10,10 +10,12 @@ export function shareCodeFromId(uuid: string): string {
 }
 
 /**
- * Given a share code, recover the hex prefix to query DB.
- * We store the first 10 hex chars of the UUID as the code source.
+ * Given a share code, recover the UUID text prefix for DB lookup.
+ * UUID format: xxxxxxxx-xxxx-... so 10 hex chars = 8 chars + dash + 2 chars
  */
-export function hexPrefixFromCode(code: string): string {
+export function uuidPrefixFromCode(code: string): string {
   const num = parseInt(code, 36)
-  return num.toString(16).padStart(10, '0')
+  const hex = num.toString(16).padStart(10, '0')
+  // Convert hex prefix back to UUID prefix format: xxxxxxxx-xx
+  return hex.slice(0, 8) + '-' + hex.slice(8, 10)
 }
