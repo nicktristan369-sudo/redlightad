@@ -41,20 +41,18 @@ const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }>
 };
 
 const TIERS: { value: string | null; label: string; color: string }[] = [
-  { value: "vip",      label: "VIP",      color: "#C9A84C" },
-  { value: "featured", label: "Featured", color: "#2563EB" },
-  { value: "basic",    label: "Basic",    color: "#6B7280" },
+  { value: "featured", label: "Premium",  color: "#C9A84C" },
+  { value: "basic",    label: "Standard", color: "#6B7280" },
   { value: null,       label: "Standard", color: "#9CA3AF" },
 ];
 
 const TIER_COLOR: Record<string, string> = {
-  vip: "#C9A84C", featured: "#2563EB", basic: "#6B7280",
+  featured: "#C9A84C", basic: "#6B7280",
 };
 
 /* ── Inline Tier Dropdown ── */
 const TIER_STYLE: Record<string, { bg: string; color: string; border: string }> = {
-  vip:      { bg: "#FEF08A", color: "#78350F", border: "#F59E0B" },
-  featured: { bg: "#BFDBFE", color: "#1E3A8A", border: "#3B82F6" },
+  featured: { bg: "#FEF08A", color: "#78350F", border: "#F59E0B" },
   basic:    { bg: "#E5E7EB", color: "#374151", border: "#D1D5DB" },
   standard: { bg: "#F3F4F6", color: "#6B7280", border: "#E5E7EB" },
 };
@@ -402,13 +400,9 @@ export default function AdminAnnoncerPage() {
                       <td className="px-4 py-3 max-w-[220px]">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-[13px] font-semibold text-gray-900 truncate">{l.title}</p>
-                          {l.tier === "vip" && (
-                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full flex-shrink-0"
-                              style={{ background: "#FFFBEB", color: "#B45309", border: "1px solid #FCD34D" }}>VIP</span>
-                          )}
                           {l.tier === "featured" && (
                             <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full flex-shrink-0"
-                              style={{ background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>FEAT</span>
+                              style={{ background: "#FEF9C3", color: "#92400E", border: "1px solid #FCD34D" }}>PREMIUM</span>
                           )}
                         </div>
                       </td>

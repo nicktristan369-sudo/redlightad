@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
     // ── set_tier ──
     if (action === "set_tier") {
       const newTier = (body.tier ?? null) as string | null;
-      const allowed = [null, "basic", "featured", "vip"];
+      const allowed = [null, "basic", "featured"];
       if (!allowed.includes(newTier)) {
         return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
       }

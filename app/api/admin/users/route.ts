@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "set_premium": {
-        const validTiers = ["basic", "featured", "vip", null];
+        const validTiers = ["basic", "featured", null];
         if (!validTiers.includes(tier ?? null)) {
           return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
         }

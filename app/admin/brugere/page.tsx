@@ -57,17 +57,15 @@ const PAGE_SIZE = 25;
 
 /* ───── Tier ───── */
 const TIERS: { value: string | null; label: string; price: string; color: string }[] = [
-  { value: "vip",      label: "VIP",      price: "$49.99/mo", color: "#CA8A04" },
-  { value: "featured", label: "Featured", price: "$24.99/mo", color: "#2563EB" },
-  { value: "basic",    label: "Basic",    price: "$9.99/mo",  color: "#6B7280" },
+  { value: "featured", label: "Premium",  price: "$42/mo", color: "#CA8A04" },
+  { value: "basic",    label: "Standard", price: "$21/mo", color: "#6B7280" },
   { value: null,       label: "Free",     price: "fjern",     color: "#DC2626" },
 ];
 
 function TierBadge({ tier, until }: { tier: string | null; until?: string | null }) {
   if (!tier) return <span className="text-[11px] text-gray-300">—</span>;
   const map: Record<string, { bg: string; color: string; label: string }> = {
-    vip:      { bg: "#FEF9C3", color: "#92400E", label: "VIP" },
-    featured: { bg: "#EFF6FF", color: "#1E40AF", label: "PREMIUM" },
+    featured: { bg: "#FEF9C3", color: "#92400E", label: "PREMIUM" },
     basic:    { bg: "#F3F4F6", color: "#374151", label: "STANDARD" },
   };
   const s = map[tier];
