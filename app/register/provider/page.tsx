@@ -138,17 +138,21 @@ function ChipSelect({
   selected,
   onChange,
   required = false,
+  max,
 }: {
   label: string;
   options: string[];
   selected: string[];
   onChange: (v: string[]) => void;
   required?: boolean;
+  max?: number;
 }) {
   const toggle = (opt: string) => {
     if (selected.includes(opt)) {
       onChange(selected.filter((s) => s !== opt));
     } else {
+      // Respect max limit
+      if (max && selected.length >= max) return;
       onChange([...selected, opt]);
     }
   };
@@ -876,10 +880,11 @@ export default function RegisterProviderPage() {
                   onChange={setServices}
                 />
                 <ChipSelect
-                  label="Languages Spoken"
+                  label="Languages Spoken (max 2)"
                   options={LANGUAGE_OPTIONS}
                   selected={languages}
                   onChange={setLanguages}
+                  max={2}
                 />
               </div>
 
