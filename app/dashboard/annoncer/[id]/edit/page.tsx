@@ -7,6 +7,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import LocationSelector from "@/components/LocationSelector";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import SocialLinksEditor from "@/components/SocialLinksEditor";
+import PhoneInput from "@/components/PhoneInput";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 import { Crown, CheckCircle, AlertTriangle, Plus, Trash2, Eye, EyeOff } from "lucide-react";
 import LocationSwitchPanel from "@/components/LocationSwitchPanel";
@@ -831,26 +832,45 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 <div>
                   <p className="text-[13px] font-semibold text-gray-900 mb-3">Contact</p>
                   <div className="space-y-2.5">
-                    {[
-                      { label: "📞 Phone",    field: "phone" },
-                      { label: "📞 Phone 2",  field: "phone2" },
-                      { label: "Email",        field: "email" },
-                    ].map(c => (
-                      <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                        <span className="w-20 text-[12px] text-gray-400 flex-shrink-0">{c.label}</span>
-                        <input type={c.field === "email" ? "email" : "text"}
-                          value={form[c.field as keyof typeof form] as string}
-                          onChange={e => updateField(c.field, e.target.value)}
-                          placeholder={c.label}
-                          className="flex-1 text-[13px] bg-transparent border-0 outline-none text-gray-900" />
-                      </div>
-                    ))}
+                    <PhoneInput
+                      label="📞 Phone"
+                      value={form.phone as string}
+                      onChange={v => updateField("phone", v)}
+                      required
+                    />
+                    <PhoneInput
+                      label="📞 Phone 2"
+                      value={(form as { phone2?: string }).phone2 ?? ""}
+                      onChange={v => updateField("phone2", v)}
+                    />
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
+                      <span className="w-20 text-[12px] text-gray-400 flex-shrink-0">Email</span>
+                      <input type="email"
+                        value={form.email as string}
+                        onChange={e => updateField("email", e.target.value)}
+                        placeholder="Email"
+                        className="flex-1 text-[13px] bg-transparent border-0 outline-none text-gray-900" />
+                    </div>
                   </div>
                   {/* Messaging apps */}
                   <p className="text-[12px] text-gray-500 mt-4 mb-2">Messaging apps</p>
                   <div className="space-y-2">
+                    {/* WhatsApp med PhoneInput */}
+                    <div>
+                      <PhoneInput
+                        label="💬 WhatsApp"
+                        value={form.whatsapp as string}
+                        onChange={v => updateField("whatsapp", v)}
+                      />
+                      <label className="flex items-center gap-1.5 text-[11px] text-gray-400 cursor-pointer mt-1.5 ml-1">
+                        <input type="checkbox"
+                          checked={form.contact_whatsapp as boolean}
+                          onChange={e => updateField("contact_whatsapp", e.target.checked)}
+                          className="rounded border-gray-300" />
+                        Show WhatsApp button
+                      </label>
+                    </div>
                     {[
-                      { app: "WhatsApp", field: "whatsapp", toggle: "contact_whatsapp", icon: "💬" },
                       { app: "Telegram", field: "telegram", toggle: "contact_telegram", icon: "✈️" },
                       { app: "Viber",    field: "viber",    toggle: "contact_viber",    icon: "📳" },
                       { app: "WeChat",   field: "wechat",   toggle: "contact_wechat",   icon: "💚" },

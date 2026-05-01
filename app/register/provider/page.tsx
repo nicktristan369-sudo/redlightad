@@ -26,6 +26,7 @@ import {
   AVAILABLE_FOR_OPTIONS,
 } from "@/lib/listingOptions";
 import Logo from "@/components/Logo";
+import PhoneInput from "@/components/PhoneInput";
 import { findNearestMajorCity, getDisplayLocation } from "@/lib/majorCities";
 
 const GENDER_OPTIONS = [
@@ -999,20 +1000,17 @@ export default function RegisterProviderPage() {
                 <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
                   Contact
                 </h2>
-                <InputField
+                <PhoneInput
                   label="Phone (with country code)"
                   value={phone}
                   onChange={setPhone}
-                  type="tel"
-                  placeholder="+45 12345678"
                   required
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <InputField
+                  <PhoneInput
                     label="WhatsApp"
                     value={whatsapp}
                     onChange={setWhatsapp}
-                    placeholder="+45 12345678"
                   />
                   <InputField
                     label="Telegram"
