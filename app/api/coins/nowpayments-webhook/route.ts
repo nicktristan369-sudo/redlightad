@@ -73,6 +73,24 @@ export async function POST(req: NextRequest) {
       status: "completed",
     })
 
+    // Log til crypto_payments for admin oversigt
+    try {
+      await supabase.from("crypto_payments").insert({
+        payment_id: data.payment_id?.toString(),
+        order_id: order_id,
+        user_id: userId,
+        payment_type: "coins",
+        status: payment_status,
+        pay_amount: data.pay_amount,
+        pay_currency: data.pay_currency,
+        price_amount: data.price_amount,
+        price_currency: data.price_currency,
+        actually_paid: data.actually_paid,
+        outcome_amount: data.outcome_amount,
+        outcome_currency: data.outcome_currency,
+      })
+    } catch { /* table might not exist yet */ }
+
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error"
