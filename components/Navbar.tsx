@@ -385,7 +385,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                                     {conv.lastMessage.slice(0, 40)}{conv.lastMessage.length > 40 ? "..." : ""}
                                   </p>
                                 </div>
-                                <span style={{ fontSize: 10, color: "#9CA3AF", flexShrink: 0 }}>
+                                <span style={{ fontSize: 10, color: "#6B7280", flexShrink: 0 }}>
                                   {conv.updatedAt ? new Date(conv.updatedAt).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" }) : ""}
                                 </span>
                               </Link>
@@ -393,7 +393,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                           ) : (
                             <div style={{ padding: "24px 16px", textAlign: "center" }}>
                               <MessageSquare size={28} color="#E5E7EB" style={{ margin: "0 auto 8px" }} />
-                              <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>No new messages</p>
+                              <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>No new messages</p>
                             </div>
                           )}
                         </div>
@@ -432,7 +432,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                             <Avatar size={36} />
                             <div style={{ minWidth: 0 }}>
                               <p style={{ fontSize: 12, fontWeight: 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
-                              <p style={{ fontSize: 10, color: "#9CA3AF", margin: "1px 0 0" }}>{user.accountType === "customer" ? "Kunde" : "Profil"}</p>
+                              <p style={{ fontSize: 10, color: "#6B7280", margin: "1px 0 0" }}>{user.accountType === "customer" ? "Kunde" : "Profil"}</p>
                             </div>
                           </div>
                         </div>
@@ -533,7 +533,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
             <div style={{ minWidth: 0, flex: 1 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                <span style={{ fontSize: 10, color: "#9CA3AF" }}>{user.accountType === "customer" ? "Customer" : "Provider"}</span>
+                <span style={{ fontSize: 10, color: "#6B7280" }}>{user.accountType === "customer" ? "Customer" : "Provider"}</span>
                 {coinBalance !== null && <>
                   <span style={{ width: 2, height: 2, borderRadius: "50%", background: "#D1D5DB", display: "inline-block" }} />
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#DC2626" }}>{coinBalance} RC</span>

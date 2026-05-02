@@ -109,7 +109,7 @@ export default function AdSidebar({
       <div className="px-5">
         {title && (
           <div className="pt-4 pb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{title}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{title}</span>
           </div>
         )}
         <div className="divide-y divide-gray-100">

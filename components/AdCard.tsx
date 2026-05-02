@@ -130,7 +130,7 @@ export default function AdCard({
             {hasVoice && voiceUrl ? (
               <VoiceMessagePlayer url={voiceUrl} compact />
             ) : hasVoice ? (
-              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
                 <Mic className="w-3.5 h-3.5" />
                 <span>Voice message</span>
               </div>

@@ -66,7 +66,7 @@ export default function AgeVerificationModal() {
           </div>
 
           {/* Description */}
-          <p className="text-gray-300 text-center text-sm md:text-base leading-relaxed mb-6 max-w-xl mx-auto">
+          <p className="text-gray-400 text-center text-sm md:text-base leading-relaxed mb-6 max-w-xl mx-auto">
             This website contains age-restricted materials including nudity and explicit 
             depictions of sexual activity. By entering, you affirm that you are at least 18 years of 
             age or the age of majority in the jurisdiction you are accessing the website from and 
@@ -97,7 +97,7 @@ export default function AgeVerificationModal() {
           </div>
 
           {/* Parental controls & Terms */}
-          <p className="text-gray-400 text-center text-sm mb-2">
+          <p className="text-gray-500 text-center text-sm mb-2">
             Our{" "}
             <Link href="/parental-controls" className="text-red-500 hover:text-red-400">
               parental controls page
