@@ -53,7 +53,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/analytics",      label: "Analytics",           icon: BarChart3 },
   { href: "/dashboard/invoices",       label: "Invoices",            icon: Receipt },
   { href: "/dashboard/profil",         label: "Profile Settings",    icon: Settings },
-  { href: "/dashboard/golive",         label: "Go Live",             icon: Radio, premiumOnly: true },
+  { href: "/dashboard/go-live",        label: "Go Live",             icon: Radio, premiumOnly: true },
   { href: "/dashboard/recordings",     label: "Recordings",          icon: Film, premiumOnly: true },
 ]
 
