@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const { listing_id, content } = body
 
     if (!listing_id || !content?.trim()) {
-      return NextResponse.json({ error: "listing_id og content er påkrævet" }, { status: 400 })
+      return NextResponse.json({ error: "listing_id and content are required" }, { status: 400 })
     }
 
     const db = admin()

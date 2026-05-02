@@ -55,6 +55,6 @@ export async function POST(req: Request) {
     email,
     password,
     userId: data.user.id,
-    message: 'Log ind på /login med disse credentials — du lander på /kunde dashboard',
+    message: 'Log in at /login with these credentials — you will land on /kunde dashboard',
   })
 }

@@ -25,7 +25,7 @@ import {
 
 const DAYS_OF_WEEK = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const;
 type DayKey = typeof DAYS_OF_WEEK[number];
-const DAY_LABELS: Record<DayKey, string> = { monday:"Mandag", tuesday:"Tirsdag", wednesday:"Onsdag", thursday:"Torsdag", friday:"Fredag", saturday:"Lørdag", sunday:"Søndag" };
+const DAY_LABELS: Record<DayKey, string> = { monday:"Monday", tuesday:"Tuesday", wednesday:"Wednesday", thursday:"Thursday", friday:"Friday", saturday:"Saturday", sunday:"Sunday" };
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = Math.floor(i / 2); const m = i % 2 === 0 ? "00" : "30";
   return `${String(h).padStart(2, "0")}:${m}`;
@@ -49,8 +49,8 @@ const SERVICE_OPTIONS = ["Dinner dates","Social events","Travel companion","Priv
 const LANGUAGE_OPTIONS = ["Dansk","Engelsk","Tysk","Fransk","Spansk"];
 
 const TIER_INFO: Record<string, { label: string; color: string; bg: string; features: string[] }> = {
-  vip:      { label: "VIP", color: "#92400E", bg: "#FEF3C7", features: ["Voice message","Social links med lås","Fremhævet i søgning (topplacering)","VIP badge"] },
-  featured: { label: "Featured", color: "#1E40AF", bg: "#EFF6FF", features: ["Voice message","Social links med lås","Featured badge"] },
+  vip:      { label: "VIP", color: "#92400E", bg: "#FEF3C7", features: ["Voice message","Social links with lock","Highlighted in search (top placement)","VIP badge"] },
+  featured: { label: "Featured", color: "#1E40AF", bg: "#EFF6FF", features: ["Voice message","Social links with lock","Featured badge"] },
   basic:    { label: "Basic", color: "#374151", bg: "#F3F4F6", features: ["Voice message","Social links (free)","Basic badge"] },
 };
 
@@ -134,7 +134,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   /* ── Travel helpers ── */
   const addTravelEntry = async () => {
     const { from_date, to_date, city, country } = newTravel;
-    if (!from_date || !to_date || !city || !country) { setTravelError("Udfyld alle felter"); return; }
+    if (!from_date || !to_date || !city || !country) { setTravelError("Fill in all fields"); return; }
     setTravelLoading(true); setTravelError("");
     try {
       const res = await fetch(`/api/listings/${id}/travel`, {
@@ -295,10 +295,10 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   /* ─── Validate step 1 ─── */
   const validateStep1 = () => {
     if (!form.title || !form.category || !form.gender || !form.age || !form.country) {
-      setError("Udfyld venligst alle påkrævede felter."); return false;
+      setError("Please fill in all required fields."); return false;
     }
     if (parseInt(form.age) < 18) {
-      setError("Du skal være mindst 18 år."); return false;
+      setError("You must be at least 18 years old."); return false;
     }
     setError(""); return true;
   };
@@ -451,7 +451,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={28} color="#16A34A" />
           </div>
-          <h2 className="text-[20px] font-bold text-gray-900 mb-2">Ændringer gemt</h2>
+          <h2 className="text-[20px] font-bold text-gray-900 mb-2">Changes saved</h2>
           <p className="text-[14px] text-gray-500 mb-6">Your changes are saved and visible on your profile immediately.</p>
           <button onClick={() => router.push(`/ads/${id}`)}
             className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white"
@@ -464,7 +464,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   const steps = [
     { num: 1, label: "Basis info" },
     { num: 2, label: "Detaljer" },
-    { num: 3, label: "Kontakt & Billeder" },
+    { num: 3, label: "Contact & Images" },
   ];
 
   return (
@@ -665,13 +665,13 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Udseende & Detaljer</p>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
-                      <span className="mb-1 block text-[11px] text-gray-400">Højde (cm)</span>
+                      <span className="mb-1 block text-[11px] text-gray-400">Height (cm)</span>
                       <input type="number" min={100} max={250} value={form.height} onChange={e => updateField("height", e.target.value)}
                         placeholder="170"
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none" />
                     </div>
                     <div>
-                      <span className="mb-1 block text-[11px] text-gray-400">Vægt (kg)</span>
+                      <span className="mb-1 block text-[11px] text-gray-400">Weight (kg)</span>
                       <input type="number" min={30} max={200} value={form.weight} onChange={e => updateField("weight", e.target.value)}
                         placeholder="60"
                         className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none" />
@@ -799,7 +799,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           {/* ──────── STEP 3 ──────── */}
           {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Kontakt & Billeder</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Contact & Images</h2>
               <div className="space-y-6">
 
                 {/* Kontakt */}
@@ -879,7 +879,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[13px] font-semibold text-gray-900">Social Media Links</p>
                     {!isPremium && (
-                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Låsning kræver premium</span>
+                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Locking requires premium</span>
                     )}
                   </div>
                   <SocialLinksEditor value={socialLinks} onChange={setSocialLinks} isPremium={isPremium} />
@@ -1120,7 +1120,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 {/* Billeder */}
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Billeder</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Images</p>
 
                   {/* Existing images */}
                   {existingImages.filter(u => !removedImages.includes(u)).length > 0 && (
@@ -1214,7 +1214,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                           className="text-[11px] font-semibold px-2 py-1 rounded flex-shrink-0"
                           style={{ background: profileVideoUrl === v.url ? "#DC2626" : "#F3F4F6", color: profileVideoUrl === v.url ? "#fff" : "#374151" }}
                         >
-                          {profileVideoUrl === v.url ? "✓ Profilbillede" : "🎬 Sæt som profil"}
+                          {profileVideoUrl === v.url ? "✓ Profile image" : "🎬 Set as profile"}
                         </button>
                         <button
                           type="button"
@@ -1240,7 +1240,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                               setExistingVideos(prev => prev.map(x => x.id === v.id ? { ...x, is_locked: e.target.checked } : x));
                             }}
                           />
-                          Låst (kræver RedCoins)
+                          Locked (requires RedCoins)
                         </label>
                         {v.is_locked && (
                           <input type="number" min={0} placeholder="Pris i RC" value={v.redcoin_price ?? 0}

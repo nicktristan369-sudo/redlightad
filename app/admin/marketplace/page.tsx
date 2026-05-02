@@ -107,7 +107,7 @@ function PreviewModal({
             {/* Description */}
             {item.description && (
               <div className="rounded-xl p-4" style={{ background: "#F9FAFB", border: "1px solid #F3F4F6" }}>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Beskrivelse</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Description</p>
                 <p className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">{item.description}</p>
               </div>
             )}
@@ -359,9 +359,9 @@ export default function AdminMarketplacePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" style={{ border: "1px solid #E5E5E5" }}>
             <h3 className="text-[16px] font-bold text-gray-900 mb-1">Afvis item</h3>
-            <p className="text-[13px] text-gray-500 mb-4">Valgfrit: efterlad en besked til sælger</p>
+            <p className="text-[13px] text-gray-500 mb-4">Optional: leave a message for the seller</p>
             <textarea value={rejectMsg} onChange={e => setRejectMsg(e.target.value)}
-              placeholder="Årsag til afvisning (valgfrit)…"
+              placeholder="Reason for rejection (optional)..."
               rows={3}
               className="w-full text-[13px] px-3 py-2 rounded-lg outline-none resize-none"
               style={{ border: "1px solid #E5E5E5" }} />
@@ -369,7 +369,7 @@ export default function AdminMarketplacePage() {
               <button onClick={reject} disabled={busy !== null}
                 className="flex-1 py-2.5 text-[13px] font-semibold text-white rounded-lg disabled:opacity-50"
                 style={{ background: "#DC2626" }}>
-                Bekræft afvisning
+                Confirm rejection
               </button>
               <button onClick={() => { setRejectId(null); setRejectMsg(""); }}
                 className="px-4 py-2.5 text-[13px] font-medium rounded-lg"
@@ -384,7 +384,7 @@ export default function AdminMarketplacePage() {
       {/* Header */}
       <div className="mb-5">
         <h1 className="text-[22px] font-bold text-gray-900">Marketplace</h1>
-        <p className="text-[13px] text-gray-400 mt-0.5">Gennemse og moderer sælger-items</p>
+        <p className="text-[13px] text-gray-400 mt-0.5">Review and moderate seller items</p>
       </div>
 
       {/* Pending alert banner */}
@@ -395,7 +395,7 @@ export default function AdminMarketplacePage() {
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             <div>
-              <p className="text-[13px] font-semibold text-orange-900">{pendingCount} item{pendingCount !== 1 ? "s" : ""} venter på gennemgang</p>
+              <p className="text-[13px] font-semibold text-orange-900">{pendingCount} item{pendingCount !== 1 ? "s" : ""} pending review</p>
               <p className="text-[12px] text-orange-700">Klik for at se pending submissions</p>
             </div>
           </div>
@@ -440,7 +440,7 @@ export default function AdminMarketplacePage() {
             <table className="w-full">
               <thead>
                 <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
-                  {["", "Item", "Kategori", "Sælger", "Pris", "Status", "Dato", "Handlinger"].map(h => (
+                  {["", "Item", "Category", "Seller", "Price", "Status", "Date", "Actions"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"
                       style={{ color: "#9CA3AF" }}>{h}</th>
                   ))}
@@ -518,7 +518,7 @@ export default function AdminMarketplacePage() {
                               className="p-1.5 rounded-md" style={{ color: "#9CA3AF" }}
                               onMouseEnter={e => { e.currentTarget.style.color = "#111"; e.currentTarget.style.background = "#F3F4F6"; }}
                               onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}
-                              title="Se på marketplace">
+                              title="View on marketplace">
                               <Eye size={14} />
                             </a>
                           )}

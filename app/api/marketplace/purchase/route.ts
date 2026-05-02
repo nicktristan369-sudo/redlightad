@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     // 10. Log transactions
     await supabase.from("coin_transactions").insert([
-      { user_id: user.id, type: "spend", amount: -item.price_redcoins, reference_id: item_id, note: "Marketplace køb" },
+      { user_id: user.id, type: "spend", amount: -item.price_redcoins, reference_id: item_id, note: "Marketplace purchase" },
       { user_id: listing.user_id, type: "earn", amount: sellerReceives, reference_id: item_id, note: "Marketplace salg (efter 19% kommission)" },
     ])
 

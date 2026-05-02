@@ -62,7 +62,7 @@ export async function POST(
     const tier = profile?.subscription_tier || listing.premium_tier;
     const isPremium = ["basic", "featured", "vip"].includes(tier ?? "");
     if (!isPremium) {
-      return NextResponse.json({ error: "Premium krævet" }, { status: 403 });
+      return NextResponse.json({ error: "Premium required" }, { status: 403 });
     }
 
     // Check 24h cooldown
@@ -80,7 +80,7 @@ export async function POST(
     const body = await req.json() as { country: string; city: string };
     const { country, city } = body;
     if (!country || !city) {
-      return NextResponse.json({ error: "country og city er påkrævet" }, { status: 400 });
+      return NextResponse.json({ error: "country and city are required" }, { status: 400 });
     }
 
     const { error: updateErr } = await db

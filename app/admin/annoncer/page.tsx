@@ -140,7 +140,7 @@ function TierDropdown({ listingId, currentTier, onSet }: {
           }}
         >
           <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sæt Tier</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Set Tier</p>
           </div>
           {TIERS.map(t => {
             const active = t.value === currentTier;
@@ -445,7 +445,7 @@ export default function AdminAnnoncerPage() {
                         <button
                           onClick={() => toggleCarousel(l.id, l.in_carousel)}
                           disabled={carouselBusy === l.id}
-                          title={l.in_carousel ? "Fjern fra carousel" : "Tilføj til carousel"}
+                          title={l.in_carousel ? "Remove from carousel" : "Add to carousel"}
                           className="p-1.5 rounded-md transition-all disabled:opacity-40"
                           style={{ color: l.in_carousel ? "#F59E0B" : "#D1D5DB" }}
                           onMouseEnter={e => { e.currentTarget.style.background = "#FFFBEB"; e.currentTarget.style.color = "#F59E0B"; }}

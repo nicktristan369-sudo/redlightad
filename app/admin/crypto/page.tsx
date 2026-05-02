@@ -175,7 +175,7 @@ export default function AdminCryptoWallet() {
           <div className="bg-white border border-gray-100 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp size={16} className="text-blue-600" />
-              <p className="text-xs text-gray-500">Denne måned</p>
+              <p className="text-xs text-gray-500">This month</p>
             </div>
             <p className="text-2xl font-bold text-gray-900">${stats?.completed_this_month.toFixed(2) || "0.00"}</p>
           </div>
@@ -207,7 +207,7 @@ export default function AdminCryptoWallet() {
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {t === "all" ? "Alle" : t === "completed" ? "Gennemført" : "Afventer"}
+              {t === "all" ? "All" : t === "completed" ? "Completed" : "Pending"}
               <span className="ml-2 text-xs opacity-70">
                 {t === "all" ? payments.length : 
                  t === "completed" ? payments.filter(p => ["finished", "confirmed"].includes(p.payment_status)).length :
@@ -231,7 +231,7 @@ export default function AdminCryptoWallet() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
-                  {["PROFIL", "TYPE", "BELØB", "CRYPTO", "STATUS", "PAYMENT ID", "DATO"].map(h => (
+                  {["PROFILE", "TYPE", "AMOUNT", "CRYPTO", "STATUS", "PAYMENT ID", "DATE"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
                       {h}
                     </th>
@@ -272,7 +272,7 @@ export default function AdminCryptoWallet() {
                       {/* Type */}
                       <td className="px-4 py-3">
                         <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                          {p.payment_type === "plan" ? "Abonnement" : 
+                          {p.payment_type === "plan" ? "Subscription" : 
                            p.payment_type === "coins" ? "Coins" : 
                            p.payment_type === "push" ? "Push Points" : p.payment_type}
                         </span>

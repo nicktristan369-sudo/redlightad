@@ -172,7 +172,7 @@ export default function TravelPage() {
     if (!res.ok) {
       setMessage({ type: 'error', text: data.error || 'Error' })
     } else {
-      setMessage({ type: 'success', text: 'Rejse tilføjet!' })
+      setMessage({ type: 'success', text: 'Travel added!' })
       setShowForm(false)
       setCity("")
       setCountry("")
@@ -185,7 +185,7 @@ export default function TravelPage() {
   }
 
   async function deleteTravel(id: string) {
-    if (!confirm("Er du sikker på du vil slette denne rejse?")) return
+    if (!confirm("Are you sure you want to delete this travel?")) return
     
     const res = await fetch('/api/travel', {
       method: 'DELETE',
@@ -221,7 +221,7 @@ export default function TravelPage() {
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Travel er en Premium Feature</h1>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              Med Premium kan du planlægge rejser, så kunder kan se hvornår du besøger deres by.
+              With Premium you can plan travels, so customers can see when you visit their city.
             </p>
             <Link 
               href="/upgrade"

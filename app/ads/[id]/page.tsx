@@ -254,7 +254,7 @@ export default function AdDetailPage() {
           {/* Stories */}
           <StoryCircles listingId={ad.id} />
 
-          {/* Title — udenfor grid, max 2/3 bredde på desktop så sidebar flugter med galleriet */}
+          {/* Title — outside grid, max 2/3 width on desktop so sidebar aligns with gallery */}
           <div className="mb-4 w-full lg:max-w-[calc(66.666%-1.5rem)]">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-lg md:text-xl font-bold text-gray-900 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ad.title}</h1>
@@ -500,7 +500,7 @@ export default function AdDetailPage() {
               alt=""
               style={{ maxHeight: "90vh", maxWidth: "90vw", objectFit: "contain", display: "block" }}
             />
-            {/* Vandmærke */}
+            {/* Watermark */}
             <div style={{ position: "absolute", bottom: 12, right: 14, pointerEvents: "none", userSelect: "none", zIndex: 10 }}>
               <span style={{
                 fontSize: 13, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",

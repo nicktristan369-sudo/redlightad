@@ -86,7 +86,7 @@ export default function VideoDewatermarkPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Video Watermark Fjerner</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Fjern vandmærker fra importerede videoer via unwatermark.ai · 1 credit/sek
+          Remove watermarks from imported videos via unwatermark.ai · 1 credit/sec
         </p>
       </div>
 
@@ -137,7 +137,7 @@ export default function VideoDewatermarkPage() {
                     <p className="text-xs text-blue-500 mt-1">Behandler... ({job.credits ?? "?"} credits brugt)</p>
                   )}
                   {isDone(video) && (
-                    <p className="text-xs text-green-600 mt-1 font-semibold">✅ Vandmærke fjernet</p>
+                    <p className="text-xs text-green-600 mt-1 font-semibold">✅ Watermark removed</p>
                   )}
 
                   <button
@@ -153,9 +153,9 @@ export default function VideoDewatermarkPage() {
                     {isProcessing(video) ? (
                       <><Loader size={14} className="animate-spin" /> Behandler...</>
                     ) : isDone(video) ? (
-                      <><CheckCircle size={14} /> Færdig</>
+                      <><CheckCircle size={14} /> Done</>
                     ) : (
-                      <><Wand2 size={14} /> Fjern vandmærke</>
+                      <><Wand2 size={14} /> Remove watermark</>
                     )}
                   </button>
                 </div>

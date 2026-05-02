@@ -83,7 +83,7 @@ async function uploadMask(buf: Buffer, filename: string): Promise<string> {
 export async function POST(req: NextRequest) {
   try {
     const { videoUrl, videoId } = await req.json()
-    if (!videoUrl) return NextResponse.json({ error: 'videoUrl påkrævet' }, { status: 400 })
+    if (!videoUrl) return NextResponse.json({ error: 'videoUrl required' }, { status: 400 })
 
     const domain = new URL(videoUrl).hostname
     console.log('[dewatermark] Starting for:', videoUrl)
@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
   const jobId = searchParams.get('job_id')
   const videoId = searchParams.get('video_id')
 
-  if (!jobId) return NextResponse.json({ error: 'job_id påkrævet' }, { status: 400 })
+  if (!jobId) return NextResponse.json({ error: 'job_id required' }, { status: 400 })
 
   const res = await fetch(`${UW_VIDEO_STATUS}/${jobId}`, {
     headers: { 'ZF-API-KEY': UW_KEY },

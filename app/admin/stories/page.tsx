@@ -57,7 +57,7 @@ export default function AdminStories() {
   }, [fetchStories]);
 
   const deleteStory = async (id: string) => {
-    if (!confirm("Slet denne story?")) return;
+    if (!confirm("Delete this story?")) return;
     setDeleting(id);
     try {
       const { createClient } = await import("@/lib/supabase");
@@ -105,7 +105,7 @@ export default function AdminStories() {
 
   const timeUntilExpiry = (iso: string) => {
     const diff = Math.floor((new Date(iso).getTime() - Date.now()) / 1000);
-    if (diff <= 0) return "Udløbet";
+    if (diff <= 0) return "Expired";
     const h = Math.floor(diff / 3600);
     if (h < 1) return `${Math.floor(diff / 60)}m tilbage`;
     return `${h}t tilbage`;
@@ -144,7 +144,7 @@ export default function AdminStories() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Søg efter navn, by, land..."
+            placeholder="Search by name, city, country..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full max-w-md pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-400"
@@ -178,7 +178,7 @@ export default function AdminStories() {
           </div>
         ) : filteredStories.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
-            {search ? "Ingen stories matcher din søgning" : "Ingen aktive stories"}
+            {search ? "No stories match your search" : "No active stories"}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">

@@ -70,7 +70,7 @@ export default function ContactsPage() {
   }
 
   async function deleteContact(id: string) {
-    if (confirm("Slet denne kontakt?")) {
+    if (confirm("Delete this contact?")) {
       await supabase
         .from("agency_contacts")
         .delete()
@@ -132,7 +132,7 @@ export default function ContactsPage() {
             className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Tilføj kontakt
+            Add contact
           </button>
         </div>
       </div>
@@ -178,7 +178,7 @@ export default function ContactsPage() {
               <input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Søg efter navn eller nummer..."
+                placeholder="Search by name or number..."
                 className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-red-500"
               />
             </div>
@@ -193,7 +193,7 @@ export default function ContactsPage() {
                 onClick={() => setShowAddModal(true)}
                 className="mt-4 text-red-400 hover:text-red-300"
               >
-                + Tilføj din første kontakt
+                + Add your first contact
               </button>
             </div>
           ) : (
@@ -272,14 +272,14 @@ export default function ContactsPage() {
                     <button
                       onClick={() => setEditingContact(contact)}
                       className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 transition-colors"
-                      title="Rediger"
+                      title="Edit"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteContact(contact.id)}
                       className="p-2 hover:bg-gray-800 rounded-lg text-red-400 transition-colors ml-auto"
-                      title="Slet"
+                      title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -327,7 +327,7 @@ function ContactModal({
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-xl w-full max-w-md">
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          <h2 className="font-bold">{contact ? "Rediger kontakt" : "Tilføj kontakt"}</h2>
+          <h2 className="font-bold">{contact ? "Edit contact" : "Add contact"}</h2>
           <button onClick={onClose} className="p-1 hover:bg-gray-800 rounded">
             <X className="w-5 h-5" />
           </button>
@@ -374,7 +374,7 @@ function ContactModal({
             <textarea
               value={form.notes}
               onChange={e => setForm({ ...form, notes: e.target.value })}
-              placeholder="Eventuelle noter om denne kontakt..."
+              placeholder="Any notes about this contact..."
               rows={3}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
             />
@@ -404,7 +404,7 @@ function ContactModal({
             disabled={!form.name || !form.phone_number}
             className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
           >
-            {contact ? "Gem ændringer" : "Tilføj kontakt"}
+            {contact ? "Save changes" : "Add contact"}
           </button>
         </div>
       </div>

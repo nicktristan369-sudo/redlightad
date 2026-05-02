@@ -334,7 +334,7 @@ export default function CreateProfilePage() {
         setError("Kunne ikke hente profil data");
       }
     } catch {
-      setError("Fejl ved hentning af URL");
+      setError("Error fetching URL");
     } finally {
       setLoading(false);
     }
@@ -387,7 +387,7 @@ export default function CreateProfilePage() {
 
   const handleCreate = async () => {
     if (!profile.display_name.trim()) {
-      setError("Navn er påkrævet");
+      setError("Name is required");
       return;
     }
     setCreating(true);
@@ -407,10 +407,10 @@ export default function CreateProfilePage() {
           startDewatermark(data.videoIds);
         }
       } else {
-        setError(data.error || "Fejl ved oprettelse");
+        setError(data.error || "Error creating");
       }
     } catch {
-      setError("Netværksfejl");
+      setError("Network error");
     } finally {
       setCreating(false);
     }
@@ -446,7 +446,7 @@ export default function CreateProfilePage() {
   return (
     <AdminLayout>
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        <h1 className="text-[22px] font-bold text-gray-900 mb-1">Opret profil</h1>
+        <h1 className="text-[22px] font-bold text-gray-900 mb-1">Create profile</h1>
         <p className="text-[13px] text-gray-500 mb-6">Scrape en annonce og opret bruger automatisk</p>
 
         {/* Step indicator */}
@@ -485,7 +485,7 @@ export default function CreateProfilePage() {
                 {loading ? <span className="flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-white rounded-full animate-spin" />Henter...</span> : "Hent info"}
               </button>
             </div>
-            <p className="text-[11px] text-gray-400 mt-2">Indsæt link til en annonce — vi henter navn, telefon, by og beskrivelse automatisk</p>
+            <p className="text-[11px] text-gray-400 mt-2">Paste a link to an ad — we fetch name, phone, city and description automatically</p>
             <div className="mt-4 pt-4" style={{ borderTop: "1px solid #F3F4F6" }}>
               <button onClick={() => setStep(2)} className="text-[12px] font-medium" style={{ color: "#6B7280" }}>
                 Eller opret manuelt uden URL →
@@ -531,7 +531,7 @@ export default function CreateProfilePage() {
                         <img key={i} src={src} alt="" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 8, border: "2px solid #BBF7D0" }} />
                       ))}
                     </div>
-                    <p style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Billeder vises som preview. Upload dem manuelt i Media-sektionen nedenfor.</p>
+                    <p style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>Images are shown as preview. Upload them manually in the Media section below.</p>
                   </div>
                 )}
               </div>
@@ -871,7 +871,7 @@ export default function CreateProfilePage() {
                   </div>
                   <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 6, padding: "8px 12px", marginBottom: 8, fontSize: 12, color: "#92400E", display: "flex", gap: 6, alignItems: "flex-start" }}>
                     <span>⚠️</span>
-                    <span>Disse videoer kan have vandmærke. Vandmærker fjernes automatisk via unwatermark.ai efter oprettelse.</span>
+                    <span>These videos may have watermarks. Watermarks are removed automatically via unwatermark.ai after creation.</span>
                   </div>
                   <div className="flex gap-3 flex-wrap">
                     {profile.videos.map((src, i) => {
@@ -889,7 +889,7 @@ export default function CreateProfilePage() {
                               style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", background: "#DC2626", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
                               ✕
                             </button>
-                            {/* LIVE badge når valgt */}
+                            {/* LIVE badge when selected */}
                             {isProfileVid && (
                               <div style={{ position: "absolute", top: 6, left: 6, background: "#DC2626", color: "#fff", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 3, letterSpacing: "0.5px" }}>
                                 🎬 LIVE
@@ -906,7 +906,7 @@ export default function CreateProfilePage() {
                               background: isProfileVid ? "#DC2626" : "#fff",
                               color: isProfileVid ? "#fff" : "#374151",
                             }}>
-                            {isProfileVid ? "✓ Profilbillede valgt" : "🎬 Vælg som profilbillede"}
+                            {isProfileVid ? "✓ Profile image selected" : "🎬 Select as profile image"}
                           </button>
                         </div>
                       );
@@ -991,13 +991,13 @@ export default function CreateProfilePage() {
                         rel="noopener noreferrer"
                         style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#111", color: "#fff", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", textDecoration: "none" }}
                       >
-                        Åbn video
+                        Open video
                       </a>
                     )}
                     {profile.video_url && profile.video_url.includes("cloudinary") && (
                       <button
                         onClick={async () => {
-                          setDewatermarking(true); setVideoImportMsg("Fjerner vandmærke...");
+                          setDewatermarking(true); setVideoImportMsg("Removing watermark...");
                           try {
                             const r = await fetch("/api/admin/dewatermark-video", {
                               method: "POST",
@@ -1008,7 +1008,7 @@ export default function CreateProfilePage() {
                             if (!r.ok) throw new Error(d.error);
                             p("video_url", d.url);
                             p("videos", [...(profile.videos || []).filter((v: string) => v !== profile.video_url), d.url]);
-                            setVideoImportMsg("✓ Vandmærke fjernet");
+                            setVideoImportMsg("✓ Watermark removed");
                           } catch (e: unknown) {
                             setVideoImportMsg(e instanceof Error ? e.message : "Fejl");
                           } finally { setDewatermarking(false); }
@@ -1016,7 +1016,7 @@ export default function CreateProfilePage() {
                         disabled={dewatermarking}
                         style={{ height: 40, padding: "0 14px", borderRadius: 8, background: "#DC2626", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: dewatermarking ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: dewatermarking ? 0.6 : 1 }}
                       >
-                        {dewatermarking ? "Behandler..." : "Fjern vandmærke"}
+                        {dewatermarking ? "Processing..." : "Remove watermark"}
                       </button>
                     )}
                   </div>
@@ -1144,7 +1144,7 @@ export default function CreateProfilePage() {
               </button>
               <button onClick={handleCreate} disabled={creating} className="flex-1 px-4 py-2.5 rounded-lg text-[13px] font-semibold"
                 style={{ background: creating ? "#E5E5E5" : "#000", color: creating ? "#9CA3AF" : "#fff", cursor: creating ? "not-allowed" : "pointer" }}>
-                {creating ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-white rounded-full animate-spin" />Opretter...</span> : "Opret profil"}
+                {creating ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-white rounded-full animate-spin" />Creating...</span> : "Create profile"}
               </button>
             </div>
           </div>
@@ -1179,10 +1179,10 @@ export default function CreateProfilePage() {
             {/* Dewatermark status */}
             {result.videoIds && result.videoIds.length > 0 && (
               <div style={{ background: "#F9FAFB", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
-                <p className="text-[12px] font-semibold text-gray-700 mb-2">🎬 Vandmærke fjernelse</p>
+                <p className="text-[12px] font-semibold text-gray-700 mb-2">🎬 Watermark removal</p>
                 {result.videoIds.map((v, i) => {
                   const s = dewatermarkStatus[v.id] || "waiting";
-                  const label = s === "waiting" ? "⏳ Afventer..." : s === "starting" ? "🔄 Starter job..." : s === "processing" || s.startsWith("job:") ? "⚙️ Behandler..." : s === "done" ? "✅ Vandmærke fjernet" : s === "failed" ? "❌ Fejlede" : s === "timeout" ? "⏰ Timeout" : s === "error" ? "❌ Fejl" : s;
+                  const label = s === "waiting" ? "⏳ Waiting..." : s === "starting" ? "🔄 Starting job..." : s === "processing" || s.startsWith("job:") ? "⚙️ Processing..." : s === "done" ? "✅ Watermark removed" : s === "failed" ? "❌ Failed" : s === "timeout" ? "⏰ Timeout" : s === "error" ? "❌ Fejl" : s;
                   return (
                     <div key={v.id} className="flex items-center gap-2 text-[12px] text-gray-600">
                       <span>Video {i + 1}:</span>
@@ -1190,7 +1190,7 @@ export default function CreateProfilePage() {
                     </div>
                   );
                 })}
-                <p className="text-[11px] text-gray-400 mt-2">Vandmærker fjernes automatisk — det tager typisk 2–5 minutter per video</p>
+                <p className="text-[11px] text-gray-400 mt-2">Watermarks are removed automatically — it typically takes 2-5 minutes per video</p>
               </div>
             )}
 

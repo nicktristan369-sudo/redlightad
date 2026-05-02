@@ -80,7 +80,7 @@ export default function MDMPage() {
             </button>
             <a href={MDM_SERVER} target="_blank" rel="noreferrer"
               style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", background: "#111827", border: "1px solid #1f2937", borderRadius: 6, color: "#6b7280", fontSize: 11, textDecoration: "none" }}>
-              <ExternalLink size={11} /> Åbn direkte
+              <ExternalLink size={11} /> Open directly
             </a>
           </div>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -102,21 +102,21 @@ export default function MDMPage() {
               <div style={{ width: 64, height: 64, borderRadius: 16, background: "#111827", border: "1px solid #374151", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
                 <ShieldAlert size={28} color="#f59e0b" />
               </div>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 10px" }}>Certifikat ikke godkendt</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 10px" }}>Certificate not approved</h2>
               <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.7, margin: "0 0 24px" }}>
-                MDM-serveren bruger et self-signed SSL-certifikat. Du skal godkende det én gang i din browser, derefter virker dashboardet automatisk.
+                The MDM server uses a self-signed SSL certificate. You need to approve it once in your browser, then the dashboard will work automatically.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <button onClick={openCertPage}
                   style={{ padding: "12px 24px", background: "#00e5a0", color: "#000", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                  Åbn server og godkend certifikat →
+                  Open server and approve certificate →
                 </button>
                 <p style={{ fontSize: 11, color: "#374151", fontFamily: "monospace" }}>
-                  Klik &quot;Avanceret&quot; → &quot;Fortsæt til {MDM_SERVER.replace("https://", "")} (usikkert)&quot;
+                  Click &quot;Advanced&quot; → &quot;Proceed to {MDM_SERVER.replace("https://", "")} (unsafe)&quot;
                 </p>
                 <button onClick={checkServer}
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 24px", background: "#111827", border: "1px solid #1f2937", borderRadius: 10, fontSize: 13, color: "#9ca3af", cursor: "pointer" }}>
-                  <CheckCircle size={14} /> Jeg har godkendt — prøv igen
+                  <CheckCircle size={14} /> I have approved — try again
                 </button>
               </div>
             </div>

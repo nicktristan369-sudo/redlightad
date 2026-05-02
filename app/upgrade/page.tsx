@@ -41,7 +41,7 @@ function PremiumContent() {
       <div className="max-w-5xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Premium Plan</h1>
-          <p className="text-gray-500 text-lg">Nå flere kunder og få mere synlighed</p>
+          <p className="text-gray-500 text-lg">Reach more customers and get more visibility</p>
         </div>
 
         {error && (
@@ -67,7 +67,7 @@ function PremiumContent() {
               >
                 {isFeatured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-4 py-1 rounded-full">
-                    MEST POPULÆR
+                    MOST POPULAR
                   </div>
                 )}
                 {isVip && (
@@ -83,7 +83,7 @@ function PremiumContent() {
                   <h2 className="text-xl font-bold text-gray-900">{plan.name}</h2>
                   <div className="mt-3">
                     <span className="text-4xl font-bold text-gray-900">{plan.priceDisplay}</span>
-                    <span className="text-gray-500 text-sm">/måned</span>
+                    <span className="text-gray-500 text-sm">/month</span>
                   </div>
                 </div>
 
