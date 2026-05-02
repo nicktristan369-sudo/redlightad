@@ -61,6 +61,8 @@ function DashboardContent() {
   const planActivated = searchParams.get("plan_activated")
   const plan = searchParams.get("plan")
   const tier = searchParams.get("tier")
+  const pointsPurchased = searchParams.get("points_purchased")
+  const pointsAmount = searchParams.get("points")
   const [checking, setChecking] = useState(true)
   const [showCompletion, setShowCompletion] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -94,6 +96,26 @@ function DashboardContent() {
           })
         } catch (e) {
           console.error("Failed to activate plan:", e)
+        }
+      }
+
+      // If redirected from push points purchase, add points as fallback
+      if (pointsPurchased && pointsAmount) {
+        try {
+          const points = parseInt(pointsAmount)
+          const { data: wallet } = await supabase
+            .from("wallets")
+            .select("push_points")
+            .eq("user_id", user.id)
+            .single()
+          const current = wallet?.push_points ?? 0
+          if (current < (current + points)) {
+            await supabase
+              .from("wallets")
+              .upsert({ user_id: user.id, push_points: current + points }, { onConflict: "user_id" })
+          }
+        } catch (e) {
+          console.error("Failed to add points fallback:", e)
         }
       }
 
