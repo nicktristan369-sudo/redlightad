@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect, useRef, useCallback } from "react"
+import Image from "next/image"
 import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { createClient } from "@/lib/supabase"
 import { getCountryVariants } from "@/lib/countries"
@@ -105,19 +106,25 @@ function CyclingImage({
     <div className="absolute inset-0">
       {/* Previous image fading out */}
       {prev !== null && (
-        <img
+        <Image
           src={pool[prev]}
           alt={alt}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          className="object-cover"
           style={{ opacity: transitioning ? 0 : 1, transition: "opacity 0.7s ease" }}
+          sizes="(max-width: 768px) 50vw, 25vw"
+          loading="lazy"
         />
       )}
       {/* Current image fading in */}
-      <img
+      <Image
         src={pool[current]}
         alt={alt}
-        className="absolute inset-0 w-full h-full object-cover"
+        fill
+        className="object-cover"
         style={{ opacity: 1, transition: "opacity 0.7s ease" }}
+        sizes="(max-width: 768px) 50vw, 25vw"
+        loading="lazy"
       />
       {/* Video icon overlay for profiles with video_url (not profile_video) */}
       {hasVideo && (

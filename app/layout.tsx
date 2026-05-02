@@ -1,19 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import dynamic from "next/dynamic";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
-
-import AgeVerificationModal from "@/components/AgeVerificationModal";
-import SentryInit from "@/components/SentryInit";
-import CookieBanner from "@/components/CookieBanner";
-import PWARegister from "@/components/PWARegister";
-import MobileBottomNav from "@/components/MobileBottomNav";
 import { ThemeProvider } from "@/lib/theme-context";
+
+// Dynamic imports for non-critical components (server-side rendering)
+const AgeVerificationModal = dynamic(() => import("@/components/AgeVerificationModal"));
+const SentryInit = dynamic(() => import("@/components/SentryInit"));
+const CookieBanner = dynamic(() => import("@/components/CookieBanner"));
+const PWARegister = dynamic(() => import("@/components/PWARegister"));
+const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {

@@ -1,5 +1,6 @@
 "use client"
 import { Suspense, useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
@@ -7,10 +8,12 @@ import DashboardLayout from "@/components/DashboardLayout"
 import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
-import ProfileCompletionModal from "@/components/ProfileCompletionModal"
-import UpgradeToPremiumModal from "@/components/UpgradeToPremiumModal"
 import { shareCodeFromId } from "@/lib/shareCode"
 import { PUSH_POINT_PACKAGES } from "@/lib/spendPackages"
+
+// Dynamic imports for modals
+const ProfileCompletionModal = dynamic(() => import("@/components/ProfileCompletionModal"), { ssr: false });
+const UpgradeToPremiumModal = dynamic(() => import("@/components/UpgradeToPremiumModal"), { ssr: false });
 
 const STATS = [
   { label: "Active listings", value: "0", Icon: FileText },
