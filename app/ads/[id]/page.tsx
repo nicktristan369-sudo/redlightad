@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import AdDetailClient from "./AdDetailClient";
 import PhotoGallery from "@/components/PhotoGallery";
@@ -19,11 +20,13 @@ import ReportModal from "@/components/ReportModal";
 import PayMeBox from "@/components/PayMeBox";
 import PhotoGrid from "@/components/PhotoGrid";
 import PrivateContentPreview from "@/components/PrivateContentPreview";
-import MarketplaceSection from "@/components/MarketplaceSection";
-import LockedContentSection from "@/components/LockedContentSection";
 import ReadMoreText from "@/components/ReadMoreText";
-import ReviewsSection from "@/components/ReviewsSection";
 import StoryCircles from "@/components/StoryCircles";
+
+// Dynamic imports for below-the-fold components
+const MarketplaceSection = dynamic(() => import("@/components/MarketplaceSection"), { ssr: false });
+const LockedContentSection = dynamic(() => import("@/components/LockedContentSection"), { ssr: false });
+const ReviewsSection = dynamic(() => import("@/components/ReviewsSection"), { ssr: false });
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
