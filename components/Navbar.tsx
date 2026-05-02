@@ -127,7 +127,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
           setRecentConversations(convs.map(c => ({
             id: c.id,
             lastMessage: c.last_message || "",
-            senderName: "Ny besked",
+            senderName: "New message",
             updatedAt: c.last_message_at || "",
           })));
         } else {
@@ -353,7 +353,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                       }}>
                         <div style={{ padding: "12px 16px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Messages</span>
-                          {unreadMessages > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: "#DC2626" }}>{unreadMessages} ulæste</span>}
+                          {unreadMessages > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: "#DC2626" }}>{unreadMessages} unread</span>}
                         </div>
                         <div style={{ maxHeight: 250, overflowY: "auto" }}>
                           {recentConversations.length > 0 ? (
@@ -392,7 +392,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                           ) : (
                             <div style={{ padding: "24px 16px", textAlign: "center" }}>
                               <MessageSquare size={28} color="#E5E7EB" style={{ margin: "0 auto 8px" }} />
-                              <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>Ingen nye beskeder</p>
+                              <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>No new messages</p>
                             </div>
                           )}
                         </div>

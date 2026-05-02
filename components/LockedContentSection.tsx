@@ -100,7 +100,7 @@ export default function LockedContentSection({ listingId }: Props) {
         setCoinModal({ needed: item.coin_price })
       }
     } catch {
-      alert("Fejl ved køb — prøv igen")
+      alert("Purchase failed — try again")
     }
     setBuyingId(null)
   }
@@ -223,7 +223,7 @@ export default function LockedContentSection({ listingId }: Props) {
                 onClick={() => setCoinModal(null)}
                 className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-medium"
               >
-                Annuller
+                Cancel
               </button>
               <Link
                 href="/dashboard/buy-coins"

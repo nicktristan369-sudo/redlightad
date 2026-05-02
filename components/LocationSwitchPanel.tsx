@@ -73,7 +73,7 @@ export default function LocationSwitchPanel({
       setTimeout(() => setDone(false), 3000);
       setCountry(""); setCity("");
     } catch {
-      setError("Noget gik galt. Prøv igen.");
+      setError("Something went wrong. Try again.");
     } finally {
       setSaving(false);
     }

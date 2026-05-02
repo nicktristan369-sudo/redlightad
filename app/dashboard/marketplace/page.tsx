@@ -298,7 +298,7 @@ export default function DashboardMarketplacePage() {
                 {/* Teaser video (9s free) */}
                 <div>
                   <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-                    Teaser video <span className="text-gray-400">(maks 9 sek, gratis preview)</span>
+                    Teaser video <span className="text-gray-400">(max 9 sec, free preview)</span>
                   </label>
                   <input ref={previewRef} type="file" accept="video/*" className="hidden"
                     onChange={e => setPreviewFile(e.target.files?.[0] ?? null)} />

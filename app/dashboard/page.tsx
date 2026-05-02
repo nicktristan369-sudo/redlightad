@@ -877,7 +877,7 @@ function PushToTopWidget({ listingId, userId }: { listingId: string; userId: str
           </div>
         )}
 
-        {/* Packages — klik åbner betalingsmodal */}
+        {/* Packages — click opens payment modal */}
         <div className="grid grid-cols-3 gap-2">
           {PUSH_POINT_PACKAGES.map((pkg) => (
             <button

@@ -51,7 +51,7 @@ const LANGUAGE_OPTIONS = ["Dansk","Engelsk","Tysk","Fransk","Spansk"];
 const TIER_INFO: Record<string, { label: string; color: string; bg: string; features: string[] }> = {
   vip:      { label: "VIP", color: "#92400E", bg: "#FEF3C7", features: ["Voice message","Social links med lås","Fremhævet i søgning (topplacering)","VIP badge"] },
   featured: { label: "Featured", color: "#1E40AF", bg: "#EFF6FF", features: ["Voice message","Social links med lås","Featured badge"] },
-  basic:    { label: "Basic", color: "#374151", bg: "#F3F4F6", features: ["Voice message","Social links (gratis)","Basic badge"] },
+  basic:    { label: "Basic", color: "#374151", bg: "#F3F4F6", features: ["Voice message","Social links (free)","Basic badge"] },
 };
 
 export default function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -143,7 +143,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         body: JSON.stringify({ from_date, to_date, city, country }),
       });
       const json = await res.json();
-      if (!res.ok) { setTravelError(json.error ?? "Fejl"); return; }
+      if (!res.ok) { setTravelError(json.error ?? "Error"); return; }
       setTravelEntries(prev => [...prev, json.entry].sort((a, b) => a.from_date.localeCompare(b.from_date)));
       setNewTravel({ from_date: "", to_date: "", city: "", country: "" });
     } catch { setTravelError("Noget gik galt"); }
@@ -415,7 +415,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
       setSuccess(true);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Noget gik galt. Prøv igen.");
+      setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
     } finally {
       setSaving(false);
     }
@@ -452,7 +452,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
             <CheckCircle size={28} color="#16A34A" />
           </div>
           <h2 className="text-[20px] font-bold text-gray-900 mb-2">Ændringer gemt</h2>
-          <p className="text-[14px] text-gray-500 mb-6">Dine ændringer er gemt og er synlige på din profil med det samme.</p>
+          <p className="text-[14px] text-gray-500 mb-6">Your changes are saved and visible on your profile immediately.</p>
           <button onClick={() => router.push(`/ads/${id}`)}
             className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white"
             style={{ background: "#000" }}>Se min profil</button>
@@ -491,7 +491,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           ) : (
             <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
               <AlertTriangle size={15} color="#9CA3AF" />
-              <p className="text-[12px] text-gray-500 flex-1">Gratis plan — premium features ikke aktiveret</p>
+              <p className="text-[12px] text-gray-500 flex-1">Free plan — premium features not activated</p>
               <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline flex-shrink-0">Opgrader</a>
             </div>
           )
@@ -937,9 +937,9 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   ) : (
                     <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
                       <Crown size={18} color="#B45309" className="mx-auto mb-2" />
-                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
-                      <p className="text-[12px] text-amber-700 mb-3">Skift din lokation 1 gang om dagen</p>
-                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Upgrade to Premium</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Change your location once a day</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">See premium plans →</a>
                     </div>
                   )}
                 </div>
@@ -1030,9 +1030,9 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   ) : (
                     <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
                       <Crown size={18} color="#B45309" className="mx-auto mb-2" />
-                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Upgrade to Premium</p>
                       <p className="text-[12px] text-amber-700 mb-3">Show future travel plans on your profile</p>
-                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">See premium plans →</a>
                     </div>
                   )}
                 </div>
@@ -1057,18 +1057,18 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         }}
                       >
                         {showReviews ? <Eye size={14} /> : <EyeOff size={14} />}
-                        {showReviews ? "Reviews er aktiveret på din profil" : "Reviews er deaktiveret"}
+                        {showReviews ? "Reviews are enabled on your profile" : "Reviews are disabled"}
                       </button>
                       <p className="text-[12px] text-gray-400">
-                        Når reviews er aktiveret, kan kunder skrive anmeldelser på din profil.
+                        When reviews are enabled, customers can write reviews on your profile.
                       </p>
                     </div>
                   ) : (
                     <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
                       <Crown size={18} color="#B45309" className="mx-auto mb-2" />
-                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
-                      <p className="text-[12px] text-amber-700 mb-3">Aktivér reviews på din profil for at bygge troværdighed</p>
-                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Upgrade to Premium</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Enable reviews on your profile to build credibility</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">See premium plans →</a>
                     </div>
                   )}
                 </div>
@@ -1330,8 +1330,8 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                     <VoiceRecorder onUpload={url => setVoiceMessageUrl(url)} existingUrl={voiceMessageUrl || null} />
                   ) : (
                     <div className="rounded-xl bg-white border border-dashed border-gray-200 p-4 text-center">
-                      <p className="text-[12px] text-gray-400">Opgrader til Premium for at tilføje en voice message</p>
-                      <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline mt-1 inline-block">Se planer</a>
+                      <p className="text-[12px] text-gray-400">Upgrade to Premium to add a voice message</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline mt-1 inline-block">See plans</a>
                     </div>
                   )}
                 </div>

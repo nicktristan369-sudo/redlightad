@@ -22,7 +22,7 @@ function PremiumContent() {
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url
-      else throw new Error(data.error || "Fejl")
+      else throw new Error(data.error || "Error")
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Noget gik galt")
       setLoading(null)
@@ -122,7 +122,7 @@ function PremiumContent() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-8">
-          Sikker betaling via Stripe • Test mode aktiv • Brug kort 4242 4242 4242 4242
+          Secure payment via Stripe • Test mode active • Use card 4242 4242 4242 4242
         </p>
       </div>
     </div>

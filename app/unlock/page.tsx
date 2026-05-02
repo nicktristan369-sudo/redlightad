@@ -26,7 +26,7 @@ export default function UnlockPage() {
       router.push("/")
       router.refresh()
     } else {
-      setError("Forkert kode — prøv igen.")
+      setError("Wrong code — try again.")
       setCode("")
     }
   }

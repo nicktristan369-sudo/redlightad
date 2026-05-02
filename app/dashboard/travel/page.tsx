@@ -147,7 +147,7 @@ export default function TravelPage() {
 
     const data = await res.json()
     if (!res.ok) {
-      setMessage({ type: 'error', text: data.error || 'Fejl' })
+      setMessage({ type: 'error', text: data.error || 'Error' })
     } else {
       setMessage({ type: 'success', text: 'Rejse tilføjet!' })
       setShowForm(false)
@@ -204,7 +204,7 @@ export default function TravelPage() {
               href="/upgrade"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
             >
-              <Crown size={18} /> Opgrader til Premium
+              <Crown size={18} /> Upgrade to Premium
             </Link>
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function TravelPage() {
           <div className="p-5 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">Planlagte rejser</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Rejser vises på din profil, så kunder ved hvornår du besøger deres by
+              Travels are displayed on your profile so customers know when you visit their city
             </p>
           </div>
 
@@ -408,7 +408,7 @@ export default function TravelPage() {
 
                 {/* Info */}
                 <div className="p-3 bg-blue-50 rounded-xl text-sm text-blue-800">
-                  <p>💡 Dine rejser vises på din profil, så kunder kan se hvornår du besøger deres by.</p>
+                  <p>💡 Your travels are displayed on your profile so customers can see when you visit their city.</p>
                 </div>
               </div>
               <div className="p-6 border-t border-gray-100 flex gap-3">

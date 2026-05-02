@@ -89,7 +89,7 @@ export default function SocialLinksEditor({ value, onChange, isPremium }: Props)
                   border: `1px solid ${cfg.locked ? "#FDE68A" : "#E5E5E5"}`,
                 }}>
                 {cfg.locked ? <Lock size={11} /> : <Unlock size={11} />}
-                {cfg.locked ? "Låst" : "Gratis"}
+                {cfg.locked ? "Locked" : "Free"}
               </button>
 
               {!isPremium && (
