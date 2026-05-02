@@ -58,7 +58,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const router = useRouter();
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); // Keep for internal logic but hide UI
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -507,28 +507,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           <h1 className="text-[22px] font-bold text-gray-900">Rediger annonce</h1>
         </div>
 
-        {/* Step indicator */}
-        <div className="flex items-center justify-center mb-8">
-          {steps.map((s, i) => (
-            <div key={s.num} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
-                  step > s.num ? "bg-gray-900 text-white"
-                  : step === s.num ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-400"
-                }`}>
-                  {step > s.num
-                    ? <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
-                    : s.num}
-                </div>
-                <span className="mt-1 text-[11px] text-gray-400">{s.label}</span>
-              </div>
-              {i < steps.length - 1 && (
-                <div className={`mx-2 mb-5 h-px w-12 ${step > s.num ? "bg-gray-900" : "bg-gray-200"}`} />
-              )}
-            </div>
-          ))}
-        </div>
+        {/* Step indicator removed - single page layout */}
 
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
@@ -539,9 +518,9 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           )}
 
           {/* ──────── STEP 1 ──────── */}
-          {step === 1 && (
+          {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Trin 1: Basis information</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Basis information</h2>
               <div className="space-y-5">
                 {/* Navn */}
                 <div>
@@ -620,18 +599,14 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              <button onClick={() => validateStep1() && setStep(2)}
-                className="mt-6 w-full rounded-xl py-2.5 text-[13px] font-semibold text-white"
-                style={{ background: "#000" }}>
-                Fortsæt →
-              </button>
+              {/* Auto-advance to next section when scrolling */}
             </div>
           )}
 
           {/* ──────── STEP 2 ──────── */}
-          {step === 2 && (
+          {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Trin 2: Om dig og dine services</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Om dig og dine services</h2>
               <div className="space-y-5">
 
                 <div>
@@ -815,17 +790,14 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
-                <button onClick={() => setStep(1)} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50">← Tilbage</button>
-                <button onClick={() => setStep(3)} className="flex-1 rounded-xl py-2.5 text-[13px] font-semibold text-white" style={{ background: "#000" }}>Fortsæt →</button>
-              </div>
+              {/* Navigation hidden - single page view */}
             </div>
           )}
 
           {/* ──────── STEP 3 ──────── */}
-          {step === 3 && (
+          {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Trin 3: Kontakt & Billeder</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Kontakt & Billeder</h2>
               <div className="space-y-6">
 
                 {/* Kontakt */}
@@ -1363,8 +1335,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <button onClick={() => setStep(2)} className="sm:w-auto rounded-xl border border-gray-200 px-6 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50">← Tilbage</button>
+              <div className="mt-6 flex gap-3">
                 <button onClick={handleSave} disabled={saving}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-semibold text-white disabled:opacity-50"
                   style={{ background: "#000" }}>
