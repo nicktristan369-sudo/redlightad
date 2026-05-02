@@ -184,14 +184,49 @@ export default function ChatPage() {
     }
     
     const content = newMessage.trim()
+    const tempId = `temp-${Date.now()}`
+    const now = new Date().toISOString()
+    
+    // Optimistic update - add message immediately to UI
+    const optimisticMsg: Message = {
+      id: tempId,
+      sender_id: userId,
+      content,
+      created_at: now,
+      read_at: null,
+    }
+    setMessages(prev => [...prev, optimisticMsg])
     setNewMessage("")
+    
+    // Scroll to bottom immediately
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    }, 50)
+    
+    // Send to server in background
     const supabase = createClient()
-    await supabase.from("messages").insert({ conversation_id: convId, sender_id: userId, content })
-    await supabase.from("conversations").update({
+    const { data: inserted, error } = await supabase
+      .from("messages")
+      .insert({ conversation_id: convId, sender_id: userId, content })
+      .select()
+      .single()
+    
+    if (error) {
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempId))
+      console.error("Failed to send message:", error)
+    } else if (inserted) {
+      // Replace temp message with real one (to get real ID)
+      setMessages(prev => prev.map(m => m.id === tempId ? inserted : m))
+    }
+    
+    // Update conversation metadata (fire and forget)
+    supabase.from("conversations").update({
       last_message: content,
-      last_message_at: new Date().toISOString(),
-    }).eq("id", convId)
-    await supabase.rpc("increment_provider_unread", { conv_id: convId }).then(() => {})
+      last_message_at: now,
+    }).eq("id", convId).then(() => {})
+    supabase.rpc("increment_provider_unread", { conv_id: convId }).then(() => {})
+    
     setSending(false)
     inputRef.current?.focus()
   }
