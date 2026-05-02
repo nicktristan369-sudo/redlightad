@@ -124,7 +124,7 @@ export default function AdDetailPage() {
           .from("listings")
           .select("*")
           .eq("id", id)
-          .eq("status", "active")
+          .in("status", ["active", "pending"])
           .single();
         data = result.data;
       }
@@ -135,7 +135,7 @@ export default function AdDetailPage() {
           .from("listings")
           .select("*")
           .eq("slug", id)
-          .eq("status", "active")
+          .in("status", ["active", "pending"])
           .single();
         data = result.data;
       }
