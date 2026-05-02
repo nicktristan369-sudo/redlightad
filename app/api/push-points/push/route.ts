@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     if (points < 1) return NextResponse.json({ error: "insufficient_points" }, { status: 402 })
 
     const now = new Date().toISOString()
-    const boostScore = Date.now() // Use timestamp as boost score for sorting
+    const boostScore = Math.floor(Date.now() / 1000) // Unix timestamp in seconds (fits in integer)
 
     // Deduct 1 point + update listing with boost score to move to top
     const [deductResult, updateResult] = await Promise.all([
