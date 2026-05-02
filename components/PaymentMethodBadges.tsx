@@ -1,9 +1,11 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 /**
  * PaymentMethodBadges — Unified payment logos for all checkout pages
  * All logos max 22-24px height
- * Supports both dark and light themes
+ * Uses official SVG logos from /public/pay/
  */
 
 // ─── Card Payment Badges (Visa + Mastercard) ──────────────────────────────────
@@ -11,17 +13,8 @@
 export function CardBadges() {
   return (
     <div className="flex items-center gap-1.5">
-      {/* Visa */}
-      <svg height="22" viewBox="0 0 50 16" fill="none">
-        <rect width="50" height="16" rx="2" fill="#1A1F71"/>
-        <path d="M19.5 11.5L21 4.5h2l-1.5 7h-2zm8.5-7l-1.8 4.8-.8-4c-.1-.5-.5-.8-1-.8h-3.2l-.1.3c.8.2 1.5.4 2 .7l1.7 6h2.1l3.2-7h-2.1zm5.5 7c.7 0 1.2-.2 1.6-.5l.4 1.6c-.5.2-1.2.4-2 .4-2.2 0-3.6-1.2-3.6-3 0-2.4 2.2-3.7 4.2-3.7.7 0 1.3.1 1.8.4l-.5 1.5c-.3-.1-.8-.3-1.4-.3-1.2 0-2.1.6-2.1 1.6 0 1.1.9 1.5 1.9 1.5l-.3.5zm6-5c.5 0 .9.3 1.1.8l2.4 6.2h-2l-.4-1.1h-2.4l-.4 1.1h-2l2.4-6.2c.2-.5.6-.8 1.1-.8h.2zm-.1 2.2l-.7 2.2h1.5l-.7-2.2h-.1z" fill="white"/>
-      </svg>
-      {/* Mastercard - two overlapping circles */}
-      <svg height="22" viewBox="0 0 36 22" fill="none">
-        <circle cx="13" cy="11" r="10" fill="#EB001B"/>
-        <circle cx="23" cy="11" r="10" fill="#F79E1B"/>
-        <path d="M18 3.5a10 10 0 0 1 0 15 10 10 0 0 1 0-15z" fill="#FF5F00"/>
-      </svg>
+      <img src="/pay/visa.svg" alt="Visa" style={{ height: 22 }} />
+      <img src="/pay/mastercard.svg" alt="Mastercard" style={{ height: 22 }} />
     </div>
   );
 }
@@ -42,21 +35,9 @@ export function PayPalBadge() {
 export function BankBadges() {
   return (
     <div className="flex items-center gap-1.5">
-      {/* Revolut */}
-      <svg height="22" viewBox="0 0 22 22" fill="none">
-        <rect width="22" height="22" rx="4" fill="#191C1F"/>
-        <text x="6" y="16" fontFamily="Arial Black, sans-serif" fontSize="13" fontWeight="900" fill="white">R</text>
-      </svg>
-      {/* N26 */}
-      <svg height="22" viewBox="0 0 36 22" fill="none">
-        <rect width="36" height="22" rx="4" fill="#36A18B"/>
-        <text x="5" y="16" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="800" fill="white">N26</text>
-      </svg>
-      {/* Wise */}
-      <svg height="22" viewBox="0 0 46 22" fill="none">
-        <rect width="46" height="22" rx="4" fill="#9FE870"/>
-        <text x="6" y="15" fontFamily="Arial Black, sans-serif" fontSize="11" fontWeight="900" fill="#163300">WISE</text>
-      </svg>
+      <img src="/pay/revolut.svg" alt="Revolut" style={{ height: 22 }} />
+      <img src="/pay/n26.svg" alt="N26" style={{ height: 22 }} />
+      <img src="/pay/wise.svg" alt="Wise" style={{ height: 22 }} />
     </div>
   );
 }
@@ -64,32 +45,13 @@ export function BankBadges() {
 // ─── Paysafecard Badge ────────────────────────────────────────────────────────
 
 export function PaysafeBadge() {
-  return (
-    <svg height="22" viewBox="0 0 85 22" fill="none">
-      <rect width="85" height="22" rx="4" fill="#003087"/>
-      <text x="6" y="15" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="700" fill="white">paysafe</text>
-      <text x="48" y="15" fontFamily="Arial, sans-serif" fontSize="10" fontWeight="700" fill="#00AEEF">card</text>
-    </svg>
-  );
+  return <img src="/pay/paysafecard.svg" alt="Paysafecard" style={{ height: 22 }} />;
 }
 
-// ─── Crypto Badges (Bitcoin + Tether) ─────────────────────────────────────────
+// ─── Crypto Badges ────────────────────────────────────────────────────────────
 
 export function CryptoBadges() {
-  return (
-    <div className="flex items-center gap-1.5">
-      {/* Bitcoin */}
-      <svg height="22" viewBox="0 0 22 22" fill="none">
-        <circle cx="11" cy="11" r="11" fill="#F7931A"/>
-        <text x="6" y="16" fontFamily="Arial Black, sans-serif" fontSize="12" fontWeight="900" fill="white">₿</text>
-      </svg>
-      {/* Tether */}
-      <svg height="22" viewBox="0 0 22 22" fill="none">
-        <circle cx="11" cy="11" r="11" fill="#26A17B"/>
-        <text x="6" y="16" fontFamily="Arial Black, sans-serif" fontSize="12" fontWeight="900" fill="white">T</text>
-      </svg>
-    </div>
-  );
+  return <img src="/pay/crypto.svg" alt="Cryptocurrency" style={{ height: 22 }} />;
 }
 
 // ─── Payment Methods Config ───────────────────────────────────────────────────
