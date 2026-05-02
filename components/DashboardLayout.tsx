@@ -158,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const dynamicItems = listingChecked
     ? listingId
       ? [
-          { href: `/dashboard/edit-profile`, label: "Edit my profile", icon: FileText },
+          { href: listingId ? `/dashboard/annoncer/${listingId}/edit` : `/dashboard/edit-profile`, label: "Edit my profile", icon: FileText },
           { href: `/ads/${listingId}`, label: "Preview", icon: Eye, target: "_blank" as const },
         ]
       : [
