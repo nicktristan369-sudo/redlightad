@@ -439,7 +439,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         <p className="text-[14px] text-gray-500 mb-6">Annoncen eksisterer ikke eller du har ikke adgang.</p>
         <button onClick={() => router.push("/dashboard/annoncer")}
           className="px-6 py-2.5 rounded-xl text-[13px] font-semibold text-white"
-          style={{ background: "#000" }}>Tilbage</button>
+          style={{ background: "#000" }}>Back</button>
       </div>
     </DashboardLayout>
   );
@@ -506,7 +506,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
             </svg>
             Mine annoncer
           </button>
-          <h1 className="text-[22px] font-bold text-gray-900">Rediger annonce</h1>
+          <h1 className="text-[22px] font-bold text-gray-900">Edit Listing</h1>
         </div>
 
         {/* Step indicator removed - single page layout */}
@@ -567,7 +567,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Kategori <span className="text-red-500">*</span></label>
                   <select value={form.category} onChange={e => updateField("category", e.target.value)}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
-                    <option value="">Vælg kategori</option>
+                    <option value="">Select category</option>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
@@ -991,7 +991,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                       {/* Add new entry */}
                       <div className="rounded-xl border border-dashed border-gray-300 p-4 space-y-2.5">
-                        <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider">Tilføj destination</p>
+                        <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider">Add destination</p>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="text-[11px] text-gray-400 block mb-1">Fra dato</label>
@@ -1013,7 +1013,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         <select value={newTravel.country}
                           onChange={e => setNewTravel(p => ({ ...p, country: e.target.value }))}
                           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none bg-white">
-                          <option value="">Vælg land…</option>
+                          <option value="">Select country…</option>
                           {SUPPORTED_COUNTRIES_SORTED.map(c => (
                             <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
                           ))}
@@ -1023,7 +1023,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                           className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold text-white transition-colors disabled:opacity-50"
                           style={{ background: "#000" }}>
                           <Plus size={14} />
-                          {travelLoading ? "Gemmer…" : "Tilføj"}
+                          {travelLoading ? "Saving…" : "Add"}
                         </button>
                       </div>
                     </div>
@@ -1031,7 +1031,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                     <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
                       <Crown size={18} color="#B45309" className="mx-auto mb-2" />
                       <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
-                      <p className="text-[12px] text-amber-700 mb-3">Vis fremtidige rejseplaner på din profil</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Show future travel plans on your profile</p>
                       <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
                     </div>
                   )}
@@ -1073,9 +1073,9 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   )}
                 </div>
 
-                {/* Åbningstider */}
+                {/* Opening hours */}
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Åbningstider & Tilgængelighed</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Opening Hours & Availability</p>
                   <div className="mb-3">
                     <label className="text-[12px] font-medium text-gray-600 block mb-1">Tidszone</label>
                     <select value={timezone} onChange={e => setTimezone(e.target.value)}
@@ -1089,7 +1089,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className="rounded-xl overflow-hidden border border-gray-100">
                     <div className="grid grid-cols-[110px_1fr_1fr_70px] bg-gray-50 px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
-                      <span>Dag</span><span>Åbner</span><span>Lukker</span><span className="text-right">Lukket</span>
+                      <span>Day</span><span>Opens</span><span>Closes</span><span className="text-right">Closed</span>
                     </div>
                     {DAYS_OF_WEEK.map(day => {
                       const h = openingHours[day];
@@ -1149,7 +1149,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
                     onClick={() => document.getElementById("edit-image-input")?.click()}>
                     <svg className="w-7 h-7 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4"/></svg>
-                    <p className="text-[13px] text-gray-400">Tilføj billeder</p>
+                    <p className="text-[13px] text-gray-400">Add photos</p>
                     <input id="edit-image-input" type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
                       onChange={e => {
                         const files = Array.from(e.target.files || []);
@@ -1183,10 +1183,10 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 <div>
                   <p className="text-[13px] font-semibold text-gray-900 mb-3">Mine Videoer</p>
 
-                  {/* Levende profilbillede — info */}
+                  {/* Animated profile picture — info */}
                   {existingVideos.length > 0 && (
                     <div className="mb-3 p-3 rounded-lg text-[12px]" style={{ background: "#FFF7ED", border: "1px solid #FED7AA", color: "#92400E" }}>
-                      🎬 <strong>Levende profilbillede:</strong> Vælg en video nedenfor som dit profilbillede. Det vises levende i kortvisning, premium-carousel og liste.
+                      🎬 <strong>Animated profile picture:</strong> Select a video below as your profile picture. It will display animated in card view, premium carousel and listings.
                     </div>
                   )}
 
@@ -1226,7 +1226,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                           }}
                           className="text-red-500 hover:text-red-700 text-sm font-medium"
                         >
-                          Slet
+                          Delete
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
@@ -1342,7 +1342,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-semibold text-white disabled:opacity-50"
                   style={{ background: "#000" }}>
                   {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  Gem ændringer
+                  Save changes
                 </button>
               </div>
             </div>

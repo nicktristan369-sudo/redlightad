@@ -341,7 +341,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                     )}
                   </button>
 
-                  {/* Besked-dropdown */}
+                  {/* Message dropdown */}
                   {showNotifications && (
                     <>
                       <div onClick={() => setShowNotifications(false)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
@@ -352,7 +352,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                         zIndex: 50, overflow: "hidden",
                       }}>
                         <div style={{ padding: "12px 16px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Beskeder</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Messages</span>
                           {unreadMessages > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: "#DC2626" }}>{unreadMessages} ulæste</span>}
                         </div>
                         <div style={{ maxHeight: 250, overflowY: "auto" }}>
@@ -437,7 +437,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                         {/* Menu items */}
                         {[
                           ...(hasActivePlan || user?.accountType === "customer" ? [{ href: dashboardHref, label: "Dashboard" }] : []),
-                          ...(hasActivePlan || user?.accountType === "customer" ? [{ href: `${dashboardHref}/profil`, label: "Indstillinger" }] : []),
+                          ...(hasActivePlan || user?.accountType === "customer" ? [{ href: `${dashboardHref}/profil`, label: "Settings" }] : []),
                           ...(!hasActivePlan && user?.accountType !== "customer" ? [{ href: "/create-profile", label: "Complete Profile" }] : []),
                           ...(coinBalance !== null ? [{ href: `${dashboardHref}/coins`, label: `🔴 ${coinBalance} coins` }] : []),
                         ].map(({ href, label }) => (

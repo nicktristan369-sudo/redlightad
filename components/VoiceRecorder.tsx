@@ -184,7 +184,7 @@ export default function VoiceRecorder({ onUpload, existingUrl }: VoiceRecorderPr
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                 ) : <Upload className="w-4 h-4" />}
-                {uploading ? "Uploader..." : "Gem voice message"}
+                {uploading ? "Uploading..." : "Save voice message"}
               </button>
             )}
             <button
@@ -193,7 +193,7 @@ export default function VoiceRecorder({ onUpload, existingUrl }: VoiceRecorderPr
               className="flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
-              Slet
+              Delete
             </button>
           </div>
         </div>

@@ -51,7 +51,7 @@ export default function LocationSwitchPanel({
   const onCooldown = remaining > 0;
 
   const handleSave = async () => {
-    if (!country || !city.trim()) { setError("Vælg land og by"); return; }
+    if (!country || !city.trim()) { setError("Select country and city"); return; }
     setSaving(true); setError("");
     try {
       const res = await fetch(`/api/listings/${listingId}/location`, {
@@ -112,7 +112,7 @@ export default function LocationSwitchPanel({
             onChange={e => setCountry(e.target.value)}
             className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[13px] focus:outline-none bg-white text-gray-900"
           >
-            <option value="">Vælg land…</option>
+            <option value="">Select country…</option>
             {SUPPORTED_COUNTRIES.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
               <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
             ))}
@@ -135,7 +135,7 @@ export default function LocationSwitchPanel({
             className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white transition-colors disabled:opacity-50"
             style={{ background: "#000" }}
           >
-            {saving ? "Gemmer…" : "Skift lokation"}
+            {saving ? "Saving…" : "Change location"}
           </button>
         </div>
       )}

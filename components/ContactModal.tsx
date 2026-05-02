@@ -99,7 +99,7 @@ export function ContactModal({ phone, whatsapp, profileImage, name, onClose }: {
             onClick={onClose} 
             className="w-full py-3 rounded-xl text-[14px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
           >
-            Luk
+            Close
           </button>
         </div>
       </div>

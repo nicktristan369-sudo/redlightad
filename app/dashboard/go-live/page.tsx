@@ -787,7 +787,7 @@ function GoLiveContent() {
                     min={1} />
                   <button onClick={addTipMenuItem} disabled={!newAction.trim()}
                     style={{ padding: "8px 14px", background: newAction.trim() ? "#DC2626" : "#D1D5DB", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: newAction.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 4 }}>
-                    <Plus size={14} /> Tilføj
+                    <Plus size={14} /> Add
                   </button>
                 </div>
               </div>

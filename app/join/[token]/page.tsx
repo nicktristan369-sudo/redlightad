@@ -433,7 +433,7 @@ export default function JoinPage() {
               transition: "opacity 0.2s",
             }}
           >
-            {submitting ? "Opretter..." : "Opret min gratis profil"}
+            {submitting ? "Creating..." : "Create my free profile"}
           </button>
         </div>
 

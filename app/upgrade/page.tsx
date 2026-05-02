@@ -40,7 +40,7 @@ function PremiumContent() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Vælg din Premium pakke</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Premium Plan</h1>
           <p className="text-gray-500 text-lg">Nå flere kunder og få mere synlighed</p>
         </div>
 
@@ -113,7 +113,7 @@ function PremiumContent() {
                       Behandler...
                     </span>
                   ) : (
-                    `Vælg ${plan.name}`
+                    `Choose ${plan.name}`
                   )}
                 </button>
               </div>

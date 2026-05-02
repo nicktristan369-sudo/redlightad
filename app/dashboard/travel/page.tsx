@@ -189,7 +189,7 @@ export default function TravelPage() {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-2xl mx-auto px-4 py-8">
           <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-6 text-sm">
-            <ArrowLeft size={16} /> Tilbage til Dashboard
+            <ArrowLeft size={16} /> Back to Dashboard
           </Link>
           
           <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
@@ -231,7 +231,7 @@ export default function TravelPage() {
             onClick={() => setShowForm(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
           >
-            <Plus size={16} /> Tilføj rejse
+            <Plus size={16} /> Add travel
           </button>
         </div>
 
@@ -288,7 +288,7 @@ export default function TravelPage() {
                 onClick={() => setShowForm(true)}
                 className="text-sm font-medium text-red-600 hover:text-red-700"
               >
-                Tilføj din første rejse →
+                Add your first travel →
               </button>
             </div>
           ) : (
@@ -345,7 +345,7 @@ export default function TravelPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900">Tilføj ny rejse</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Add new travel</h3>
                 <button onClick={() => setShowForm(false)} className="p-1 text-gray-400 hover:text-gray-600">
                   <X size={20} />
                 </button>
@@ -363,7 +363,7 @@ export default function TravelPage() {
                     }}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   >
-                    <option value="">Vælg land...</option>
+                    <option value="">Select country...</option>
                     {COUNTRIES.map(c => (
                       <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
                     ))}
@@ -416,14 +416,14 @@ export default function TravelPage() {
                   onClick={() => setShowForm(false)}
                   className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                 >
-                  Annuller
+                  Cancel
                 </button>
                 <button
                   onClick={addTravel}
                   disabled={!city || !country || !arrivalDate || !departureDate || saving}
                   className="flex-1 py-3 text-sm font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
-                  {saving ? 'Gemmer...' : 'Tilføj rejse'}
+                  {saving ? 'Saving...' : 'Add travel'}
                 </button>
               </div>
             </div>

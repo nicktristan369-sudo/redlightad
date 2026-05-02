@@ -264,7 +264,7 @@ export default function CustomerProfileCard({ profile, onClose }: Props) {
             onClick={onClose}
             style={{ padding: "9px 20px", fontSize: 13, fontWeight: 700, border: "1px solid #E5E7EB", borderRadius: 8, background: "#fff", cursor: "pointer", color: "#374151" }}
           >
-            Luk
+            Close
           </button>
         </div>
       </div>
