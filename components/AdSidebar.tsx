@@ -83,12 +83,24 @@ export default function AdSidebar({
     { label: t.sidebar_travel, value: travel || null },
   ].filter(r => r.value);
 
-  const InfoRow = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex items-center justify-between py-2.5">
-      <span className="text-[13px] text-gray-500">{label}</span>
-      <span className="text-[13px] font-medium text-gray-900 text-right max-w-[60%]">{value}</span>
-    </div>
-  );
+  const InfoRow = ({ label, value }: { label: string; value: string }) => {
+    // Try to parse as JSON array and format nicely
+    let displayValue = value;
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        displayValue = parsed.join(", ");
+      }
+    } catch {
+      // Not JSON, use as-is
+    }
+    return (
+      <div className="flex items-center justify-between py-2.5">
+        <span className="text-[13px] text-gray-500">{label}</span>
+        <span className="text-[13px] font-medium text-gray-900 text-right max-w-[60%]">{displayValue}</span>
+      </div>
+    );
+  };
 
   const Section = ({ title, rows }: { title?: string; rows: { label: string; value: string | null }[] }) => {
     if (rows.length === 0) return null;
