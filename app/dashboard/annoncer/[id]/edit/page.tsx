@@ -653,7 +653,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         <span className="mb-1 block text-[11px] text-gray-400">{r.label}</span>
                         <input type="text" value={form[r.field as keyof typeof form] as string}
                           onChange={e => updateField(r.field, e.target.value)}
-                          placeholder="f.eks. 500 DKK"
+                          placeholder="e.g. 500 DKK"
                           className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none" />
                       </div>
                     ))}

@@ -84,10 +84,33 @@ export default function TravelPage() {
   // Form state
   const [showForm, setShowForm] = useState(false)
   const [city, setCity] = useState("")
+  const [citySearch, setCitySearch] = useState("")
+  const [cityResults, setCityResults] = useState<{name: string; region?: string; is_major_city?: boolean}[]>([])
+  const [showCityDropdown, setShowCityDropdown] = useState(false)
   const [country, setCountry] = useState("")
   const [countryCode, setCountryCode] = useState("")
   const [arrivalDate, setArrivalDate] = useState("")
   const [departureDate, setDepartureDate] = useState("")
+  const [majorCity, setMajorCity] = useState<string | null>(null)
+
+  // City autocomplete
+  useEffect(() => {
+    if (!citySearch || citySearch.length < 2 || !countryCode) {
+      setCityResults([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/cities?country=${countryCode}&search=${encodeURIComponent(citySearch)}&limit=10`)
+        const data = await res.json()
+        setCityResults(data.cities || [])
+        setShowCityDropdown(true)
+      } catch (e) {
+        console.error(e)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [citySearch, countryCode])
 
   useEffect(() => {
     loadData()
@@ -262,7 +285,7 @@ export default function TravelPage() {
               </p>
               {activeTravel && (
                 <p className="text-sm text-gray-500 mt-1">
-                  Hjem: {listing?.city}, {listing?.country}
+                  Home: {listing?.city}, {listing?.country}
                 </p>
               )}
             </div>
@@ -353,7 +376,7 @@ export default function TravelPage() {
               <div className="p-6 space-y-4">
                 {/* Country Select */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Land</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Country</label>
                   <select
                     value={countryCode}
                     onChange={e => {
@@ -372,20 +395,60 @@ export default function TravelPage() {
 
                 {/* City */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">By</label>
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    placeholder="f.eks. København, Stockholm..."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={citySearch || city}
+                      onChange={e => {
+                        setCitySearch(e.target.value)
+                        setCity("")
+                        setMajorCity(null)
+                      }}
+                      placeholder="e.g. Copenhagen, Stockholm..."
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      disabled={!countryCode}
+                    />
+                    {showCityDropdown && cityResults.length > 0 && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {cityResults.map((c, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={async () => {
+                              setCity(c.name)
+                              setCitySearch(c.name)
+                              setShowCityDropdown(false)
+                              setCityResults([])
+                              // Find major city if not already major
+                              if (!c.is_major_city) {
+                                try {
+                                  const res = await fetch(`/api/geo/nearest-major?city=${encodeURIComponent(c.name)}&country=${countryCode}`)
+                                  const data = await res.json()
+                                  setMajorCity(data.city?.name || null)
+                                } catch (e) { console.error(e) }
+                              } else {
+                                setMajorCity(c.name)
+                              }
+                            }}
+                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center justify-between text-sm"
+                          >
+                            <span className="text-gray-900">{c.name}{c.region ? `, ${c.region}` : ''}</span>
+                            {c.is_major_city && <span className="text-xs text-green-600 font-medium">Major</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {majorCity && majorCity !== city && (
+                    <p className="text-xs text-gray-500 mt-1">📍 Mapped to: {majorCity} area</p>
+                  )}
                 </div>
 
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Ankomst</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Arrival</label>
                     <input
                       type="date"
                       value={arrivalDate}
@@ -395,7 +458,7 @@ export default function TravelPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Afrejse</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Departure</label>
                     <input
                       type="date"
                       value={departureDate}
