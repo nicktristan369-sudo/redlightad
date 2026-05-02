@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Support multiple env var names for Google API key
-const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
 
 /**
  * GET /api/geo/static-map
