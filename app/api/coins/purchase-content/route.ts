@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     // Log transactions
     await supabase.from("coin_transactions").insert([
-      { user_id: buyerId, type: "spend", amount: -content.coin_price, reference_id: contentId, note: "Låst op for eksklusivt indhold" },
+      { user_id: buyerId, type: "spend", amount: -content.coin_price, reference_id: contentId, note: "Unlocked exclusive content" },
       { user_id: content.seller_id, type: "earn", amount: content.coin_price, reference_id: contentId, note: "Salg af eksklusivt indhold" },
     ])
 

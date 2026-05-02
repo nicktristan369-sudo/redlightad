@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     if (type === "tip" && customAmount) {
       priceEur = parseFloat(customAmount)
-      orderDescription = `Tip til profil på RedLightAD`
+      orderDescription = `Tip to profile on RedLightAD`
       orderId = `tip_${listingId}_${toUserId}_${Date.now()}`
       successUrl = `${siteUrl}/ads/${listingId}?tip_sent=true`
       cancelUrl = `${siteUrl}/ads/${listingId}`
