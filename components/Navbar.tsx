@@ -521,6 +521,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
             <Logo variant="light" height={24} />
           </Link>
           <button onClick={closeDrawer}
+            aria-label="Close menu"
             style={{ width: 30, height: 30, borderRadius: "50%", border: "none", background: "#F2F2F2", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <X size={15} color="#555" strokeWidth={2.5} />
           </button>
