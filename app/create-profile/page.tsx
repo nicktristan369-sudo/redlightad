@@ -867,7 +867,7 @@ export default function OpretAnnoncePage() {
                                 } else {
                                   langs[idx] = val
                                 }
-                                return { ...prev, languages: langs.slice(0, 3) }
+                                return { ...prev, languages: langs.slice(0, 2) }
                               })
                             }}
                             style={{ fontSize: 16 }}
