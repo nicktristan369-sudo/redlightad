@@ -255,7 +255,7 @@ export default function TravelPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                {activeTravel ? 'Nuværende rejse-lokation' : 'Din hjem-lokation'}
+                {activeTravel ? 'Current travel location' : 'Your home location'}
               </p>
               <p className="text-xl font-semibold text-gray-900">
                 {activeTravel ? `${activeTravel.city}, ${activeTravel.country}` : `${listing?.city}, ${listing?.country}`}
@@ -272,7 +272,7 @@ export default function TravelPage() {
         {/* Travels List */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Planlagte rejser</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Planned travels</h2>
             <p className="text-sm text-gray-500 mt-1">
               Travels are displayed on your profile so customers know when you visit their city
             </p>
@@ -283,7 +283,7 @@ export default function TravelPage() {
               <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
                 <Globe size={24} className="text-gray-500" />
               </div>
-              <p className="text-gray-500 mb-4">Ingen rejser planlagt endnu</p>
+              <p className="text-gray-500 mb-4">No travels planned yet</p>
               <button
                 onClick={() => setShowForm(true)}
                 className="text-sm font-medium text-red-600 hover:text-red-700"
