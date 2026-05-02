@@ -254,7 +254,7 @@ export default function ReviewsSection({
       />
       {/* CTA box at bottom */}
       <div className="relative w-full p-5 text-center">
-        <Lock className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+        <Lock className="w-6 h-6 text-gray-500 mx-auto mb-2" />
         <h4 className="text-[14px] font-semibold text-gray-900 mb-1">Want to read more?</h4>
         <p className="text-[12px] text-gray-500 mb-3">
           Create a free account to see all reviews
@@ -311,7 +311,7 @@ export default function ReviewsSection({
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[17px] font-semibold text-gray-900">
           Reviews
-          <span className="text-[14px] font-normal text-gray-400 ml-2">({stats.count})</span>
+          <span className="text-[14px] font-normal text-gray-500 ml-2">({stats.count})</span>
         </h3>
         {!isOwnListing && isLoggedIn && !showForm && (
           <button
@@ -329,7 +329,7 @@ export default function ReviewsSection({
           <div className="text-center">
             <div className="text-4xl font-bold text-gray-900">{stats.avgRating}</div>
             <StarRating rating={Math.round(stats.avgRating)} size="lg" />
-            <div className="text-[12px] text-gray-400 mt-1">{stats.count} reviews</div>
+            <div className="text-[12px] text-gray-500 mt-1">{stats.count} reviews</div>
           </div>
           <div className="flex-1 space-y-1.5">
             {[5, 4, 3, 2, 1].map((star) => {
@@ -342,7 +342,7 @@ export default function ReviewsSection({
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="w-6 text-gray-400 text-right">{count}</span>
+                  <span className="w-6 text-gray-500 text-right">{count}</span>
                 </div>
               );
             })}
@@ -357,7 +357,7 @@ export default function ReviewsSection({
             <h4 className="font-semibold text-gray-900">Write Your Review</h4>
             <button
               onClick={() => { setShowForm(false); resetForm(); }}
-              className="text-[13px] text-gray-400 hover:text-gray-600"
+              className="text-[13px] text-gray-500 hover:text-gray-600"
             >
               Cancel
             </button>
@@ -465,10 +465,10 @@ export default function ReviewsSection({
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-gray-300 resize-none"
               />
               <div className="flex justify-between mt-1">
-                <span className="text-[11px] text-gray-400">
+                <span className="text-[11px] text-gray-500">
                   {formBody.length < 20 ? `${20 - formBody.length} more characters needed` : "✓ Ready"}
                 </span>
-                <span className="text-[11px] text-gray-400">{formBody.length}/2000</span>
+                <span className="text-[11px] text-gray-500">{formBody.length}/2000</span>
               </div>
             </div>
 
@@ -517,7 +517,7 @@ export default function ReviewsSection({
 
       {/* Reviews List */}
       {visibleReviews.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-gray-500">
           <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-[14px] font-medium">No reviews yet</p>
           {!isOwnListing && isLoggedIn && (
@@ -538,7 +538,7 @@ export default function ReviewsSection({
                   {!review.is_anonymous && review.reviewer_avatar ? (
                     <img src={review.reviewer_avatar} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-5 h-5 text-gray-400" />
+                    <User className="w-5 h-5 text-gray-500" />
                   )}
                 </div>
                 
@@ -554,11 +554,11 @@ export default function ReviewsSection({
                         </span>
                       )}
                     </div>
-                    <span className="text-[12px] text-gray-400">{timeAgo(review.created_at)}</span>
+                    <span className="text-[12px] text-gray-500">{timeAgo(review.created_at)}</span>
                   </div>
                   
                   {!review.is_anonymous && review.reviewer_location && (
-                    <p className="text-[12px] text-gray-400 mt-0.5">{review.reviewer_location}</p>
+                    <p className="text-[12px] text-gray-500 mt-0.5">{review.reviewer_location}</p>
                   )}
                   
                   <div className="mt-1">
@@ -593,25 +593,25 @@ export default function ReviewsSection({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 border-t border-gray-200 mt-3">
                   {review.time_spent && (
                     <div>
-                      <div className="text-[11px] text-gray-400 uppercase tracking-wide">Time Spent</div>
+                      <div className="text-[11px] text-gray-500 uppercase tracking-wide">Time Spent</div>
                       <div className="text-[13px] font-medium text-gray-800 mt-0.5">{review.time_spent}</div>
                     </div>
                   )}
                   {review.ambience && (
                     <div>
-                      <div className="text-[11px] text-gray-400 uppercase tracking-wide">Ambience</div>
+                      <div className="text-[11px] text-gray-500 uppercase tracking-wide">Ambience</div>
                       <div className="text-[13px] font-medium text-gray-800 mt-0.5">{review.ambience}</div>
                     </div>
                   )}
                   {review.photos_accurate && (
                     <div>
-                      <div className="text-[11px] text-gray-400 uppercase tracking-wide">Photos Accurate?</div>
+                      <div className="text-[11px] text-gray-500 uppercase tracking-wide">Photos Accurate?</div>
                       <div className="text-[13px] font-medium text-gray-800 mt-0.5">{review.photos_accurate}</div>
                     </div>
                   )}
                   {review.would_recommend && (
                     <div>
-                      <div className="text-[11px] text-gray-400 uppercase tracking-wide">Recommend?</div>
+                      <div className="text-[11px] text-gray-500 uppercase tracking-wide">Recommend?</div>
                       <div className="text-[13px] font-medium text-gray-800 mt-0.5">{review.would_recommend}</div>
                     </div>
                   )}

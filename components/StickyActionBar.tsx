@@ -62,7 +62,7 @@ function MessageModal({
               <X size={15} color="#6B7280" />
             </button>
           </div>
-          <p className="text-[12px] text-gray-400">{t.sticky_to} <strong className="text-gray-700">{listingTitle}</strong></p>
+          <p className="text-[12px] text-gray-500">{t.sticky_to} <strong className="text-gray-700">{listingTitle}</strong></p>
           {sent ? (
             <p className="text-[14px] text-green-600 font-semibold text-center py-6">{t.sticky_msg_sent}</p>
           ) : (
@@ -122,7 +122,7 @@ function MessageModal({
               <MessageSquare size={18} color="#6B7280" />
               <div>
                 <p className="text-[14px] font-semibold text-gray-700">{t.sticky_platform_msg}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{t.sticky_platform_anonymous}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">{t.sticky_platform_anonymous}</p>
               </div>
             </div>
             <p className="text-[12px] text-gray-500">{t.sticky_create_free}</p>

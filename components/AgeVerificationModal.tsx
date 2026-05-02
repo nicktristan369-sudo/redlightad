@@ -119,6 +119,7 @@ export default function AgeVerificationModal() {
               href="https://www.rtalabel.org" 
               target="_blank" 
               rel="noopener noreferrer"
+              aria-label="RTA Label - Restricted to Adults"
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               {/* RTA Logo */}
