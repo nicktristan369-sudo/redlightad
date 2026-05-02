@@ -4,13 +4,18 @@ import { Redis } from "@upstash/redis";
 // Check if Upstash Redis is configured
 const hasRedis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
 
-// Initialize Redis client only if configured
-const redis = hasRedis
-  ? new Redis({
+// Initialize Redis client only if configured - with error handling
+let redis: Redis | null = null;
+if (hasRedis) {
+  try {
+    redis = new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL!,
       token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    })
-  : null;
+    });
+  } catch (err) {
+    console.error("[RateLimit] Failed to initialize Redis:", err);
+  }
+}
 
 // No-op fallback for when Redis is not available
 const noOpLimiter = {
@@ -25,24 +30,29 @@ function createLimiter(
     return noOpLimiter;
   }
   
-  const limiter = new Ratelimit({
-    redis,
-    limiter: options.limiter,
-    analytics: true,
-    prefix: options.prefix,
-  });
+  try {
+    const limiter = new Ratelimit({
+      redis,
+      limiter: options.limiter,
+      analytics: true,
+      prefix: options.prefix,
+    });
 
-  // Wrap limit() to catch Redis errors and fallback gracefully
-  return {
-    limit: async (identifier: string) => {
-      try {
-        return await limiter.limit(identifier);
-      } catch (err) {
-        console.error("[RateLimit] Redis error, allowing request:", err);
-        return { success: true, remaining: 999, reset: 0 };
-      }
-    },
-  };
+    // Wrap limit() to catch Redis errors and fallback gracefully
+    return {
+      limit: async (identifier: string) => {
+        try {
+          return await limiter.limit(identifier);
+        } catch (err) {
+          console.error("[RateLimit] Redis error, allowing request:", err);
+          return { success: true, remaining: 999, reset: 0 };
+        }
+      },
+    };
+  } catch (err) {
+    console.error("[RateLimit] Failed to create limiter:", err);
+    return noOpLimiter;
+  }
 }
 
 // ── Rate Limiters ────────────────────────────────────────────────────────────
