@@ -129,7 +129,37 @@ export default function ChatPage() {
           }
         })
         .subscribe()
-      return () => { supabase.removeChannel(channel) }
+      
+      // Polling fallback for incoming messages (every 3 seconds)
+      // This ensures messages appear even if Realtime is not enabled
+      const pollInterval = setInterval(async () => {
+        const { data: newMsgs } = await supabase
+          .from("messages")
+          .select("*")
+          .eq("conversation_id", convId)
+          .order("created_at", { ascending: true })
+        if (newMsgs) {
+          setMessages(prev => {
+            // Only update if there are new messages
+            if (newMsgs.length > prev.filter(m => !m.id.startsWith('temp-')).length) {
+              // Preserve any optimistic messages that haven't been confirmed yet
+              const tempMsgs = prev.filter(m => m.id.startsWith('temp-'))
+              // Check if optimistic messages are now in the real data
+              const confirmedTempIds = tempMsgs
+                .filter(tm => newMsgs.some(nm => nm.content === tm.content && nm.sender_id === tm.sender_id))
+                .map(tm => tm.id)
+              const remainingTemp = tempMsgs.filter(tm => !confirmedTempIds.includes(tm.id))
+              return [...newMsgs, ...remainingTemp]
+            }
+            return prev
+          })
+        }
+      }, 3000)
+      
+      return () => {
+        supabase.removeChannel(channel)
+        clearInterval(pollInterval)
+      }
     }
     init()
   }, [convId, router])
