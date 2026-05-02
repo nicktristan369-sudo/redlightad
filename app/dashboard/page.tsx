@@ -590,107 +590,136 @@ function PushPayModal({ pkg, userId, onClose }: {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div 
+        className="absolute inset-0 transition-opacity duration-350" 
+        style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(8px)" }} 
+      />
 
       {/* Modal */}
       <div
-        className="relative w-full sm:max-w-md max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-[#111] text-white"
+        className="relative w-full sm:max-w-[440px] max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white animate-slide-up"
+        style={{ boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 4px 20px rgba(0,0,0,0.06)" }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div
-          className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4 rounded-t-3xl"
-          style={{ background: "linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%)" }}
-        >
-          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
-            <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#F0F0F0]">
+          <button 
+            onClick={onClose} 
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F5F5F5] hover:bg-[#EEE] transition-colors"
+          >
+            <svg className="w-4 h-4 text-[#666]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           <div className="flex-1">
-            <p className="text-sm font-black text-white">{pkg.points} Push Points</p>
-            <p className="text-xs text-[#f5a623] font-semibold">{pkg.points} × Push to Top</p>
+            <p className="text-[17px] font-bold text-[#111]">{pkg.points} Push Points</p>
+            <p className="text-[13px] text-[#999]">{pkg.points} × Push to Top</p>
           </div>
-          <p className="text-sm font-black tabular-nums text-white">€{finalPrice.toFixed(2)}</p>
+          <p className="text-[22px] font-bold tabular-nums text-[#111]">€{finalPrice.toFixed(2)}</p>
         </div>
 
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-5 py-4 space-y-4">
           {/* Payment methods */}
           <PaymentMethodsList selected={method} onSelect={setMethod} />
 
           {/* Card form */}
           {method === "card" && (
-            <div className="rounded-xl border border-[#222] bg-[#141414] p-4 space-y-3">
+            <div className="space-y-3 animate-fade-in">
               <input
                 type="text" inputMode="numeric" placeholder="Card number"
                 value={cardNum} onChange={e => setCardNum(fmtCard(e.target.value))}
-                className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#E8192C] font-mono tracking-widest"
+                className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[13px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white focus:shadow-[0_0_0_3px_rgba(230,57,70,0.08)] font-mono tracking-widest transition-all"
               />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-[10px]">
                 <input
                   type="text" inputMode="numeric" placeholder="MM/YY"
                   value={expiry} onChange={e => setExpiry(fmtExp(e.target.value))}
-                  className="w-full bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] font-mono"
+                  className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[13px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white focus:shadow-[0_0_0_3px_rgba(230,57,70,0.08)] font-mono transition-all"
                 />
                 <input
                   type="text" inputMode="numeric" placeholder="CVC"
                   value={cvc} onChange={e => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                  className="w-full bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] font-mono"
+                  className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[13px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white focus:shadow-[0_0_0_3px_rgba(230,57,70,0.08)] font-mono transition-all"
                 />
               </div>
               <input
                 type="text" placeholder="Name on card"
                 value={name} onChange={e => setName(e.target.value)}
-                className="w-full bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623]"
+                className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[13px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white focus:shadow-[0_0_0_3px_rgba(230,57,70,0.08)] transition-all"
               />
             </div>
           )}
 
           {/* Promo code */}
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-4">
-            <p className="text-xs text-gray-500 font-semibold uppercase tracking-widest mb-2">Promo code</p>
+          <div>
+            <p className="text-[11px] text-[#999] font-semibold uppercase tracking-[0.08em] mb-2">Promo code</p>
             {promoApplied ? (
-              <div className="flex items-center gap-2 text-green-400 text-sm">
+              <div className="flex items-center gap-2 text-green-600 text-sm bg-green-50 rounded-[10px] px-4 py-3">
                 <span>✓ {promoCode.toUpperCase()} — {discount}% off</span>
-                <button onClick={() => { setPromoApplied(false); setDiscount(0); setPromoCode("") }} className="ml-auto text-gray-500 hover:text-white text-xs">Remove</button>
+                <button onClick={() => { setPromoApplied(false); setDiscount(0); setPromoCode("") }} className="ml-auto text-[#999] hover:text-[#E63946] text-xs transition-colors">Remove</button>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="grid grid-cols-[1fr_auto] gap-2">
                 <input
                   type="text" placeholder="Enter promo code"
                   value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())}
                   onKeyDown={e => e.key === "Enter" && applyPromo()}
-                  className="flex-1 bg-[#111] border border-[#333] rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] uppercase tracking-widest"
+                  className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[10px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white uppercase tracking-widest transition-all"
                 />
-                <button onClick={applyPromo} className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-bold transition-colors flex-shrink-0">Apply</button>
+                <button 
+                  onClick={applyPromo} 
+                  className="px-4 py-[10px] rounded-[10px] border-[1.5px] border-[#E5E5E5] text-[#666] text-sm font-semibold hover:border-[#E63946] hover:text-[#E63946] transition-colors flex-shrink-0"
+                >
+                  Apply
+                </button>
               </div>
             )}
           </div>
 
           {error && (
-            <div className="rounded-xl bg-red-900/30 border border-red-800/50 px-4 py-3 text-sm text-red-400">{error}</div>
+            <div className="rounded-[10px] bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</div>
           )}
 
           {/* CTA */}
           <button
             onClick={handlePay}
             disabled={processing}
-            className="w-full py-4 rounded-xl bg-[#f5a623] hover:bg-[#e69520] text-black font-black text-base tracking-widest uppercase disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-xl text-white font-bold text-sm uppercase tracking-wide disabled:opacity-50 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
+            style={{ 
+              background: "linear-gradient(135deg, #E63946 0%, #C62828 100%)",
+              boxShadow: "0 4px 16px rgba(230,57,70,0.25)"
+            }}
           >
             {processing ? (
               <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="40" strokeDashoffset="10" />
               </svg>
             ) : null}
-            {processing ? "Processing..." : `Buy ${pkg.points} Points — €${finalPrice.toFixed(2)}`}
+            {processing ? "Processing..." : `BUY ${pkg.points} POINTS — €${finalPrice.toFixed(2)}`}
           </button>
 
-          {/* Trust */}
-          <div className="text-center pb-2">
-            <p className="text-[10px] text-gray-600">Secure payment · No subscription · Points added instantly</p>
-          </div>
+          {/* Trust footer */}
+          <SecurePaymentFooter />
         </div>
       </div>
+
+      {/* Animation styles */}
+      <style jsx>{`
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { transform: translateY(4px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+          animation: slideUp 350ms ease;
+        }
+        .animate-fade-in {
+          animation: fadeIn 200ms ease;
+        }
+      `}</style>
     </div>
   )
 }
