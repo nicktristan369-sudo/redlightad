@@ -103,7 +103,7 @@ function FilterDrawer({
     label: string; value: string; onChange: (v: string) => void; options: string[]
   }) => (
     <div className="mb-4">
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{label}</p>
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">{label}</p>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -140,7 +140,7 @@ function FilterDrawer({
 
           {/* Sort */}
           <div className="mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 mt-3">{t.filter_sort}</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 mt-3">{t.filter_sort}</p>
             <div className="flex flex-col gap-1">
               {SORT_OPTIONS.map(opt => (
                 <button
@@ -164,7 +164,7 @@ function FilterDrawer({
 
           {/* Age range */}
           <div className="mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t.filter_age_range}</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">{t.filter_age_range}</p>
             <div className="flex items-center gap-2">
               <input
                 type="number" min="18" max="99" placeholder={t.filter_min}
@@ -172,7 +172,7 @@ function FilterDrawer({
                 onChange={e => setAgeMin(e.target.value)}
                 style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }}
               />
-              <span className="text-gray-400 text-sm">–</span>
+              <span className="text-gray-500 text-sm">–</span>
               <input
                 type="number" min="18" max="99" placeholder={t.filter_max}
                 value={ageMax}
@@ -184,12 +184,12 @@ function FilterDrawer({
 
           {/* Height */}
           <div className="mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">HEIGHT (CM)</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">HEIGHT (CM)</p>
             <div className="flex items-center gap-2">
               <input type="number" min="140" max="210" placeholder="Min"
                 value={heightMin} onChange={e => setHeightMin(e.target.value)}
                 style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }} />
-              <span className="text-gray-400 text-sm">–</span>
+              <span className="text-gray-500 text-sm">–</span>
               <input type="number" min="140" max="210" placeholder="Max"
                 value={heightMax} onChange={e => setHeightMax(e.target.value)}
                 style={{ flex: 1, border: "1px solid #E5E7EB", padding: "8px 10px", fontSize: 14, outline: "none", borderRadius: 0 }} />
@@ -198,7 +198,7 @@ function FilterDrawer({
 
           {/* Toggles */}
           <div className="mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{t.filter_show_only}</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">{t.filter_show_only}</p>
             <Toggle label={t.filter_premium_profiles} value={premiumOnly} onChange={setPremiumOnly} />
             <Toggle label={t.filter_has_video} value={hasVideo} onChange={setHasVideo} />
             <Toggle label="Outcall available" value={outcall} onChange={setOutcall} />
@@ -215,7 +215,7 @@ function FilterDrawer({
 
           {/* Languages */}
           <div className="mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">LANGUAGES</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">LANGUAGES</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {["English","Danish","Swedish","Norwegian","German","French","Spanish","Russian","Arabic","Thai"].map(lang => (
                 <button key={lang}
@@ -344,7 +344,7 @@ function CountryOnlyMenu({
     <DropMenu maxH={320}>
       <div className="px-3 py-2 border-b border-gray-100">
         <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             ref={inputRef}
             type="text"
@@ -453,7 +453,7 @@ function CityOnlyMenu({
       {/* Search input */}
       <div className="px-3 py-2 border-b border-gray-100 sticky top-0 bg-white">
         <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             ref={inputRef}
             type="text"
@@ -479,12 +479,12 @@ function CityOnlyMenu({
       {showMajor && (
         <>
           {loadingMajor ? (
-            <div className="px-4 py-4 text-sm text-gray-400 text-center">Loading...</div>
+            <div className="px-4 py-4 text-sm text-gray-500 text-center">Loading...</div>
           ) : (
             <>
               {majorCities.length > 0 && (
                 <div className="px-4 pt-2 pb-1">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Popular cities</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Popular cities</span>
                 </div>
               )}
               {majorCities.map(c => (
@@ -495,7 +495,7 @@ function CityOnlyMenu({
                     current === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
                   }`}
                 >
-                  <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                  <MapPin size={12} className="text-gray-500 flex-shrink-0" />
                   <span className="flex-1">{c.name}</span>
                   {current === c.name && <Check size={13} className="text-red-500" />}
                 </button>
@@ -508,9 +508,9 @@ function CityOnlyMenu({
       {/* Search results */}
       {!showMajor && (
         loading ? (
-          <div className="px-4 py-4 text-sm text-gray-400 text-center">Searching...</div>
+          <div className="px-4 py-4 text-sm text-gray-500 text-center">Searching...</div>
         ) : results.length === 0 ? (
-          <div className="px-4 py-4 text-sm text-gray-400 text-center">No cities found</div>
+          <div className="px-4 py-4 text-sm text-gray-500 text-center">No cities found</div>
         ) : results.map(c => (
           <button
             key={c.ascii_name + c.admin1_name}
@@ -519,12 +519,12 @@ function CityOnlyMenu({
               current === c.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-700"
             }`}
           >
-            <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+            <MapPin size={12} className="text-gray-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <span>{c.name}</span>
-              {c.admin1_name && <span className="text-xs text-gray-400 ml-1.5">{c.admin1_name}</span>}
+              {c.admin1_name && <span className="text-xs text-gray-500 ml-1.5">{c.admin1_name}</span>}
             </div>
-            {c.is_major_city && <span className="text-[10px] text-gray-400 flex-shrink-0">Popular</span>}
+            {c.is_major_city && <span className="text-[10px] text-gray-500 flex-shrink-0">Popular</span>}
             {current === c.name && <Check size={13} className="text-red-500 flex-shrink-0" />}
           </button>
         ))
@@ -689,12 +689,12 @@ function LocationMenu({
           ) : isSearching ? (
             /* Show search results when searching */
             results.length === 0 ? (
-              <p className="px-4 py-4 text-sm text-gray-400 text-center">
+              <p className="px-4 py-4 text-sm text-gray-500 text-center">
                 No cities found for "{search}"
               </p>
             ) : (
               <>
-                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
+                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
                   Search Results
                 </div>
                 {results.map((city, i) => (
@@ -705,23 +705,23 @@ function LocationMenu({
                       currentCity === city.name ? "text-red-600 font-semibold bg-red-50" : "text-gray-800"
                     }`}
                   >
-                    <MapPin size={14} className={city.isMajor ? "text-red-500" : "text-gray-400"} />
+                    <MapPin size={14} className={city.isMajor ? "text-red-500" : "text-gray-500"} />
                     <div className="text-left">
                       <span className={city.isMajor ? "font-medium" : ""}>{city.name}</span>
-                      {city.region && <span className="text-xs text-gray-400 ml-1">({city.region})</span>}
+                      {city.region && <span className="text-xs text-gray-500 ml-1">({city.region})</span>}
                     </div>
                   </button>
                 ))}
               </>
             )
           ) : countryCities.length === 0 ? (
-            <p className="px-4 py-4 text-sm text-gray-400 text-center">
+            <p className="px-4 py-4 text-sm text-gray-500 text-center">
               No major cities found
             </p>
           ) : (
             /* Show major cities when not searching */
             <>
-              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
+              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
                 Major Cities
               </div>
               {countryCities.map((city, i) => (
@@ -735,7 +735,7 @@ function LocationMenu({
                   <MapPin size={14} className="text-red-500" />
                   <div className="text-left">
                     <span className="font-medium">{city.name}</span>
-                    {city.region && <span className="text-xs text-gray-400 ml-1">({city.region})</span>}
+                    {city.region && <span className="text-xs text-gray-500 ml-1">({city.region})</span>}
                   </div>
                 </button>
               ))}
@@ -784,7 +784,7 @@ function LocationMenu({
         {/* Global search results */}
         {!loading && isSearching && results.length > 0 && (
           <>
-            <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
+            <div className="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-50 border-b border-gray-100">
               Cities
             </div>
             {results.map((city, i) => (
@@ -793,7 +793,7 @@ function LocationMenu({
                 onClick={() => onSelect({ country: city.country, city: city.name })}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100"
               >
-                <MapPin size={14} className={city.isMajor ? "text-red-500" : "text-gray-400"} />
+                <MapPin size={14} className={city.isMajor ? "text-red-500" : "text-gray-500"} />
                 <div className="text-left">
                   <div className={city.isMajor ? "font-semibold text-gray-900" : "text-gray-800"}>
                     {city.name}
@@ -809,7 +809,7 @@ function LocationMenu({
         
         {/* No results */}
         {!loading && isSearching && results.length === 0 && (
-          <p className="px-4 py-4 text-sm text-gray-400 text-center">
+          <p className="px-4 py-4 text-sm text-gray-500 text-center">
             No cities found for "{search}"
           </p>
         )}
@@ -820,7 +820,7 @@ function LocationMenu({
             {/* EUROPE section */}
             {filteredEurope.length > 0 && (
               <>
-                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
+                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
                   {t.filter_europe}
                 </div>
                 {filteredEurope.map(c => (
@@ -832,7 +832,7 @@ function LocationMenu({
                     }`}
                   >
                     <span className={`fi fi-${c.code} fis`} style={{ width: 18, height: 18, display: "inline-block", flexShrink: 0, borderRadius: 2 }} />{" "}{c.name}
-                    <ChevronRight size={14} className="ml-auto text-gray-400" />
+                    <ChevronRight size={14} className="ml-auto text-gray-500" />
                   </button>
                 ))}
               </>
@@ -840,7 +840,7 @@ function LocationMenu({
             {/* WORLDWIDE section */}
             {filteredWorldwide.length > 0 && (
               <>
-                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
+                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-50 border-b border-gray-100 sticky top-0">
                   {t.filter_worldwide}
                 </div>
                 {filteredWorldwide.map(c => (
@@ -852,7 +852,7 @@ function LocationMenu({
                     }`}
                   >
                     <span className={`fi fi-${c.code} fis`} style={{ width: 18, height: 18, display: "inline-block", flexShrink: 0, borderRadius: 2 }} />{" "}{c.name}
-                    <ChevronRight size={14} className="ml-auto text-gray-400" />
+                    <ChevronRight size={14} className="ml-auto text-gray-500" />
                   </button>
                 ))}
               </>
@@ -1047,7 +1047,7 @@ function FilterBarInner() {
 
         {/* Search — full width top row on mobile */}
         <div className="relative mb-2 md:hidden">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
           <input
             type="text"
             placeholder={t.common_search}
@@ -1065,7 +1065,7 @@ function FilterBarInner() {
 
           {/* Search — desktop only, left of pills */}
           <div className="relative hidden md:block mr-2">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             <input
               type="text"
               placeholder={t.common_search}

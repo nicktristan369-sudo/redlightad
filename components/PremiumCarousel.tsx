@@ -401,7 +401,7 @@ export default function PremiumCarousel({
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-gray-900 tracking-tight">{title}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
           </div>
           {listings.length > VISIBLE_COUNT && (
             <div className="flex gap-2">
@@ -469,12 +469,12 @@ export default function PremiumCarousel({
                     <p className="text-white text-xs font-black tracking-wider uppercase leading-tight truncate">
                       {l.title.toUpperCase()}
                     </p>
-                    <p className="text-gray-400 text-[10px] leading-tight truncate mt-0.5">
+                    <p className="text-gray-500 text-[10px] leading-tight truncate mt-0.5">
                       {[l.city, l.country].filter(Boolean).join(", ").toUpperCase()}
                     </p>
                     <p className="text-gray-500 text-[10px] mt-1">{ago}</p>
                     {l.about && (
-                      <p className="text-gray-400 text-[10px] mt-0.5 leading-tight line-clamp-1">{l.about}</p>
+                      <p className="text-gray-500 text-[10px] mt-0.5 leading-tight line-clamp-1">{l.about}</p>
                     )}
                   </div>
                 </div>

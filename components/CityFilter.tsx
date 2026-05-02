@@ -154,7 +154,7 @@ export default function CityFilter() {
                 onClick={() => scroll('left')}
                 className="absolute left-0 z-10 p-1 bg-white dark:bg-gray-900 shadow-md rounded-full"
               >
-                <ChevronLeft size={18} className="text-gray-600 dark:text-gray-400" />
+                <ChevronLeft size={18} className="text-gray-600 dark:text-gray-500" />
               </button>
             )}
 
@@ -199,7 +199,7 @@ export default function CityFilter() {
               {allCities.length > cities.length && (
                 <button
                   onClick={() => setShowSearch(true)}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
                 >
                   <Search size={14} />
                   More cities
@@ -213,7 +213,7 @@ export default function CityFilter() {
                 onClick={() => scroll('right')}
                 className="absolute right-0 z-10 p-1 bg-white dark:bg-gray-900 shadow-md rounded-full"
               >
-                <ChevronRight size={18} className="text-gray-600 dark:text-gray-400" />
+                <ChevronRight size={18} className="text-gray-600 dark:text-gray-500" />
               </button>
             )}
           </div>
@@ -242,7 +242,7 @@ export default function CityFilter() {
                 </button>
               </div>
               <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -263,7 +263,7 @@ export default function CityFilter() {
                   !selectedCity ? "bg-red-50 dark:bg-red-900/20" : ""
                 }`}
               >
-                <Globe size={18} className="text-gray-400" />
+                <Globe size={18} className="text-gray-500" />
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   All {country.name}
                 </span>
@@ -279,7 +279,7 @@ export default function CityFilter() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <MapPin size={16} className="text-gray-400" />
+                    <MapPin size={16} className="text-gray-500" />
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {city.name}
@@ -290,7 +290,7 @@ export default function CityFilter() {
                     </div>
                   </div>
                   {city.count > 0 && (
-                    <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                       {city.count} profiles
                     </span>
                   )}

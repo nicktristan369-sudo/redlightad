@@ -132,7 +132,7 @@ export default function CityAutocomplete({
       <div className="relative">
         <MapPin
           size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
         />
         <input
           ref={inputRef}
@@ -151,7 +151,7 @@ export default function CityAutocomplete({
         {loading && (
           <Loader2
             size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 animate-spin"
           />
         )}
         {!loading && query && (
@@ -164,7 +164,7 @@ export default function CityAutocomplete({
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
           >
-            <X size={14} className="text-gray-400" />
+            <X size={14} className="text-gray-500" />
           </button>
         )}
       </div>
@@ -186,7 +186,7 @@ export default function CityAutocomplete({
                   : "hover:bg-gray-50 dark:hover:bg-gray-800"
               }`}
             >
-              <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+              <MapPin size={14} className="text-gray-500 flex-shrink-0" />
               <div className="min-w-0">
                 <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {city.name}
