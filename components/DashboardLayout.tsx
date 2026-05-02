@@ -41,8 +41,6 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard",                label: "Overview",            icon: LayoutDashboard },
-  { href: "/dashboard/profil",         label: "My Profile",          icon: FileText },
-  { href: "/dashboard/preview",        label: "Preview",             icon: Eye },
   { href: "/dashboard/beskeder",       label: "Messages",            icon: MessageSquare },
   { href: "/dashboard/locked-content", label: "Exclusive Content",   icon: Lock, premiumOnly: true },
   { href: "/dashboard/marketplace",    label: "Marketplace",         icon: Tag, premiumOnly: true },

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef, useCallback, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { Video, Radio, Square, Users, Clock, Mic, MicOff, VideoOff, Trash2, Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase"
@@ -131,7 +131,7 @@ function BroadcastControls({ onViewerCount, onStreamReady }: { onViewerCount: (n
 }
 
 // ── Main page ────────────────────────────────────────────────────────────────
-export default function GoLivePage() {
+function GoLiveContent() {
   const router = useRouter()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [adminListings, setAdminListings] = useState<any[]>([])
@@ -864,5 +864,13 @@ export default function GoLivePage() {
         )}
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function GoLivePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /></div>}>
+      <GoLiveContent />
+    </Suspense>
   )
 }
