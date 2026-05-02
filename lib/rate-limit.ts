@@ -12,21 +12,36 @@ const redis = hasRedis
     })
   : null;
 
-// Create a rate limiter or a no-op fallback
+// No-op fallback for when Redis is not available
+const noOpLimiter = {
+  limit: async (_: string) => ({ success: true, remaining: 999, reset: 0 }),
+};
+
+// Create a rate limiter with graceful fallback
 function createLimiter(
   options: { limiter: ReturnType<typeof Ratelimit.slidingWindow>; prefix: string }
 ) {
-  if (redis) {
-    return new Ratelimit({
-      redis,
-      limiter: options.limiter,
-      analytics: true,
-      prefix: options.prefix,
-    });
+  if (!redis) {
+    return noOpLimiter;
   }
-  // Fallback: no rate limiting
+  
+  const limiter = new Ratelimit({
+    redis,
+    limiter: options.limiter,
+    analytics: true,
+    prefix: options.prefix,
+  });
+
+  // Wrap limit() to catch Redis errors and fallback gracefully
   return {
-    limit: async (_: string) => ({ success: true, remaining: 999, reset: 0 }),
+    limit: async (identifier: string) => {
+      try {
+        return await limiter.limit(identifier);
+      } catch (err) {
+        console.error("[RateLimit] Redis error, allowing request:", err);
+        return { success: true, remaining: 999, reset: 0 };
+      }
+    },
   };
 }
 
