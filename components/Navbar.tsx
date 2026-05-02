@@ -450,17 +450,31 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                     onClick={async () => {
                       if (pushPoints < 1) { router.push("/dashboard"); closeDrawer(); return; }
                       setQuickPushing(true);
-                      const supabase = createClient();
-                      const token = (await supabase.auth.getSession()).data.session?.access_token;
-                      const res = await fetch("/api/push-points/push", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-                        body: JSON.stringify({ listingId: providerListingId }),
-                      });
-                      const data = await res.json();
-                      setQuickPushing(false);
-                      if (res.ok) { setPushPoints(data.points_remaining); closeDrawer(); }
-                      else { router.push("/dashboard"); closeDrawer(); }
+                      try {
+                        const supabase = createClient();
+                        const token = (await supabase.auth.getSession()).data.session?.access_token;
+                        const res = await fetch("/api/push-points/push", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                          body: JSON.stringify({ listingId: providerListingId }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setPushPoints(data.points_remaining);
+                          // Don't close drawer — show success
+                          alert(`✓ Profile pushed to top! ${data.points_remaining} points remaining.`);
+                        } else if (data.error === "insufficient_points") {
+                          router.push("/dashboard/boost");
+                          closeDrawer();
+                        } else {
+                          alert(`Error: ${data.error || "Failed to push"}`);
+                        }
+                      } catch (e) {
+                        alert("Error pushing profile. Please try again.");
+                        console.error(e);
+                      } finally {
+                        setQuickPushing(false);
+                      }
                     }}
                     disabled={quickPushing}
                     style={{
