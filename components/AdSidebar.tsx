@@ -53,7 +53,7 @@ export default function AdSidebar({
     { label: t.sidebar_gender, value: gender },
     { label: t.sidebar_category, value: category },
     { label: t.sidebar_location, value: [city, country].filter(Boolean).join(", ") },
-    { label: t.sidebar_languages, value: languages?.join(", ") || null },
+    { label: t.sidebar_languages, value: languages && languages.length > 0 ? [...new Set(languages)].join(", ") : null },
     { label: t.sidebar_nationality, value: nationality || null },
     { label: t.sidebar_ethnicity, value: ethnicity || null },
   ].filter(r => r.value);
@@ -84,12 +84,13 @@ export default function AdSidebar({
   ].filter(r => r.value);
 
   const InfoRow = ({ label, value }: { label: string; value: string }) => {
-    // Try to parse as JSON array and format nicely
+    // Try to parse as JSON array and format nicely, deduplicate
     let displayValue = value;
     try {
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) {
-        displayValue = parsed.join(", ");
+        // Remove duplicates with Set
+        displayValue = [...new Set(parsed)].join(", ");
       }
     } catch {
       // Not JSON, use as-is
