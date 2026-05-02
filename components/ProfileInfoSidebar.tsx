@@ -3,7 +3,13 @@
 import { Calendar, User, Tag, MapPin, Globe } from "lucide-react"
 import { useCurrency } from "@/lib/useCurrency"
 import { convertPrice } from "@/lib/currency"
-import { formatLocation } from "@/lib/getRegionForCity"
+// Simple location format without heavy country-state-city package
+const formatLocation = (city?: string | null, country?: string | null) => {
+  if (!city && !country) return "";
+  if (!city) return country || "";
+  if (!country) return city;
+  return `${city}, ${country}`;
+};
 
 interface Rate {
   duration: string
@@ -35,7 +41,7 @@ export default function ProfileInfoSidebar({
     { icon: <Calendar size={14} />, label: "Alder",    value: age ? `${age} år` : "—" },
     { icon: <User size={14} />,     label: "Køn",      value: gender || "—" },
     { icon: <Tag size={14} />,      label: "Kategori", value: category || "—" },
-    { icon: <MapPin size={14} />,   label: "Lokation", value: formatLocation(city, country) || "—" },
+    { icon: <MapPin size={14} />,   label: "Location", value: formatLocation(city, country) || "—" },
     { icon: <Globe size={14} />,    label: "Sprog",    value: languages?.join(", ") || "—" },
   ]
 

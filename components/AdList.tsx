@@ -34,7 +34,13 @@ interface Listing {
 }
 
 import { isAvailableNow } from "@/lib/isAvailableNow"
-import { formatLocation } from "@/lib/getRegionForCity"
+// Simple location format without heavy country-state-city package
+const formatLocation = (city?: string | null, country?: string | null) => {
+  if (!city && !country) return "";
+  if (!city) return country || "";
+  if (!country) return city;
+  return `${city}, ${country}`;
+};
 
 // ── Mobile listing card with auto-cycling images ──────────────────────────
 function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 }: { // i18n-ready
