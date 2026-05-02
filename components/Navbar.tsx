@@ -448,7 +448,10 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                 {user.accountType === "provider" && providerListingId && (
                   <button
                     onClick={async () => {
-                      if (pushPoints < 1) { router.push("/dashboard"); closeDrawer(); return; }
+                      if (pushPoints < 1) {
+                        alert("You need push points. Go to Premium & Boost to buy more.");
+                        return;
+                      }
                       setQuickPushing(true);
                       try {
                         const supabase = createClient();
@@ -461,11 +464,9 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                         const data = await res.json();
                         if (res.ok) {
                           setPushPoints(data.points_remaining);
-                          // Don't close drawer — show success
-                          alert(`✓ Profile pushed to top! ${data.points_remaining} points remaining.`);
-                        } else if (data.error === "insufficient_points") {
-                          router.push("/dashboard/boost");
-                          closeDrawer();
+                          alert(`✓ Profile pushed to top!\n${data.points_remaining} points remaining.`);
+                        } else if (res.status === 402) {
+                          alert("Insufficient push points. Buy more in Premium & Boost.");
                         } else {
                           alert(`Error: ${data.error || "Failed to push"}`);
                         }
