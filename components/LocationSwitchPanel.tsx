@@ -326,7 +326,7 @@ export default function LocationSwitchPanel({
                 className="block"
               >
                 <img
-                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${selectedAddress.lat},${selectedAddress.lng}&zoom=15&size=400x150&markers=color:red%7C${selectedAddress.lat},${selectedAddress.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}`}
+                  src={`/api/geo/static-map?lat=${selectedAddress.lat}&lng=${selectedAddress.lng}&zoom=15&size=400x150`}
                   alt="Location preview"
                   className="w-full h-[120px] object-cover rounded-xl border border-gray-200"
                 />

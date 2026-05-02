@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
+// Support multiple env var names for Google API key
+const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
