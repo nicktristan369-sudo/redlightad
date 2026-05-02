@@ -107,17 +107,18 @@ export default function AdDetailPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient();
+      try {
+        const supabase = createClient();
 
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id ?? null);
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id ?? null);
 
-      // Fetch listing - try by ID first, then by slug
-      let data = null;
-      
-      // Check if id looks like a UUID
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        // Fetch listing - try by ID first, then by slug
+        let data = null;
+        
+        // Check if id looks like a UUID
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       
       if (isUuid) {
         const result = await supabase
@@ -177,7 +178,11 @@ export default function AdDetailPage() {
           .catch(() => {});
       }
 
-      setLoading(false);
+        setLoading(false);
+      } catch (err) {
+        console.error("[Ads] Load error:", err);
+        setLoading(false);
+      }
     };
     load();
   }, [id]);
