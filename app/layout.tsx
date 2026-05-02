@@ -58,6 +58,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://kkkqvhfgjofppimwxtub.supabase.co" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <link rel="dns-prefetch" href="https://kkkqvhfgjofppimwxtub.supabase.co" />
+        {/* Preload critical LCP image */}
+        <link rel="preload" href="/age-verify-bg.jpg" as="image" fetchPriority="high" />
         {/* PWA theme color */}
         <meta name="theme-color" content="#DC2626" />
         <meta name="mobile-web-app-capable" content="yes" />
