@@ -120,7 +120,7 @@ export default function MineAnnoncer() {
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 flex-shrink-0 w-full sm:w-auto">
                     <a
-                      href={`/ads/${listing.id}`}
+                      href={`/ads/${listing.slug || listing.id}`}
                       className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-900 hover:bg-black text-white transition-colors"
                     >
                       View Profile

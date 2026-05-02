@@ -195,9 +195,9 @@ function DashboardContent() {
             </div>
             <div className="bg-green-50 px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <p className="text-[13px] text-green-800 flex-1">Your profile is now visible on RedLightAD and clients can find you.</p>
-              {listingId && (
+              {listingSlug && (
                 <a
-                  href={`/ads/${listingId}`}
+                  href={`/ads/${listingSlug}`}
                   className="inline-flex items-center gap-2 bg-green-600 text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
                 >
                   <Eye size={14} /> View my profile
@@ -305,7 +305,7 @@ function DashboardContent() {
             <div className="flex flex-wrap gap-3">
               <QuickBtn href={`/dashboard/annoncer/${listingId}/edit`} style="black">Edit my profile</QuickBtn>
               <Link
-                href={`/ads/${listingId}`}
+                href={`/ads/${listingSlug || listingId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-5 py-2.5 rounded-lg text-[13px] font-semibold inline-block transition-colors duration-200"
