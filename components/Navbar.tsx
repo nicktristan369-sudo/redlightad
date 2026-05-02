@@ -185,8 +185,32 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
       msgChannel = await loadUser(session?.user ?? null);
     });
 
+    // Polling fallback - check for new messages every 30 seconds
+    // This ensures notifications work even if Realtime is not configured
+    const pollInterval = setInterval(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Re-run fetchUnread logic
+        const { data: listing } = await supabase
+          .from("listings")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const isProvider = !!listing;
+        const unreadField = isProvider ? "provider_unread" : "customer_unread";
+        const idField = isProvider ? "provider_id" : "customer_id";
+        const { data: convs } = await supabase
+          .from("conversations")
+          .select(`id, ${unreadField}`)
+          .eq(idField, user.id);
+        const total = convs?.reduce((sum, c) => sum + ((c as Record<string, number>)[unreadField] || 0), 0) || 0;
+        setUnreadMessages(total);
+      }
+    }, 30000); // Poll every 30 seconds
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(pollInterval);
       if (msgChannel) {
         supabase.removeChannel(msgChannel).catch(() => {});
       }
