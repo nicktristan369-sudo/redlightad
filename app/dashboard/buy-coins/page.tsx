@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase"
 import DashboardLayout from "@/components/DashboardLayout"
 import { COIN_PACKAGES } from "@/lib/coinPackages"
 import { ShoppingBag, Lock, MessageSquare, TrendingUp, ChevronDown, Shield, AlertCircle } from "lucide-react"
+import { CardBadges, CryptoBadges } from "@/components/PaymentMethodBadges"
 
 type PaymentTab = "card" | "crypto"
 
@@ -100,15 +101,15 @@ export default function BuyCoinsPage() {
 
         {/* Payment tabs */}
         <div className="flex gap-2 mb-3">
-          <div className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gray-50 border border-gray-200 text-gray-300 text-center cursor-not-allowed flex items-center justify-center gap-2">
-            <span className="text-xs">CARD</span>
-            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">Soon</span>
+          <div className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gray-50 border border-gray-200 text-gray-400 cursor-not-allowed flex items-center justify-center gap-3">
+            <CardBadges />
+            <span className="text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full font-medium">Soon</span>
           </div>
           <button
             onClick={() => setTab("crypto")}
-            className="flex-1 py-3 rounded-xl text-sm font-bold transition-all bg-white border-2 border-gray-900 text-gray-900 shadow-sm hover:bg-gray-900 hover:text-white"
+            className="flex-1 py-3 rounded-xl text-sm font-bold transition-all bg-gray-900 border-2 border-gray-900 text-white flex items-center justify-center gap-3"
           >
-            Crypto
+            <CryptoBadges />
           </button>
         </div>
         <p className="text-xs text-gray-500 text-center mb-6">
