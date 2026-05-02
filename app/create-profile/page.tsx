@@ -505,8 +505,12 @@ export default function OpretAnnoncePage() {
       // Upload images
       let imageUrls: string[] = [];
       if (imageFiles.length > 0) {
-        const { uploadImages } = await import("@/lib/uploadImages");
-        imageUrls = await uploadImages(imageFiles);
+        try {
+          const { uploadImages } = await import("@/lib/uploadImages");
+          imageUrls = await uploadImages(imageFiles);
+        } catch (uploadErr: unknown) {
+          throw new Error(`Photo upload failed: ${uploadErr instanceof Error ? uploadErr.message : 'Unknown error'}`);
+        }
       }
 
       // Generate URL slug from display name or title
