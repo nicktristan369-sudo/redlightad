@@ -471,28 +471,30 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
     <DashboardLayout>
       <div className="max-w-2xl mx-auto px-4 py-6">
 
-        {/* Plan banner */}
-        {userTier && TIER_INFO[userTier] ? (
-          <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl"
-            style={{ background: TIER_INFO[userTier].bg, border: `1px solid ${TIER_INFO[userTier].color}22` }}>
-            <Crown size={16} color={TIER_INFO[userTier].color} />
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: TIER_INFO[userTier].color }}>
-                {TIER_INFO[userTier].label} Plan
-              </p>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                {TIER_INFO[userTier].features.join(" · ")}
-              </p>
+        {/* Plan banner - hide for VIP users, show upgrade for non-VIP */}
+        {userTier !== "vip" && (
+          userTier && TIER_INFO[userTier] ? (
+            <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl"
+              style={{ background: TIER_INFO[userTier].bg, border: `1px solid ${TIER_INFO[userTier].color}22` }}>
+              <Crown size={16} color={TIER_INFO[userTier].color} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: TIER_INFO[userTier].color }}>
+                  {TIER_INFO[userTier].label} Plan
+                </p>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  {TIER_INFO[userTier].features.join(" · ")}
+                </p>
+              </div>
+              <a href="/premium" className="text-[11px] font-semibold underline flex-shrink-0"
+                style={{ color: TIER_INFO[userTier].color }}>Opgrader</a>
             </div>
-            <a href="/premium" className="text-[11px] font-semibold underline flex-shrink-0"
-              style={{ color: TIER_INFO[userTier].color }}>Opgrader</a>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
-            <AlertTriangle size={15} color="#9CA3AF" />
-            <p className="text-[12px] text-gray-500 flex-1">Gratis plan — premium features ikke aktiveret</p>
-            <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline flex-shrink-0">Opgrader</a>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
+              <AlertTriangle size={15} color="#9CA3AF" />
+              <p className="text-[12px] text-gray-500 flex-1">Gratis plan — premium features ikke aktiveret</p>
+              <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline flex-shrink-0">Opgrader</a>
+            </div>
+          )
         )}
 
         {/* Header */}
