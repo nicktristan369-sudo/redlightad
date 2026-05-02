@@ -46,7 +46,7 @@ const defaultHours = (): OpeningHours => {
 };
 
 const SERVICE_OPTIONS = ["Dinner dates","Social events","Travel companion","Private meetings","Weekend getaways"];
-const LANGUAGE_OPTIONS = ["Dansk","Engelsk","Tysk","Fransk","Spansk"];
+const LANGUAGE_OPTIONS = ["Danish","English","German","French","Spanish","Italian","Portuguese","Russian","Arabic","Chinese","Japanese","Korean"];
 
 const TIER_INFO: Record<string, { label: string; color: string; bg: string; features: string[] }> = {
   vip:      { label: "VIP", color: "#92400E", bg: "#FEF3C7", features: ["Voice message","Social links with lock","Highlighted in search (top placement)","VIP badge"] },
@@ -146,7 +146,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
       if (!res.ok) { setTravelError(json.error ?? "Error"); return; }
       setTravelEntries(prev => [...prev, json.entry].sort((a, b) => a.from_date.localeCompare(b.from_date)));
       setNewTravel({ from_date: "", to_date: "", city: "", country: "" });
-    } catch { setTravelError("Noget gik galt"); }
+    } catch { setTravelError("Something went wrong"); }
     finally { setTravelLoading(false); }
   };
 
@@ -292,24 +292,28 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
     load();
   }, [id, router]);
 
-  /* ─── Validate step 1 ─── */
-  const validateStep1 = () => {
+  /* ─── Validate ─── */
+  const validateForm = () => {
     if (!form.title || !form.category || !form.gender || !form.age || !form.country) {
       setError("Please fill in all required fields."); return false;
     }
     if (parseInt(form.age) < 18) {
       setError("You must be at least 18 years old."); return false;
     }
+    if (form.about.length < 400) {
+      setError("About me must be at least 400 characters."); return false;
+    }
     setError(""); return true;
   };
 
   /* ─── Save ─── */
   const handleSave = async () => {
+    if (!validateForm()) { return; }
     setSaving(true); setError("");
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.id !== userId) throw new Error("Ikke autoriseret");
+      if (!user || user.id !== userId) throw new Error("Not authorized");
 
       // Upload new images
       let newUrls: string[] = [];
@@ -435,8 +439,8 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   if (notFound) return (
     <DashboardLayout>
       <div className="max-w-lg mx-auto py-16 text-center">
-        <p className="text-[16px] font-semibold text-gray-900 mb-2">Annonce ikke fundet</p>
-        <p className="text-[14px] text-gray-500 mb-6">Annoncen eksisterer ikke eller du har ikke adgang.</p>
+        <p className="text-[16px] font-semibold text-gray-900 mb-2">Listing not found</p>
+        <p className="text-[14px] text-gray-500 mb-6">This listing does not exist or you don't have access.</p>
         <button onClick={() => router.push("/dashboard/annoncer")}
           className="px-6 py-2.5 rounded-xl text-[13px] font-semibold text-white"
           style={{ background: "#000" }}>Back</button>
@@ -462,7 +466,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   );
 
   const steps = [
-    { num: 1, label: "Basis info" },
+    { num: 1, label: "Basic info" },
     { num: 2, label: "Detaljer" },
     { num: 3, label: "Contact & Images" },
   ];
@@ -504,7 +508,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Mine annoncer
+            My listings
           </button>
           <h1 className="text-[22px] font-bold text-gray-900">Edit Listing</h1>
         </div>
@@ -522,17 +526,17 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           {/* ──────── STEP 1 ──────── */}
           {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Basis information</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Basic Information</h2>
               <div className="space-y-5">
                 {/* Navn */}
                 <div>
                   <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    Dit navn <span style={{ color: "#DC2626" }}>*</span>
+                    Your name <span style={{ color: "#DC2626" }}>*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Eks. Sofia, Anna, Maria..."
+                    placeholder="e.g. Sofia, Anna, Maria..."
                     value={form.display_name ?? ""}
                     onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
                     style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
@@ -542,7 +546,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 {/* Alder */}
                 <div>
                   <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    Din alder <span style={{ color: "#DC2626" }}>*</span>
+                    Your age <span style={{ color: "#DC2626" }}>*</span>
                   </label>
                   <input
                     type="number"
@@ -557,14 +561,14 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Annonce titel <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Ad title <span className="text-red-500">*</span></label>
                   <input type="text" value={form.title} onChange={e => updateField("title", e.target.value)}
-                    placeholder="F.eks. Sofia - Diskret escort i København"
+                    placeholder="e.g. Sofia - Discreet escort in Copenhagen"
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none focus:ring-0" />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Kategori <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Category <span className="text-red-500">*</span></label>
                   <select value={form.category} onChange={e => updateField("category", e.target.value)}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
                     <option value="">Select category</option>
@@ -573,7 +577,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Køn <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Gender <span className="text-red-500">*</span></label>
                   <div className="flex gap-3 flex-wrap">
                     {GENDERS.map(g => (
                       <button key={g} type="button" onClick={() => updateField("gender", g)}
@@ -586,14 +590,14 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Alder <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Age <span className="text-red-500">*</span></label>
                   <input type="number" min={18} max={99} value={form.age} onChange={e => updateField("age", e.target.value)}
                     placeholder="18"
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none focus:ring-0" />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Lokation <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Location <span className="text-red-500">*</span></label>
                   <LocationSelector
                     value={{ country: form.country, countryName: form.countryName, region: form.region, regionName: form.regionName, city: form.location }}
                     onChange={val => setForm(prev => ({ ...prev, country: val.country, countryName: val.countryName, region: val.region, regionName: val.regionName, location: val.city }))}
@@ -608,14 +612,25 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           {/* ──────── STEP 2 ──────── */}
           {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Om dig og dine services</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">About You & Services</h2>
               <div className="space-y-5">
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Om mig</label>
-                  <textarea rows={5} value={form.about} onChange={e => updateField("about", e.target.value)}
-                    placeholder="Beskriv dig selv og hvad du tilbyder..."
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none focus:ring-0 resize-none" />
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">About me <span className="text-red-500">*</span></label>
+                  <textarea rows={6} value={form.about} onChange={e => updateField("about", e.target.value)}
+                    placeholder="Describe yourself and what you offer... (minimum 400 characters)"
+                    className={`w-full rounded-xl border px-4 py-2.5 text-[13px] focus:outline-none focus:ring-0 resize-none ${
+                      form.about.length > 0 && form.about.length < 400 
+                        ? "border-red-300 focus:border-red-400" 
+                        : "border-gray-200 focus:border-gray-400"
+                    }`} />
+                  <div className="flex justify-end mt-1">
+                    <span className={`text-[11px] ${
+                      form.about.length < 400 ? "text-red-500" : "text-green-600"
+                    }`}>
+                      {form.about.length} / 400 characters {form.about.length < 400 ? "(minimum)" : "✓"}
+                    </span>
+                  </div>
                 </div>
 
                 <div>
@@ -632,23 +647,36 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Sprog</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Languages</label>
+                  <p className="text-[11px] text-gray-400 mb-2">Select up to 2 languages</p>
                   <div className="flex flex-wrap gap-2">
-                    {LANGUAGE_OPTIONS.map(l => (
-                      <button key={l} type="button" onClick={() => toggleArray("languages", l)}
-                        className="rounded-full border px-4 py-1.5 text-[12px] transition"
-                        style={{ borderColor: form.languages.includes(l) ? "#000" : "#E5E7EB", background: form.languages.includes(l) ? "#000" : "#fff", color: form.languages.includes(l) ? "#fff" : "#6B7280" }}>
-                        {l}
-                      </button>
-                    ))}
+                    {LANGUAGE_OPTIONS.map(l => {
+                      const isSelected = form.languages.includes(l);
+                      const isDisabled = !isSelected && form.languages.length >= 2;
+                      return (
+                        <button key={l} type="button" 
+                          onClick={() => !isDisabled && toggleArray("languages", l)}
+                          disabled={isDisabled}
+                          className={`rounded-full border px-4 py-1.5 text-[12px] transition ${
+                            isDisabled ? "opacity-40 cursor-not-allowed" : ""
+                          }`}
+                          style={{ 
+                            borderColor: isSelected ? "#000" : "#E5E7EB", 
+                            background: isSelected ? "#000" : "#fff", 
+                            color: isSelected ? "#fff" : "#6B7280" 
+                          }}>
+                          {l}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Priser */}
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Priser</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Rates</label>
                   <div className="grid grid-cols-2 gap-3">
-                    {[{ field: "rate_1hour", label: "1 time" }, { field: "rate_2hours", label: "2 timer" }, { field: "rate_overnight", label: "Overnat" }, { field: "rate_weekend", label: "Weekend" }].map(r => (
+                    {[{ field: "rate_1hour", label: "1 hour" }, { field: "rate_2hours", label: "2 hours" }, { field: "rate_overnight", label: "Overnight" }, { field: "rate_weekend", label: "Weekend" }].map(r => (
                       <div key={r.field}>
                         <span className="mb-1 block text-[11px] text-gray-400">{r.label}</span>
                         <input type="text" value={form[r.field as keyof typeof form] as string}
@@ -662,19 +690,27 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 {/* Udseende */}
                 <div className="pt-1">
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Udseende & Detaljer</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Appearance & Details</p>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
                       <span className="mb-1 block text-[11px] text-gray-400">Height (cm)</span>
-                      <input type="number" min={100} max={250} value={form.height} onChange={e => updateField("height", e.target.value)}
-                        placeholder="170"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none" />
+                      <select value={form.height} onChange={e => updateField("height", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
+                        <option value="">Select height</option>
+                        {Array.from({ length: 71 }, (_, i) => 140 + i).map(h => (
+                          <option key={h} value={h}>{h} cm</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <span className="mb-1 block text-[11px] text-gray-400">Weight (kg)</span>
-                      <input type="number" min={30} max={200} value={form.weight} onChange={e => updateField("weight", e.target.value)}
-                        placeholder="60"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none" />
+                      <select value={form.weight} onChange={e => updateField("weight", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
+                        <option value="">Select weight</option>
+                        {Array.from({ length: 111 }, (_, i) => 40 + i).map(w => (
+                          <option key={w} value={w}>{w} kg</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
@@ -1006,7 +1042,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none" />
                           </div>
                         </div>
-                        <input type="text" placeholder="By (fx København)"
+                        <input type="text" placeholder="City (e.g. Copenhagen)"
                           value={newTravel.city}
                           onChange={e => setNewTravel(p => ({ ...p, city: e.target.value }))}
                           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none placeholder-gray-400" />
@@ -1181,7 +1217,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 {/* Videoer */}
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Mine Videoer</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3">My Videos</p>
 
                   {/* Animated profile picture — info */}
                   {existingVideos.length > 0 && (
@@ -1256,7 +1292,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                     </div>
                   ))}
 
-                  {/* Upload nye videoer */}
+                  {/* Upload new videos */}
                   <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-gray-400 transition-colors">
                     <input
                       type="file"
@@ -1272,7 +1308,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                       }}
                     />
                     <svg className="w-7 h-7 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
-                    <span className="text-[13px] text-gray-400">+ Upload video (maks 10 i alt)</span>
+                    <span className="text-[13px] text-gray-400">+ Upload video (max 10 total)</span>
                   </label>
 
                   {/* Preview nye videoer */}
@@ -1303,7 +1339,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                             checked={newVideoLocked[i]}
                             onChange={e => setNewVideoLocked(prev => prev.map((v, j) => j === i ? e.target.checked : v))}
                           />
-                          Låst
+                          Locked
                         </label>
                         {newVideoLocked[i] && (
                           <input type="number" min={0} placeholder="Pris i RC" value={newVideoPrices[i] ?? 0}
@@ -1315,7 +1351,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   ))}
 
                   {videoUploading && (
-                    <p className="text-sm text-gray-500 mt-2">Uploader videoer...</p>
+                    <p className="text-sm text-gray-500 mt-2">Uploading videos...</p>
                   )}
                 </div>
 
