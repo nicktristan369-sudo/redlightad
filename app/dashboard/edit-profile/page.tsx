@@ -91,15 +91,9 @@ export default function EditProfilePage() {
         .eq("user_id", user.id)
         .single()
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("premium_tier")
-        .eq("user_id", user.id)
-        .single()
-
       if (listing) {
         setForm(listing as FormData)
-        setPremium(!!profile?.premium_tier)
+        setPremium(!!listing.premium_tier)
       }
       setLoading(false)
     })
