@@ -359,7 +359,7 @@ export default function TravelPage() {
                       setCountryCode(e.target.value)
                       setCountry(selected?.name || "")
                     }}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   >
                     <option value="">Vælg land...</option>
                     {COUNTRIES.map(c => (
@@ -376,7 +376,7 @@ export default function TravelPage() {
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     placeholder="f.eks. København, Stockholm..."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
@@ -389,7 +389,7 @@ export default function TravelPage() {
                       value={arrivalDate}
                       onChange={e => setArrivalDate(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                     />
                   </div>
                   <div>
@@ -399,7 +399,7 @@ export default function TravelPage() {
                       value={departureDate}
                       onChange={e => setDepartureDate(e.target.value)}
                       min={arrivalDate || new Date().toISOString().split('T')[0]}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                     />
                   </div>
                 </div>
