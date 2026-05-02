@@ -185,7 +185,7 @@ export default function EditProfilePage() {
               </InfoBox>
               <div className="space-y-4">
                 <div className="p-6 border-2 border-dashed border-gray-300 rounded-2xl text-center hover:border-gray-900 transition cursor-pointer">
-                  <Plus size={32} className="mx-auto text-gray-400 mb-2" />
+                  <Plus size={32} className="mx-auto text-gray-500 mb-2" />
                   <p className="text-sm font-medium text-gray-900">Upload photos</p>
                   <p className="text-xs text-gray-500">PNG, JPG up to 10MB</p>
                 </div>

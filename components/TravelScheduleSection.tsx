@@ -72,7 +72,7 @@ export default function TravelScheduleSection({ listingId }: { listingId: string
                 <MapPin size={18} className="text-red-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Current Location</p>
+                <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Current Location</p>
                 <p className="text-[15px] font-semibold text-gray-900 truncate">
                   {activeTravel.city}, {activeTravel.country}
                 </p>
@@ -130,7 +130,7 @@ export default function TravelScheduleSection({ listingId }: { listingId: string
                 <Plane size={18} className="text-gray-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Upcoming</p>
+                <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Upcoming</p>
                 <p className="text-[15px] font-semibold text-gray-900 truncate">
                   {nextTravel.city}, {nextTravel.country}
                 </p>

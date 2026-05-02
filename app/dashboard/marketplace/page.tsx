@@ -229,7 +229,7 @@ export default function DashboardMarketplacePage() {
                   <div className="grid grid-cols-2 gap-3">
                     {/* EUR input */}
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-gray-400">€</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-gray-500">€</span>
                       <input
                         type="number" min={1} step={0.5}
                         placeholder="10.00"
@@ -254,7 +254,7 @@ export default function DashboardMarketplacePage() {
                     </div>
                   </div>
                   {form.coin_price && (
-                    <p className="mt-1.5 text-[12px] text-gray-400">
+                    <p className="mt-1.5 text-[12px] text-gray-500">
                       You receive <strong>{Math.round(parseInt(form.coin_price) * 0.81)}</strong> coins after 19% platform fee (≈ €{coinsToEur(Math.round(parseInt(form.coin_price) * 0.81))})
                     </p>
                   )}
@@ -289,7 +289,7 @@ export default function DashboardMarketplacePage() {
                   <input ref={thumbnailRef} type="file" accept="image/*" className="hidden"
                     onChange={e => setThumbnailFile(e.target.files?.[0] ?? null)} />
                   <button type="button" onClick={() => thumbnailRef.current?.click()}
-                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border-2 border-dashed border-[#E5E5E5] rounded-xl text-[13px] text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors">
+                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border-2 border-dashed border-[#E5E5E5] rounded-xl text-[13px] text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors">
                     <Upload size={18} />
                     {thumbnailFile ? thumbnailFile.name : "Upload cover"}
                   </button>
@@ -298,16 +298,16 @@ export default function DashboardMarketplacePage() {
                 {/* Teaser video (9s free) */}
                 <div>
                   <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
-                    Teaser video <span className="text-gray-400">(max 9 sec, free preview)</span>
+                    Teaser video <span className="text-gray-500">(max 9 sec, free preview)</span>
                   </label>
                   <input ref={previewRef} type="file" accept="video/*" className="hidden"
                     onChange={e => setPreviewFile(e.target.files?.[0] ?? null)} />
                   <button type="button" onClick={() => previewRef.current?.click()}
-                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border-2 border-dashed border-[#E5E5E5] rounded-xl text-[13px] text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors">
+                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border-2 border-dashed border-[#E5E5E5] rounded-xl text-[13px] text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors">
                     <Upload size={18} />
                     {previewFile ? previewFile.name : "Upload teaser (video)"}
                   </button>
-                  <p className="mt-1 text-[11px] text-gray-400">Must not contain explicit content</p>
+                  <p className="mt-1 text-[11px] text-gray-500">Must not contain explicit content</p>
                 </div>
 
                 {/* Full content */}
@@ -316,7 +316,7 @@ export default function DashboardMarketplacePage() {
                   <input ref={contentRef} type="file" accept="image/*,video/*" multiple className="hidden"
                     onChange={e => setContentFiles(Array.from(e.target.files ?? []))} />
                   <button type="button" onClick={() => contentRef.current?.click()}
-                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border-2 border-dashed border-[#E5E5E5] rounded-xl text-[13px] text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors">
+                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border-2 border-dashed border-[#E5E5E5] rounded-xl text-[13px] text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors">
                     <Upload size={18} />
                     {contentFiles.length > 0 ? `${contentFiles.length} file(s)` : "Upload content (up to 20)"}
                   </button>
@@ -343,7 +343,7 @@ export default function DashboardMarketplacePage() {
 
         {/* Items list */}
         {loading ? (
-          <div className="text-[14px] text-gray-400">Loading...</div>
+          <div className="text-[14px] text-gray-500">Loading...</div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-[#E5E5E5]">
             <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
@@ -386,12 +386,12 @@ export default function DashboardMarketplacePage() {
                       <div className="flex items-center gap-2 justify-end">
                         {item.status === "approved" && (
                           <a href={`/marketplace/${item.id}`} target="_blank" rel="noopener noreferrer"
-                            className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors">
+                            className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors">
                             <Eye size={15} />
                           </a>
                         )}
                         <button onClick={() => handleDelete(item.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 transition-colors">
+                          className="p-1.5 text-gray-500 hover:text-red-600 transition-colors">
                           <Trash2 size={15} />
                         </button>
                       </div>

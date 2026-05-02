@@ -192,7 +192,7 @@ export default function ChoosePlanPage() {
         <div className="rounded-2xl border border-[#2a2a2a] overflow-hidden">
           {/* Header */}
           <div className="grid grid-cols-[1fr_90px_90px] bg-[#1a1a1a]">
-            <div className="px-4 py-3 text-sm font-semibold text-gray-400">Compare plans</div>
+            <div className="px-4 py-3 text-sm font-semibold text-gray-500">Compare plans</div>
             <div className={`px-2 py-3 text-center text-sm font-bold ${plan === "standard" ? "bg-[#f5a623]/10 text-[#f5a623] border-t-2 border-[#f5a623]" : "text-white"}`}>
               Standard
             </div>
@@ -221,7 +221,7 @@ export default function ChoosePlanPage() {
                   ) : f.standard === false ? (
                     <X className="w-4 h-4 text-red-500/70" />
                   ) : (
-                    <span className="text-gray-400 text-xs">{f.standard}</span>
+                    <span className="text-gray-500 text-xs">{f.standard}</span>
                   )}
                 </div>
                 {/* Premium value */}

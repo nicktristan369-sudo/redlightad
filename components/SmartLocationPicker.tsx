@@ -121,11 +121,11 @@ export default function SmartLocationPicker({
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors min-w-[180px]"
       >
-        <MapPin size={16} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+        <MapPin size={16} className="text-gray-500 dark:text-gray-500 flex-shrink-0" />
         <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1 text-left">
           {displayValue}
         </span>
-        <ChevronDown size={16} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={16} className={`text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {/* Dropdown */}
@@ -134,7 +134,7 @@ export default function SmartLocationPicker({
           {/* Search Input */}
           <div className="p-3 border-b border-gray-100 dark:border-gray-800">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
                 ref={inputRef}
                 type="text"
@@ -148,7 +148,7 @@ export default function SmartLocationPicker({
                   onClick={() => setSearch("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                 >
-                  <X size={14} className="text-gray-400" />
+                  <X size={14} className="text-gray-500" />
                 </button>
               )}
             </div>
@@ -161,7 +161,7 @@ export default function SmartLocationPicker({
               className={`flex-1 py-2 text-sm font-medium transition-colors ${
                 activeTab === "cities"
                   ? "text-red-600 border-b-2 border-red-600"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-500"
               }`}
             >
               Cities
@@ -171,7 +171,7 @@ export default function SmartLocationPicker({
               className={`flex-1 py-2 text-sm font-medium transition-colors ${
                 activeTab === "regions"
                   ? "text-red-600 border-b-2 border-red-600"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-500"
               }`}
             >
               Regions
@@ -189,7 +189,7 @@ export default function SmartLocationPicker({
               !currentCity && !currentRegion ? "bg-red-50 dark:bg-red-900/20" : ""
             }`}
           >
-            <Globe size={18} className="text-gray-400" />
+            <Globe size={18} className="text-gray-500" />
             <div>
               <div className="text-sm font-medium text-gray-900 dark:text-white">
                 All {countryName}
@@ -232,7 +232,7 @@ export default function SmartLocationPicker({
                         )}
                       </div>
                       {city.count !== undefined && city.count > 0 && (
-                        <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                        <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                           {city.count}
                         </span>
                       )}

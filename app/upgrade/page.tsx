@@ -121,7 +121,7 @@ function PremiumContent() {
           })}
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-8">
+        <p className="text-center text-xs text-gray-500 mt-8">
           Secure payment via Stripe • Test mode active • Use card 4242 4242 4242 4242
         </p>
       </div>

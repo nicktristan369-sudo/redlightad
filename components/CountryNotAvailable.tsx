@@ -21,7 +21,7 @@ export default function CountryNotAvailable({ countryCode }: Props) {
         <p className="text-gray-500 text-sm mb-2">
           RedLightAD hasn&apos;t launched in <strong className="uppercase">{countryCode}</strong> yet.
         </p>
-        <p className="text-gray-400 text-sm mb-8">
+        <p className="text-gray-500 text-sm mb-8">
           Be the first to post an ad in this country.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

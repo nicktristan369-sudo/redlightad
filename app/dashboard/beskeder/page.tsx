@@ -181,12 +181,12 @@ export default function BeskederPage() {
                           {conv.other_name}
                         </p>
                         {profileHref && (
-                          <span className="text-[10px] text-gray-400 font-medium hidden sm:inline">· Se profil →</span>
+                          <span className="text-[10px] text-gray-500 font-medium hidden sm:inline">· Se profil →</span>
                         )}
                       </div>
-                      <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{formatTime(conv.last_message_at)}</span>
+                      <span className="text-xs text-gray-500 flex-shrink-0 ml-2">{formatTime(conv.last_message_at)}</span>
                     </div>
-                    <p className={`text-sm truncate ${unread > 0 ? "text-gray-700 font-medium" : "text-gray-400"}`}>
+                    <p className={`text-sm truncate ${unread > 0 ? "text-gray-700 font-medium" : "text-gray-500"}`}>
                       {conv.last_message || "No messages yet"}
                     </p>
                   </Link>

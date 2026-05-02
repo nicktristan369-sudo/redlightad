@@ -320,13 +320,13 @@ export default function ProfileCompletionModal({ listingId, plan, onClose }: Pro
           <div className="flex border-b border-gray-100">
             <button
               onClick={() => setActiveTab("setup")}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === "setup" ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-400"}`}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === "setup" ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-500"}`}
             >
               Complete Profile {incompleteSteps.length > 0 && `(${incompleteSteps.length})`}
             </button>
             <button
               onClick={() => setActiveTab("features")}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === "features" ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-400"}`}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === "features" ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-500"}`}
             >
               Premium Features
             </button>
@@ -406,7 +406,7 @@ export default function ProfileCompletionModal({ listingId, plan, onClose }: Pro
               {/* Incomplete steps */}
               {incompleteSteps.length > 0 ? (
                 <>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
                     Recommended to complete
                   </p>
                   {incompleteSteps.map(step => (
@@ -467,7 +467,7 @@ export default function ProfileCompletionModal({ listingId, plan, onClose }: Pro
             </div>
           ) : (
             <div className="p-5 space-y-3">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
                 Your Premium Features
               </p>
               {premiumFeatures.map(feature => (
@@ -531,7 +531,7 @@ export default function ProfileCompletionModal({ listingId, plan, onClose }: Pro
                 <Zap size={16} />
                 Start: {incompleteSteps[0].title}
               </button>
-              <button onClick={handleClose} className="w-full text-center text-xs text-gray-400 mt-2 py-1 hover:text-gray-600 transition-colors">
+              <button onClick={handleClose} className="w-full text-center text-xs text-gray-500 mt-2 py-1 hover:text-gray-600 transition-colors">
                 Remind me later
               </button>
             </>
@@ -544,7 +544,7 @@ export default function ProfileCompletionModal({ listingId, plan, onClose }: Pro
                 <CheckCircle2 size={16} />
                 Got it — Start using Premium
               </button>
-              <button onClick={handleClose} className="w-full text-center text-xs text-gray-400 mt-2 py-1 hover:text-gray-600 transition-colors">
+              <button onClick={handleClose} className="w-full text-center text-xs text-gray-500 mt-2 py-1 hover:text-gray-600 transition-colors">
                 Close
               </button>
             </>

@@ -241,7 +241,7 @@ export default function AdDetailPage() {
             const shortTitle = ad.title.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim().slice(0, 28).trim();
             const crumbLabel = shortTitle.length < ad.title.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim().length ? shortTitle + '…' : shortTitle;
             return (
-              <nav className="mb-3 flex items-center gap-1 text-[12px] text-gray-400">
+              <nav className="mb-3 flex items-center gap-1 text-[12px] text-gray-500">
                 <a href="/" className="hover:text-red-600 transition-colors">{t.ad_home}</a>
                 <span className="text-red-400">/</span>
                 <a href={`/country/${ad.country.toLowerCase()}`} className="hover:text-red-600 transition-colors capitalize">{ad.country}</a>
@@ -276,7 +276,7 @@ export default function AdDetailPage() {
                 </span>
               )}
             </div>
-            {(ad as any).short_id && <span className="text-[11px] text-gray-400 mt-1 block">ID #{(ad as any).short_id}</span>}
+            {(ad as any).short_id && <span className="text-[11px] text-gray-500 mt-1 block">ID #{(ad as any).short_id}</span>}
           </div>
 
           {/* Two-column layout — sidebar flugter med galleriet */}

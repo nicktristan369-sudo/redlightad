@@ -268,7 +268,7 @@ export default function VideoSection({ videos, isLoggedIn, listingId, currentUse
           <h2 className="text-base font-bold text-gray-900 uppercase tracking-wide">
             {t.video_my_videos}
           </h2>
-          <span className="text-sm text-gray-400">{videos.length} {videos.length !== 1 ? t.video_count_plural : t.video_count}</span>
+          <span className="text-sm text-gray-500">{videos.length} {videos.length !== 1 ? t.video_count_plural : t.video_count}</span>
         </div>
 
         {/* Grid: 2 cols mobil, 3 cols desktop */}

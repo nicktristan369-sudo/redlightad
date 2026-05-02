@@ -127,7 +127,7 @@ function InputField({
         required={required}
         minLength={minLength}
       />
-      {note && <p className="text-xs text-gray-400 mt-1">{note}</p>}
+      {note && <p className="text-xs text-gray-500 mt-1">{note}</p>}
     </div>
   );
 }
@@ -580,7 +580,7 @@ export default function RegisterProviderPage() {
           <Link href="/">
             <Logo />
           </Link>
-          <span className="text-[13px] text-gray-400">
+          <span className="text-[13px] text-gray-500">
             Already a member?{" "}
             <Link href="/login" className="text-[#DC2626] hover:underline font-medium">
               Sign in
@@ -600,7 +600,7 @@ export default function RegisterProviderPage() {
                     className={`w-8 h-8 flex items-center justify-center text-[13px] font-semibold transition-all ${
                       step >= s.num
                         ? "bg-[#DC2626] text-white"
-                        : "bg-gray-100 text-gray-400"
+                        : "bg-gray-100 text-gray-500"
                     }`}
                     style={{ borderRadius: 0 }}
                   >
@@ -614,7 +614,7 @@ export default function RegisterProviderPage() {
                   </div>
                   <span
                     className={`text-[13px] font-medium hidden sm:block ${
-                      step >= s.num ? "text-gray-900" : "text-gray-400"
+                      step >= s.num ? "text-gray-900" : "text-gray-500"
                     }`}
                   >
                     {s.label}
@@ -767,7 +767,7 @@ export default function RegisterProviderPage() {
 
               {/* Appearance */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Appearance
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -870,7 +870,7 @@ export default function RegisterProviderPage() {
 
               {/* Services */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Services & Languages
                 </h2>
                 <ChipSelect
@@ -904,10 +904,10 @@ export default function RegisterProviderPage() {
                   minLength={50}
                 />
                 <div className="flex justify-between">
-                  <p className="text-xs text-gray-400">Min. 50 characters</p>
+                  <p className="text-xs text-gray-500">Min. 50 characters</p>
                   <p
                     className={`text-xs ${
-                      about.length >= 50 ? "text-green-500" : "text-gray-400"
+                      about.length >= 50 ? "text-green-500" : "text-gray-500"
                     }`}
                   >
                     {about.length}/50
@@ -950,7 +950,7 @@ export default function RegisterProviderPage() {
 
               {/* Location */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Location
                 </h2>
                 <CountrySelect
@@ -1031,7 +1031,7 @@ export default function RegisterProviderPage() {
 
               {/* Contact */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Contact
                 </h2>
                 <PhoneInput
@@ -1059,7 +1059,7 @@ export default function RegisterProviderPage() {
 
               {/* Photos */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Photos
                 </h2>
 
@@ -1098,7 +1098,7 @@ export default function RegisterProviderPage() {
                     <button
                       type="button"
                       onClick={() => frontPhotoRef.current?.click()}
-                      className="w-36 h-48 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors"
+                      className="w-36 h-48 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-500 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors"
                       style={{ borderRadius: 0 }}
                     >
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1114,7 +1114,7 @@ export default function RegisterProviderPage() {
                 {/* Gallery */}
                 <div>
                   <label className="block text-[13px] font-medium text-gray-500 uppercase tracking-wide mb-2">
-                    Gallery Photos <span className="text-gray-400 font-normal normal-case">(optional, max 15)</span>
+                    Gallery Photos <span className="text-gray-500 font-normal normal-case">(optional, max 15)</span>
                   </label>
                   <input
                     ref={galleryRef}
@@ -1146,7 +1146,7 @@ export default function RegisterProviderPage() {
                       <button
                         type="button"
                         onClick={() => galleryRef.current?.click()}
-                        className="w-24 h-32 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors"
+                        className="w-24 h-32 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-500 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors"
                         style={{ borderRadius: 0 }}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1199,7 +1199,7 @@ export default function RegisterProviderPage() {
                 </button>
               </div>
 
-              <p className="text-center text-[13px] text-gray-400">
+              <p className="text-center text-[13px] text-gray-500">
                 Your profile will be reviewed and go live within 24 hours.
               </p>
             </div>

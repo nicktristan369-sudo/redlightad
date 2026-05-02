@@ -361,7 +361,7 @@ export default function AdminLayout({
             </button>
 
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-[13px] text-gray-400">
+            <div className="flex items-center gap-2 text-[13px] text-gray-500">
               <Link href="/admin" className="hover:text-gray-900 transition-colors hidden md:inline">
                 Admin
               </Link>

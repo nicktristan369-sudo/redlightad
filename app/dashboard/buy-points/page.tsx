@@ -100,7 +100,7 @@ function BuyPointsContent() {
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-700 transition-colors mt-2 mb-8"
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors mt-2 mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -124,7 +124,7 @@ function BuyPointsContent() {
             <div className="inline-flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-6 py-3 mt-6 shadow-sm">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
               <span className="text-2xl font-black text-gray-900">{balance.toLocaleString()}</span>
-              <span className="text-sm text-gray-400 font-medium">points available</span>
+              <span className="text-sm text-gray-500 font-medium">points available</span>
             </div>
           )}
         </div>
@@ -164,7 +164,7 @@ function BuyPointsContent() {
                 )}
 
                 {/* Duration label */}
-                <p className="text-xs font-bold tracking-widest text-gray-400 mb-3">
+                <p className="text-xs font-bold tracking-widest text-gray-500 mb-3">
                   {pkg.label.toUpperCase()}
                 </p>
 
@@ -176,7 +176,7 @@ function BuyPointsContent() {
 
                 {/* Price */}
                 <div className="text-2xl font-bold text-red-600 mb-1">€{pkg.price}</div>
-                <p className="text-xs text-gray-400 mb-3">€{pkg.pricePerPoint.toFixed(3)}/point</p>
+                <p className="text-xs text-gray-500 mb-3">€{pkg.pricePerPoint.toFixed(3)}/point</p>
 
                 {/* Saving badge */}
                 {pkg.saving ? (
@@ -184,7 +184,7 @@ function BuyPointsContent() {
                     {pkg.saving}
                   </span>
                 ) : (
-                  <span className="inline-block text-xs text-gray-400">Standard price</span>
+                  <span className="inline-block text-xs text-gray-500">Standard price</span>
                 )}
 
                 {/* Selected checkmark */}
@@ -200,7 +200,7 @@ function BuyPointsContent() {
 
         {/* ── Price comparison table ── */}
         <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6 mb-8">
-          <p className="text-xs font-bold tracking-widest text-gray-400 mb-4">PRICE COMPARISON</p>
+          <p className="text-xs font-bold tracking-widest text-gray-500 mb-4">PRICE COMPARISON</p>
           <div className="space-y-2">
             {POINT_PACKAGES.map((pkg) => {
               const isSelected = selectedPackage === pkg.id
@@ -216,7 +216,7 @@ function BuyPointsContent() {
                     {pkg.label}
                   </span>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-400">{pkg.points} pts</span>
+                    <span className="text-sm text-gray-500">{pkg.points} pts</span>
                     <span className={`text-sm font-bold ${isSelected ? "text-gray-900" : "text-gray-600"}`}>
                       €{pkg.price}
                     </span>
@@ -268,23 +268,23 @@ function BuyPointsContent() {
             <div className="text-center">
               <div className="text-3xl mb-2">🚀</div>
               <p className="font-semibold text-gray-900 text-sm mb-1">Push to Top</p>
-              <p className="text-xs text-gray-400">1 point = move your profile to position #1 instantly</p>
+              <p className="text-xs text-gray-500">1 point = move your profile to position #1 instantly</p>
             </div>
             <div className="text-center">
               <div className="text-3xl mb-2">⚡</div>
               <p className="font-semibold text-gray-900 text-sm mb-1">Instant effect</p>
-              <p className="text-xs text-gray-400">Your profile appears first in search & categories</p>
+              <p className="text-xs text-gray-500">Your profile appears first in search & categories</p>
             </div>
             <div className="text-center">
               <div className="text-3xl mb-2">♾️</div>
               <p className="font-semibold text-gray-900 text-sm mb-1">Never expire</p>
-              <p className="text-xs text-gray-400">Points stay in your account until you use them</p>
+              <p className="text-xs text-gray-500">Points stay in your account until you use them</p>
             </div>
           </div>
         </div>
 
         {/* Trust bar */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-gray-400">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-gray-500">
           <div className="flex items-center gap-2"><Shield className="h-4 w-4" /><span>One-time payment — no subscription</span></div>
           <div className="hidden md:block w-px h-4 bg-gray-200" />
           <div className="flex items-center gap-2"><Check className="h-4 w-4" /><span>Anonymous crypto payment accepted</span></div>

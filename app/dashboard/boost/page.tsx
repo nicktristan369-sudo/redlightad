@@ -155,7 +155,7 @@ export default function BoostPage() {
             <div className="w-7 h-7 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : listings.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
+          <div className="text-center py-20 text-gray-500">
             <p className="text-lg font-medium mb-2">No active listings</p>
             <Link href="/create-profile" className="text-red-500 underline">Create a listing first</Link>
           </div>
@@ -205,8 +205,8 @@ export default function BoostPage() {
                     )}
                     <p className="text-gray-900 font-bold text-base mt-2">{pkg.label}</p>
                     <p className="text-red-500 text-3xl font-extrabold mt-3">{pkg.coins.toLocaleString()}</p>
-                    <p className="text-gray-400 text-xs mt-1">Red Coins</p>
-                    <p className="text-gray-400 text-xs mt-1">{Math.round(pkg.coins / pkg.months)} coins/mo</p>
+                    <p className="text-gray-500 text-xs mt-1">Red Coins</p>
+                    <p className="text-gray-500 text-xs mt-1">{Math.round(pkg.coins / pkg.months)} coins/mo</p>
                     <button
                       onClick={() => handleBuy(pkg.id)}
                       disabled={buyingId !== null}
@@ -237,8 +237,8 @@ export default function BoostPage() {
                     )}
                     <p className="text-gray-900 font-bold text-base mt-2">{pkg.label}</p>
                     <p className="text-red-500 text-3xl font-extrabold mt-3">{pkg.coins}</p>
-                    <p className="text-gray-400 text-xs mt-1">Red Coins</p>
-                    <p className="text-gray-400 text-xs mt-3">Your profile will be #1 on the front page for {pkg.label.toLowerCase()}</p>
+                    <p className="text-gray-500 text-xs mt-1">Red Coins</p>
+                    <p className="text-gray-500 text-xs mt-3">Your profile will be #1 on the front page for {pkg.label.toLowerCase()}</p>
                     <button
                       onClick={() => handleBuy(pkg.id)}
                       disabled={buyingId !== null}

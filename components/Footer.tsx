@@ -20,7 +20,7 @@ export default function Footer() {
         {/* Logo + tagline */}
         <div className="mb-10">
           <Logo variant="dark" height={28} />
-          <p className="text-gray-400 text-sm mt-2">{t.footer_tagline}</p>
+          <p className="text-gray-500 text-sm mt-2">{t.footer_tagline}</p>
         </div>
 
         {/* 5 columns */}
@@ -39,7 +39,7 @@ export default function Footer() {
                 { label: "Pornstar",     href: "/pornstar" },
               ].map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  <Link href={item.href} className="text-[13px] text-gray-500 hover:text-white transition-colors">
                     {item.label}
                   </Link>
                 </li>
@@ -58,33 +58,33 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/buy-coins" className="text-[13px] flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
+                <Link href="/dashboard/buy-coins" className="text-[13px] flex items-center gap-1.5 text-gray-500 hover:text-white transition-colors">
                   <Coins size={12} strokeWidth={2} />
                   Red Coins
                 </Link>
               </li>
               <li>
-                <Link href="/premium" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                <Link href="/premium" className="text-[13px] text-gray-500 hover:text-white transition-colors">
                   Premium
                 </Link>
               </li>
               <li>
-                <Link href="/reviews" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                <Link href="/reviews" className="text-[13px] text-gray-500 hover:text-white transition-colors">
                   Reviews
                 </Link>
               </li>
               <li>
-                <Link href="/marketplace" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketplace" className="text-[13px] text-gray-500 hover:text-white transition-colors">
                   Marketplace
                 </Link>
               </li>
               <li>
-                <Link href="/videos" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                <Link href="/videos" className="text-[13px] text-gray-500 hover:text-white transition-colors">
                   Videos
                 </Link>
               </li>
               <li>
-                <Link href="/onlyfans" className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                <Link href="/onlyfans" className="text-[13px] text-gray-500 hover:text-white transition-colors">
                   OnlyFans
                 </Link>
               </li>
@@ -106,7 +106,7 @@ export default function Footer() {
                 { label: "Scandinavia",    href: "/scandinavia" },
               ].map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  <Link href={item.href} className="text-[13px] text-gray-500 hover:text-white transition-colors">
                     {item.label}
                   </Link>
                 </li>
@@ -127,7 +127,7 @@ export default function Footer() {
                 { label: "Help Center",   href: "/help" },
               ].map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  <Link href={item.href} className="text-[13px] text-gray-500 hover:text-white transition-colors">
                     {item.label}
                   </Link>
                 </li>
@@ -147,7 +147,7 @@ export default function Footer() {
                 { label: "Cookie Policy",  href: "/cookies" },
               ].map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-[13px] text-gray-400 hover:text-white transition-colors">
+                  <Link href={item.href} className="text-[13px] text-gray-500 hover:text-white transition-colors">
                     {item.label}
                   </Link>
                 </li>

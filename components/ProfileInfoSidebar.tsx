@@ -73,7 +73,7 @@ export default function ProfileInfoSidebar({
         <div className="rounded bg-white p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-gray-900">Priser</h3>
-            <span className="text-[11px] text-gray-400">{currency.code}</span>
+            <span className="text-[11px] text-gray-500">{currency.code}</span>
           </div>
           <div className="space-y-0">
             {rates.map((rate, i) => {
@@ -91,7 +91,7 @@ export default function ProfileInfoSidebar({
               )
             })}
           </div>
-          <p className="mt-3 text-[11px] text-gray-400">
+          <p className="mt-3 text-[11px] text-gray-500">
             *Prices shown in {currency.code} based on your location
           </p>
         </div>

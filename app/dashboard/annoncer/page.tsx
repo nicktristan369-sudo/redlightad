@@ -110,7 +110,7 @@ export default function MineAnnoncer() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 truncate">{listing.title}</h3>
                     <p className="text-sm text-gray-500">{listing.category} • {listing.location}</p>
-                    <p className="text-xs text-gray-400 mt-1">{new Date(listing.created_at).toLocaleDateString("en-US")}</p>
+                    <p className="text-xs text-gray-500 mt-1">{new Date(listing.created_at).toLocaleDateString("en-US")}</p>
                   </div>
 
                   {/* Status badge */}

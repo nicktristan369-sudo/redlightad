@@ -76,15 +76,15 @@ export default function BuyCoinsPage() {
         <div className="text-center mb-10 pt-2">
           <div className="inline-flex items-center gap-2 mb-5">
             <div className="w-2 h-2 rounded-full bg-red-500" />
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">RedLightAD</span>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">RedLightAD</span>
           </div>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Red Coins</h1>
-          <p className="text-gray-400 text-base">The platform's official currency — buy once, use everywhere</p>
+          <p className="text-gray-500 text-base">The platform's official currency — buy once, use everywhere</p>
           {balance !== null && (
             <div className="inline-flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-6 py-3 mt-5 shadow-sm">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
               <span className="text-2xl font-black text-gray-900">{balance.toLocaleString()}</span>
-              <span className="text-sm text-gray-400 font-medium">RC available</span>
+              <span className="text-sm text-gray-500 font-medium">RC available</span>
             </div>
           )}
         </div>
@@ -102,7 +102,7 @@ export default function BuyCoinsPage() {
         <div className="flex gap-2 mb-3">
           <div className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gray-50 border border-gray-200 text-gray-300 text-center cursor-not-allowed flex items-center justify-center gap-2">
             <span className="text-xs">CARD</span>
-            <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">Soon</span>
+            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">Soon</span>
           </div>
           <button
             onClick={() => setTab("crypto")}
@@ -111,14 +111,14 @@ export default function BuyCoinsPage() {
             Crypto
           </button>
         </div>
-        <p className="text-xs text-gray-400 text-center mb-6">
+        <p className="text-xs text-gray-500 text-center mb-6">
           Payment via SegPay coming soon — pay now with crypto anonymously and fast
         </p>
 
         {/* Crypto minimum notice */}
         {tab === "crypto" && (
           <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6 text-sm text-gray-600">
-            <AlertCircle size={15} className="text-gray-400 shrink-0" />
+            <AlertCircle size={15} className="text-gray-500 shrink-0" />
             <span>Crypto requires a minimum of <strong className="text-gray-900">€{CRYPTO_MIN_EUR}</strong> per transaction. Packages below this amount are not available with crypto.</span>
           </div>
         )}
@@ -140,12 +140,12 @@ export default function BuyCoinsPage() {
                     <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-3">Most Popular</span>
                   )}
                   {cryptoDisabled && (
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Not available</span>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Not available</span>
                   )}
                   {!pkg.popular && !cryptoDisabled && <div className="mb-3 h-4" />}
                   <div className="text-xs font-semibold text-gray-300 uppercase tracking-widest mb-3">{pkg.label}</div>
                   <div className="text-4xl font-black text-gray-900 mb-0.5">{pkg.coins.toLocaleString()}</div>
-                  <div className="text-sm text-gray-400 font-medium mb-5">Red Coins</div>
+                  <div className="text-sm text-gray-500 font-medium mb-5">Red Coins</div>
                   <div className="text-2xl font-bold text-gray-900 mb-1">€{pkg.price_eur}</div>
                   <div className="text-xs text-gray-300 mb-6">€{pkg.per_coin.toFixed(3)} per coin</div>
                   <button
@@ -180,7 +180,7 @@ export default function BuyCoinsPage() {
                   <Icon size={16} className="text-gray-600" strokeWidth={1.8} />
                 </div>
                 <div className="font-semibold text-gray-900 text-sm mb-1">{title}</div>
-                <div className="text-xs text-gray-400 leading-relaxed">{desc}</div>
+                <div className="text-xs text-gray-500 leading-relaxed">{desc}</div>
               </div>
             ))}
           </div>
@@ -210,7 +210,7 @@ export default function BuyCoinsPage() {
         </div>
 
         {/* Discreet billing */}
-        <div className="flex items-center justify-center gap-2.5 py-4 text-sm text-gray-400 mb-6">
+        <div className="flex items-center justify-center gap-2.5 py-4 text-sm text-gray-500 mb-6">
           <Shield size={14} className="text-gray-300" strokeWidth={1.8} />
           Discreet billing — your purchase appears confidentially on your statement
         </div>

@@ -168,7 +168,7 @@ export default function LockedContentPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
             <div className="mb-4"><svg className="w-8 h-8 text-gray-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div>
             <p className="font-semibold text-gray-900 mb-1">No content yet</p>
-            <p className="text-gray-400 text-sm mb-5">Upload exclusive content and set a coin price</p>
+            <p className="text-gray-500 text-sm mb-5">Upload exclusive content and set a coin price</p>
             <button
               onClick={() => setShowModal(true)}
               className="bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl"
@@ -195,7 +195,7 @@ export default function LockedContentPage() {
                 )}
                 <div className="p-4">
                   <p className="font-semibold text-gray-900 text-sm mb-0.5">{escapeHtml(item.title)}</p>
-                  <p className="text-xs text-gray-400 mb-3">
+                  <p className="text-xs text-gray-500 mb-3">
                     {escapeHtml((item.listings as { title: string } | null)?.title || "No listing")} · {new Date(item.created_at).toLocaleDateString("en-US")}
                   </p>
                   <button
@@ -218,7 +218,7 @@ export default function LockedContentPage() {
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl my-8">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">Add exclusive content</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-700 text-xl font-light">×</button>
+              <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700 text-xl font-light">×</button>
             </div>
             <div className="p-5 space-y-4">
               {/* Listing */}
@@ -273,7 +273,7 @@ export default function LockedContentPage() {
                   onChange={e => setForm(f => ({ ...f, coin_price: parseInt(e.target.value) || 10 }))}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-gray-400"
                 />
-                <p className="text-xs text-gray-400 mt-1">Minimum 10 coins · You receive ~${(form.coin_price * 0.065).toFixed(2)} USD per sale</p>
+                <p className="text-xs text-gray-500 mt-1">Minimum 10 coins · You receive ~${(form.coin_price * 0.065).toFixed(2)} USD per sale</p>
               </div>
 
               {/* Media upload */}
@@ -286,7 +286,7 @@ export default function LockedContentPage() {
                   className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-gray-300 transition-colors"
                 >
                   <p className="text-sm text-gray-500">Click to upload images or video</p>
-                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF, WEBP, MP4, MOV</p>
+                  <p className="text-xs text-gray-500 mt-1">JPG, PNG, GIF, WEBP, MP4, MOV</p>
                 </div>
                 <input
                   ref={fileRef}

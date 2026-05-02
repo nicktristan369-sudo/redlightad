@@ -192,7 +192,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <NotificationBell />
           </div>
           {email && (
-            <p className="text-[11px] text-gray-400 mt-2 truncate">{email}</p>
+            <p className="text-[11px] text-gray-500 mt-2 truncate">{email}</p>
           )}
         </div>
 

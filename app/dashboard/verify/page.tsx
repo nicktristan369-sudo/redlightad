@@ -369,7 +369,7 @@ export default function VerifyPage() {
                 <ChevronRight className="w-5 h-5" />
               </button>
 
-              <p className="text-xs text-gray-400 text-center mt-4">
+              <p className="text-xs text-gray-500 text-center mt-4">
                 Your data is encrypted and securely stored. We never share your personal information.
               </p>
             </div>
@@ -414,7 +414,7 @@ export default function VerifyPage() {
                     max={maxDob}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-red-500 transition-colors"
                   />
-                  <p className="text-xs text-gray-400 mt-1">You must be at least 18 years old</p>
+                  <p className="text-xs text-gray-500 mt-1">You must be at least 18 years old</p>
                 </div>
 
                 <div>
@@ -439,7 +439,7 @@ export default function VerifyPage() {
                 <button
                   onClick={() => setStep(2)}
                   disabled={!fullName || !dob}
-                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold rounded-lg transition-colors"
+                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-500 text-white font-semibold rounded-lg transition-colors"
                 >
                   Continue
                 </button>
@@ -519,7 +519,7 @@ export default function VerifyPage() {
                     onClick={() => frontInputRef.current?.click()}
                     className="w-full h-48 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-red-400 hover:bg-red-50/50 transition-colors"
                   >
-                    <Upload className="w-8 h-8 text-gray-400" />
+                    <Upload className="w-8 h-8 text-gray-500" />
                     <span className="text-sm text-gray-500">Click to upload front of ID</span>
                   </button>
                 )}
@@ -554,7 +554,7 @@ export default function VerifyPage() {
                       onClick={() => backInputRef.current?.click()}
                       className="w-full h-32 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-red-400 hover:bg-red-50/50 transition-colors"
                     >
-                      <Upload className="w-6 h-6 text-gray-400" />
+                      <Upload className="w-6 h-6 text-gray-500" />
                       <span className="text-xs text-gray-500">Click to upload back of ID</span>
                     </button>
                   )}
@@ -575,7 +575,7 @@ export default function VerifyPage() {
                 <button
                   onClick={() => setStep(3)}
                   disabled={!idFrontUrl}
-                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold rounded-lg transition-colors"
+                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-500 text-white font-semibold rounded-lg transition-colors"
                 >
                   Continue
                 </button>
@@ -635,7 +635,7 @@ export default function VerifyPage() {
                     className="w-full h-64 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center gap-3 hover:border-red-400 hover:bg-red-50/50 transition-colors"
                   >
                     <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Camera className="w-10 h-10 text-gray-400" />
+                      <Camera className="w-10 h-10 text-gray-500" />
                     </div>
                     <span className="text-sm text-gray-500">Click to take or upload a selfie</span>
                   </button>
@@ -675,7 +675,7 @@ export default function VerifyPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={!selfieUrl || submitting}
-                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-500 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>
@@ -688,7 +688,7 @@ export default function VerifyPage() {
                 </button>
               </div>
 
-              <p className="text-xs text-gray-400 text-center mt-4">
+              <p className="text-xs text-gray-500 text-center mt-4">
                 By submitting, you confirm you are at least 18 years old and agree to our verification terms.
               </p>
             </div>

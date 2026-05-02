@@ -224,7 +224,7 @@ export default function TravelPage() {
               <ArrowLeft size={16} /> Dashboard
             </Link>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              <Plane className="text-gray-400" /> Travel
+              <Plane className="text-gray-500" /> Travel
             </h1>
           </div>
           <button
@@ -254,7 +254,7 @@ export default function TravelPage() {
               <MapPin size={22} className={activeTravel ? 'text-red-500' : 'text-green-500'} />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
                 {activeTravel ? 'Nuværende rejse-lokation' : 'Din hjem-lokation'}
               </p>
               <p className="text-xl font-semibold text-gray-900">
@@ -281,7 +281,7 @@ export default function TravelPage() {
           {travels.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                <Globe size={24} className="text-gray-400" />
+                <Globe size={24} className="text-gray-500" />
               </div>
               <p className="text-gray-500 mb-4">Ingen rejser planlagt endnu</p>
               <button
@@ -327,7 +327,7 @@ export default function TravelPage() {
                           )}
                           <button
                             onClick={() => deleteTravel(travel.id)}
-                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                            className="p-2 text-gray-500 hover:text-red-500 transition-colors"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -346,7 +346,7 @@ export default function TravelPage() {
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between p-6 border-b border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900">Add new travel</h3>
-                <button onClick={() => setShowForm(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setShowForm(false)} className="p-1 text-gray-500 hover:text-gray-600">
                   <X size={20} />
                 </button>
               </div>

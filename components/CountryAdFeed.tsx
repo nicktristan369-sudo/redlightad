@@ -87,7 +87,7 @@ export default async function CountryAdFeed({ country }: Props) {
                     <h3 className="font-bold text-gray-900 text-base leading-tight">
                       {l.title}{l.age ? `, ${l.age}` : ""}
                     </h3>
-                    <p className="text-sm text-gray-400 mt-0.5">{l.city || l.location}</p>
+                    <p className="text-sm text-gray-500 mt-0.5">{l.city || l.location}</p>
                   </div>
                   {l.premium_tier && l.premium_tier !== "basic" && (
                     <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider bg-gray-900 text-white px-2 py-0.5 rounded-full">

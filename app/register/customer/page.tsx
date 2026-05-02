@@ -109,12 +109,12 @@ export default function CustomerRegisterPage() {
 
         {/* Content */}
         <div className="p-6 pt-4">
-          <p className="text-center text-gray-400 text-[14px] mb-6">Browse profiles, send messages, buy coins</p>
+          <p className="text-center text-gray-500 text-[14px] mb-6">Browse profiles, send messages, buy coins</p>
 
           {!showEmailForm ? (
             <>
               {/* OAuth Section */}
-              <p className="text-center text-gray-400 text-[13px] mb-4">Sign up with</p>
+              <p className="text-center text-gray-500 text-[13px] mb-4">Sign up with</p>
               
               {/* OAuth buttons - icon only */}
               <div className="flex gap-3 justify-center mb-6">
@@ -156,7 +156,7 @@ export default function CustomerRegisterPage() {
               </button>
 
               {/* Login link */}
-              <p className="text-center text-[14px] text-gray-400 mt-6">
+              <p className="text-center text-[14px] text-gray-500 mt-6">
                 Already have an account?{" "}
                 <Link href="/login" className="text-[#DC2626] font-semibold hover:underline">
                   Login
@@ -177,7 +177,7 @@ export default function CustomerRegisterPage() {
               {/* Back button */}
               <button
                 onClick={() => setShowEmailForm(false)}
-                className="text-gray-400 text-[13px] mb-4 hover:text-white transition-colors flex items-center gap-1"
+                className="text-gray-500 text-[13px] mb-4 hover:text-white transition-colors flex items-center gap-1"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -249,7 +249,7 @@ export default function CustomerRegisterPage() {
               </form>
 
               {/* Login link */}
-              <p className="text-center text-[14px] text-gray-400 mt-6">
+              <p className="text-center text-[14px] text-gray-500 mt-6">
                 Already have an account?{" "}
                 <Link href="/login" className="text-[#DC2626] font-semibold hover:underline">
                   Sign in

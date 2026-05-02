@@ -26,10 +26,10 @@ export default function LanguageSelector() {
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
       >
-        <Globe size={12} className="text-gray-400 flex-shrink-0" />
+        <Globe size={12} className="text-gray-500 flex-shrink-0" />
         <span className={`fi fi-${current.flagCode}`} style={{ width: "16px", height: "12px", display: "inline-block" }} />
         <span className="hidden sm:inline">{current.name}</span>
-        <ChevronDown size={12} className="text-gray-400" />
+        <ChevronDown size={12} className="text-gray-500" />
       </button>
 
       {open && (
@@ -44,7 +44,7 @@ export default function LanguageSelector() {
             >
               <span className={`fi fi-${lang.flagCode} flex-shrink-0`} style={{ width: "18px", height: "13px", display: "inline-block" }} />
               <span>{lang.name}</span>
-              {code === locale && <svg className="ml-auto w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>}
+              {code === locale && <svg className="ml-auto w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>}
             </button>
           ))}
         </div>

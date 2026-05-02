@@ -188,7 +188,7 @@ export default function OpeningHoursDisplay({ openingHours, profileTimezone }: P
                 {isToday && <span className="ml-1.5 text-xs font-normal text-red-400">(today)</span>}
               </span>
               {isClosed ? (
-                <span className="text-sm text-gray-400">Closed</span>
+                <span className="text-sm text-gray-500">Closed</span>
               ) : (
                 <span className={`text-sm tabular-nums ${isToday ? "text-red-600 font-semibold" : "text-gray-900"}`}>
                   {openDisplay} – {closeDisplay}
@@ -201,7 +201,7 @@ export default function OpeningHoursDisplay({ openingHours, profileTimezone }: P
 
       {/* Timezone note */}
       {!sameTimezone && (
-        <p className="mt-4 text-xs text-gray-400 text-center">
+        <p className="mt-4 text-xs text-gray-500 text-center">
           Times shown in your local timezone ({visitorTz.replace("_", " ")})
         </p>
       )}

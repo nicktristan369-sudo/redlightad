@@ -62,9 +62,9 @@ export default function CountrySelect({ value, onChange, required, placeholder =
               <span className="flex-1">{selected.name}</span>
             </>
           ) : (
-            <span className="flex-1 text-gray-400">{placeholder}</span>
+            <span className="flex-1 text-gray-500">{placeholder}</span>
           )}
-          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
@@ -75,7 +75,7 @@ export default function CountrySelect({ value, onChange, required, placeholder =
             {/* Search */}
             <div className="p-2 border-b border-gray-100 bg-gray-50">
               <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
@@ -113,7 +113,7 @@ export default function CountrySelect({ value, onChange, required, placeholder =
                 </button>
               ))}
               {filtered.length === 0 && (
-                <p className="text-center text-sm text-gray-400 py-6">No countries found</p>
+                <p className="text-center text-sm text-gray-500 py-6">No countries found</p>
               )}
             </div>
           </div>

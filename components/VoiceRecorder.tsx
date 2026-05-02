@@ -199,7 +199,7 @@ export default function VoiceRecorder({ onUpload, existingUrl }: VoiceRecorderPr
         </div>
       )}
 
-      <p className="text-xs text-gray-400">Max 60 sekunder · MP3, WAV, M4A</p>
+      <p className="text-xs text-gray-500">Max 60 sekunder · MP3, WAV, M4A</p>
     </div>
   )
 }

@@ -246,7 +246,7 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-[24px] font-bold text-gray-900">Overview</h1>
-          <p className="text-[14px] text-gray-400 mt-0.5">Welcome to your dashboard</p>
+          <p className="text-[14px] text-gray-500 mt-0.5">Welcome to your dashboard</p>
         </div>
 
         {/* Personal Link Card — premium only */}
@@ -257,7 +257,7 @@ function DashboardContent() {
                 <span className="text-[11px] font-bold tracking-widest text-yellow-400 uppercase">✦ Premium Feature</span>
               </div>
               <h2 className="text-[17px] font-black text-white">Your personal link</h2>
-              <p className="text-[13px] text-gray-400 mt-0.5">Share this link anywhere — it shows only your profile, no navigation, no distractions.</p>
+              <p className="text-[13px] text-gray-500 mt-0.5">Share this link anywhere — it shows only your profile, no navigation, no distractions.</p>
             </div>
             <div className="px-5 py-4">
               {shareCode && (<>
@@ -604,7 +604,7 @@ function PushPayModal({ pkg, userId, onClose }: {
           style={{ background: "linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%)" }}
         >
           <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
-            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -849,7 +849,7 @@ function PushToTopWidget({ listingId, userId }: { listingId: string; userId: str
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-gray-900">{points ?? "\u2014"}</div>
-            <div className="text-[11px] text-gray-400">points left</div>
+            <div className="text-[11px] text-gray-500">points left</div>
           </div>
         </div>
 
@@ -895,7 +895,7 @@ function PushToTopWidget({ listingId, userId }: { listingId: string; userId: str
               <div className="font-bold text-gray-900 text-lg">{pkg.points}</div>
               <div className="text-[10px] text-gray-500 font-medium">pushes</div>
               <div className="text-sm font-semibold text-red-600 mt-1">&euro;{pkg.price_usd}</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">{pkg.description}</div>
+              <div className="text-[10px] text-gray-500 mt-0.5">{pkg.description}</div>
             </button>
           ))}
         </div>

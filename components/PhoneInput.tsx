@@ -310,7 +310,7 @@ export default function PhoneInput({ label, value, onChange, placeholder, requir
               style={{ width: 18, height: 18, display: "inline-block", flexShrink: 0, borderRadius: 2 }}
             />
             <span className="text-sm text-gray-700 font-medium">{selected.dial}</span>
-            <svg className="w-3 h-3 text-gray-400 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3 h-3 text-gray-500 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -348,7 +348,7 @@ export default function PhoneInput({ label, value, onChange, placeholder, requir
                   </button>
                 ))}
                 {filtered.length === 0 && (
-                  <p className="text-center text-sm text-gray-400 py-4">No results</p>
+                  <p className="text-center text-sm text-gray-500 py-4">No results</p>
                 )}
               </div>
             </div>

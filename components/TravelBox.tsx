@@ -30,7 +30,7 @@ export default function TravelBox({ entries }: { entries: TravelEntry[] }) {
       <div className="space-y-2">
         {upcoming.map(e => (
           <div key={e.id} className="flex items-center gap-2 text-[14px] text-gray-700">
-            <span className="text-gray-400 flex-shrink-0">•</span>
+            <span className="text-gray-500 flex-shrink-0">•</span>
             <span className="text-gray-500 flex-shrink-0 whitespace-nowrap">
               {formatDate(e.from_date)} – {formatDate(e.to_date)}
             </span>

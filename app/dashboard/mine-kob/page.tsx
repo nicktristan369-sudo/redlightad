@@ -41,7 +41,7 @@ export default function MinePurchasesPage() {
     <DashboardLayout>
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900">My Purchases</h1>
-        <p className="text-[13px] text-gray-400 mt-0.5">{purchases.length} purchased items</p>
+        <p className="text-[13px] text-gray-500 mt-0.5">{purchases.length} purchased items</p>
       </div>
 
       {loading ? (
@@ -92,10 +92,10 @@ export default function MinePurchasesPage() {
                         style={{ background: "#F3F4F6", color: "#6B7280" }}>
                         {CATEGORY_LABELS[item.category]}
                       </span>
-                      <span className="text-[11px] text-gray-400">
+                      <span className="text-[11px] text-gray-500">
                         {p.coins_paid} coins · ≈€{coinsToEur(p.coins_paid)}
                       </span>
-                      <span className="text-[11px] text-gray-400">
+                      <span className="text-[11px] text-gray-500">
                         {new Date(p.created_at).toLocaleDateString("en-US")}
                       </span>
                     </div>
@@ -144,7 +144,7 @@ export default function MinePurchasesPage() {
                 )}
 
                 {isOpen && (!item.full_content_urls || item.full_content_urls.length === 0) && (
-                  <div className="px-4 pb-4 pt-3 border-t border-[#F3F4F6] text-center text-[13px] text-gray-400">
+                  <div className="px-4 pb-4 pt-3 border-t border-[#F3F4F6] text-center text-[13px] text-gray-500">
                     Content will be available shortly
                   </div>
                 )}

@@ -172,7 +172,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
             {onClose && (
               <button 
                 onClick={() => { setVisible(false); onClose() }} 
-                className="text-gray-400 hover:text-gray-600 transition-colors w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+                className="text-gray-500 hover:text-gray-600 transition-colors w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -183,7 +183,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
           
           {/* Search */}
           <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -229,7 +229,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
               
               return (
                 <div key={continent}>
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
+                  <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">
                     {CONTINENT_NAMES[continent]}
                   </p>
                   <div className="grid grid-cols-3 gap-1">
@@ -250,7 +250,7 @@ export default function CountrySelector({ onClose, forceOpen }: Props) {
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-gray-500 text-center">
             {countries.length} countries available
           </p>
         </div>

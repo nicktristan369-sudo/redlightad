@@ -79,7 +79,7 @@ export default function UpgradeToPremiumModal({ featureName, onClose }: Props) {
 
         {/* Features list */}
         <div className="px-6 py-5 max-h-[40vh] overflow-y-auto">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
             Premium includes everything:
           </p>
           <div className="grid grid-cols-1 gap-2">
@@ -98,7 +98,7 @@ export default function UpgradeToPremiumModal({ featureName, onClose }: Props) {
         <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-5">
           {/* Price badge */}
           <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="text-gray-400 line-through text-sm">$42/mo</span>
+            <span className="text-gray-500 line-through text-sm">$42/mo</span>
             <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">50% OFF</span>
             <span className="text-xl font-black text-gray-900">$21/mo</span>
           </div>
@@ -113,7 +113,7 @@ export default function UpgradeToPremiumModal({ featureName, onClose }: Props) {
           
           <button 
             onClick={handleClose} 
-            className="w-full text-center text-xs text-gray-400 mt-3 py-1 hover:text-gray-600 transition-colors"
+            className="w-full text-center text-xs text-gray-500 mt-3 py-1 hover:text-gray-600 transition-colors"
           >
             Maybe later
           </button>

@@ -107,11 +107,11 @@ export default function StoriesPage() {
       <div>
         <div className="mb-8">
           <h1 className="text-[24px] font-bold text-gray-900">Stories</h1>
-          <p className="text-[14px] text-gray-400 mt-0.5">Upload stories that disappear after 24 hours</p>
+          <p className="text-[14px] text-gray-500 mt-0.5">Upload stories that disappear after 24 hours</p>
         </div>
 
         {loading ? (
-          <p className="text-gray-400 text-sm">Loading...</p>
+          <p className="text-gray-500 text-sm">Loading...</p>
         ) : !listingId ? (
           <div className="bg-white p-6" style={{ border: "1px solid #E5E5E5", borderRadius: 12 }}>
             <p className="text-gray-500 text-sm">You need an active listing to post stories.</p>
@@ -174,7 +174,7 @@ export default function StoriesPage() {
             <div className="bg-white p-6" style={{ border: "1px solid #E5E5E5", borderRadius: 12 }}>
               <h2 className="text-[15px] font-semibold text-gray-900 mb-4">Active Stories</h2>
               {stories.length === 0 ? (
-                <p className="text-gray-400 text-sm">No active stories</p>
+                <p className="text-gray-500 text-sm">No active stories</p>
               ) : (
                 <div className="space-y-3">
                   {stories.map((s) => (
@@ -195,7 +195,7 @@ export default function StoriesPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-900 truncate">{s.caption || "No caption"}</p>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                        <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                           <Clock size={12} />
                           <span>{timeRemaining(s.expires_at)}</span>
                         </div>
