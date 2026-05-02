@@ -76,28 +76,22 @@ export function PayPalBadge() {
 
 export function BankBadges() {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {/* Revolut */}
-      <Badge>
-        <svg height="14" viewBox="0 0 14 14">
-          <text y="12" fontFamily="Arial Black, sans-serif" fontSize="13" fontWeight="900" fill="#191C1F">R</text>
-        </svg>
-      </Badge>
+      <svg height="24" viewBox="0 0 28 24" fill="none">
+        <rect width="28" height="24" rx="4" fill="#191C1F"/>
+        <text x="8" y="17" fontFamily="Arial Black, sans-serif" fontSize="14" fontWeight="900" fill="white">R</text>
+      </svg>
       {/* N26 */}
-      <Badge>
-        <svg height="12" viewBox="0 0 32 12">
-          <text y="11" fontFamily="Arial, sans-serif" fontSize="11" fontWeight="800" fill="#36A18B">N26</text>
-        </svg>
-      </Badge>
+      <svg height="24" viewBox="0 0 40 24" fill="none">
+        <rect width="40" height="24" rx="4" fill="#36A18B"/>
+        <text x="6" y="17" fontFamily="Arial, sans-serif" fontSize="13" fontWeight="800" fill="white">N26</text>
+      </svg>
       {/* Wise */}
-      <span 
-        className="inline-flex items-center justify-center rounded"
-        style={{ height: 24, padding: "0 8px", background: "#9FE870", flexShrink: 0 }}
-      >
-        <svg height="11" viewBox="0 0 36 11">
-          <text y="10" fontFamily="Arial Black, sans-serif" fontSize="10" fontWeight="900" fill="#163300">WISE</text>
-        </svg>
-      </span>
+      <svg height="24" viewBox="0 0 50 24" fill="none">
+        <rect width="50" height="24" rx="4" fill="#9FE870"/>
+        <text x="8" y="17" fontFamily="Arial Black, sans-serif" fontSize="12" fontWeight="900" fill="#163300">WISE</text>
+      </svg>
     </div>
   );
 }
@@ -106,12 +100,11 @@ export function BankBadges() {
 
 export function PaysafeBadge() {
   return (
-    <Badge>
-      <svg height="12" viewBox="0 0 80 12">
-        <text y="10" fontFamily="Arial, sans-serif" fontSize="11" fontWeight="800" fill="#003082">paysafe</text>
-        <text x="47" y="10" fontFamily="Arial, sans-serif" fontSize="11" fontWeight="800" fill="#009EE2">card</text>
-      </svg>
-    </Badge>
+    <svg height="24" viewBox="0 0 90 24" fill="none">
+      <rect width="90" height="24" rx="4" fill="#003087"/>
+      <text x="8" y="16" fontFamily="Arial, sans-serif" fontSize="11" fontWeight="700" fill="white">paysafe</text>
+      <text x="52" y="16" fontFamily="Arial, sans-serif" fontSize="11" fontWeight="700" fill="#00AEEF">card</text>
+    </svg>
   );
 }
 
@@ -119,19 +112,17 @@ export function PaysafeBadge() {
 
 export function CryptoBadges() {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {/* Bitcoin */}
-      <CircleBadge bg="#F7931A">
-        <svg height="14" viewBox="0 0 14 14">
-          <text x="2" y="11" fontFamily="Arial Black, sans-serif" fontSize="11" fontWeight="900" fill="white">₿</text>
-        </svg>
-      </CircleBadge>
+      <svg height="24" viewBox="0 0 24 24" fill="none">
+        <rect width="24" height="24" rx="12" fill="#F7931A"/>
+        <text x="7" y="17" fontFamily="Arial Black, sans-serif" fontSize="13" fontWeight="900" fill="white">₿</text>
+      </svg>
       {/* USDT / Tether */}
-      <CircleBadge bg="#26A17B">
-        <svg height="14" viewBox="0 0 14 14">
-          <text x="2.5" y="11" fontFamily="Arial Black, sans-serif" fontSize="11" fontWeight="900" fill="white">T</text>
-        </svg>
-      </CircleBadge>
+      <svg height="24" viewBox="0 0 24 24" fill="none">
+        <rect width="24" height="24" rx="12" fill="#26A17B"/>
+        <text x="7" y="17" fontFamily="Arial Black, sans-serif" fontSize="13" fontWeight="900" fill="white">T</text>
+      </svg>
     </div>
   );
 }
