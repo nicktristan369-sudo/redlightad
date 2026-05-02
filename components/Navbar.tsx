@@ -99,12 +99,13 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
 
       // Ulæste beskeder - tjek conversations tabel
       const fetchUnread = async () => {
-        // Check if user is provider (has listing)
-        const { data: listing } = await supabase
-          .from("listings")
-          .select("id")
-          .eq("user_id", authUser.id)
-          .single();
+        try {
+          // Check if user is provider (has listing)
+          const { data: listing } = await supabase
+            .from("listings")
+            .select("id")
+            .eq("user_id", authUser.id)
+            .maybeSingle();
         
         const isProvider = !!listing;
         const unreadField = isProvider ? "provider_unread" : "customer_unread";
@@ -131,6 +132,9 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
           })));
         } else {
           setRecentConversations([]);
+        }
+        } catch (err) {
+          console.error("[Navbar] fetchUnread error:", err);
         }
       };
       fetchUnread();
