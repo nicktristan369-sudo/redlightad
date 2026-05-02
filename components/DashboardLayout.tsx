@@ -93,7 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .from("listings")
         .select("id, premium_tier")
         .eq("user_id", user.id)
-        .eq("status", "active")
+        .in("status", ["active", "pending"])
         .limit(1)
         .single()
       setListingId(listing?.id ?? null)
