@@ -950,6 +950,11 @@ export default function OpretAnnoncePage() {
                     style={{ fontSize: 16 }}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, fontSize: 12 }}>
+                    <p style={{ color: form.about.length < 200 ? "#DC2626" : "#059669" }}>
+                      {form.about.length}/200 characters (minimum)
+                    </p>
+                  </div>
                   <p style={{ fontSize: 11, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 6, padding: "6px 10px", marginTop: 6 }}>
                     ⚠️ NOT ALLOWED in description: phone numbers, email addresses, website URLs, social media (FB, IG, TikTok) or OnlyFans links.
                   </p>
@@ -1508,8 +1513,8 @@ export default function OpretAnnoncePage() {
                       setError("Please enter your age (minimum 18).");
                       return;
                     }
-                    if (!form.about || form.about.trim().length < 50) {
-                      setError("Please write at least 50 characters in your bio (About me).");
+                    if (!form.about || form.about.trim().length < 200) {
+                      setError("Please write at least 200 characters in your bio (About me).");
                       return;
                     }
                     setError("");
