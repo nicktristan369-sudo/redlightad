@@ -17,11 +17,42 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session
-    const { tier, listing_id } = session.metadata || {}
-
-    if (!tier) return NextResponse.json({ received: true })
+    const { tier, listing_id, type, userId, points } = session.metadata || {}
 
     const supabase = createServerClient()
+
+    // Handle push points purchase
+    if (type === "push_points" && userId && points) {
+      const pointsAmount = parseInt(points)
+      
+      // Get current balance
+      const { data: wallet } = await supabase
+        .from("wallets")
+        .select("push_points")
+        .eq("user_id", userId)
+        .single()
+
+      const current = wallet?.push_points ?? 0
+
+      // Update wallet
+      await supabase
+        .from("wallets")
+        .upsert({ user_id: userId, push_points: current + pointsAmount }, { onConflict: "user_id" })
+
+      // Log purchase
+      await supabase.from("push_point_purchases").insert({
+        user_id: userId,
+        stripe_session_id: session.id,
+        points_bought: pointsAmount,
+        price_usd: (session.amount_total || 0) / 100,
+      })
+
+      return NextResponse.json({ received: true })
+    }
+
+    // Handle tier/premium purchase
+    if (!tier) return NextResponse.json({ received: true })
+
     const premiumUntil = new Date()
     premiumUntil.setDate(premiumUntil.getDate() + 30)
 
