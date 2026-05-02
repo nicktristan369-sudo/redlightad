@@ -10,6 +10,11 @@ import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { shareCodeFromId } from "@/lib/shareCode"
 import { PUSH_POINT_PACKAGES } from "@/lib/spendPackages"
+import {
+  PaymentMethodsList,
+  SecurePaymentFooter,
+  type PaymentMethodId
+} from "@/components/PaymentMethodBadges"
 
 // Dynamic imports for modals
 const ProfileCompletionModal = dynamic(() => import("@/components/ProfileCompletionModal"), { ssr: false });
@@ -511,22 +516,13 @@ function DashboardContent() {
 }
 
 // ─── Payment Modal for Push Points ────────────────────────────────────────────
-const CDN = "https://cdn.jsdelivr.net/npm/payment-icons/min/flat"
-type PayMethod = "card" | "paypal" | "bank" | "paysafe" | "crypto"
-const PAY_METHODS: { id: PayMethod; label: string; sub?: string }[] = [
-  { id: "card",    label: "Credit or debit card" },
-  { id: "paypal",  label: "PayPal" },
-  { id: "bank",    label: "Instant Bank Transfer", sub: "Revolut, N26, Wise and more" },
-  { id: "paysafe", label: "PaysafeCard" },
-  { id: "crypto",  label: "CryptoCoins", sub: "Bitcoin, Ethereum & more" },
-]
-
+// Payment modal for Push Points
 function PushPayModal({ pkg, userId, onClose }: {
   pkg: { id: string; points: number; price_usd: number; label: string }
   userId: string
   onClose: () => void
 }) {
-  const [method, setMethod] = useState<PayMethod>("card")
+  const [method, setMethod] = useState<PaymentMethodId>("card")
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cardNum, setCardNum] = useState("")
@@ -620,82 +616,15 @@ function PushPayModal({ pkg, userId, onClose }: {
 
         <div className="px-5 py-4 space-y-3">
           {/* Payment methods */}
-          <div className="rounded-2xl overflow-hidden border border-[#2a2a2a]">
-            {PAY_METHODS.map((m, i) => {
-              const isSel = method === m.id
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => setMethod(m.id)}
-                  className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${
-                    i > 0 ? "border-t border-[#222]" : ""
-                  } ${isSel ? "bg-white" : "bg-[#1a1a1a] hover:bg-[#222]"}`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                      isSel ? "border-black bg-black" : "border-[#555]"
-                    }`}>
-                      {isSel && <div className="w-2 h-2 rounded-full bg-white" />}
-                    </div>
-                    <div className="text-left min-w-0">
-                      <p className={`text-sm font-semibold leading-tight ${isSel ? "text-black" : "text-white"}`}>{m.label}</p>
-                      {m.sub && <p className="text-xs text-gray-500 leading-tight mt-0.5">{m.sub}</p>}
-                    </div>
-                  </div>
-                  {/* Method icons */}
-                  <div className="flex-shrink-0 ml-2 flex items-center gap-1">
-                    {m.id === "card" && (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`${CDN}/visa.svg`} alt="Visa" style={{ height: 20, width: "auto", borderRadius: 3 }} />
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`${CDN}/mastercard.svg`} alt="MC" style={{ height: 20, width: "auto", borderRadius: 3 }} />
-                      </>
-                    )}
-                    {m.id === "paypal" && (
-                      <span className="inline-flex items-center justify-center bg-white rounded px-2" style={{ height: 22 }}>
-                        <svg height="12" viewBox="0 0 60 16" fill="none">
-                          <text y="12" fontFamily="Arial" fontSize="11" fontWeight="800" fill="#003087">Pay</text>
-                          <text x="22" y="12" fontFamily="Arial" fontSize="11" fontWeight="800" fill="#009CDE">Pal</text>
-                        </svg>
-                      </span>
-                    )}
-                    {m.id === "bank" && (
-                      <span className="inline-flex items-center justify-center bg-[#9FE870] rounded px-2" style={{ height: 20 }}>
-                        <svg height="9" viewBox="0 0 28 9"><text y="8" fontFamily="Arial Black" fontSize="8" fontWeight="900" fill="#163300">WISE</text></svg>
-                      </span>
-                    )}
-                    {m.id === "paysafe" && (
-                      <span className="inline-flex items-center justify-center bg-white rounded px-2" style={{ height: 20 }}>
-                        <svg height="9" viewBox="0 0 55 9">
-                          <text y="8" fontFamily="Arial" fontSize="8" fontWeight="800" fill="#003082">paysafe</text>
-                          <text x="38" y="8" fontFamily="Arial" fontSize="8" fontWeight="800" fill="#009EE2">card</text>
-                        </svg>
-                      </span>
-                    )}
-                    {m.id === "crypto" && (
-                      <>
-                        <span className="inline-flex items-center justify-center rounded-full" style={{ width: 20, height: 20, background: "#F7931A" }}>
-                          <svg height="10" viewBox="0 0 12 12"><text x="2" y="9" fontFamily="Arial Black" fontSize="9" fontWeight="900" fill="white">₿</text></svg>
-                        </span>
-                        <span className="inline-flex items-center justify-center rounded-full" style={{ width: 20, height: 20, background: "#26A17B" }}>
-                          <svg height="10" viewBox="0 0 12 12"><text x="2" y="9" fontFamily="Arial Black" fontSize="9" fontWeight="900" fill="white">T</text></svg>
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+          <PaymentMethodsList selected={method} onSelect={setMethod} />
 
           {/* Card form */}
           {method === "card" && (
-            <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-4 space-y-3">
+            <div className="rounded-xl border border-[#222] bg-[#141414] p-4 space-y-3">
               <input
                 type="text" inputMode="numeric" placeholder="Card number"
                 value={cardNum} onChange={e => setCardNum(fmtCard(e.target.value))}
-                className="w-full bg-[#111] border border-[#333] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#f5a623] font-mono tracking-widest"
+                className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#E8192C] font-mono tracking-widest"
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
