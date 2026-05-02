@@ -16,7 +16,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const STORAGE_KEY = "redlightad-theme";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("light");
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
 
@@ -47,10 +47,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Initialize theme from storage
+  // Initialize theme from storage (always light)
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initialTheme = stored || "system";
+    const initialTheme = "light";
     setThemeState(initialTheme);
     
     const resolved = resolveTheme(initialTheme);
@@ -60,26 +59,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Listen for system theme changes
-  useEffect(() => {
-    if (theme !== "system") return;
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => {
-      const newTheme = e.matches ? "dark" : "light";
-      setResolvedTheme(newTheme);
-      applyTheme(newTheme);
-    };
-
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
-  }, [theme]);
+  // Don't listen for system theme changes - always use light
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEY, newTheme);
-    
-    const resolved = resolveTheme(newTheme);
+    // Force light theme always
+    setThemeState("light");
+    const resolved = "light";
     setResolvedTheme(resolved);
     applyTheme(resolved);
   };
