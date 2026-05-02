@@ -4,8 +4,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
   
   // ── Production Optimizations ───────────────────────────────────────────────
-  // Minify and obfuscate production builds (makes code harder to steal)
-  productionBrowserSourceMaps: false, // Don't expose source maps in production
+  productionBrowserSourceMaps: false,
+  compress: true,
+  poweredByHeader: false,
   
   async redirects() {
     return [

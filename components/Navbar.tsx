@@ -325,6 +325,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                 {/* Notifikationer / beskeder */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
+                    aria-label="Messages"
                     style={{ position: "relative", padding: 8, borderRadius: 8, border: "none", background: showNotifications ? (isDark ? "#222" : "#F5F5F7") : "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
                     onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
                     onMouseLeave={e => { if (!showNotifications) e.currentTarget.style.background = "transparent"; }}>
@@ -410,6 +411,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                 {/* Avatar → user menu */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }}
+                    aria-label="User menu"
                     style={{ padding: 4, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", borderRadius: "50%" }}>
                     <Avatar size={32} />
                   </button>
@@ -465,6 +467,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
 
             {/* Hamburger */}
             <button onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
               style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
               onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
@@ -485,7 +488,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                 onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
                 placeholder={t.search_placeholder} autoFocus
                 style={{ width: "100%", borderRadius: "9999px", border: "1px solid #E5E5E5", background: "#F9F9F9", padding: "10px 16px 10px 40px", fontSize: "14px", color: "#111", outline: "none" }} />
-              <button onClick={handleSearch} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+              <button onClick={handleSearch} aria-label="Search" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
                 <Search size={16} color="#9CA3AF" />
               </button>
             </div>

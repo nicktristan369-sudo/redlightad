@@ -19,8 +19,8 @@ const inter = Inter({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 }
 
 export const metadata: Metadata = {
@@ -53,9 +53,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Preconnect to image CDN for faster loading */}
+        {/* Preconnect to critical third-party domains */}
         <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="preconnect" href="https://kkkqvhfgjofppimwxtub.supabase.co" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://kkkqvhfgjofppimwxtub.supabase.co" />
         {/* PWA theme color */}
         <meta name="theme-color" content="#DC2626" />
         <meta name="mobile-web-app-capable" content="yes" />

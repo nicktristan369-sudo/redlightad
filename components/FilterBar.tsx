@@ -81,6 +81,9 @@ function FilterDrawer({
       <span className="text-sm text-gray-800">{label}</span>
       <button
         onClick={() => onChange(!value)}
+        aria-label={label}
+        aria-pressed={value}
+        role="switch"
         style={{
           width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
           background: value ? "#DC2626" : "#D1D5DB", position: "relative", transition: "background 0.2s",
@@ -127,7 +130,7 @@ function FilterDrawer({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="text-base font-bold text-gray-900">{t.filter_title}</h2>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
+          <button onClick={onClose} aria-label="Close filters" className="p-1 rounded hover:bg-gray-100">
             <X size={18} color="#374151" />
           </button>
         </div>
