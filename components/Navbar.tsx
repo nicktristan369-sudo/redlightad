@@ -34,6 +34,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
   const [user, setUser] = useState<UserState | null>(null);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [recentConversations, setRecentConversations] = useState<{ id: string; lastMessage: string; senderName: string; updatedAt: string }[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
   const [showCountrySelector, setShowCountrySelector] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -96,20 +97,96 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
       supabase.from("wallets").select("balance").eq("user_id", authUser.id).single()
         .then(({ data }) => { if (data) setCoinBalance(data.balance); });
 
-      // Ulæste beskeder
-      supabase.from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", authUser.id)
-        .eq("read", false)
-        .then(({ count }) => { if (count) setUnreadMessages(count); });
+      // Ulæste beskeder - tjek conversations tabel
+      const fetchUnread = async () => {
+        // Check if user is provider (has listing)
+        const { data: listing } = await supabase
+          .from("listings")
+          .select("id")
+          .eq("user_id", authUser.id)
+          .single();
+        
+        const isProvider = !!listing;
+        const unreadField = isProvider ? "provider_unread" : "customer_unread";
+        const idField = isProvider ? "provider_id" : "customer_id";
+        
+        // Get conversations with unread count
+        const { data: convs } = await supabase
+          .from("conversations")
+          .select(`id, last_message, last_message_at, ${unreadField}, customer_id, provider_id`)
+          .eq(idField, authUser.id)
+          .order("last_message_at", { ascending: false })
+          .limit(5);
+        
+        const total = convs?.reduce((sum, c) => sum + ((c as Record<string, number>)[unreadField] || 0), 0) || 0;
+        setUnreadMessages(total);
+        
+        // Set recent conversations for dropdown
+        if (convs && convs.length > 0) {
+          setRecentConversations(convs.map(c => ({
+            id: c.id,
+            lastMessage: c.last_message || "",
+            senderName: "Ny besked",
+            updatedAt: c.last_message_at || "",
+          })));
+        } else {
+          setRecentConversations([]);
+        }
+      };
+      fetchUnread();
+
+      // Subscribe to realtime message updates
+      const channel = supabase
+        .channel("navbar-messages")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "conversations",
+        }, () => {
+          // Refetch unread count when conversations change
+          fetchUnread();
+        })
+        .on("postgres_changes", {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        }, (payload) => {
+          // Play notification sound for new messages not from me
+          const msg = payload.new as { sender_id: string };
+          if (msg.sender_id !== authUser.id) {
+            try {
+              const audio = new Audio("/sounds/notification.mp3");
+              audio.volume = 0.3;
+              audio.play().catch(() => {});
+            } catch {}
+            fetchUnread();
+          }
+        })
+        .subscribe();
+      
+      return channel;
     };
 
-    supabase.auth.getUser().then(({ data: { user: u } }) => loadUser(u));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let msgChannel: any = null;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      loadUser(session?.user ?? null);
+    supabase.auth.getUser().then(async ({ data: { user: u } }) => {
+      msgChannel = await loadUser(u);
     });
-    return () => subscription.unsubscribe();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (msgChannel) {
+        await supabase.removeChannel(msgChannel);
+      }
+      msgChannel = await loadUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (msgChannel) {
+        supabase.removeChannel(msgChannel).catch(() => {});
+      }
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -250,11 +327,46 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                           <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Beskeder</span>
                           {unreadMessages > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: "#DC2626" }}>{unreadMessages} ulæste</span>}
                         </div>
-                        <div style={{ padding: "24px 16px", textAlign: "center" }}>
-                          <MessageSquare size={28} color="#E5E7EB" style={{ margin: "0 auto 8px" }} />
-                          <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>
-                            {unreadMessages > 0 ? `Du har ${unreadMessages} ulæste beskeder` : "Ingen nye beskeder"}
-                          </p>
+                        <div style={{ maxHeight: 250, overflowY: "auto" }}>
+                          {recentConversations.length > 0 ? (
+                            recentConversations.map(conv => (
+                              <Link
+                                key={conv.id}
+                                href={`${dashboardHref}/beskeder/${conv.id}`}
+                                onClick={() => setShowNotifications(false)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 10,
+                                  padding: "10px 16px",
+                                  borderBottom: "1px solid #F3F4F6",
+                                  textDecoration: "none",
+                                  background: "#fff",
+                                  transition: "background 0.15s",
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "#F9FAFB"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+                              >
+                                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                  <MessageSquare size={16} color="#fff" />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ fontSize: 12, color: "#111", margin: 0, fontWeight: 600 }}>{conv.senderName}</p>
+                                  <p style={{ fontSize: 11, color: "#6B7280", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {conv.lastMessage.slice(0, 40)}{conv.lastMessage.length > 40 ? "..." : ""}
+                                  </p>
+                                </div>
+                                <span style={{ fontSize: 10, color: "#9CA3AF", flexShrink: 0 }}>
+                                  {conv.updatedAt ? new Date(conv.updatedAt).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" }) : ""}
+                                </span>
+                              </Link>
+                            ))
+                          ) : (
+                            <div style={{ padding: "24px 16px", textAlign: "center" }}>
+                              <MessageSquare size={28} color="#E5E7EB" style={{ margin: "0 auto 8px" }} />
+                              <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>Ingen nye beskeder</p>
+                            </div>
+                          )}
                         </div>
                         <div style={{ padding: "0 12px 12px" }}>
                           <Link href={`${dashboardHref}/beskeder`} onClick={() => setShowNotifications(false)}
