@@ -294,6 +294,7 @@ export default function TravelPage() {
           ) : (
             <div className="divide-y divide-gray-50">
               {travels
+                .filter(t => !t.is_current)
                 .sort((a, b) => new Date(a.arrival_date).getTime() - new Date(b.arrival_date).getTime())
                 .map(travel => {
                   const isPast = new Date(travel.departure_date) < new Date()
