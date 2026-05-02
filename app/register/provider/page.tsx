@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { uploadImages } from "@/lib/uploadImages";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
-import { SUPPORTED_COUNTRIES, COUNTRY_CITIES } from "@/lib/countries";
+import { SUPPORTED_COUNTRIES } from "@/lib/countries";
 import { CATEGORIES } from "@/lib/constants/categories";
 import {
   NATIONALITY_OPTIONS,
@@ -28,7 +28,7 @@ import {
 import Logo from "@/components/Logo";
 import PhoneInput from "@/components/PhoneInput";
 import CountrySelect from "@/components/CountrySelect";
-import { findNearestMajorCity, getDisplayLocation } from "@/lib/majorCities";
+// majorCities functions moved to API endpoints to reduce bundle size
 
 const GENDER_OPTIONS = [
   { value: "Woman", label: "Woman" },
