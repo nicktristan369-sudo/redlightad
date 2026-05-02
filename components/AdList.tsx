@@ -3,6 +3,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { useEffect, useState, Suspense, useRef } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import { FileText, LayoutList, LayoutGrid } from "lucide-react"
 import AdCardGrid from "./AdCardGrid"
@@ -84,13 +85,13 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         {/* Left panel - static image */}
         <div className="relative overflow-hidden bg-gray-300 flex-1">
           {panels[0] && (
-            <img 
+            <Image 
               src={panels[0]} 
               alt="" 
-              className="w-full h-full object-cover"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 50vw, 33vw"
             />
           )}
         </div>
@@ -103,12 +104,13 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
               className="w-full h-full object-cover"
             />
           ) : panels[1] && (
-            <img 
+            <Image 
               src={panels[1]} 
               alt="" 
-              className="w-full h-full object-cover"
-              loading="eager" fetchPriority="high"
-              decoding="async"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 50vw, 33vw"
             />
           )}
         </div>
@@ -116,9 +118,9 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         {/* Right panel - static image */}
         <div className="relative overflow-hidden bg-gray-300 flex-1">
           {ad.profile_video_url ? (
-            panels[1] && <img src={panels[1]} alt="" className="w-full h-full object-cover" loading="eager" fetchPriority="high" decoding="async" />
+            panels[1] && <Image src={panels[1]} alt="" fill className="object-cover" priority sizes="(max-width: 768px) 50vw, 33vw" />
           ) : (
-            panels[2] && <img src={panels[2]} alt="" className="w-full h-full object-cover" loading="eager" fetchPriority="high" decoding="async" />
+            panels[2] && <Image src={panels[2]} alt="" fill className="object-cover" priority sizes="(max-width: 768px) 50vw, 33vw" />
           )}
         </div>
       </div>
