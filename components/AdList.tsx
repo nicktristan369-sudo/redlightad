@@ -21,6 +21,7 @@ interface Listing {
   location: string
   city: string | null
   country: string | null
+  major_city?: string | null
   about: string | null
   languages: string[]
   premium_tier: string | null
@@ -34,12 +35,18 @@ interface Listing {
 }
 
 import { isAvailableNow } from "@/lib/isAvailableNow"
-// Simple location format without heavy country-state-city package
-const formatLocation = (city?: string | null, country?: string | null) => {
+// Format location with major city info
+const formatLocation = (city?: string | null, country?: string | null, majorCity?: string | null) => {
   if (!city && !country) return "";
   if (!city) return country || "";
-  if (!country) return city;
-  return `${city}, ${country}`;
+  
+  // Show "City (Major City area)" format if different
+  const cityPart = majorCity && majorCity !== city 
+    ? `${city} (${majorCity} area)` 
+    : city;
+  
+  if (!country) return cityPart;
+  return `${cityPart}, ${country}`;
 };
 
 // ── Mobile listing card with auto-cycling images ──────────────────────────
@@ -519,7 +526,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
       ) : (
         <div className="space-y-3">
           {listings.map((ad, idx) => {
-            const displayLocation = formatLocation(ad.city, ad.country) || ad.location || ""
+            const displayLocation = formatLocation(ad.city, ad.country, ad.major_city) || ad.location || ""
             const description = cleanDescription(ad.about || "")
             return (
               <Link key={ad.id} href={`/ads/${ad.slug || ad.id}`} className="block">
