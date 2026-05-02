@@ -8,10 +8,17 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature")!
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
+  if (!webhookSecret) {
+    console.error("[Webhook] STRIPE_WEBHOOK_SECRET not configured")
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 })
+  }
+
   let event: Stripe.Event
   try {
     event = getStripe().webhooks.constructEvent(body, sig, webhookSecret)
-  } catch {
+    console.log(`[Webhook] Event received: ${event.type}`)
+  } catch (err) {
+    console.error("[Webhook] Invalid signature:", err)
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
@@ -26,27 +33,42 @@ export async function POST(req: NextRequest) {
       const pointsAmount = parseInt(points)
       
       // Get current balance
-      const { data: wallet } = await supabase
+      const { data: wallet, error: walletErr } = await supabase
         .from("wallets")
         .select("push_points")
         .eq("user_id", userId)
         .single()
 
+      if (walletErr) {
+        console.error("[Webhook] Wallet fetch error:", walletErr)
+        return NextResponse.json({ error: "Wallet fetch failed" }, { status: 500 })
+      }
+
       const current = wallet?.push_points ?? 0
 
       // Update wallet
-      await supabase
+      const { error: updateErr } = await supabase
         .from("wallets")
         .upsert({ user_id: userId, push_points: current + pointsAmount }, { onConflict: "user_id" })
+      
+      if (updateErr) {
+        console.error("[Webhook] Wallet update error:", updateErr)
+        return NextResponse.json({ error: "Wallet update failed" }, { status: 500 })
+      }
 
       // Log purchase
-      await supabase.from("push_point_purchases").insert({
+      const { error: logErr } = await supabase.from("push_point_purchases").insert({
         user_id: userId,
         stripe_session_id: session.id,
         points_bought: pointsAmount,
         price_usd: (session.amount_total || 0) / 100,
       })
+      
+      if (logErr) {
+        console.error("[Webhook] Purchase log error:", logErr)
+      }
 
+      console.log(`[Webhook] Push points added: ${pointsAmount} to user ${userId}`)
       return NextResponse.json({ received: true })
     }
 
