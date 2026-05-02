@@ -7,6 +7,7 @@ import { FileText, Image as ImageIcon } from "lucide-react"
 
 interface Listing {
   id: string
+  slug: string
   title: string
   category: string
   location: string
@@ -29,7 +30,7 @@ export default function MineAnnoncer() {
 
       const { data } = await supabase
         .from("listings")
-        .select("id, title, category, location, status, created_at, profile_image")
+        .select("id, slug, title, category, location, status, created_at, profile_image")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
