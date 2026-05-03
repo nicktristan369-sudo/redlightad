@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { ChevronLeft, MoreVertical, Paperclip, Smile, Send } from 'lucide-react';
@@ -14,16 +14,16 @@ const supabase = createClient(
 
 interface User {
   id: string;
-  username?: string;
-  profile_picture_url?: string;
-  first_name?: string;
-  last_name?: string;
+  username: string;
+  profile_picture_url: string;
+  first_name: string;
+  last_name: string;
 }
 
 interface Message {
   id: string;
   sender_id: string;
-  content?: string;
+  content: string;
   image_url?: string;
   created_at: string;
   read_at?: string;
@@ -38,43 +38,10 @@ interface Conversation {
   user2?: User;
 }
 
-const AVATAR_COLORS = [
-  'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500',
-  'bg-orange-500', 'bg-pink-500', 'bg-teal-500', 'bg-indigo-500',
-];
-
-function getAvatarColor(id?: string): string {
-  if (!id) return AVATAR_COLORS[0];
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function getInitials(user?: User | null): string {
-  if (!user) return '?';
-  const f = user.first_name?.[0] || '';
-  const l = user.last_name?.[0] || '';
-  if (f || l) return (f + l).toUpperCase();
-  return (user.username?.[0] || '?').toUpperCase();
-}
-
-function timeAgo(dateStr?: string | null): string {
-  if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
-
 export default function ChatPage() {
   const params = useParams();
-  const conversationId = params?.conversationId as string;
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  const conversationId = params.conversationId as string;
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -88,55 +55,43 @@ export default function ChatPage() {
   const [otherUserOnline, setOtherUserOnline] = useState(false);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
 
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   // Get current user
   useEffect(() => {
     const getUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          if (data) setCurrentUser(data);
-        }
-      } catch (e) {
-        console.error('Error fetching user:', e);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        setCurrentUser(data);
       }
     };
     getUser();
   }, []);
 
-  // Fetch conversation
+  // Fetch conversation and messages
   useEffect(() => {
-    if (!conversationId || !currentUser?.id) return;
+    if (!conversationId) return;
 
     const fetchConversation = async () => {
-      try {
-        const { data: conv } = await supabase
-          .from('conversations')
-          .select(`
-            *,
-            user1:user1_id(id, username, profile_picture_url, first_name, last_name),
-            user2:user2_id(id, username, profile_picture_url, first_name, last_name)
-          `)
-          .eq('id', conversationId)
-          .single();
+      const { data: conv } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          user1:user1_id(id, username, profile_picture_url, first_name, last_name),
+          user2:user2_id(id, username, profile_picture_url, first_name, last_name)
+        `)
+        .eq('id', conversationId)
+        .single();
 
-        if (conv) {
-          setConversation(conv);
-          const other = currentUser.id === conv.user1_id ? conv.user2 : conv.user1;
-          setOtherUser(other || null);
-        }
-      } catch (e) {
-        console.error('Error fetching conversation:', e);
+      if (conv) {
+        setConversation(conv);
+        const other = currentUser?.id === conv.user1_id ? conv.user2 : conv.user1;
+        setOtherUser(other);
       }
+
       setLoading(false);
     };
 
@@ -145,22 +100,22 @@ export default function ChatPage() {
 
   // Fetch messages
   useEffect(() => {
-    if (!conversationId || !currentUser?.id) return;
+    if (!conversationId) return;
 
     const fetchMessages = async () => {
-      try {
-        const { data } = await supabase
-          .from('messages')
-          .select(`
-            *,
-            sender:sender_id(id, username, profile_picture_url, first_name, last_name)
-          `)
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: true });
+      const { data } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          sender:sender_id(id, username, profile_picture_url, first_name, last_name)
+        `)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
 
-        if (data) {
-          setMessages(data);
-          // Mark as read
+      if (data) {
+        setMessages(data);
+        // Mark as read
+        if (currentUser) {
           await fetch('/api/messages/read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -168,34 +123,18 @@ export default function ChatPage() {
               conversation_id: conversationId,
               user_id: currentUser.id
             })
-          }).catch(() => {});
+          });
         }
-      } catch (e) {
-        console.error('Error fetching messages:', e);
       }
     };
 
     fetchMessages();
 
+    // Subscribe to new messages
     const subscription = supabase
       .channel(`messages:${conversationId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message]);
-        // Mark incoming as read
-        if ((payload.new as Message).sender_id !== currentUser?.id) {
-          fetch('/api/messages/read', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversation_id: conversationId,
-              user_id: currentUser?.id
-            })
-          }).catch(() => {});
-        }
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
-        // Update read_at on existing messages
-        setMessages(prev => prev.map(m => m.id === (payload.new as Message).id ? { ...m, ...payload.new } : m));
       })
       .subscribe();
 
@@ -204,20 +143,22 @@ export default function ChatPage() {
     };
   }, [conversationId, currentUser?.id]);
 
-  // Track own online status
+  // Track online status
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    const updateStatus = () => {
-      fetch('/api/status', {
+    // Update own status
+    const updateStatus = async () => {
+      await fetch('/api/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: currentUser.id })
-      }).catch(() => {});
+      });
     };
 
     updateStatus();
-    const interval = setInterval(updateStatus, 30000);
+    const interval = setInterval(updateStatus, 30000); // Every 30s
+
     return () => clearInterval(interval);
   }, [currentUser?.id]);
 
@@ -226,20 +167,15 @@ export default function ChatPage() {
     if (!otherUser?.id) return;
 
     const checkStatus = async () => {
-      try {
-        const res = await fetch(`/api/status?user_id=${otherUser.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setOtherUserOnline(data?.online ?? false);
-          setLastSeen(data?.last_seen ?? null);
-        }
-      } catch {
-        setOtherUserOnline(false);
-      }
+      const res = await fetch(`/api/status?user_id=${otherUser.id}`);
+      const data = await res.json();
+      setOtherUserOnline(data.online);
+      setLastSeen(data.last_seen);
     };
 
     checkStatus();
-    const interval = setInterval(checkStatus, 10000);
+    const interval = setInterval(checkStatus, 10000); // Every 10s
+
     return () => clearInterval(interval);
   }, [otherUser?.id]);
 
@@ -248,16 +184,25 @@ export default function ChatPage() {
     if (file) {
       setSelectedImage(file);
       const reader = new FileReader();
-      reader.onloadend = () => setPreviewUrl(reader.result as string);
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
       reader.readAsDataURL(file);
     }
   };
 
   const uploadImage = async (file: File): Promise<string> => {
     const fileName = `${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from('messages').upload(fileName, file);
+    const { data, error } = await supabase.storage
+      .from('messages')
+      .upload(fileName, file);
+
     if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from('messages').getPublicUrl(fileName);
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('messages')
+      .getPublicUrl(fileName);
+
     return publicUrl;
   };
 
@@ -294,13 +239,20 @@ export default function ChatPage() {
 
   const emojis = ['😀', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨', '😢', '😡'];
 
+  const addEmoji = (emoji: string) => {
+    setMessageInput(prev => prev + emoji);
+  };
+
   const blockUser = async () => {
     if (!currentUser || !otherUser) return;
     try {
       await fetch('/api/blocked', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.id, blocked_user_id: otherUser.id })
+        body: JSON.stringify({
+          user_id: currentUser.id,
+          blocked_user_id: otherUser.id
+        })
       });
       window.location.href = '/messages';
     } catch (error) {
@@ -311,11 +263,15 @@ export default function ChatPage() {
   const deleteConversation = async () => {
     if (!conversationId || !currentUser) return;
     if (!confirm('Delete this conversation? This cannot be undone.')) return;
+    
     try {
       await fetch('/api/conversations', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: conversationId, user_id: currentUser.id })
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          user_id: currentUser.id
+        })
       });
       window.location.href = '/messages';
     } catch (error) {
@@ -326,11 +282,15 @@ export default function ChatPage() {
   const clearHistory = async () => {
     if (!conversationId || !currentUser) return;
     if (!confirm('Clear all messages? Messages will be deleted for you only.')) return;
+    
     try {
       await fetch('/api/messages/clear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: conversationId, user_id: currentUser.id })
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          user_id: currentUser.id
+        })
       });
       setMessages([]);
     } catch (error) {
@@ -338,46 +298,12 @@ export default function ChatPage() {
     }
   };
 
-  // Avatar component for consistency
-  const Avatar = ({ user, size = 32 }: { user?: User | null; size?: number }) => {
-    if (!user) {
-      return (
-        <div
-          className={`rounded-full bg-gray-400 flex items-center justify-center text-white font-semibold`}
-          style={{ width: size, height: size, fontSize: size * 0.35 }}
-        >
-          ?
-        </div>
-      );
-    }
-    if (user.profile_picture_url) {
-      return (
-        <Image
-          src={user.profile_picture_url}
-          alt={user.username || 'User'}
-          width={size}
-          height={size}
-          className="rounded-full object-cover"
-          style={{ width: size, height: size }}
-        />
-      );
-    }
-    return (
-      <div
-        className={`rounded-full ${getAvatarColor(user.id)} flex items-center justify-center text-white font-semibold`}
-        style={{ width: size, height: size, fontSize: size * 0.35 }}
-      >
-        {getInitials(user)}
-      </div>
-    );
-  };
-
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  if (!conversation) {
-    return <div className="flex items-center justify-center h-screen text-gray-500">Conversation not found</div>;
+  if (!conversation || !otherUser) {
+    return <div className="flex items-center justify-center h-screen">Conversation not found</div>;
   }
 
   return (
@@ -389,22 +315,26 @@ export default function ChatPage() {
             <ChevronLeft className="w-5 h-5 cursor-pointer" />
           </Link>
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <Avatar user={otherUser} size={40} />
-              {otherUserOnline && (
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-              )}
-            </div>
+            {otherUser.profile_picture_url ? (
+              <Image
+                src={otherUser.profile_picture_url}
+                alt={otherUser.username}
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-full"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white text-sm font-semibold">
+                {otherUser.first_name?.[0]}{otherUser.last_name?.[0]}
+              </div>
+            )}
             <div>
-              <h2 className="font-semibold">{otherUser?.username || otherUser?.first_name || 'Unknown'}</h2>
+              <h2 className="font-semibold">{otherUser.username}</h2>
               <p className="text-xs text-gray-500">
                 {otherUserOnline ? (
-                  <span className="text-green-500 flex items-center gap-1">
-                    <span className="inline-block w-1.5 h-1.5 bg-green-500 rounded-full" />
-                    Online
-                  </span>
+                  <span className="text-green-500">● Active now</span>
                 ) : lastSeen ? (
-                  <>Last seen {timeAgo(lastSeen)}</>
+                  <>Last seen {new Date(lastSeen).toLocaleTimeString()}</>
                 ) : (
                   'Offline'
                 )}
@@ -434,50 +364,47 @@ export default function ChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => {
-          const isMe = message.sender_id === currentUser?.id;
-          return (
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${
+              message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            {message.sender_id !== currentUser?.id && otherUser && (
+              <Image
+                src={otherUser.profile_picture_url || ''}
+                alt={otherUser.username}
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-full mr-2"
+              />
+            )}
             <div
-              key={message.id}
-              className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+              className={`max-w-xs px-4 py-2 rounded-lg ${
+                message.sender_id === currentUser?.id
+                  ? 'bg-red-500 text-white'
+                  : 'bg-gray-200 text-black'
+              }`}
             >
-              {!isMe && (
-                <div className="mr-2 flex-shrink-0 self-end">
-                  <Avatar user={otherUser} size={32} />
-                </div>
+              {message.image_url && (
+                <img
+                  src={message.image_url}
+                  alt="message"
+                  className="max-w-sm rounded cursor-pointer mb-2"
+                  onClick={() => window.open(message.image_url, '_blank')}
+                />
               )}
-              <div
-                className={`max-w-xs px-4 py-2 rounded-lg ${
-                  isMe ? 'bg-red-500 text-white' : 'bg-gray-200 text-black'
-                }`}
-              >
-                {message.image_url && (
-                  <img
-                    src={message.image_url}
-                    alt="message"
-                    className="max-w-sm rounded cursor-pointer mb-2"
-                    onClick={() => message.image_url && window.open(message.image_url, '_blank')}
-                  />
+              {message.content && <p className="text-sm break-words">{message.content}</p>}
+              <div className={`text-xs flex items-center gap-1 ${message.sender_id === currentUser?.id ? 'text-red-100' : 'text-gray-500'}`}>
+                <span>{new Date(message.created_at).toLocaleTimeString()}</span>
+                {message.sender_id === currentUser?.id && (
+                  <span>{message.read_at ? '✓✓' : '✓'}</span>
                 )}
-                {message.content && <p className="text-sm break-words">{message.content}</p>}
-                <div className={`text-[10px] flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-red-100' : 'text-gray-500'}`}>
-                  <span>
-                    {new Date(message.created_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                  {isMe && (
-                    <span className={message.read_at ? 'text-blue-300' : 'text-gray-300'}>
-                      {message.read_at ? '✓✓' : '✓'}
-                    </span>
-                  )}
-                </div>
               </div>
             </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
+          </div>
+        ))}
       </div>
 
       {/* Input Area */}
@@ -486,14 +413,17 @@ export default function ChatPage() {
           <div className="mb-3 relative w-fit">
             <img src={previewUrl} alt="preview" className="max-w-xs rounded" />
             <button
-              onClick={() => { setSelectedImage(null); setPreviewUrl(null); }}
+              onClick={() => {
+                setSelectedImage(null);
+                setPreviewUrl(null);
+              }}
               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
             >
               ×
             </button>
           </div>
         )}
-
+        
         <div className="flex gap-2 items-end">
           <input
             type="file"
@@ -515,7 +445,10 @@ export default function ChatPage() {
                 {emojis.map((emoji) => (
                   <button
                     key={emoji}
-                    onClick={() => { setMessageInput(prev => prev + emoji); setShowEmojiPicker(false); }}
+                    onClick={() => {
+                      addEmoji(emoji);
+                      setShowEmojiPicker(false);
+                    }}
                     className="text-xl hover:bg-gray-100 p-1 rounded"
                   >
                     {emoji}
@@ -534,7 +467,10 @@ export default function ChatPage() {
             className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
           />
 
-          <button onClick={sendMessage} className="text-red-500 hover:text-red-600">
+          <button
+            onClick={sendMessage}
+            className="text-red-500 hover:text-red-600"
+          >
             <Send className="w-5 h-5" />
           </button>
         </div>
