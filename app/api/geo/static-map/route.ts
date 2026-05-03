@@ -11,14 +11,18 @@ const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_M
  * - lat: Latitude
  * - lng: Longitude  
  * - zoom: Zoom level (default 15)
- * - size: Map size (default 400x150)
+ * - size: Map size (default 600x280)
+ * - style: "minimal" removes default marker (for custom overlay)
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
   const zoom = searchParams.get("zoom") || "15";
-  const size = searchParams.get("size") || "400x150";
+  const width = searchParams.get("width") || "600";
+  const height = searchParams.get("height") || "280";
+  const size = searchParams.get("size") || `${width}x${height}`;
+  const style = searchParams.get("style");
 
   if (!lat || !lng) {
     return NextResponse.json({ error: "lat and lng required" }, { status: 400 });
@@ -26,16 +30,28 @@ export async function GET(req: NextRequest) {
 
   if (!GOOGLE_API_KEY) {
     // Return a placeholder image if no API key
-    return NextResponse.redirect("https://via.placeholder.com/400x150?text=Map+unavailable");
+    return NextResponse.redirect("https://via.placeholder.com/600x280?text=Map+unavailable");
   }
 
-  const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&markers=color:red%7C${lat},${lng}&key=${GOOGLE_API_KEY}`;
+  // Build map URL
+  let mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&scale=2&maptype=roadmap&key=${GOOGLE_API_KEY}`;
+  
+  // Add marker unless minimal style requested (we overlay our own)
+  if (style !== "minimal") {
+    mapUrl += `&markers=color:red%7C${lat},${lng}`;
+  }
+
+  // Clean map style - subtle colors
+  mapUrl += "&style=feature:poi|visibility:off"; // Hide POIs
+  mapUrl += "&style=feature:transit|visibility:off"; // Hide transit
+  mapUrl += "&style=feature:road|element:labels.icon|visibility:off"; // Hide road icons
 
   try {
     const res = await fetch(mapUrl);
     
     if (!res.ok) {
-      return NextResponse.redirect("https://via.placeholder.com/400x150?text=Map+unavailable");
+      console.error("Static Map API error:", res.status);
+      return NextResponse.redirect("https://via.placeholder.com/600x280?text=Map+unavailable");
     }
 
     const imageBuffer = await res.arrayBuffer();
@@ -48,6 +64,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Static Map error:", error);
-    return NextResponse.redirect("https://via.placeholder.com/400x150?text=Map+unavailable");
+    return NextResponse.redirect("https://via.placeholder.com/600x280?text=Map+unavailable");
   }
 }
