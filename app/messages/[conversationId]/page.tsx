@@ -176,17 +176,18 @@ export default function ChatPage() {
         imageUrl = await uploadImage(selectedImage);
       }
 
-      const { error } = await supabase
-        .from('messages')
-        .insert([{
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           conversation_id: conversationId,
           sender_id: currentUser.id,
           content: messageInput.trim(),
-          image_url: imageUrl,
-          created_at: new Date().toISOString()
-        }]);
+          image_url: imageUrl
+        })
+      });
 
-      if (!error) {
+      if (response.ok) {
         setMessageInput('');
         setSelectedImage(null);
         setPreviewUrl(null);
@@ -200,6 +201,61 @@ export default function ChatPage() {
 
   const addEmoji = (emoji: string) => {
     setMessageInput(prev => prev + emoji);
+  };
+
+  const blockUser = async () => {
+    if (!currentUser || !otherUser) return;
+    try {
+      await fetch('/api/blocked', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser.id,
+          blocked_user_id: otherUser.id
+        })
+      });
+      window.location.href = '/messages';
+    } catch (error) {
+      console.error('Error blocking user:', error);
+    }
+  };
+
+  const deleteConversation = async () => {
+    if (!conversationId || !currentUser) return;
+    if (!confirm('Delete this conversation? This cannot be undone.')) return;
+    
+    try {
+      await fetch('/api/conversations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          user_id: currentUser.id
+        })
+      });
+      window.location.href = '/messages';
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+    }
+  };
+
+  const clearHistory = async () => {
+    if (!conversationId || !currentUser) return;
+    if (!confirm('Clear all messages? Messages will be deleted for you only.')) return;
+    
+    try {
+      await fetch('/api/messages/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          user_id: currentUser.id
+        })
+      });
+      setMessages([]);
+    } catch (error) {
+      console.error('Error clearing history:', error);
+    }
   };
 
   if (loading) {
@@ -244,13 +300,13 @@ export default function ChatPage() {
           </button>
           {showMenu && (
             <div className="absolute right-0 mt-2 bg-white border rounded-lg shadow-lg z-50">
-              <button className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
+              <button onClick={blockUser} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
                 Block user
               </button>
-              <button className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
+              <button onClick={clearHistory} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
                 Clear history
               </button>
-              <button className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600">
+              <button onClick={deleteConversation} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600">
                 Delete chat
               </button>
             </div>
