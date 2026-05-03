@@ -1,57 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Support multiple env var names for Google API key
-const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-
 /**
  * GET /api/geo/static-map
- * Proxies Google Static Maps API to hide API key from client
+ * Returns a static map image using OpenStreetMap (no branding/logo)
  * 
  * Query params:
  * - lat: Latitude
  * - lng: Longitude  
- * - zoom: Zoom level (default 15)
+ * - zoom: Zoom level (default 14)
  * - size: Map size (default 600x280)
- * - style: "minimal" removes default marker (for custom overlay)
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
-  const zoom = searchParams.get("zoom") || "15";
+  const zoom = searchParams.get("zoom") || "14";
   const width = searchParams.get("width") || "600";
   const height = searchParams.get("height") || "280";
-  const size = searchParams.get("size") || `${width}x${height}`;
-  const style = searchParams.get("style");
 
   if (!lat || !lng) {
     return NextResponse.json({ error: "lat and lng required" }, { status: 400 });
   }
 
-  if (!GOOGLE_API_KEY) {
-    // Return a placeholder image if no API key
-    return NextResponse.redirect("https://via.placeholder.com/600x280?text=Map+unavailable");
-  }
-
-  // Build map URL
-  let mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&scale=2&maptype=roadmap&key=${GOOGLE_API_KEY}`;
-  
-  // Add marker unless minimal style requested (we overlay our own)
-  if (style !== "minimal") {
-    mapUrl += `&markers=color:red%7C${lat},${lng}`;
-  }
-
-  // Clean map style - subtle colors
-  mapUrl += "&style=feature:poi|visibility:off"; // Hide POIs
-  mapUrl += "&style=feature:transit|visibility:off"; // Hide transit
-  mapUrl += "&style=feature:road|element:labels.icon|visibility:off"; // Hide road icons
+  // Use OpenStreetMap static tiles via staticmap.openstreetmap.de (no logo)
+  const mapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=${zoom}&size=${width}x${height}&maptype=osmarenderer`;
 
   try {
-    const res = await fetch(mapUrl);
+    const res = await fetch(mapUrl, {
+      headers: {
+        "User-Agent": "RedLightAD/1.0 (contact@redlightad.com)",
+      },
+    });
     
     if (!res.ok) {
-      console.error("Static Map API error:", res.status);
-      return NextResponse.redirect("https://via.placeholder.com/600x280?text=Map+unavailable");
+      // Fallback: try alternative OSM static map service
+      const fallbackUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=${width}&height=${height}&center=lonlat:${lng},${lat}&zoom=${zoom}&apiKey=demo`;
+      const fallbackRes = await fetch(fallbackUrl);
+      
+      if (!fallbackRes.ok) {
+        return NextResponse.redirect(`https://via.placeholder.com/${width}x${height}/f5f5f5/666?text=Map`);
+      }
+      
+      const imageBuffer = await fallbackRes.arrayBuffer();
+      return new NextResponse(imageBuffer, {
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=86400",
+        },
+      });
     }
 
     const imageBuffer = await res.arrayBuffer();
@@ -59,11 +55,11 @@ export async function GET(req: NextRequest) {
     return new NextResponse(imageBuffer, {
       headers: {
         "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=86400", // Cache for 24 hours
+        "Cache-Control": "public, max-age=86400",
       },
     });
   } catch (error) {
     console.error("Static Map error:", error);
-    return NextResponse.redirect("https://via.placeholder.com/600x280?text=Map+unavailable");
+    return NextResponse.redirect(`https://via.placeholder.com/${width}x${height}/f5f5f5/666?text=Map`);
   }
 }
