@@ -1,14 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import Link from 'next/link';
 import { Search, MoreVertical } from 'lucide-react';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
 
 interface OtherUser {
   id: string;
@@ -70,6 +65,7 @@ export default function MessagesPage() {
   useEffect(() => {
     const getUser = async () => {
       try {
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) setCurrentUserId(user.id);
       } catch (e) {
@@ -101,6 +97,7 @@ export default function MessagesPage() {
     fetchConversations();
 
     // Refresh on conversation changes
+    const supabase = createClient();
     const subscription = supabase
       .channel('conversations-list')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {

@@ -2,14 +2,9 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import { ChevronLeft, MoreVertical, Paperclip, Smile, Send } from 'lucide-react';
 import Link from 'next/link';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
 
 interface Message {
   id: string;
@@ -68,6 +63,7 @@ export default function ChatPage() {
   useEffect(() => {
     const getUser = async () => {
       try {
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) setCurrentUserId(user.id);
       } catch (e) {
@@ -83,6 +79,7 @@ export default function ChatPage() {
 
     const fetchConversation = async () => {
       try {
+        const supabase = createClient();
         const { data: conv } = await supabase
           .from('conversations')
           .select('*')
@@ -133,6 +130,7 @@ export default function ChatPage() {
 
     const fetchMessages = async () => {
       try {
+        const supabase = createClient();
         const { data } = await supabase
           .from('messages')
           .select('*')
@@ -155,7 +153,8 @@ export default function ChatPage() {
 
     fetchMessages();
 
-    const subscription = supabase
+    const sub_supabase = createClient();
+    const subscription = sub_supabase
       .channel(`messages:${conversationId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message]);
@@ -192,6 +191,7 @@ export default function ChatPage() {
     try {
       let imageUrl = null;
       if (selectedImage) {
+        const supabase = createClient();
         const fileName = `${Date.now()}-${selectedImage.name}`;
         const { error } = await supabase.storage.from('messages').upload(fileName, selectedImage);
         if (!error) {

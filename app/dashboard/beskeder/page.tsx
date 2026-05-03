@@ -1,15 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Search, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
 
 interface OtherUser {
   id: string;
@@ -55,6 +50,7 @@ export default function BeskederPage() {
   useEffect(() => {
     const getUser = async () => {
       try {
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) setCurrentUserId(user.id);
       } catch (e) { console.error('Error getting user:', e); }

@@ -2,15 +2,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import DashboardLayout from '@/components/DashboardLayout';
 import { ChevronLeft, MoreVertical, Paperclip, Smile, Send } from 'lucide-react';
 import Link from 'next/link';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
 
 interface OtherUser {
   id: string;
@@ -69,6 +64,7 @@ export default function ChatPage() {
   useEffect(() => {
     const getUser = async () => {
       try {
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) setCurrentUserId(user.id);
       } catch (e) { console.error('Error getting user:', e); }
@@ -82,6 +78,7 @@ export default function ChatPage() {
 
     const fetchConversation = async () => {
       try {
+        const supabase = createClient();
         const { data: conv } = await supabase
           .from('conversations')
           .select('*')
@@ -128,6 +125,7 @@ export default function ChatPage() {
 
     const fetchMessages = async () => {
       try {
+        const supabase = createClient();
         const { data } = await supabase
           .from('messages')
           .select('*')
@@ -147,7 +145,8 @@ export default function ChatPage() {
 
     fetchMessages();
 
-    const subscription = supabase
+    const msgSupabase = createClient();
+    const subscription = msgSupabase
       .channel(`messages:${conversationId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message]);
@@ -175,6 +174,7 @@ export default function ChatPage() {
       let imageUrl = null;
       if (selectedImage) {
         const fileName = `${Date.now()}-${selectedImage.name}`;
+        const supabase = createClient();
         const { error } = await supabase.storage.from('messages').upload(fileName, selectedImage);
         if (!error) {
           const { data: { publicUrl } } = supabase.storage.from('messages').getPublicUrl(fileName);
