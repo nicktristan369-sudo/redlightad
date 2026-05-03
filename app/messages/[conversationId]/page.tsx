@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
-import { ChevronLeft, MoreVertical, Paperclip, Smile, Send } from 'lucide-react';
+import { ChevronLeft, MoreVertical, Paperclip, Smile, Send, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 interface Message {
   id: string;
@@ -25,6 +28,8 @@ const AVATAR_COLORS = [
   '#EF4444', '#3B82F6', '#10B981', '#8B5CF6',
   '#F97316', '#EC4899', '#14B8A6', '#6366F1',
 ];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 function getAvatarColor(id?: string): string {
   if (!id) return AVATAR_COLORS[0];
@@ -44,6 +49,7 @@ export default function ChatPage() {
   const params = useParams();
   const conversationId = params?.conversationId as string;
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -54,6 +60,9 @@ export default function ChatPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,102 +75,66 @@ export default function ChatPage() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) setCurrentUserId(user.id);
-      } catch (e) {
-        console.error('Error getting user:', e);
-      }
+      } catch (e) { console.error('Error getting user:', e); }
     };
     getUser();
   }, []);
 
-  // Fetch conversation + other user info
+  // Fetch conversation
   useEffect(() => {
     if (!conversationId || !currentUserId) return;
-
     const fetchConversation = async () => {
       try {
         const supabase = createClient();
         const { data: conv } = await supabase
-          .from('conversations')
-          .select('*')
-          .eq('id', conversationId)
-          .single();
-
+          .from('conversations').select('*').eq('id', conversationId).single();
         if (!conv) { setLoading(false); return; }
 
         const otherId = currentUserId === conv.provider_id ? conv.customer_id : conv.provider_id;
-
-        // Get profile
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url, email, username')
-          .eq('id', otherId)
-          .maybeSingle();
+          .from('profiles').select('id, full_name, avatar_url, email, username').eq('id', otherId).maybeSingle();
 
         let displayName = profile?.full_name || profile?.username || profile?.email || 'User';
-
-        // Check if other user is provider → get listing display name
         if (otherId === conv.provider_id) {
           const { data: listing } = await supabase
-            .from('listings')
-            .select('display_name')
-            .eq('user_id', otherId)
-            .limit(1)
-            .maybeSingle();
+            .from('listings').select('display_name').eq('user_id', otherId).limit(1).maybeSingle();
           if (listing?.display_name) displayName = listing.display_name;
         }
 
-        setOtherUser({
-          id: otherId,
-          display_name: displayName,
-          avatar_url: profile?.avatar_url || null,
-        });
-      } catch (e) {
-        console.error('Error fetching conversation:', e);
-      }
+        setOtherUser({ id: otherId, display_name: displayName, avatar_url: profile?.avatar_url || null });
+      } catch (e) { console.error('Error fetching conversation:', e); }
       setLoading(false);
     };
-
     fetchConversation();
   }, [conversationId, currentUserId]);
 
-  // Fetch messages
+  // Fetch messages + realtime
   useEffect(() => {
     if (!conversationId || !currentUserId) return;
-
     const fetchMessages = async () => {
       try {
         const supabase = createClient();
         const { data } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: true });
-
+          .from('messages').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: true });
         if (data) {
           setMessages(data);
-          // Mark as read
           fetch('/api/messages/read', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
           }).catch(() => {});
         }
-      } catch (e) {
-        console.error('Error fetching messages:', e);
-      }
+      } catch (e) { console.error('Error fetching messages:', e); }
     };
-
     fetchMessages();
 
-    const sub_supabase = createClient();
-    const subscription = sub_supabase
+    const rtSupabase = createClient();
+    const subscription = rtSupabase
       .channel(`messages:${conversationId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message]);
         if ((payload.new as Message).sender_id !== currentUserId) {
           fetch('/api/messages/read', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
           }).catch(() => {});
         }
@@ -174,30 +147,60 @@ export default function ChatPage() {
     return () => { subscription.unsubscribe(); };
   }, [conversationId, currentUserId]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Image selection with validation
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setPreviewUrl(reader.result as string);
-      reader.readAsDataURL(file);
+    setUploadError(null);
+    if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setUploadError('Only JPG, PNG, GIF and WEBP allowed');
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError('File too large. Max 10MB');
+      return;
+    }
+
+    setSelectedImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setPreviewUrl(reader.result as string);
+    reader.readAsDataURL(file);
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, []);
+
+  // Upload image to Cloudinary via API
+  const uploadImage = async (file: File): Promise<string | null> => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/messages/upload', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json();
+        setUploadError(err?.error || 'Upload failed');
+        return null;
+      }
+      const data = await res.json();
+      return data.url;
+    } catch {
+      setUploadError('Upload failed');
+      return null;
+    } finally {
+      setUploading(false);
     }
   };
 
   const sendMessage = async () => {
-    if (!messageInput.trim() && !selectedImage) return;
+    if ((!messageInput.trim() && !selectedImage) || uploading) return;
     if (!conversationId || !currentUserId) return;
 
     try {
-      let imageUrl = null;
+      let imageUrl: string | null = null;
       if (selectedImage) {
-        const supabase = createClient();
-        const fileName = `${Date.now()}-${selectedImage.name}`;
-        const { error } = await supabase.storage.from('messages').upload(fileName, selectedImage);
-        if (!error) {
-          const { data: { publicUrl } } = supabase.storage.from('messages').getPublicUrl(fileName);
-          imageUrl = publicUrl;
-        }
+        imageUrl = await uploadImage(selectedImage);
+        if (!imageUrl && !messageInput.trim()) return; // upload failed, no text
       }
 
       const res = await fetch('/api/messages', {
@@ -206,7 +209,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           conversation_id: conversationId,
           sender_id: currentUserId,
-          content: messageInput.trim(),
+          content: messageInput.trim() || null,
           image_url: imageUrl
         })
       });
@@ -215,35 +218,31 @@ export default function ChatPage() {
         setMessageInput('');
         setSelectedImage(null);
         setPreviewUrl(null);
+        setUploadError(null);
       }
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
-  const emojis = ['😀', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨', '😢', '😡'];
+  const onEmojiClick = (emojiData: { emoji: string }) => {
+    setMessageInput(prev => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+  };
 
   const blockUser = async () => {
     if (!currentUserId || !otherUser) return;
     try {
-      await fetch('/api/blocked', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUserId, blocked_user_id: otherUser.id })
-      });
+      await fetch('/api/blocked', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, blocked_user_id: otherUser.id }) });
       window.location.href = '/messages';
     } catch (e) { console.error('Error blocking:', e); }
   };
 
   const deleteConversation = async () => {
     if (!conversationId || !currentUserId) return;
-    if (!confirm('Delete this conversation? This cannot be undone.')) return;
+    if (!confirm('Delete this conversation?')) return;
     try {
-      await fetch('/api/conversations', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
-      });
+      await fetch('/api/conversations', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId }) });
       window.location.href = '/messages';
     } catch (e) { console.error('Error deleting:', e); }
   };
@@ -252,43 +251,35 @@ export default function ChatPage() {
     if (!conversationId || !currentUserId) return;
     if (!confirm('Clear all messages?')) return;
     try {
-      await fetch('/api/messages/clear', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
-      });
+      await fetch('/api/messages/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId }) });
       setMessages([]);
     } catch (e) { console.error('Error clearing:', e); }
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
-
-  if (!otherUser) {
-    return <div className="flex items-center justify-center h-screen text-gray-500">Conversation not found</div>;
-  }
+  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  if (!otherUser) return <div className="flex items-center justify-center h-screen text-gray-500">Conversation not found</div>;
 
   return (
     <div className="flex flex-col h-screen bg-white">
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" onClick={() => setLightboxUrl(null)}>
+          <button onClick={() => setLightboxUrl(null)} className="absolute top-4 right-4 text-white hover:text-gray-300 z-[101]">
+            <X className="w-8 h-8" />
+          </button>
+          <img src={lightboxUrl} alt="Full size" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-3">
-          <Link href="/messages">
-            <ChevronLeft className="w-5 h-5 cursor-pointer" />
-          </Link>
+          <Link href="/messages"><ChevronLeft className="w-5 h-5 cursor-pointer" /></Link>
           <div className="flex items-center gap-2">
             {otherUser.avatar_url ? (
-              <img
-                src={otherUser.avatar_url}
-                alt={otherUser.display_name}
-                className="w-10 h-10 rounded-full object-cover"
-              />
+              <img src={otherUser.avatar_url} alt={otherUser.display_name} className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-                style={{ backgroundColor: getAvatarColor(otherUser.id) }}
-              >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>
                 {getInitials(otherUser.display_name)}
               </div>
             )}
@@ -296,9 +287,7 @@ export default function ChatPage() {
           </div>
         </div>
         <div className="relative">
-          <button onClick={() => setShowMenu(!showMenu)}>
-            <MoreVertical className="w-5 h-5" />
-          </button>
+          <button onClick={() => setShowMenu(!showMenu)}><MoreVertical className="w-5 h-5" /></button>
           {showMenu && (
             <div className="absolute right-0 mt-2 bg-white border rounded-lg shadow-lg z-50">
               <button onClick={blockUser} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Block user</button>
@@ -320,10 +309,7 @@ export default function ChatPage() {
                   {otherUser.avatar_url ? (
                     <img src={otherUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
                   ) : (
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
-                      style={{ backgroundColor: getAvatarColor(otherUser.id) }}
-                    >
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>
                       {getInitials(otherUser.display_name)}
                     </div>
                   )}
@@ -334,17 +320,16 @@ export default function ChatPage() {
                   <img
                     src={msg.image_url}
                     alt="attachment"
-                    className="max-w-sm rounded cursor-pointer mb-2"
-                    onClick={() => msg.image_url && window.open(msg.image_url, '_blank')}
+                    className="rounded cursor-pointer mb-2 hover:opacity-90 transition"
+                    style={{ maxWidth: 300, maxHeight: 300, objectFit: 'cover' }}
+                    onClick={() => setLightboxUrl(msg.image_url!)}
                   />
                 )}
                 {msg.content && <p className="text-sm break-words">{msg.content}</p>}
                 <div className={`text-[10px] flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-red-100' : 'text-gray-500'}`}>
                   <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {isMe && (
-                    <span style={{ color: msg.read_at ? '#93C5FD' : '#D1D5DB' }}>
-                      {msg.read_at ? '✓✓' : '✓'}
-                    </span>
+                    <span style={{ color: msg.read_at ? '#93C5FD' : '#D1D5DB' }}>{msg.read_at ? '✓✓' : '✓'}</span>
                   )}
                 </div>
               </div>
@@ -356,31 +341,30 @@ export default function ChatPage() {
 
       {/* Input Area */}
       <div className="border-t p-4">
-        {previewUrl && (
-          <div className="mb-3 relative w-fit">
-            <img src={previewUrl} alt="preview" className="max-w-xs rounded" />
-            <button
-              onClick={() => { setSelectedImage(null); setPreviewUrl(null); }}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-            >×</button>
+        {uploadError && (
+          <div className="mb-2 text-xs text-red-500 flex items-center gap-1">
+            <span>⚠️ {uploadError}</span>
+            <button onClick={() => setUploadError(null)} className="text-red-400 hover:text-red-600">✕</button>
           </div>
         )}
-        <div className="flex gap-2 items-end">
-          <input type="file" accept="image/*" className="hidden" id="image-input" onChange={handleImageSelect} />
-          <label htmlFor="image-input" className="cursor-pointer text-gray-500 hover:text-gray-700">
+        {previewUrl && (
+          <div className="mb-3 relative w-fit">
+            <img src={previewUrl} alt="preview" className="max-w-[200px] max-h-[150px] rounded object-cover" />
+            <button onClick={() => { setSelectedImage(null); setPreviewUrl(null); setUploadError(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">×</button>
+          </div>
+        )}
+        <div className="flex gap-2 items-end relative">
+          <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" id="image-input" onChange={handleImageSelect} />
+          <label htmlFor="image-input" className="cursor-pointer text-gray-500 hover:text-gray-700 flex-shrink-0">
             <Paperclip className="w-5 h-5" />
           </label>
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-500 hover:text-gray-700">
               <Smile className="w-5 h-5" />
             </button>
             {showEmojiPicker && (
-              <div className="absolute bottom-8 left-0 z-50 bg-white border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-2">
-                {emojis.map((emoji) => (
-                  <button key={emoji} onClick={() => { setMessageInput(prev => prev + emoji); setShowEmojiPicker(false); }} className="text-xl hover:bg-gray-100 p-1 rounded">
-                    {emoji}
-                  </button>
-                ))}
+              <div className="absolute bottom-10 left-0 z-50">
+                <EmojiPicker onEmojiClick={onEmojiClick} width={320} height={400} />
               </div>
             )}
           </div>
@@ -388,12 +372,12 @@ export default function ChatPage() {
             type="text"
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}}
             placeholder="Write a message..."
             className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
           />
-          <button onClick={sendMessage} className="text-red-500 hover:text-red-600">
-            <Send className="w-5 h-5" />
+          <button onClick={sendMessage} disabled={uploading} className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0">
+            {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
       </div>
