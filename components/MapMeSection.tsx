@@ -22,60 +22,53 @@ export default function MapMeSection({ latitude, longitude, profileImage }: Prop
     return null
   }
 
-  // Build static map URL (no marker - we overlay our own)
+  // Build static map URL
   let mapUrl: string
   try {
-    mapUrl = `/api/geo/static-map?lat=${latitude}&lng=${longitude}&zoom=14&size=600x280&style=minimal`
+    mapUrl = `/api/geo/static-map?lat=${latitude}&lng=${longitude}&zoom=14&width=600&height=200`
   } catch {
     return null
   }
 
-  const handleMapClick = () => {
+  const handleOpenMaps = () => {
     try {
       window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, "_blank")
     } catch {
-      // Ignore click errors
+      // Ignore errors
     }
   }
 
-  // Fallback if map image fails
+  // Fallback if map image fails - show just the button
   if (imgError) {
     return (
       <div style={{
         background: "#fff",
         border: "1px solid #E5E7EB",
-        borderRadius: 16,
-        padding: 20,
+        borderRadius: 12,
+        padding: 16,
         marginBottom: 16,
       }}>
         <div style={{
-          fontSize: 15,
-          fontWeight: 700,
-          color: "#111",
-          marginBottom: 16,
           display: "flex",
           alignItems: "center",
           gap: 8,
+          marginBottom: 14,
         }}>
-          <span style={{ fontSize: 18 }}>📍</span>
-          Map me
+          <span style={{ fontSize: 16 }}>📍</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>Map me</span>
         </div>
         <button
-          onClick={handleMapClick}
+          onClick={handleOpenMaps}
           style={{
             width: "100%",
-            padding: "14px 20px",
+            padding: "12px 20px",
             background: "#DC2626",
             border: "none",
-            borderRadius: 12,
+            borderRadius: 8,
             cursor: "pointer",
             fontSize: 14,
             fontWeight: 600,
             color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
           }}
         >
           Open in Google Maps
@@ -88,33 +81,27 @@ export default function MapMeSection({ latitude, longitude, profileImage }: Prop
     <div style={{
       background: "#fff",
       border: "1px solid #E5E7EB",
-      borderRadius: 16,
+      borderRadius: 12,
       overflow: "hidden",
       marginBottom: 16,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
     }}>
       {/* Header */}
       <div style={{
-        padding: "14px 18px",
-        borderBottom: "1px solid #F3F4F6",
+        padding: "12px 16px",
         display: "flex",
         alignItems: "center",
-        gap: 10,
+        gap: 8,
       }}>
-        <span style={{ fontSize: 18 }}>📍</span>
-        <span style={{ fontSize: 15, fontWeight: 700, color: "#111" }}>Map me</span>
+        <span style={{ fontSize: 16 }}>📍</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>Map me</span>
       </div>
 
-      {/* Map with custom marker overlay */}
-      <div
-        onClick={handleMapClick}
-        style={{
-          position: "relative",
-          cursor: "pointer",
-          height: 220,
-          overflow: "hidden",
-        }}
-      >
+      {/* Map with profile image overlay */}
+      <div style={{
+        position: "relative",
+        height: 160,
+        overflow: "hidden",
+      }}>
         {/* Map image */}
         <img
           src={mapUrl}
@@ -128,92 +115,51 @@ export default function MapMeSection({ latitude, longitude, profileImage }: Prop
           onError={() => setImgError(true)}
         />
 
-        {/* Custom pin with profile image */}
-        <div style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -100%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.25))",
-        }}>
-          {/* Pin body */}
+        {/* Profile image circle - floating on map */}
+        {profileImage && !profileImgError && (
           <div style={{
-            width: 52,
-            height: 52,
-            borderRadius: "50% 50% 50% 0",
-            background: "#DC2626",
-            transform: "rotate(-45deg)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            position: "absolute",
+            bottom: 20,
+            right: 24,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
             border: "3px solid #fff",
+            overflow: "hidden",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
           }}>
-            {/* Profile image inside pin */}
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              overflow: "hidden",
-              transform: "rotate(45deg)",
-              background: "#fff",
-            }}>
-              {profileImage && !profileImgError ? (
-                <img
-                  src={profileImage}
-                  alt=""
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                  onError={() => setProfileImgError(true)}
-                />
-              ) : (
-                <div style={{
-                  width: "100%",
-                  height: "100%",
-                  background: "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontSize: 18,
-                  fontWeight: 700,
-                }}>
-                  ♥
-                </div>
-              )}
-            </div>
+            <img
+              src={profileImage}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+              onError={() => setProfileImgError(true)}
+            />
           </div>
-          {/* Pin point */}
-          <div style={{
-            width: 0,
-            height: 0,
-            borderLeft: "8px solid transparent",
-            borderRight: "8px solid transparent",
-            borderTop: "12px solid #DC2626",
-            marginTop: -3,
-          }} />
-        </div>
+        )}
+      </div>
 
-        {/* Tap hint */}
-        <div style={{
-          position: "absolute",
-          bottom: 12,
-          right: 12,
-          background: "rgba(0,0,0,0.7)",
-          backdropFilter: "blur(4px)",
-          color: "#fff",
-          fontSize: 12,
-          fontWeight: 500,
-          padding: "6px 12px",
-          borderRadius: 20,
-        }}>
-          Tap for directions →
-        </div>
+      {/* Button */}
+      <div style={{ padding: "12px 16px" }}>
+        <button
+          onClick={handleOpenMaps}
+          style={{
+            width: "100%",
+            padding: "12px 20px",
+            background: "#DC2626",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#fff",
+          }}
+        >
+          Open in Google Maps
+        </button>
       </div>
     </div>
   )
