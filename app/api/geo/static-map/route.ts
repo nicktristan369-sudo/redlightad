@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY;
+
 /**
  * GET /api/geo/static-map
- * Returns a static map image using OpenStreetMap (no branding/logo)
- * 
- * Query params:
- * - lat: Latitude
- * - lng: Longitude  
- * - zoom: Zoom level (default 14)
- * - size: Map size (default 600x280)
+ * Returns a clean Google Static Map (no markers - we overlay profile image)
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -16,38 +12,35 @@ export async function GET(req: NextRequest) {
   const lng = searchParams.get("lng");
   const zoom = searchParams.get("zoom") || "14";
   const width = searchParams.get("width") || "600";
-  const height = searchParams.get("height") || "280";
+  const height = searchParams.get("height") || "200";
 
   if (!lat || !lng) {
     return NextResponse.json({ error: "lat and lng required" }, { status: 400 });
   }
 
-  // Use OpenStreetMap static tiles via staticmap.openstreetmap.de (no logo)
-  const mapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=${zoom}&size=${width}x${height}&maptype=osmarenderer`;
+  if (!GOOGLE_API_KEY) {
+    return NextResponse.redirect(`https://via.placeholder.com/${width}x${height}/f0f0f0/999?text=Map`);
+  }
+
+  // Google Static Maps - clean style, no markers
+  const mapUrl = new URL("https://maps.googleapis.com/maps/api/staticmap");
+  mapUrl.searchParams.set("center", `${lat},${lng}`);
+  mapUrl.searchParams.set("zoom", zoom);
+  mapUrl.searchParams.set("size", `${width}x${height}`);
+  mapUrl.searchParams.set("scale", "2");
+  mapUrl.searchParams.set("maptype", "roadmap");
+  mapUrl.searchParams.set("key", GOOGLE_API_KEY);
+  
+  // Clean style - hide POI icons, transit, keep roads/labels
+  mapUrl.searchParams.append("style", "feature:poi|visibility:off");
+  mapUrl.searchParams.append("style", "feature:transit|visibility:off");
 
   try {
-    const res = await fetch(mapUrl, {
-      headers: {
-        "User-Agent": "RedLightAD/1.0 (contact@redlightad.com)",
-      },
-    });
+    const res = await fetch(mapUrl.toString());
     
     if (!res.ok) {
-      // Fallback: try alternative OSM static map service
-      const fallbackUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=${width}&height=${height}&center=lonlat:${lng},${lat}&zoom=${zoom}&apiKey=demo`;
-      const fallbackRes = await fetch(fallbackUrl);
-      
-      if (!fallbackRes.ok) {
-        return NextResponse.redirect(`https://via.placeholder.com/${width}x${height}/f5f5f5/666?text=Map`);
-      }
-      
-      const imageBuffer = await fallbackRes.arrayBuffer();
-      return new NextResponse(imageBuffer, {
-        headers: {
-          "Content-Type": "image/png",
-          "Cache-Control": "public, max-age=86400",
-        },
-      });
+      console.error("Google Maps error:", res.status);
+      return NextResponse.redirect(`https://via.placeholder.com/${width}x${height}/f0f0f0/999?text=Map`);
     }
 
     const imageBuffer = await res.arrayBuffer();
@@ -60,6 +53,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Static Map error:", error);
-    return NextResponse.redirect(`https://via.placeholder.com/${width}x${height}/f5f5f5/666?text=Map`);
+    return NextResponse.redirect(`https://via.placeholder.com/${width}x${height}/f0f0f0/999?text=Map`);
   }
 }
