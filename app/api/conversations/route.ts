@@ -18,7 +18,7 @@ export async function DELETE(request: NextRequest) {
     // Get conversation
     const { data: conv } = await supabase
       .from('conversations')
-      .select('user1_id, user2_id')
+      .select('provider_id, customer_id')
       .eq('id', conversation_id)
       .single();
 
@@ -26,23 +26,18 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
     }
 
-    if (conv.user1_id === user_id) {
-      await supabase
-        .from('conversations')
-        .update({
-          deleted_by_user1: true,
-          deleted_at_user1: new Date().toISOString()
-        })
-        .eq('id', conversation_id);
-    } else if (conv.user2_id === user_id) {
-      await supabase
-        .from('conversations')
-        .update({
-          deleted_by_user2: true,
-          deleted_at_user2: new Date().toISOString()
-        })
-        .eq('id', conversation_id);
+    // Verify user is part of this conversation
+    if (conv.provider_id !== user_id && conv.customer_id !== user_id) {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
+
+    // Delete the conversation
+    const { error } = await supabase
+      .from('conversations')
+      .delete()
+      .eq('id', conversation_id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

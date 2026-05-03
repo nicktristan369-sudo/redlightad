@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const { data: conversations } = await supabase
       .from('conversations')
       .select('id')
-      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+      .or(`provider_id.eq.${userId},customer_id.eq.${userId}`);
 
     if (!conversations || conversations.length === 0) {
       return NextResponse.json({ results: [] });
@@ -33,35 +33,20 @@ export async function GET(request: NextRequest) {
     // Search in messages
     const { data: messages } = await supabase
       .from('messages')
-      .select(`
-        id,
-        content,
-        conversation_id,
-        sender_id,
-        created_at,
-        sender:sender_id(id, username, profile_picture_url, first_name, last_name),
-        conversation:conversation_id(id, user1_id, user2_id, user1:user1_id(username), user2:user2_id(username))
-      `)
+      .select('id, content, conversation_id, sender_id, created_at')
       .in('conversation_id', conversationIds)
       .ilike('content', searchTerm)
       .order('created_at', { ascending: false })
       .limit(20);
 
-    // Enrich results with conversation partner info
-    const results = (messages || []).map(msg => {
-      const conv = msg.conversation as any;
-      const otherUser = conv.user1_id === userId ? conv.user2 : conv.user1;
-      
-      return {
-        id: msg.id,
-        content: msg.content,
-        conversation_id: msg.conversation_id,
-        sender: msg.sender,
-        other_user: otherUser,
-        created_at: msg.created_at,
-        snippet: msg.content?.substring(0, 100) || '...'
-      };
-    });
+    const results = (messages || []).map(msg => ({
+      id: msg.id,
+      content: msg.content,
+      conversation_id: msg.conversation_id,
+      sender_id: msg.sender_id,
+      created_at: msg.created_at,
+      snippet: msg.content?.substring(0, 100) || '...'
+    }));
 
     return NextResponse.json({ results });
   } catch (error) {

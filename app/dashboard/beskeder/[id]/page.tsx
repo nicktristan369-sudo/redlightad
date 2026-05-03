@@ -1,345 +1,246 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import DashboardLayout from '@/components/DashboardLayout';
 import { ChevronLeft, MoreVertical, Paperclip, Smile, Send } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-interface User {
+interface OtherUser {
   id: string;
-  username: string;
-  profile_picture_url: string;
-  first_name: string;
-  last_name: string;
+  display_name: string;
+  avatar_url?: string | null;
 }
 
 interface Message {
   id: string;
   sender_id: string;
-  content: string;
+  content?: string;
   image_url?: string;
   created_at: string;
   read_at?: string;
-  sender?: User;
 }
 
-interface Conversation {
-  id: string;
-  user1_id: string;
-  user2_id: string;
-  user1?: User;
-  user2?: User;
+const AVATAR_COLORS = ['#EF4444','#3B82F6','#10B981','#8B5CF6','#F97316','#EC4899','#14B8A6','#6366F1'];
+
+function getAvatarColor(id?: string): string {
+  if (!id) return AVATAR_COLORS[0];
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function getInitials(name?: string): string {
+  if (!name) return '?';
+  const p = name.trim().split(/\s+/);
+  if (p.length >= 2) return (p[0][0] + p[p.length-1][0]).toUpperCase();
+  return name[0]?.toUpperCase() || '?';
 }
 
 export default function ChatPage() {
   const params = useParams();
-  const conversationId = params.id as string;
+  const conversationId = params?.id as string;
   const router = useRouter();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
-  const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [otherUser, setOtherUser] = useState<User | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const emojis = ['😀', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨', '😢', '😠'];
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Get current user
   useEffect(() => {
     const getUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) return; // DashboardLayout handles auth
-
-        // Try to fetch user data, but don't fail if not found
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (data) {
-          setCurrentUser(data);
-        } else {
-          // Create temp profile from auth data
-          const tempUser: User = {
-            id: user.id,
-            username: user.email?.split('@')[0] || 'User',
-            first_name: user.user_metadata?.first_name || 'User',
-            last_name: user.user_metadata?.last_name || '',
-            profile_picture_url: user.user_metadata?.avatar_url || ''
-          };
-          setCurrentUser(tempUser);
-        }
-      } catch (error) {
-        console.error('Error loading user:', error);
-      }
+        if (user?.id) setCurrentUserId(user.id);
+      } catch (e) { console.error('Error getting user:', e); }
     };
     getUser();
   }, []);
 
-  // Fetch conversation and messages
+  // Fetch conversation info
   useEffect(() => {
-    if (!conversationId || !currentUser?.id) return;
+    if (!conversationId || !currentUserId) return;
 
     const fetchConversation = async () => {
-      const { data: conv } = await supabase
-        .from('conversations')
-        .select(`
-          *,
-          user1:user1_id(id, username, profile_picture_url, first_name, last_name),
-          user2:user2_id(id, username, profile_picture_url, first_name, last_name)
-        `)
-        .eq('id', conversationId)
-        .single();
+      try {
+        const { data: conv } = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .single();
 
-      if (conv) {
-        setConversation(conv);
-        const other = currentUser.id === conv.user1_id ? conv.user2 : conv.user1;
-        setOtherUser(other);
-      }
+        if (!conv) { setLoading(false); return; }
 
+        const otherId = currentUserId === conv.provider_id ? conv.customer_id : conv.provider_id;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, email, username')
+          .eq('id', otherId)
+          .maybeSingle();
+
+        let displayName = profile?.full_name || profile?.username || profile?.email || 'User';
+
+        if (otherId === conv.provider_id) {
+          const { data: listing } = await supabase
+            .from('listings')
+            .select('display_name')
+            .eq('user_id', otherId)
+            .limit(1)
+            .maybeSingle();
+          if (listing?.display_name) displayName = listing.display_name;
+        }
+
+        setOtherUser({
+          id: otherId,
+          display_name: displayName,
+          avatar_url: profile?.avatar_url || null,
+        });
+      } catch (e) { console.error('Error fetching conversation:', e); }
       setLoading(false);
     };
 
     fetchConversation();
-  }, [conversationId, currentUser?.id]);
+  }, [conversationId, currentUserId]);
 
   // Fetch messages
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !currentUserId) return;
 
     const fetchMessages = async () => {
-      const { data } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:sender_id(id, username, profile_picture_url, first_name, last_name)
-        `)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+      try {
+        const { data } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
 
-      if (data) {
-        setMessages(data);
-        // Mark as read
-        if (currentUser) {
-          await fetch('/api/messages/read', {
+        if (data) {
+          setMessages(data);
+          fetch('/api/messages/read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversation_id: conversationId,
-              user_id: currentUser.id
-            })
-          });
+            body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
+          }).catch(() => {});
         }
-      }
+      } catch (e) { console.error('Error fetching messages:', e); }
     };
 
     fetchMessages();
 
     const subscription = supabase
       .channel(`messages:${conversationId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=eq.${conversationId}`
-      }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message]);
+        if ((payload.new as Message).sender_id !== currentUserId) {
+          fetch('/api/messages/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
+          }).catch(() => {});
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
+        setMessages(prev => prev.map(m => m.id === (payload.new as Message).id ? { ...m, ...payload.new } : m));
       })
       .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [conversationId, currentUser?.id]);
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const uploadImage = async (file: File): Promise<string> => {
-    const fileName = `${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage
-      .from('messages')
-      .upload(fileName, file);
-
-    if (error) throw error;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('messages')
-      .getPublicUrl(fileName);
-
-    return publicUrl;
-  };
+    return () => { subscription.unsubscribe(); };
+  }, [conversationId, currentUserId]);
 
   const sendMessage = async () => {
     if (!messageInput.trim() && !selectedImage) return;
-    if (!conversationId || !currentUser) return;
+    if (!conversationId || !currentUserId) return;
 
     try {
       let imageUrl = null;
       if (selectedImage) {
-        imageUrl = await uploadImage(selectedImage);
+        const fileName = `${Date.now()}-${selectedImage.name}`;
+        const { error } = await supabase.storage.from('messages').upload(fileName, selectedImage);
+        if (!error) {
+          const { data: { publicUrl } } = supabase.storage.from('messages').getPublicUrl(fileName);
+          imageUrl = publicUrl;
+        }
       }
 
-      const response = await fetch('/api/messages', {
+      const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          sender_id: currentUser.id,
-          content: messageInput.trim(),
-          image_url: imageUrl
-        })
+        body: JSON.stringify({ conversation_id: conversationId, sender_id: currentUserId, content: messageInput.trim(), image_url: imageUrl })
       });
 
-      if (response.ok) {
-        setMessageInput('');
-        setSelectedImage(null);
-        setPreviewUrl(null);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
-
-  const addEmoji = (emoji: string) => {
-    setMessageInput(prev => prev + emoji);
-  };
-
-  const deleteConversation = async () => {
-    if (!conversationId || !currentUser) return;
-    if (!confirm('Delete this conversation? This cannot be undone.')) return;
-
-    try {
-      await fetch('/api/conversations', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          user_id: currentUser.id
-        })
-      });
-      router.push('/dashboard/beskeder');
-    } catch (error) {
-      console.error('Error deleting conversation:', error);
-    }
+      if (res.ok) { setMessageInput(''); setSelectedImage(null); setPreviewUrl(null); }
+    } catch (e) { console.error('Error sending message:', e); }
   };
 
   const blockUser = async () => {
-    if (!currentUser || !otherUser) return;
+    if (!currentUserId || !otherUser) return;
     try {
-      await fetch('/api/blocked', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: currentUser.id,
-          blocked_user_id: otherUser.id
-        })
-      });
+      await fetch('/api/blocked', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, blocked_user_id: otherUser.id }) });
       router.push('/dashboard/beskeder');
-    } catch (error) {
-      console.error('Error blocking user:', error);
-    }
+    } catch (e) { console.error('Error blocking:', e); }
   };
 
-  if (!currentUser) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </DashboardLayout>
-    );
+  const deleteConversation = async () => {
+    if (!conversationId || !currentUserId) return;
+    if (!confirm('Delete this conversation?')) return;
+    try {
+      await fetch('/api/conversations', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId }) });
+      router.push('/dashboard/beskeder');
+    } catch (e) { console.error('Error deleting:', e); }
+  };
+
+  if (!currentUserId || loading) {
+    return <DashboardLayout><div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" /></div></DashboardLayout>;
   }
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">Loading...</div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!conversation || !otherUser) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">Conversation not found</div>
-      </DashboardLayout>
-    );
+  if (!otherUser) {
+    return <DashboardLayout><div className="flex items-center justify-center h-96 text-gray-500">Conversation not found</div></DashboardLayout>;
   }
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl h-screen flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className="max-w-2xl h-[calc(100vh-120px)] flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard/beskeder">
-              <ChevronLeft className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900" />
-            </Link>
+            <Link href="/dashboard/beskeder"><ChevronLeft className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900" /></Link>
             <div className="flex items-center gap-2">
-              {otherUser.profile_picture_url ? (
-                <Image
-                  src={otherUser.profile_picture_url}
-                  alt={otherUser.username}
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-full"
-                />
+              {otherUser.avatar_url ? (
+                <img src={otherUser.avatar_url} alt={otherUser.display_name} className="w-10 h-10 rounded-full object-cover" />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white text-sm font-semibold">
-                  {otherUser.first_name?.[0]}{otherUser.last_name?.[0]}
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>
+                  {getInitials(otherUser.display_name)}
                 </div>
               )}
-              <div>
-                <h2 className="font-semibold text-sm">{otherUser.username}</h2>
-                <p className="text-xs text-gray-500">Active now</p>
-              </div>
+              <h2 className="font-semibold text-sm">{otherUser.display_name}</h2>
             </div>
           </div>
-
           <div className="relative">
-            <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg">
-              <MoreVertical className="w-5 h-5 text-gray-600" />
-            </button>
+            <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg"><MoreVertical className="w-5 h-5 text-gray-600" /></button>
             {showMenu && (
               <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <button
-                  onClick={blockUser}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-900"
-                >
-                  Block user
-                </button>
-                <button
-                  onClick={deleteConversation}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600"
-                >
-                  Delete chat
-                </button>
+                <button onClick={blockUser} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Block user</button>
+                <button onClick={deleteConversation} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600">Delete chat</button>
               </div>
             )}
           </div>
@@ -347,108 +248,56 @@ export default function ChatPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
-              {message.sender_id !== currentUser?.id && otherUser && (
-                <Image
-                  src={otherUser.profile_picture_url || ''}
-                  alt={otherUser.username}
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 rounded-full mr-2"
-                />
-              )}
-              <div
-                className={`max-w-xs px-4 py-2 rounded-lg ${
-                  message.sender_id === currentUser?.id
-                    ? 'bg-red-500 text-white'
-                    : 'bg-gray-100 text-black'
-                }`}
-              >
-                {message.image_url && (
-                  <img
-                    src={message.image_url}
-                    alt="message"
-                    className="max-w-sm rounded mb-2 cursor-pointer"
-                    onClick={() => window.open(message.image_url, '_blank')}
-                  />
+          {messages.map((msg) => {
+            const isMe = msg.sender_id === currentUserId;
+            return (
+              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                {!isMe && (
+                  <div className="mr-2 flex-shrink-0 self-end">
+                    {otherUser.avatar_url ? (
+                      <img src={otherUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>
+                        {getInitials(otherUser.display_name)}
+                      </div>
+                    )}
+                  </div>
                 )}
-                {message.content && <p className="text-sm break-words">{message.content}</p>}
-                <p
-                  className={`text-xs mt-1 ${
-                    message.sender_id === currentUser?.id ? 'text-red-100' : 'text-gray-500'
-                  }`}
-                >
-                  {new Date(message.created_at).toLocaleTimeString()}
-                </p>
+                <div className={`max-w-xs px-4 py-2 rounded-lg ${isMe ? 'bg-red-500 text-white' : 'bg-gray-100 text-black'}`}>
+                  {msg.image_url && <img src={msg.image_url} alt="attachment" className="max-w-sm rounded mb-2 cursor-pointer" onClick={() => msg.image_url && window.open(msg.image_url, '_blank')} />}
+                  {msg.content && <p className="text-sm break-words">{msg.content}</p>}
+                  <div className={`text-[10px] flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-red-100' : 'text-gray-500'}`}>
+                    <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {isMe && <span style={{ color: msg.read_at ? '#93C5FD' : '#D1D5DB' }}>{msg.read_at ? '✓✓' : '✓'}</span>}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
+        {/* Input */}
         <div className="border-t border-gray-200 p-4">
           {previewUrl && (
             <div className="mb-3 relative w-fit">
               <img src={previewUrl} alt="preview" className="max-w-xs rounded" />
-              <button
-                onClick={() => {
-                  setSelectedImage(null);
-                  setPreviewUrl(null);
-                }}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
-              >
-                ×
-              </button>
+              <button onClick={() => { setSelectedImage(null); setPreviewUrl(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">×</button>
             </div>
           )}
-
           <div className="flex gap-2 items-end">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              id="image-input"
-              onChange={handleImageSelect}
-            />
-            <label htmlFor="image-input" className="cursor-pointer text-gray-500 hover:text-gray-700">
-              <Paperclip className="w-5 h-5" />
-            </label>
-
+            <input type="file" accept="image/*" className="hidden" id="image-input" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSelectedImage(f); const r = new FileReader(); r.onloadend = () => setPreviewUrl(r.result as string); r.readAsDataURL(f); }}} />
+            <label htmlFor="image-input" className="cursor-pointer text-gray-500 hover:text-gray-700"><Paperclip className="w-5 h-5" /></label>
             <div className="relative">
-              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-500 hover:text-gray-700">
-                <Smile className="w-5 h-5" />
-              </button>
+              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-500 hover:text-gray-700"><Smile className="w-5 h-5" /></button>
               {showEmojiPicker && (
-                <div className="absolute bottom-8 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-2 grid grid-cols-5 gap-2">
-                  {emojis.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        addEmoji(emoji);
-                        setShowEmojiPicker(false);
-                      }}
-                      className="text-xl hover:bg-gray-100 p-1 rounded"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+                <div className="absolute bottom-8 left-0 z-50 bg-white border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-2">
+                  {emojis.map((emoji) => (<button key={emoji} onClick={() => { setMessageInput(prev => prev + emoji); setShowEmojiPicker(false); }} className="text-xl hover:bg-gray-100 p-1 rounded">{emoji}</button>))}
                 </div>
               )}
             </div>
-
-            <input
-              type="text"
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder="Write a message..."
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-
-            <button onClick={sendMessage} className="text-red-500 hover:text-red-600">
-              <Send className="w-5 h-5" />
-            </button>
+            <input type="text" value={messageInput} onChange={(e) => setMessageInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && sendMessage()} placeholder="Write a message..." className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+            <button onClick={sendMessage} className="text-red-500 hover:text-red-600"><Send className="w-5 h-5" /></button>
           </div>
         </div>
       </div>
