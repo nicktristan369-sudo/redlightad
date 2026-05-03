@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import Link from 'next/link';
-import { Search, MoreVertical } from 'lucide-react';
+import { Search, MoreVertical, BellOff } from 'lucide-react';
 
 interface OtherUser {
   id: string;
@@ -61,6 +61,15 @@ export default function MessagesPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [mutedIds, setMutedIds] = useState<Set<string>>(new Set());
+
+  // Load muted state from localStorage
+  useEffect(() => {
+    try {
+      const muted = JSON.parse(localStorage.getItem('muted_conversations') || '{}');
+      setMutedIds(new Set(Object.keys(muted)));
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     const getUser = async () => {
@@ -175,8 +184,9 @@ export default function MessagesPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <h3 className={`text-sm ${unread > 0 ? 'font-bold text-black' : 'font-semibold text-gray-900'}`}>
+                      <h3 className={`text-sm ${unread > 0 ? 'font-bold text-black' : 'font-semibold text-gray-900'} flex items-center gap-1`}>
                         {other?.display_name || 'Unknown'}
+                        {mutedIds.has(conv.id) && <BellOff className="w-3 h-3 text-gray-400" />}
                       </h3>
                       <p className={`text-xs truncate ${unread > 0 ? 'font-semibold text-gray-800' : 'text-gray-500'}`}>
                         {preview}
