@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Phone, Star, MessageCircle, Flag, X, Send, MessageSquare, MapPin } from "lucide-react"
+import { Phone, Star, MessageCircle, Flag, X, Send, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import { Sheet, ContactModal as SharedContactModal } from "@/components/ContactModal"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
@@ -14,10 +14,6 @@ interface Props {
   isLoggedIn: boolean
   profileImage?: string | null
   name?: string
-  // Map me
-  showExactAddress?: boolean
-  exactLatitude?: number | null
-  exactLongitude?: number | null
 }
 
 // Sheet re-exported from shared module (imported above)
@@ -226,7 +222,7 @@ function scrollToReviews() {
 // ── Main component ────────────────────────────────────────────────────────────
 type Modal = "contact" | "message" | "report" | "review-gate" | null
 
-export default function StickyActionBar({ phone, whatsapp, listingId, listingTitle, isLoggedIn, profileImage, name, showExactAddress, exactLatitude, exactLongitude }: Props) {
+export default function StickyActionBar({ phone, whatsapp, listingId, listingTitle, isLoggedIn, profileImage, name }: Props) {
   const { t } = useLanguage()
   const [modal, setModal] = useState<Modal>(null)
 
@@ -235,22 +231,11 @@ export default function StickyActionBar({ phone, whatsapp, listingId, listingTit
     scrollToReviews()
   }
 
-  const handleMapMe = () => {
-    if (exactLatitude && exactLongitude) {
-      window.open(`https://www.google.com/maps?q=${exactLatitude},${exactLongitude}`, "_blank")
-    }
-  }
-
-  // Show Map me button if exact address is enabled, otherwise show Report
-  const hasMap = showExactAddress && exactLatitude && exactLongitude
-
   const buttons = [
     { icon: <Phone size={20} />,          label: t.sticky_contact, primary: true,  action: () => setModal("contact") },
     { icon: <Star size={20} />,           label: t.sticky_review,  primary: false, action: handleReview },
     { icon: <MessageCircle size={20} />,  label: t.sticky_message, primary: false, action: () => setModal("message") },
-    hasMap
-      ? { icon: <MapPin size={20} />,     label: "Map me",         primary: false, action: handleMapMe }
-      : { icon: <Flag size={20} />,       label: t.sticky_report,  primary: false, action: () => setModal("report") },
+    { icon: <Flag size={20} />,           label: t.sticky_report,  primary: false, action: () => setModal("report") },
   ]
 
   return (

@@ -9,7 +9,6 @@ import PhotoGallery from "@/components/PhotoGallery";
 import VoicePlayer from "@/components/VoicePlayer";
 import AdSidebar from "@/components/AdSidebar";
 import ContactSection from "@/components/ContactSection";
-import MapMeSection from "@/components/MapMeSection";
 import VideoSection from "@/components/VideoSection";
 import SocialLinksSection from "@/components/SocialLinksSection";
 import TravelBox from "@/components/TravelBox";
@@ -96,11 +95,6 @@ interface Listing {
   has_own_place?: boolean | null;
   opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null;
   timezone?: string | null;
-  // Exact address fields
-  show_exact_address?: boolean | null;
-  exact_address?: string | null;
-  exact_latitude?: number | null;
-  exact_longitude?: number | null;
 }
 
 export default function AdDetailPage() {
@@ -450,16 +444,6 @@ export default function AdDetailPage() {
                   travel={ad.travel}
                   body_build={(ad as any).body_build}
                 />
-                {/* Map Me section - only show when exact address is enabled */}
-                {(ad?.show_exact_address ?? false) && 
-                 typeof ad?.exact_latitude === 'number' && 
-                 typeof ad?.exact_longitude === 'number' && (
-                  <MapMeSection
-                    latitude={ad.exact_latitude}
-                    longitude={ad.exact_longitude}
-                    profileImage={ad?.profile_image ?? ad?.images?.[0] ?? null}
-                  />
-                )}
                 <ContactSection contact={{
                   phone: ad.phone,
                   whatsapp: ad.whatsapp,
@@ -500,9 +484,6 @@ export default function AdDetailPage() {
         isLoggedIn={currentUserId !== null}
         profileImage={ad.images?.[0] ?? null}
         name={ad.title}
-        showExactAddress={ad?.show_exact_address ?? false}
-        exactLatitude={ad?.exact_latitude ?? null}
-        exactLongitude={ad?.exact_longitude ?? null}
       />
 
       {/* Grid lightbox */}

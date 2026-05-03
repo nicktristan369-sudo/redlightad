@@ -4,16 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { MapPin, CheckCircle, Clock, Info } from "lucide-react";
 import { SUPPORTED_COUNTRIES } from "@/lib/countries";
 
-// Local type - no Google Maps dependency
-interface PlacePrediction {
-  place_id: string;
-  description: string;
-  structured_formatting?: {
-    main_text: string;
-    secondary_text?: string;
-  };
-}
-
 interface Props {
   listingId: string;
   currentCountry: string;
@@ -48,13 +38,13 @@ export default function LocationSwitchPanel({
   // Exact address
   const [showExactAddress, setShowExactAddress] = useState(!!exactAddress);
   const [addressInput, setAddressInput] = useState(exactAddress || "");
-  const [addressSuggestions, setAddressSuggestions] = useState<PlacePrediction[]>([]);
+  const [addressSuggestions, setAddressSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<{ address: string; lat: number; lng: number } | null>(
     exactAddress && exactLat && exactLng ? { address: exactAddress, lat: exactLat, lng: exactLng } : null
   );
   
   // City autocomplete
-  const [citySuggestions, setCitySuggestions] = useState<PlacePrediction[]>([]);
+  const [citySuggestions, setCitySuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const cityInputRef = useRef<HTMLInputElement>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -130,13 +120,13 @@ export default function LocationSwitchPanel({
     return null;
   };
 
-  const handleCitySelect = async (prediction: PlacePrediction) => {
+  const handleCitySelect = async (prediction: google.maps.places.AutocompletePrediction) => {
     setCity(prediction.structured_formatting?.main_text || prediction.description);
     setCitySuggestions([]);
     setShowCitySuggestions(false);
   };
 
-  const handleAddressSelect = async (prediction: PlacePrediction) => {
+  const handleAddressSelect = async (prediction: google.maps.places.AutocompletePrediction) => {
     const details = await getPlaceDetails(prediction.place_id);
     if (details) {
       setSelectedAddress({ address: details.formatted, lat: details.lat, lng: details.lng });
