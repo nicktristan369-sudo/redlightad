@@ -500,6 +500,9 @@ export default function AdDetailPage() {
         isLoggedIn={currentUserId !== null}
         profileImage={ad.images?.[0] ?? null}
         name={ad.title}
+        showExactAddress={ad?.show_exact_address ?? false}
+        exactLatitude={ad?.exact_latitude ?? null}
+        exactLongitude={ad?.exact_longitude ?? null}
       />
 
       {/* Grid lightbox */}
