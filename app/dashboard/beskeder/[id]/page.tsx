@@ -209,39 +209,58 @@ export default function ChatPage() {
           <div className="relative">
             <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg"><MoreVertical className="w-5 h-5 text-gray-600" /></button>
             {showMenu && (
-              <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <button onClick={blockUser} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Block user</button>
-                <button onClick={deleteConversation} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600">Delete chat</button>
-              </div>
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+                  <button onClick={() => { setShowMenu(false); blockUser(); }} className="flex items-center gap-2 w-full text-left px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700">🚫 Block user</button>
+                  <div className="border-t border-gray-100" />
+                  <button onClick={() => { setShowMenu(false); deleteConversation(); }} className="flex items-center gap-2 w-full text-left px-4 py-2.5 hover:bg-red-50 text-sm text-red-600">❌ Delete chat</button>
+                </div>
+              </>
             )}
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg) => {
+        <div className="flex-1 overflow-y-auto px-4 py-3" style={{ background: '#f5f5f5' }}>
+          {messages.map((msg, i) => {
             const isMe = msg.sender_id === currentUserId;
+            const isEmoji = msg.content && !msg.image_url && /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s]+$/u.test(msg.content) && msg.content.length <= 12;
+            const prevMsg = messages[i - 1];
+            const sameSender = prevMsg && prevMsg.sender_id === msg.sender_id;
             return (
-              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${sameSender ? 'mt-1' : 'mt-3'}`} style={{ marginTop: i === 0 ? 0 : undefined }}>
                 {!isMe && (
-                  <div className="mr-2 flex-shrink-0 self-end">
-                    {otherUser.avatar_url ? (
-                      <img src={otherUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>{getInitials(otherUser.display_name)}</div>
-                    )}
+                  <div className="mr-2 flex-shrink-0 self-end" style={{ width: 32 }}>
+                    {!sameSender ? (
+                      otherUser.avatar_url ? (
+                        <img src={otherUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>{getInitials(otherUser.display_name)}</div>
+                      )
+                    ) : null}
                   </div>
                 )}
-                <div className={`max-w-xs px-4 py-2 rounded-lg ${isMe ? 'bg-red-500 text-white' : 'bg-gray-100 text-black'}`}>
-                  {msg.image_url && (
-                    <img src={msg.image_url} alt="attachment" className="rounded mb-2 cursor-pointer hover:opacity-90 transition" style={{ maxWidth: 300, maxHeight: 300, objectFit: 'cover' }} onClick={() => setLightboxUrl(msg.image_url!)} />
-                  )}
-                  {msg.content && <p className="text-sm break-words">{msg.content}</p>}
-                  <div className={`text-[10px] flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-red-100' : 'text-gray-500'}`}>
-                    <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    {isMe && <span style={{ color: msg.read_at ? '#93C5FD' : '#D1D5DB' }}>{msg.read_at ? '✓✓' : '✓'}</span>}
+                {isEmoji ? (
+                  <div className="flex flex-col items-end">
+                    <span className="text-4xl leading-tight">{msg.content}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5">
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {isMe && <span className="ml-1" style={{ color: msg.read_at ? '#3B82F6' : '#9CA3AF' }}>{msg.read_at ? '✓✓' : '✓'}</span>}
+                    </span>
                   </div>
-                </div>
+                ) : (
+                  <div className={`max-w-[75%] px-3 py-2 ${isMe ? 'bg-red-500 text-white rounded-2xl rounded-br-md' : 'bg-white text-gray-900 rounded-2xl rounded-bl-md shadow-sm'}`}>
+                    {msg.image_url && (
+                      <img src={msg.image_url} alt="attachment" className="rounded-lg mb-1.5 cursor-pointer hover:opacity-90 transition" style={{ maxWidth: 280, maxHeight: 280, objectFit: 'cover' }} onClick={() => setLightboxUrl(msg.image_url!)} />
+                    )}
+                    {msg.content && <p className="text-[15px] leading-snug break-words whitespace-pre-wrap">{msg.content}</p>}
+                    <div className={`text-[10px] flex items-center justify-end gap-1 mt-0.5 ${isMe ? 'text-red-200' : 'text-gray-400'}`}>
+                      <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      {isMe && <span style={{ color: msg.read_at ? '#FDE8E8' : 'rgba(255,255,255,0.5)' }}>{msg.read_at ? '✓✓' : '✓'}</span>}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
