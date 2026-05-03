@@ -38,27 +38,36 @@ export default function BeskederPage() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          setCurrentUserId(user.id);
+        }
+      } catch (error) {
+        console.error('Error getting user:', error);
       }
     };
     getUser();
   }, []);
 
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      setLoading(false);
+      return;
+    }
 
     const fetchConversations = async () => {
       try {
         const response = await fetch(`/api/conversations/list?user_id=${currentUserId}`);
-        const { conversations } = await response.json();
-        setConversations(conversations || []);
+        const result = await response.json();
+        console.log('Conversations response:', result);
+        setConversations(result.conversations || []);
       } catch (error) {
         console.error('Error fetching conversations:', error);
         setConversations([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchConversations();
@@ -100,7 +109,11 @@ export default function BeskederPage() {
         </div>
 
         {/* Conversations List */}
-        {loading ? (
+        {!currentUserId ? (
+          <div className="flex justify-center py-20">
+            <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : loading ? (
           <div className="flex justify-center py-20">
             <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
           </div>
