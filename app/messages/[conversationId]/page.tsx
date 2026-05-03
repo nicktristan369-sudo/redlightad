@@ -1,233 +1,217 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { ChevronLeft, MoreVertical, Paperclip, Smile, Send } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-interface User {
-  id: string;
-  username: string;
-  profile_picture_url: string;
-  first_name: string;
-  last_name: string;
-}
-
 interface Message {
   id: string;
   sender_id: string;
-  content: string;
+  content?: string;
   image_url?: string;
   created_at: string;
   read_at?: string;
-  sender?: User;
 }
 
-interface Conversation {
+interface OtherUser {
   id: string;
-  user1_id: string;
-  user2_id: string;
-  user1?: User;
-  user2?: User;
+  display_name: string;
+  avatar_url?: string | null;
+}
+
+const AVATAR_COLORS = [
+  '#EF4444', '#3B82F6', '#10B981', '#8B5CF6',
+  '#F97316', '#EC4899', '#14B8A6', '#6366F1',
+];
+
+function getAvatarColor(id?: string): string {
+  if (!id) return AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(name?: string): string {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name[0]?.toUpperCase() || '?';
 }
 
 export default function ChatPage() {
   const params = useParams();
-  const conversationId = params.conversationId as string;
-  
+  const conversationId = params?.conversationId as string;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const [messages, setMessages] = useState<Message[]>([]);
-  const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [otherUser, setOtherUser] = useState<User | null>(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [otherUserOnline, setOtherUserOnline] = useState(false);
-  const [lastSeen, setLastSeen] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Get current user
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        setCurrentUser(data);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) setCurrentUserId(user.id);
+      } catch (e) {
+        console.error('Error getting user:', e);
       }
     };
     getUser();
   }, []);
 
-  // Fetch conversation and messages
+  // Fetch conversation + other user info
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !currentUserId) return;
 
     const fetchConversation = async () => {
-      const { data: conv } = await supabase
-        .from('conversations')
-        .select(`
-          *,
-          user1:user1_id(id, username, profile_picture_url, first_name, last_name),
-          user2:user2_id(id, username, profile_picture_url, first_name, last_name)
-        `)
-        .eq('id', conversationId)
-        .single();
+      try {
+        const { data: conv } = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .single();
 
-      if (conv) {
-        setConversation(conv);
-        const other = currentUser?.id === conv.user1_id ? conv.user2 : conv.user1;
-        setOtherUser(other);
+        if (!conv) { setLoading(false); return; }
+
+        const otherId = currentUserId === conv.provider_id ? conv.customer_id : conv.provider_id;
+
+        // Get profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, email, username')
+          .eq('id', otherId)
+          .maybeSingle();
+
+        let displayName = profile?.full_name || profile?.username || profile?.email || 'User';
+
+        // Check if other user is provider → get listing display name
+        if (otherId === conv.provider_id) {
+          const { data: listing } = await supabase
+            .from('listings')
+            .select('display_name')
+            .eq('user_id', otherId)
+            .limit(1)
+            .maybeSingle();
+          if (listing?.display_name) displayName = listing.display_name;
+        }
+
+        setOtherUser({
+          id: otherId,
+          display_name: displayName,
+          avatar_url: profile?.avatar_url || null,
+        });
+      } catch (e) {
+        console.error('Error fetching conversation:', e);
       }
-
       setLoading(false);
     };
 
     fetchConversation();
-  }, [conversationId, currentUser?.id]);
+  }, [conversationId, currentUserId]);
 
   // Fetch messages
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !currentUserId) return;
 
     const fetchMessages = async () => {
-      const { data } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:sender_id(id, username, profile_picture_url, first_name, last_name)
-        `)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+      try {
+        const { data } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
 
-      if (data) {
-        setMessages(data);
-        // Mark as read
-        if (currentUser) {
-          await fetch('/api/messages/read', {
+        if (data) {
+          setMessages(data);
+          // Mark as read
+          fetch('/api/messages/read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversation_id: conversationId,
-              user_id: currentUser.id
-            })
-          });
+            body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
+          }).catch(() => {});
         }
+      } catch (e) {
+        console.error('Error fetching messages:', e);
       }
     };
 
     fetchMessages();
 
-    // Subscribe to new messages
     const subscription = supabase
       .channel(`messages:${conversationId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message]);
+        if ((payload.new as Message).sender_id !== currentUserId) {
+          fetch('/api/messages/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
+          }).catch(() => {});
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
+        setMessages(prev => prev.map(m => m.id === (payload.new as Message).id ? { ...m, ...payload.new } : m));
       })
       .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [conversationId, currentUser?.id]);
-
-  // Track online status
-  useEffect(() => {
-    if (!currentUser?.id) return;
-
-    // Update own status
-    const updateStatus = async () => {
-      await fetch('/api/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.id })
-      });
-    };
-
-    updateStatus();
-    const interval = setInterval(updateStatus, 30000); // Every 30s
-
-    return () => clearInterval(interval);
-  }, [currentUser?.id]);
-
-  // Check other user status
-  useEffect(() => {
-    if (!otherUser?.id) return;
-
-    const checkStatus = async () => {
-      const res = await fetch(`/api/status?user_id=${otherUser.id}`);
-      const data = await res.json();
-      setOtherUserOnline(data.online);
-      setLastSeen(data.last_seen);
-    };
-
-    checkStatus();
-    const interval = setInterval(checkStatus, 10000); // Every 10s
-
-    return () => clearInterval(interval);
-  }, [otherUser?.id]);
+    return () => { subscription.unsubscribe(); };
+  }, [conversationId, currentUserId]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedImage(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
+      reader.onloadend = () => setPreviewUrl(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
-    const fileName = `${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage
-      .from('messages')
-      .upload(fileName, file);
-
-    if (error) throw error;
-    
-    const { data: { publicUrl } } = supabase.storage
-      .from('messages')
-      .getPublicUrl(fileName);
-
-    return publicUrl;
-  };
-
   const sendMessage = async () => {
     if (!messageInput.trim() && !selectedImage) return;
-    if (!conversationId || !currentUser) return;
+    if (!conversationId || !currentUserId) return;
 
     try {
       let imageUrl = null;
       if (selectedImage) {
-        imageUrl = await uploadImage(selectedImage);
+        const fileName = `${Date.now()}-${selectedImage.name}`;
+        const { error } = await supabase.storage.from('messages').upload(fileName, selectedImage);
+        if (!error) {
+          const { data: { publicUrl } } = supabase.storage.from('messages').getPublicUrl(fileName);
+          imageUrl = publicUrl;
+        }
       }
 
-      const response = await fetch('/api/messages', {
+      const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversation_id: conversationId,
-          sender_id: currentUser.id,
+          sender_id: currentUserId,
           content: messageInput.trim(),
           image_url: imageUrl
         })
       });
 
-      if (response.ok) {
+      if (res.ok) {
         setMessageInput('');
         setSelectedImage(null);
         setPreviewUrl(null);
@@ -239,71 +223,50 @@ export default function ChatPage() {
 
   const emojis = ['😀', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨', '😢', '😡'];
 
-  const addEmoji = (emoji: string) => {
-    setMessageInput(prev => prev + emoji);
-  };
-
   const blockUser = async () => {
-    if (!currentUser || !otherUser) return;
+    if (!currentUserId || !otherUser) return;
     try {
       await fetch('/api/blocked', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: currentUser.id,
-          blocked_user_id: otherUser.id
-        })
+        body: JSON.stringify({ user_id: currentUserId, blocked_user_id: otherUser.id })
       });
       window.location.href = '/messages';
-    } catch (error) {
-      console.error('Error blocking user:', error);
-    }
+    } catch (e) { console.error('Error blocking:', e); }
   };
 
   const deleteConversation = async () => {
-    if (!conversationId || !currentUser) return;
+    if (!conversationId || !currentUserId) return;
     if (!confirm('Delete this conversation? This cannot be undone.')) return;
-    
     try {
       await fetch('/api/conversations', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          user_id: currentUser.id
-        })
+        body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
       });
       window.location.href = '/messages';
-    } catch (error) {
-      console.error('Error deleting conversation:', error);
-    }
+    } catch (e) { console.error('Error deleting:', e); }
   };
 
   const clearHistory = async () => {
-    if (!conversationId || !currentUser) return;
-    if (!confirm('Clear all messages? Messages will be deleted for you only.')) return;
-    
+    if (!conversationId || !currentUserId) return;
+    if (!confirm('Clear all messages?')) return;
     try {
       await fetch('/api/messages/clear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          user_id: currentUser.id
-        })
+        body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId })
       });
       setMessages([]);
-    } catch (error) {
-      console.error('Error clearing history:', error);
-    }
+    } catch (e) { console.error('Error clearing:', e); }
   };
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  if (!conversation || !otherUser) {
-    return <div className="flex items-center justify-center h-screen">Conversation not found</div>;
+  if (!otherUser) {
+    return <div className="flex items-center justify-center h-screen text-gray-500">Conversation not found</div>;
   }
 
   return (
@@ -315,31 +278,21 @@ export default function ChatPage() {
             <ChevronLeft className="w-5 h-5 cursor-pointer" />
           </Link>
           <div className="flex items-center gap-2">
-            {otherUser.profile_picture_url ? (
-              <Image
-                src={otherUser.profile_picture_url}
-                alt={otherUser.username}
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-full"
+            {otherUser.avatar_url ? (
+              <img
+                src={otherUser.avatar_url}
+                alt={otherUser.display_name}
+                className="w-10 h-10 rounded-full object-cover"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white text-sm font-semibold">
-                {otherUser.first_name?.[0]}{otherUser.last_name?.[0]}
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+                style={{ backgroundColor: getAvatarColor(otherUser.id) }}
+              >
+                {getInitials(otherUser.display_name)}
               </div>
             )}
-            <div>
-              <h2 className="font-semibold">{otherUser.username}</h2>
-              <p className="text-xs text-gray-500">
-                {otherUserOnline ? (
-                  <span className="text-green-500">● Active now</span>
-                ) : lastSeen ? (
-                  <>Last seen {new Date(lastSeen).toLocaleTimeString()}</>
-                ) : (
-                  'Offline'
-                )}
-              </p>
-            </div>
+            <h2 className="font-semibold">{otherUser.display_name}</h2>
           </div>
         </div>
         <div className="relative">
@@ -348,15 +301,9 @@ export default function ChatPage() {
           </button>
           {showMenu && (
             <div className="absolute right-0 mt-2 bg-white border rounded-lg shadow-lg z-50">
-              <button onClick={blockUser} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
-                Block user
-              </button>
-              <button onClick={clearHistory} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
-                Clear history
-              </button>
-              <button onClick={deleteConversation} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600">
-                Delete chat
-              </button>
+              <button onClick={blockUser} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Block user</button>
+              <button onClick={clearHistory} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">Clear history</button>
+              <button onClick={deleteConversation} className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600">Delete chat</button>
             </div>
           )}
         </div>
@@ -364,47 +311,47 @@ export default function ChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${
-              message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            {message.sender_id !== currentUser?.id && otherUser && (
-              <Image
-                src={otherUser.profile_picture_url || ''}
-                alt={otherUser.username}
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-full mr-2"
-              />
-            )}
-            <div
-              className={`max-w-xs px-4 py-2 rounded-lg ${
-                message.sender_id === currentUser?.id
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-200 text-black'
-              }`}
-            >
-              {message.image_url && (
-                <img
-                  src={message.image_url}
-                  alt="message"
-                  className="max-w-sm rounded cursor-pointer mb-2"
-                  onClick={() => window.open(message.image_url, '_blank')}
-                />
+        {messages.map((msg) => {
+          const isMe = msg.sender_id === currentUserId;
+          return (
+            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+              {!isMe && (
+                <div className="mr-2 flex-shrink-0 self-end">
+                  {otherUser.avatar_url ? (
+                    <img src={otherUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+                      style={{ backgroundColor: getAvatarColor(otherUser.id) }}
+                    >
+                      {getInitials(otherUser.display_name)}
+                    </div>
+                  )}
+                </div>
               )}
-              {message.content && <p className="text-sm break-words">{message.content}</p>}
-              <div className={`text-xs flex items-center gap-1 ${message.sender_id === currentUser?.id ? 'text-red-100' : 'text-gray-500'}`}>
-                <span>{new Date(message.created_at).toLocaleTimeString()}</span>
-                {message.sender_id === currentUser?.id && (
-                  <span>{message.read_at ? '✓✓' : '✓'}</span>
+              <div className={`max-w-xs px-4 py-2 rounded-lg ${isMe ? 'bg-red-500 text-white' : 'bg-gray-200 text-black'}`}>
+                {msg.image_url && (
+                  <img
+                    src={msg.image_url}
+                    alt="attachment"
+                    className="max-w-sm rounded cursor-pointer mb-2"
+                    onClick={() => msg.image_url && window.open(msg.image_url, '_blank')}
+                  />
                 )}
+                {msg.content && <p className="text-sm break-words">{msg.content}</p>}
+                <div className={`text-[10px] flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-red-100' : 'text-gray-500'}`}>
+                  <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {isMe && (
+                    <span style={{ color: msg.read_at ? '#93C5FD' : '#D1D5DB' }}>
+                      {msg.read_at ? '✓✓' : '✓'}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
@@ -413,29 +360,16 @@ export default function ChatPage() {
           <div className="mb-3 relative w-fit">
             <img src={previewUrl} alt="preview" className="max-w-xs rounded" />
             <button
-              onClick={() => {
-                setSelectedImage(null);
-                setPreviewUrl(null);
-              }}
+              onClick={() => { setSelectedImage(null); setPreviewUrl(null); }}
               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-            >
-              ×
-            </button>
+            >×</button>
           </div>
         )}
-        
         <div className="flex gap-2 items-end">
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            id="image-input"
-            onChange={handleImageSelect}
-          />
+          <input type="file" accept="image/*" className="hidden" id="image-input" onChange={handleImageSelect} />
           <label htmlFor="image-input" className="cursor-pointer text-gray-500 hover:text-gray-700">
             <Paperclip className="w-5 h-5" />
           </label>
-
           <div className="relative">
             <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-500 hover:text-gray-700">
               <Smile className="w-5 h-5" />
@@ -443,21 +377,13 @@ export default function ChatPage() {
             {showEmojiPicker && (
               <div className="absolute bottom-8 left-0 z-50 bg-white border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-2">
                 {emojis.map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => {
-                      addEmoji(emoji);
-                      setShowEmojiPicker(false);
-                    }}
-                    className="text-xl hover:bg-gray-100 p-1 rounded"
-                  >
+                  <button key={emoji} onClick={() => { setMessageInput(prev => prev + emoji); setShowEmojiPicker(false); }} className="text-xl hover:bg-gray-100 p-1 rounded">
                     {emoji}
                   </button>
                 ))}
               </div>
             )}
           </div>
-
           <input
             type="text"
             value={messageInput}
@@ -466,11 +392,7 @@ export default function ChatPage() {
             placeholder="Write a message..."
             className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
           />
-
-          <button
-            onClick={sendMessage}
-            className="text-red-500 hover:text-red-600"
-          >
+          <button onClick={sendMessage} className="text-red-500 hover:text-red-600">
             <Send className="w-5 h-5" />
           </button>
         </div>

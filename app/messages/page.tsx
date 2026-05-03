@@ -3,110 +3,121 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Search, ArrowLeft, MoreVertical } from 'lucide-react';
+import { Search, MoreVertical } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-interface User {
+interface OtherUser {
   id: string;
-  username: string;
-  profile_picture_url?: string;
-  first_name: string;
-  last_name: string;
+  display_name: string;
+  avatar_url?: string | null;
 }
 
-interface Conversation {
+interface ConversationData {
   id: string;
-  user1_id: string;
-  user2_id: string;
-  user1?: User;
-  user2?: User;
-  last_message_id?: string;
-  created_at?: string;
-  updated_at?: string;
+  provider_id: string;
+  customer_id: string;
+  other_user?: OtherUser;
   last_message?: {
     content?: string;
-    image_url?: string;
     created_at?: string;
-  };
+    sender_id?: string;
+  } | null;
+  last_message_at?: string;
+  unread_count?: number;
+}
+
+const AVATAR_COLORS = [
+  '#EF4444', '#3B82F6', '#10B981', '#8B5CF6',
+  '#F97316', '#EC4899', '#14B8A6', '#6366F1',
+];
+
+function getAvatarColor(id?: string): string {
+  if (!id) return AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(name?: string): string {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name[0]?.toUpperCase() || '?';
+}
+
+function timeAgo(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
 }
 
 export default function MessagesPage() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [conversations, setConversations] = useState<ConversationData[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        setCurrentUser(data);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) setCurrentUserId(user.id);
+      } catch (e) {
+        console.error('Error getting user:', e);
       }
     };
     getUser();
   }, []);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUserId) {
+      setLoading(false);
+      return;
+    }
 
     const fetchConversations = async () => {
-      const { data } = await supabase
-        .from('conversations')
-        .select(`
-          *,
-          user1:user1_id(id, username, profile_picture_url, first_name, last_name),
-          user2:user2_id(id, username, profile_picture_url, first_name, last_name),
-          last_message:last_message_id(content, image_url, created_at)
-        `)
-        .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
-        .order('updated_at', { ascending: false });
-
-      if (data) {
-        setConversations(data);
+      try {
+        const res = await fetch(`/api/conversations/list?user_id=${currentUserId}`);
+        const data = await res.json();
+        setConversations(data?.conversations || []);
+      } catch (e) {
+        console.error('Error fetching conversations:', e);
+        setConversations([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchConversations();
 
-    // Subscribe to updates
+    // Refresh on conversation changes
     const subscription = supabase
-      .channel('conversations')
+      .channel('conversations-list')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
+        fetchConversations();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
         fetchConversations();
       })
       .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [currentUser?.id]);
-
-  const getOtherUser = (conv: Conversation): User | null => {
-    if (!currentUser) return null;
-    return currentUser.id === conv.user1_id ? conv.user2 || null : conv.user1 || null;
-  };
-
-  const getLastMessagePreview = (conv: Conversation): string => {
-    if (!conv.last_message) return 'No messages yet';
-    if (conv.last_message.image_url) return '📷 Image';
-    return conv.last_message.content?.substring(0, 50) || 'No message';
-  };
+    return () => { subscription.unsubscribe(); };
+  }, [currentUserId]);
 
   const filteredConversations = conversations.filter(conv => {
-    const other = getOtherUser(conv);
-    return other?.username.toLowerCase().includes(searchQuery.toLowerCase()) || 
-           other?.first_name.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!searchQuery) return true;
+    const name = conv.other_user?.display_name?.toLowerCase() || '';
+    return name.includes(searchQuery.toLowerCase());
   });
 
   if (loading) {
@@ -118,8 +129,6 @@ export default function MessagesPage() {
       {/* Header */}
       <div className="p-4 border-b">
         <h1 className="text-2xl font-bold mb-4">Messages</h1>
-        
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
           <input
@@ -141,55 +150,54 @@ export default function MessagesPage() {
         ) : (
           <div className="divide-y">
             {filteredConversations.map((conv) => {
-              const otherUser = getOtherUser(conv);
-              if (!otherUser) return null;
+              const other = conv.other_user;
+              const unread = conv.unread_count || 0;
+              const msgTime = conv.last_message?.created_at || conv.last_message_at;
+              const preview = conv.last_message?.content?.substring(0, 50) || 'No messages yet';
 
               return (
                 <Link key={conv.id} href={`/messages/${conv.id}`}>
                   <div className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer group">
                     {/* Avatar */}
-                    {otherUser.profile_picture_url ? (
-                      <Image
-                        src={otherUser.profile_picture_url}
-                        alt={otherUser.username}
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-full flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-                        {otherUser.first_name?.[0]}{otherUser.last_name?.[0]}
-                      </div>
-                    )}
+                    <div className="relative flex-shrink-0">
+                      {other?.avatar_url ? (
+                        <img
+                          src={other.avatar_url}
+                          alt={other.display_name || 'User'}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+                          style={{ backgroundColor: getAvatarColor(other?.id) }}
+                        >
+                          {getInitials(other?.display_name)}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm">{otherUser.username}</h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {getLastMessagePreview(conv)}
+                      <h3 className={`text-sm ${unread > 0 ? 'font-bold text-black' : 'font-semibold text-gray-900'}`}>
+                        {other?.display_name || 'Unknown'}
+                      </h3>
+                      <p className={`text-xs truncate ${unread > 0 ? 'font-semibold text-gray-800' : 'text-gray-500'}`}>
+                        {preview}
                       </p>
                     </div>
 
-                    {/* Time and Menu */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {conv.last_message?.created_at && (
-                        <p className="text-xs text-gray-400">
-                          {new Date(conv.last_message.created_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                    {/* Time + badge */}
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      {msgTime && (
+                        <p className={`text-xs ${unread > 0 ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                          {timeAgo(msgTime)}
                         </p>
                       )}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          // Menu will be implemented
-                        }}
-                        className="opacity-0 group-hover:opacity-100 transition"
-                      >
-                        <MoreVertical className="w-4 h-4 text-gray-400" />
-                      </button>
+                      {unread > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                          {unread > 99 ? '99+' : unread}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </Link>
