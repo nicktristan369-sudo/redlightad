@@ -1,420 +1,434 @@
-"use client"
-import { useEffect, useState, useRef } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { createClient } from "@/lib/supabase"
-import DashboardLayout from "@/components/DashboardLayout"
-import { ArrowLeft, Send } from "lucide-react"
-import CustomerProfileCard from "@/components/CustomerProfileCard"
-import { useLanguage } from "@/lib/i18n/LanguageContext"
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
+import DashboardLayout from '@/components/DashboardLayout';
+import { ChevronLeft, MoreVertical, Paperclip, Smile, Send } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
+
+interface User {
+  id: string;
+  username: string;
+  profile_picture_url: string;
+  first_name: string;
+  last_name: string;
+}
 
 interface Message {
-  id: string
-  sender_id: string
-  content: string
-  created_at: string
-  read_at?: string | null
+  id: string;
+  sender_id: string;
+  content: string;
+  image_url?: string;
+  created_at: string;
+  read_at?: string;
+  sender?: User;
 }
 
-interface Conv {
-  id: string
-  provider_id: string
-  customer_id: string
-  listing_id: string | null
-  listings?: { title: string; profile_image: string | null } | null
-}
-
-interface CustomerProfile {
-  user_id: string
-  username: string | null
-  avatar_url: string | null
-  age?: number | null
-  gender?: string | null
-  nationality?: string | null
-  height_cm?: number | null
-  weight_kg?: number | null
-  languages?: string[] | null
-  kinks?: string[] | null
-  kink_bio?: string | null
-  phone_verified?: boolean
-  created_at?: string
+interface Conversation {
+  id: string;
+  user1_id: string;
+  user2_id: string;
+  user1?: User;
+  user2?: User;
 }
 
 export default function ChatPage() {
-  const { t } = useLanguage()
-  const params = useParams()
-  const convId = params.id as string
-  const router = useRouter()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [conv, setConv] = useState<Conv | null>(null)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [customer, setCustomer] = useState<CustomerProfile | null>(null)
-  const [newMessage, setNewMessage] = useState("")
-  const [sending, setSending] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [showProfile, setShowProfile] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
-  const [otherTyping, setOtherTyping] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const params = useParams();
+  const conversationId = params.id as string;
+  const router = useRouter();
 
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [messageInput, setMessageInput] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [otherUser, setOtherUser] = useState<User | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
+
+  const emojis = ['😀', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨', '😢', '😠'];
+
+  // Get current user
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  useEffect(() => {
-    const supabase = createClient()
-
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace("/login"); return }
-      setUserId(user.id)
-
-      const { data: c } = await supabase
-        .from("conversations")
-        .select("*, listings(title, profile_image)")
-        .eq("id", convId)
-        .single()
-      if (!c || (c.provider_id !== user.id && c.customer_id !== user.id)) {
-        router.replace("/dashboard/beskeder"); return
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace('/login');
+        return;
       }
-      setConv(c)
 
-      const customerId = c.provider_id === user.id ? c.customer_id : c.provider_id
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (token) {
-        const cpRes = await fetch(`/api/customer-profile/${customerId}`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        })
-        if (cpRes.ok) {
-          const cp = await cpRes.json()
-          setCustomer(cp)
-        } else {
-          setCustomer({ user_id: customerId, username: null, avatar_url: null })
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        setCurrentUser(data);
+      }
+    };
+    getUser();
+  }, [router]);
+
+  // Fetch conversation and messages
+  useEffect(() => {
+    if (!conversationId || !currentUser?.id) return;
+
+    const fetchConversation = async () => {
+      const { data: conv } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          user1:user1_id(id, username, profile_picture_url, first_name, last_name),
+          user2:user2_id(id, username, profile_picture_url, first_name, last_name)
+        `)
+        .eq('id', conversationId)
+        .single();
+
+      if (conv) {
+        setConversation(conv);
+        const other = currentUser.id === conv.user1_id ? conv.user2 : conv.user1;
+        setOtherUser(other);
+      }
+
+      setLoading(false);
+    };
+
+    fetchConversation();
+  }, [conversationId, currentUser?.id]);
+
+  // Fetch messages
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const fetchMessages = async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          sender:sender_id(id, username, profile_picture_url, first_name, last_name)
+        `)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (data) {
+        setMessages(data);
+        // Mark as read
+        if (currentUser) {
+          await fetch('/api/messages/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              user_id: currentUser.id
+            })
+          });
         }
       }
+    };
 
-      const { data: msgs } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true })
-      setMessages(msgs || [])
-      setLoading(false)
+    fetchMessages();
 
-      const unreadField = user.id === c.provider_id ? "provider_unread" : "customer_unread"
-      await supabase.from("conversations").update({ [unreadField]: 0 }).eq("id", convId)
+    const subscription = supabase
+      .channel(`messages:${conversationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`
+      }, (payload) => {
+        setMessages(prev => [...prev, payload.new as Message]);
+      })
+      .subscribe();
 
-      // Subscribe to new messages
-      const channel = supabase
-        .channel(`chat:${convId}`)
-        .on("postgres_changes", {
-          event: "INSERT", schema: "public", table: "messages",
-          filter: `conversation_id=eq.${convId}`,
-        }, (payload) => {
-          setMessages(prev => [...prev, payload.new as Message])
-        })
-        .on("postgres_changes", {
-          event: "*", schema: "public", table: "typing_status",
-          filter: `conversation_id=eq.${convId}`,
-        }, (payload) => {
-          const status = payload.new as { user_id: string; is_typing: boolean; updated_at: string }
-          if (status.user_id !== user.id) {
-            setOtherTyping(status.is_typing)
-            // Auto-clear typing after 3 seconds
-            if (status.is_typing) {
-              setTimeout(() => setOtherTyping(false), 3000)
-            }
-          }
-        })
-        .subscribe()
-      
-      // Polling fallback for incoming messages (every 3 seconds)
-      // This ensures messages appear even if Realtime is not enabled
-      const pollInterval = setInterval(async () => {
-        const { data: newMsgs } = await supabase
-          .from("messages")
-          .select("*")
-          .eq("conversation_id", convId)
-          .order("created_at", { ascending: true })
-        if (newMsgs) {
-          setMessages(prev => {
-            // Only update if there are new messages
-            if (newMsgs.length > prev.filter(m => !m.id.startsWith('temp-')).length) {
-              // Preserve any optimistic messages that haven't been confirmed yet
-              const tempMsgs = prev.filter(m => m.id.startsWith('temp-'))
-              // Check if optimistic messages are now in the real data
-              const confirmedTempIds = tempMsgs
-                .filter(tm => newMsgs.some(nm => nm.content === tm.content && nm.sender_id === tm.sender_id))
-                .map(tm => tm.id)
-              const remainingTemp = tempMsgs.filter(tm => !confirmedTempIds.includes(tm.id))
-              return [...newMsgs, ...remainingTemp]
-            }
-            return prev
-          })
-        }
-      }, 3000)
-      
-      return () => {
-        supabase.removeChannel(channel)
-        clearInterval(pollInterval)
-      }
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [conversationId, currentUser?.id]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-    init()
-  }, [convId, router])
+  };
 
-  // Broadcast typing status
-  const broadcastTyping = async (typing: boolean) => {
-    if (!conv) return
-    const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) return
-    
-    fetch("/api/chat/typing", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ conversation_id: convId, is_typing: typing }),
-    }).catch(() => {})
-  }
+  const uploadImage = async (file: File): Promise<string> => {
+    const fileName = `${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage
+      .from('messages')
+      .upload(fileName, file);
 
-  // Handle input change with typing indicator
-  const handleInputChange = (value: string) => {
-    setNewMessage(value)
-    
-    if (value.trim() && !isTyping) {
-      setIsTyping(true)
-      broadcastTyping(true)
-    }
-    
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-    
-    // Set new timeout to stop typing indicator
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false)
-      broadcastTyping(false)
-    }, 2000)
-  }
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('messages')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending || !userId || !conv) return
-    setSending(true)
-    
-    // Clear typing status
-    setIsTyping(false)
-    broadcastTyping(false)
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
+    if (!messageInput.trim() && !selectedImage) return;
+    if (!conversationId || !currentUser) return;
+
+    try {
+      let imageUrl = null;
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage);
+      }
+
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          sender_id: currentUser.id,
+          content: messageInput.trim(),
+          image_url: imageUrl
+        })
+      });
+
+      if (response.ok) {
+        setMessageInput('');
+        setSelectedImage(null);
+        setPreviewUrl(null);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
     }
-    
-    const content = newMessage.trim()
-    const tempId = `temp-${Date.now()}`
-    const now = new Date().toISOString()
-    
-    // Optimistic update - add message immediately to UI
-    const optimisticMsg: Message = {
-      id: tempId,
-      sender_id: userId,
-      content,
-      created_at: now,
-      read_at: null,
+  };
+
+  const addEmoji = (emoji: string) => {
+    setMessageInput(prev => prev + emoji);
+  };
+
+  const deleteConversation = async () => {
+    if (!conversationId || !currentUser) return;
+    if (!confirm('Delete this conversation? This cannot be undone.')) return;
+
+    try {
+      await fetch('/api/conversations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          user_id: currentUser.id
+        })
+      });
+      router.push('/dashboard/beskeder');
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
     }
-    setMessages(prev => [...prev, optimisticMsg])
-    setNewMessage("")
-    
-    // Scroll to bottom immediately
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-    }, 50)
-    
-    // Send to server in background
-    const supabase = createClient()
-    const { data: inserted, error } = await supabase
-      .from("messages")
-      .insert({ conversation_id: convId, sender_id: userId, content })
-      .select()
-      .single()
-    
-    if (error) {
-      // Remove optimistic message on error
-      setMessages(prev => prev.filter(m => m.id !== tempId))
-      console.error("Failed to send message:", error)
-    } else if (inserted) {
-      // Replace temp message with real one (to get real ID)
-      setMessages(prev => prev.map(m => m.id === tempId ? inserted : m))
+  };
+
+  const blockUser = async () => {
+    if (!currentUser || !otherUser) return;
+    try {
+      await fetch('/api/blocked', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser.id,
+          blocked_user_id: otherUser.id
+        })
+      });
+      router.push('/dashboard/beskeder');
+    } catch (error) {
+      console.error('Error blocking user:', error);
     }
-    
-    // Update conversation metadata (fire and forget)
-    supabase.from("conversations").update({
-      last_message: content,
-      last_message_at: now,
-    }).eq("id", convId).then(() => {})
-    supabase.rpc("increment_provider_unread", { conv_id: convId }).then(() => {})
-    
-    setSending(false)
-    inputRef.current?.focus()
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">Loading...</div>
+      </DashboardLayout>
+    );
   }
 
-  const fmt = (ts: string) => new Date(ts).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-  const fmtDate = (ts: string) => new Date(ts).toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })
-
-  const grouped: { date: string; msgs: Message[] }[] = []
-  for (const m of messages) {
-    const d = fmtDate(m.created_at)
-    if (!grouped.length || grouped[grouped.length - 1].date !== d) grouped.push({ date: d, msgs: [m] })
-    else grouped[grouped.length - 1].msgs.push(m)
+  if (!conversation || !otherUser) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">Conversation not found</div>
+      </DashboardLayout>
+    );
   }
-
-  const customerName = customer?.username || t.preview_anon
-  const customerAvatar = customer?.avatar_url || null
-  const customerInitials = customerName.slice(0, 2).toUpperCase()
-
-  const AvatarBubble = ({ size = 28 }: { size?: number }) => (
-    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "#E5E7EB", border: "2px solid #F3F4F6" }}>
-      {customerAvatar
-        ? <img src={customerAvatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        : <div style={{ width: "100%", height: "100%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: size * 0.35, fontWeight: 800, color: "#fff" }}>{customerInitials}</span>
-          </div>}
-    </div>
-  )
 
   return (
     <DashboardLayout>
-      <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 8rem)" }}>
-
-        {/* ── Header ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexShrink: 0 }}>
-          <button onClick={() => router.push("/dashboard/beskeder")}
-            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: 0 }}>
-            <ArrowLeft size={16} /> {t.chat_back}
-          </button>
-
-          <button onClick={() => setShowProfile(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 10 }}>
-            <AvatarBubble size={38} />
-            <div style={{ textAlign: "left" }}>
-              <p style={{ fontSize: 14, fontWeight: 800, color: "#111", margin: 0 }}>{customerName}</p>
-              <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>{t.chat_view_profile}</p>
+      <div className="max-w-2xl h-screen flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard/beskeder">
+              <ChevronLeft className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900" />
+            </Link>
+            <div className="flex items-center gap-2">
+              {otherUser.profile_picture_url ? (
+                <Image
+                  src={otherUser.profile_picture_url}
+                  alt={otherUser.username}
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded-full"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white text-sm font-semibold">
+                  {otherUser.first_name?.[0]}{otherUser.last_name?.[0]}
+                </div>
+              )}
+              <div>
+                <h2 className="font-semibold text-sm">{otherUser.username}</h2>
+                <p className="text-xs text-gray-500">Active now</p>
+              </div>
             </div>
-          </button>
-        </div>
-
-        {/* ── Chat area ── */}
-        <div style={{ flex: 1, background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
-            {loading ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-                <div style={{ width: 24, height: 24, border: "3px solid #E5E7EB", borderTopColor: "#DC2626", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-              </div>
-            ) : messages.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                <p style={{ fontSize: 13, color: "#9CA3AF" }}>{t.chat_no_messages}</p>
-              </div>
-            ) : (
-              grouped.map(({ date, msgs }) => (
-                <div key={date}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0" }}>
-                    <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
-                    <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, textTransform: "capitalize" }}>{date}</span>
-                    <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
-                  </div>
-                  {msgs.map((m, i) => {
-                    const isMe = m.sender_id === userId
-                    const showAvatar = !isMe && (i === 0 || msgs[i-1]?.sender_id !== m.sender_id)
-                    return (
-                      <div key={m.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", marginBottom: 4, alignItems: "flex-end", gap: 6 }}>
-                        {!isMe && (
-                          <div style={{ visibility: showAvatar ? "visible" : "hidden" }}>
-                            <AvatarBubble size={28} />
-                          </div>
-                        )}
-                        <div style={{ maxWidth: "72%" }}>
-                          <div style={{
-                            padding: "9px 13px",
-                            borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                            background: isMe ? "#DC2626" : "#F3F4F6",
-                            color: isMe ? "#fff" : "#111",
-                            fontSize: 14, lineHeight: 1.45,
-                          }}>
-                            {m.content}
-                          </div>
-                          <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isMe ? "right" : "left", display: "flex", alignItems: "center", gap: 4, justifyContent: isMe ? "flex-end" : "flex-start" }}>
-                            {fmt(m.created_at)}
-                            {isMe && (
-                              <span style={{ color: m.read_at ? "#10B981" : "#9CA3AF" }}>
-                                {m.read_at ? "✓✓" : "✓"}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))
-            )}
-            {/* Typing indicator */}
-            {otherTyping && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, marginBottom: 4 }}>
-                <AvatarBubble size={24} />
-                <div style={{ 
-                  padding: "8px 14px", 
-                  background: "#F3F4F6", 
-                  borderRadius: "18px 18px 18px 4px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4
-                }}>
-                  <div style={{ display: "flex", gap: 3 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0s" }} />
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0.2s" }} />
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0.4s" }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef} />
           </div>
 
-          {/* ── Input ── */}
-          <div style={{ padding: "10px 12px", borderTop: "1px solid #F3F4F6", display: "flex", gap: 8, alignItems: "center" }}>
+          <div className="relative">
+            <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <MoreVertical className="w-5 h-5 text-gray-600" />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <button
+                  onClick={blockUser}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-900"
+                >
+                  Block user
+                </button>
+                <button
+                  onClick={deleteConversation}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600"
+                >
+                  Delete chat
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message) => (
+            <div key={message.id} className={`flex ${message.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
+              {message.sender_id !== currentUser?.id && otherUser && (
+                <Image
+                  src={otherUser.profile_picture_url || ''}
+                  alt={otherUser.username}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full mr-2"
+                />
+              )}
+              <div
+                className={`max-w-xs px-4 py-2 rounded-lg ${
+                  message.sender_id === currentUser?.id
+                    ? 'bg-red-500 text-white'
+                    : 'bg-gray-100 text-black'
+                }`}
+              >
+                {message.image_url && (
+                  <img
+                    src={message.image_url}
+                    alt="message"
+                    className="max-w-sm rounded mb-2 cursor-pointer"
+                    onClick={() => window.open(message.image_url, '_blank')}
+                  />
+                )}
+                {message.content && <p className="text-sm break-words">{message.content}</p>}
+                <p
+                  className={`text-xs mt-1 ${
+                    message.sender_id === currentUser?.id ? 'text-red-100' : 'text-gray-500'
+                  }`}
+                >
+                  {new Date(message.created_at).toLocaleTimeString()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Input Area */}
+        <div className="border-t border-gray-200 p-4">
+          {previewUrl && (
+            <div className="mb-3 relative w-fit">
+              <img src={previewUrl} alt="preview" className="max-w-xs rounded" />
+              <button
+                onClick={() => {
+                  setSelectedImage(null);
+                  setPreviewUrl(null);
+                }}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          <div className="flex gap-2 items-end">
             <input
-              ref={inputRef}
-              type="text"
-              value={newMessage}
-              onChange={e => handleInputChange(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") sendMessage() }}
-              placeholder={t.chat_placeholder}
-              style={{ flex: 1, padding: "10px 16px", fontSize: 14, border: "1px solid #E5E7EB", borderRadius: 24, outline: "none", background: "#F9FAFB" }}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              id="image-input"
+              onChange={handleImageSelect}
             />
-            <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-              style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: newMessage.trim() ? "#DC2626" : "#E5E7EB", cursor: newMessage.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              {sending
-                ? <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-                : <Send size={16} color={newMessage.trim() ? "#fff" : "#9CA3AF"} />}
+            <label htmlFor="image-input" className="cursor-pointer text-gray-500 hover:text-gray-700">
+              <Paperclip className="w-5 h-5" />
+            </label>
+
+            <div className="relative">
+              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-500 hover:text-gray-700">
+                <Smile className="w-5 h-5" />
+              </button>
+              {showEmojiPicker && (
+                <div className="absolute bottom-8 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-2 grid grid-cols-5 gap-2">
+                  {emojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        addEmoji(emoji);
+                        setShowEmojiPicker(false);
+                      }}
+                      className="text-xl hover:bg-gray-100 p-1 rounded"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <input
+              type="text"
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+              placeholder="Write a message..."
+              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+
+            <button onClick={sendMessage} className="text-red-500 hover:text-red-600">
+              <Send className="w-5 h-5" />
             </button>
           </div>
         </div>
       </div>
-
-      {showProfile && customer && (
-        <CustomerProfileCard profile={customer} onClose={() => setShowProfile(false)} />
-      )}
-
-      <style>{`
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes bounce{
-          0%,60%,100%{transform:translateY(0)}
-          30%{transform:translateY(-4px)}
-        }
-      `}</style>
     </DashboardLayout>
-  )
+  );
 }
