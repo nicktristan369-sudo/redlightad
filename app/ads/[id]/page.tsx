@@ -451,11 +451,13 @@ export default function AdDetailPage() {
                   body_build={(ad as any).body_build}
                 />
                 {/* Map Me section - only show when exact address is enabled */}
-                {ad.show_exact_address && ad.exact_latitude && ad.exact_longitude && (
+                {(ad?.show_exact_address ?? false) && 
+                 typeof ad?.exact_latitude === 'number' && 
+                 typeof ad?.exact_longitude === 'number' && (
                   <MapMeSection
                     latitude={ad.exact_latitude}
                     longitude={ad.exact_longitude}
-                    profileImage={ad.profile_image ?? ad.images?.[0] ?? null}
+                    profileImage={ad?.profile_image ?? ad?.images?.[0] ?? null}
                   />
                 )}
                 <ContactSection contact={{

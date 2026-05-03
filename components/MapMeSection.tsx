@@ -3,12 +3,17 @@
 import { MapPin } from "lucide-react";
 
 interface Props {
-  latitude: number;
-  longitude: number;
-  profileImage: string | null;
+  latitude: number | null | undefined;
+  longitude: number | null | undefined;
+  profileImage: string | null | undefined;
 }
 
 export default function MapMeSection({ latitude, longitude, profileImage }: Props) {
+  // Guard: Don't render anything if coordinates are missing
+  if (!latitude || !longitude || typeof latitude !== 'number' || typeof longitude !== 'number') {
+    return null;
+  }
+
   const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
   const staticMapUrl = `/api/geo/static-map?lat=${latitude}&lng=${longitude}&zoom=15&size=600x250`;
 
@@ -32,6 +37,13 @@ export default function MapMeSection({ latitude, longitude, profileImage }: Prop
           src={staticMapUrl}
           alt="Location map"
           className="w-full h-[200px] object-cover rounded-xl transition-all group-hover:shadow-lg group-hover:opacity-95"
+          onError={(e) => {
+            // Hide the entire component if map fails to load
+            const target = e.target as HTMLImageElement;
+            if (target.parentElement?.parentElement) {
+              target.parentElement.parentElement.style.display = 'none';
+            }
+          }}
         />
 
         {/* Profile image pin overlay - centered on map */}
@@ -40,7 +52,7 @@ export default function MapMeSection({ latitude, longitude, profileImage }: Prop
           style={{
             top: "50%",
             left: "50%",
-            transform: "translate(-50%, -100%)", // Position so bottom of circle is at center
+            transform: "translate(-50%, -100%)",
           }}
         >
           {/* Pin stem */}
@@ -62,6 +74,11 @@ export default function MapMeSection({ latitude, longitude, profileImage }: Prop
                 src={profileImage}
                 alt="Profile"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to icon if profile image fails
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center">
