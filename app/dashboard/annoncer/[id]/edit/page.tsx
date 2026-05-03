@@ -92,6 +92,12 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   // location switch
   const [locationChangedAt, setLocationChangedAt] = useState<string | null>(null);
 
+  // exact address
+  const [showExactAddress, setShowExactAddress] = useState(false);
+  const [exactAddress, setExactAddress] = useState<string | null>(null);
+  const [exactLatitude, setExactLatitude] = useState<number | null>(null);
+  const [exactLongitude, setExactLongitude] = useState<number | null>(null);
+
   // travel schedule
   const [travelEntries, setTravelEntries] = useState<TravelEntry[]>([]);
   const [showTravelSchedule, setShowTravelSchedule] = useState(false);
@@ -281,6 +287,12 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
       if (listing.show_travel_schedule) setShowTravelSchedule(listing.show_travel_schedule);
       if (listing.show_reviews) setShowReviews(listing.show_reviews);
 
+      // Load exact address data
+      if (listing.show_exact_address) setShowExactAddress(listing.show_exact_address);
+      if (listing.exact_address) setExactAddress(listing.exact_address);
+      if (listing.exact_latitude) setExactLatitude(listing.exact_latitude);
+      if (listing.exact_longitude) setExactLongitude(listing.exact_longitude);
+
       // Fetch travel entries
       fetch(`/api/listings/${id}/travel`)
         .then(r => r.json())
@@ -390,6 +402,11 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         social_links:    Object.keys(socialLinks).length > 0 ? socialLinks : null,
         onlyfans_username: form.onlyfans_username || null,
         onlyfans_price_usd: form.onlyfans_price_usd ? parseFloat(form.onlyfans_price_usd) : null,
+        // Exact address fields
+        show_exact_address: showExactAddress,
+        exact_address: exactAddress,
+        exact_latitude: exactLatitude,
+        exact_longitude: exactLongitude,
         updated_at:      new Date().toISOString(),
         // Keep status as active — no re-approval needed for edits
       }).eq("id", id).eq("user_id", user.id);
@@ -968,6 +985,23 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         updateField("country", country);
                         updateField("location", city);
                         setLocationChangedAt(new Date().toISOString());
+                      }}
+                      exactAddress={exactAddress}
+                      exactLat={exactLatitude}
+                      exactLng={exactLongitude}
+                      onAddressChange={async (address, lat, lng) => {
+                        setExactAddress(address);
+                        setExactLatitude(lat);
+                        setExactLongitude(lng);
+                        setShowExactAddress(!!address);
+                        // Save to database immediately
+                        const supabase = createClient();
+                        await supabase.from("listings").update({
+                          show_exact_address: !!address,
+                          exact_address: address,
+                          exact_latitude: lat,
+                          exact_longitude: lng,
+                        }).eq("id", id);
                       }}
                     />
                   ) : (
