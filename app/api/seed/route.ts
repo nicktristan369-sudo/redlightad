@@ -8,48 +8,39 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    // Security: Only allow in development or with secret
     const secret = request.headers.get('x-seed-secret');
     if (secret !== 'dev-seed-key-12345') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create test users
     const testUserIds = [
       '550e8400-e29b-41d4-a716-446655440001',
       '550e8400-e29b-41d4-a716-446655440002'
     ];
 
-    // Insert users
-    const { error: userError } = await supabase
-      .from('users')
-      .insert([
-        {
-          id: testUserIds[0],
-          username: 'testuser1',
-          email: 'testuser1@example.com',
-          first_name: 'Test',
-          last_name: 'User1',
-          profile_picture_url: null
-        },
-        {
-          id: testUserIds[1],
-          username: 'testuser2',
-          email: 'testuser2@example.com',
-          first_name: 'Test',
-          last_name: 'User2',
-          profile_picture_url: null
-        }
-      ])
-      .select();
+    // Create users
+    await supabase.from('users').insert([
+      {
+        id: testUserIds[0],
+        username: 'testuser1',
+        email: 'testuser1@example.com',
+        first_name: 'Test',
+        last_name: 'User1'
+      },
+      {
+        id: testUserIds[1],
+        username: 'testuser2',
+        email: 'testuser2@example.com',
+        first_name: 'Test',
+        last_name: 'User2'
+      }
+    ]);
 
-    if (userError) {
-      console.log('User insert result:', userError);
-      // Continue even if users exist
-    }
+    // Try different conversation schema approaches
+    let conversationId: string | null = null;
 
-    // Create conversation
-    const { data: conversationData, error: convError } = await supabase
+    // Approach 1: Try new schema (user1_id, user2_id)
+    const { data: conv1, error: err1 } = await supabase
       .from('conversations')
       .insert([
         {
@@ -57,67 +48,89 @@ export async function POST(request: NextRequest) {
           user2_id: testUserIds[1]
         }
       ])
-      .select()
+      .select('id')
       .single();
 
-    if (convError) {
-      console.log('Conversation error:', convError);
+    if (conv1?.id) {
+      conversationId = conv1.id;
+    } else {
+      // Approach 2: Try old schema (provider_id, customer_id)
+      const { data: conv2, error: err2 } = await supabase
+        .from('conversations')
+        .insert([
+          {
+            provider_id: testUserIds[0],
+            customer_id: testUserIds[1]
+          }
+        ])
+        .select('id')
+        .single();
+
+      if (conv2?.id) {
+        conversationId = conv2.id;
+      }
+    }
+
+    if (!conversationId) {
       return NextResponse.json(
-        { error: 'Failed to create conversation', details: convError },
+        { error: 'Could not create conversation - unknown schema', errors: [err1, err2] },
         { status: 400 }
       );
     }
 
-    if (!conversationData) {
-      return NextResponse.json({ error: 'No conversation created' }, { status: 400 });
-    }
+    // Try to create messages - try different table names
+    let msgCreated = false;
 
-    // Create test messages
-    const { error: msgError } = await supabase
+    // Try new messages table
+    const { error: msgErr1 } = await supabase
       .from('messages')
       .insert([
         {
-          conversation_id: conversationData.id,
+          conversation_id: conversationId,
           sender_id: testUserIds[0],
           content: 'Hey! How are you?',
           created_at: new Date(Date.now() - 5 * 60000).toISOString()
         },
         {
-          conversation_id: conversationData.id,
+          conversation_id: conversationId,
           sender_id: testUserIds[1],
           content: 'I am doing great! Thanks for asking 😊',
           created_at: new Date(Date.now() - 3 * 60000).toISOString()
         }
       ]);
 
-    if (msgError) {
-      console.log('Message error:', msgError);
-      return NextResponse.json(
-        { error: 'Failed to create messages', details: msgError },
-        { status: 400 }
-      );
-    }
+    if (!msgErr1) {
+      msgCreated = true;
+    } else {
+      // Try old conversation_messages table
+      const { error: msgErr2 } = await supabase
+        .from('conversation_messages')
+        .insert([
+          {
+            conversation_id: conversationId,
+            sender_id: testUserIds[0],
+            message: 'Hey! How are you?',
+            created_at: new Date(Date.now() - 5 * 60000).toISOString()
+          },
+          {
+            conversation_id: conversationId,
+            sender_id: testUserIds[1],
+            message: 'I am doing great! Thanks for asking 😊',
+            created_at: new Date(Date.now() - 3 * 60000).toISOString()
+          }
+        ]);
 
-    // Get last message for conversation update
-    const { data: messages } = await supabase
-      .from('messages')
-      .select('id')
-      .eq('conversation_id', conversationData.id)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (messages && messages.length > 0) {
-      await supabase
-        .from('conversations')
-        .update({ last_message_id: messages[0].id, updated_at: new Date().toISOString() })
-        .eq('id', conversationData.id);
+      if (!msgErr2) {
+        msgCreated = true;
+      }
     }
 
     return NextResponse.json({
       success: true,
       message: 'Test data created successfully',
-      conversation_id: conversationData.id,
-      users: testUserIds
+      conversation_id: conversationId,
+      users: testUserIds,
+      messages_created: msgCreated
     });
   } catch (error) {
     console.error('Seed error:', error);
