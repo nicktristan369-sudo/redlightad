@@ -47,31 +47,36 @@ export default function BeskederPage() {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         
-        if (authError || !user) {
-          router.replace('/login');
-          return;
-        }
+        if (!user) return; // DashboardLayout already handles auth
 
+        // Try to fetch user data, but don't fail if not found
         const { data } = await supabase
           .from('users')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (data) {
           setCurrentUser(data);
         } else {
-          router.replace('/login');
+          // User logged in but not in users table - create temp profile
+          const tempUser: User = {
+            id: user.id,
+            username: user.email?.split('@')[0] || 'User',
+            first_name: user.user_metadata?.first_name || 'User',
+            last_name: user.user_metadata?.last_name || '',
+            profile_picture_url: user.user_metadata?.avatar_url
+          };
+          setCurrentUser(tempUser);
         }
       } catch (error) {
-        console.error('Auth error:', error);
-        router.replace('/login');
+        console.error('Error loading user:', error);
       }
     };
     getUser();
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -127,11 +132,12 @@ export default function BeskederPage() {
     );
   });
 
-  if (!currentUser && !loading) {
+  // Show loading while fetching user data
+  if (!currentUser) {
     return (
       <DashboardLayout>
-        <div className="text-center py-20">
-          <p className="text-gray-500">Redirecting to login...</p>
+        <div className="flex justify-center py-20">
+          <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
         </div>
       </DashboardLayout>
     );

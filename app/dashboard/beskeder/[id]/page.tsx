@@ -61,31 +61,36 @@ export default function ChatPage() {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         
-        if (authError || !user) {
-          router.replace('/login');
-          return;
-        }
+        if (!user) return; // DashboardLayout handles auth
 
+        // Try to fetch user data, but don't fail if not found
         const { data } = await supabase
           .from('users')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (data) {
           setCurrentUser(data);
         } else {
-          router.replace('/login');
+          // Create temp profile from auth data
+          const tempUser: User = {
+            id: user.id,
+            username: user.email?.split('@')[0] || 'User',
+            first_name: user.user_metadata?.first_name || 'User',
+            last_name: user.user_metadata?.last_name || '',
+            profile_picture_url: user.user_metadata?.avatar_url || ''
+          };
+          setCurrentUser(tempUser);
         }
       } catch (error) {
-        console.error('Auth error:', error);
-        router.replace('/login');
+        console.error('Error loading user:', error);
       }
     };
     getUser();
-  }, [router]);
+  }, []);
 
   // Fetch conversation and messages
   useEffect(() => {
@@ -264,7 +269,9 @@ export default function ChatPage() {
   if (!currentUser) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-96">Redirecting...</div>
+        <div className="flex items-center justify-center h-96">
+          <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+        </div>
       </DashboardLayout>
     );
   }
