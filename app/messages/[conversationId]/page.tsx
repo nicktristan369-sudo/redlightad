@@ -6,8 +6,6 @@ import { createClient } from '@supabase/supabase-js';
 import { ChevronLeft, MoreVertical, Paperclip, Smile, Send } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import EmojiPicker from '@emoji-mart/react';
-import data from '@emoji-mart/data';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -198,8 +196,10 @@ export default function ChatPage() {
     }
   };
 
-  const addEmoji = (emoji: any) => {
-    setMessageInput(prev => prev + emoji.native);
+  const emojis = ['😀', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨', '😢', '😡'];
+
+  const addEmoji = (emoji: string) => {
+    setMessageInput(prev => prev + emoji);
   };
 
   if (loading) {
@@ -334,8 +334,19 @@ export default function ChatPage() {
               <Smile className="w-5 h-5" />
             </button>
             {showEmojiPicker && (
-              <div className="absolute bottom-8 left-0 z-50">
-                <EmojiPicker data={data} onEmojiSelect={addEmoji} />
+              <div className="absolute bottom-8 left-0 z-50 bg-white border rounded-lg shadow-lg p-2 grid grid-cols-5 gap-2">
+                {emojis.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      addEmoji(emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                    className="text-xl hover:bg-gray-100 p-1 rounded"
+                  >
+                    {emoji}
+                  </button>
+                ))}
               </div>
             )}
           </div>
