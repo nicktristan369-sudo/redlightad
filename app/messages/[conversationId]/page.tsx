@@ -52,6 +52,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [otherUser, setOtherUser] = useState<User | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [otherUserOnline, setOtherUserOnline] = useState(false);
+  const [lastSeen, setLastSeen] = useState<string | null>(null);
 
   // Get current user
   useEffect(() => {
@@ -114,12 +116,14 @@ export default function ChatPage() {
         setMessages(data);
         // Mark as read
         if (currentUser) {
-          await supabase
-            .from('messages')
-            .update({ read_at: new Date().toISOString() })
-            .eq('conversation_id', conversationId)
-            .neq('sender_id', currentUser.id)
-            .is('read_at', true);
+          await fetch('/api/messages/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              user_id: currentUser.id
+            })
+          });
         }
       }
     };
@@ -138,6 +142,42 @@ export default function ChatPage() {
       subscription.unsubscribe();
     };
   }, [conversationId, currentUser?.id]);
+
+  // Track online status
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    // Update own status
+    const updateStatus = async () => {
+      await fetch('/api/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.id })
+      });
+    };
+
+    updateStatus();
+    const interval = setInterval(updateStatus, 30000); // Every 30s
+
+    return () => clearInterval(interval);
+  }, [currentUser?.id]);
+
+  // Check other user status
+  useEffect(() => {
+    if (!otherUser?.id) return;
+
+    const checkStatus = async () => {
+      const res = await fetch(`/api/status?user_id=${otherUser.id}`);
+      const data = await res.json();
+      setOtherUserOnline(data.online);
+      setLastSeen(data.last_seen);
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 10000); // Every 10s
+
+    return () => clearInterval(interval);
+  }, [otherUser?.id]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -290,7 +330,15 @@ export default function ChatPage() {
             )}
             <div>
               <h2 className="font-semibold">{otherUser.username}</h2>
-              <p className="text-xs text-gray-500">Active now</p>
+              <p className="text-xs text-gray-500">
+                {otherUserOnline ? (
+                  <span className="text-green-500">● Active now</span>
+                ) : lastSeen ? (
+                  <>Last seen {new Date(lastSeen).toLocaleTimeString()}</>
+                ) : (
+                  'Offline'
+                )}
+              </p>
             </div>
           </div>
         </div>
@@ -348,9 +396,12 @@ export default function ChatPage() {
                 />
               )}
               {message.content && <p className="text-sm break-words">{message.content}</p>}
-              <p className={`text-xs ${message.sender_id === currentUser?.id ? 'text-red-100' : 'text-gray-500'}`}>
-                {new Date(message.created_at).toLocaleTimeString()}
-              </p>
+              <div className={`text-xs flex items-center gap-1 ${message.sender_id === currentUser?.id ? 'text-red-100' : 'text-gray-500'}`}>
+                <span>{new Date(message.created_at).toLocaleTimeString()}</span>
+                {message.sender_id === currentUser?.id && (
+                  <span>{message.read_at ? '✓✓' : '✓'}</span>
+                )}
+              </div>
             </div>
           </div>
         ))}
