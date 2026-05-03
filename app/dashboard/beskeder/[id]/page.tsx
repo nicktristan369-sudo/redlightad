@@ -60,20 +60,28 @@ export default function ChatPage() {
   // Get current user
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          router.replace('/login');
+          return;
+        }
+
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (data) {
+          setCurrentUser(data);
+        } else {
+          router.replace('/login');
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
         router.replace('/login');
-        return;
-      }
-
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (data) {
-        setCurrentUser(data);
       }
     };
     getUser();
@@ -252,6 +260,14 @@ export default function ChatPage() {
       console.error('Error blocking user:', error);
     }
   };
+
+  if (!currentUser) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">Redirecting...</div>
+      </DashboardLayout>
+    );
+  }
 
   if (loading) {
     return (

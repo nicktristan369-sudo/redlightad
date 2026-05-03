@@ -46,20 +46,28 @@ export default function BeskederPage() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          router.replace('/login');
+          return;
+        }
+
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (data) {
+          setCurrentUser(data);
+        } else {
+          router.replace('/login');
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
         router.replace('/login');
-        return;
-      }
-
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (data) {
-        setCurrentUser(data);
       }
     };
     getUser();
@@ -118,6 +126,16 @@ export default function BeskederPage() {
       other?.first_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
+
+  if (!currentUser && !loading) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-20">
+          <p className="text-gray-500">Redirecting to login...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
