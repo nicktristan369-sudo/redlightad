@@ -898,15 +898,15 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                       </label>
                     </div>
                     {[
-                      { app: "Telegram", field: "telegram", toggle: "contact_telegram", icon: "✈️" },
-                      { app: "Viber",    field: "viber",    toggle: "contact_viber",    icon: "📳" },
-                      { app: "WeChat",   field: "wechat",   toggle: "contact_wechat",   icon: "💚" },
-                      { app: "LINE",     field: "line_app", toggle: "contact_line",     icon: "🟢" },
-                      { app: "Signal",   field: "signal",   toggle: "contact_signal",   icon: "🔒" },
-                      { app: "Snapchat", field: "snapchat", toggle: "", icon: "👻" },
+                      { app: "Telegram", field: "telegram", toggle: "contact_telegram", logo: "/logos/telegram.svg" },
+                      { app: "Viber",    field: "viber",    toggle: "contact_viber",    logo: "/logos/viber.svg" },
+                      { app: "WeChat",   field: "wechat",   toggle: "contact_wechat",   logo: "/logos/wechat.svg" },
+                      { app: "LINE",     field: "line_app", toggle: "contact_line",     logo: "/logos/line.svg" },
+                      { app: "Signal",   field: "signal",   toggle: "contact_signal",   logo: "/logos/signal.svg" },
+                      { app: "Snapchat", field: "snapchat", toggle: "", logo: "/logos/snapchat.svg" },
                     ].map(c => (
                       <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                        <span className="text-base">{c.icon}</span>
+                        <img src={c.logo} alt={c.app} className="w-6 h-6 rounded flex-shrink-0" />
                         <span className="w-16 text-[12px] text-gray-400 flex-shrink-0">{c.app}</span>
                         <input type="text"
                           value={form[c.field as keyof typeof form] as string}
