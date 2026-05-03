@@ -13,10 +13,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const testUserIds = [
-      '550e8400-e29b-41d4-a716-446655440001',
-      '550e8400-e29b-41d4-a716-446655440002'
-    ];
+    // Get user IDs from headers or use defaults
+    const userId1 = request.headers.get('x-user-id-1') || '38112176-e45d-43bb-a442-c177291e759b';
+    const userId2 = request.headers.get('x-user-id-2') || '4fd0c8e9-073d-4c37-bb4f-cd5df7315114';
+
+    const testUserIds = [userId1, userId2];
 
     // Create users
     await supabase.from('users').insert([
@@ -68,14 +69,12 @@ export async function POST(request: NextRequest) {
 
       if (conv2?.id) {
         conversationId = conv2.id;
+      } else {
+        return NextResponse.json(
+          { error: 'Could not create conversation - unknown schema', err1, err2 },
+          { status: 400 }
+        );
       }
-    }
-
-    if (!conversationId) {
-      return NextResponse.json(
-        { error: 'Could not create conversation - unknown schema', errors: [err1, err2] },
-        { status: 400 }
-      );
     }
 
     // Try to create messages - try different table names
