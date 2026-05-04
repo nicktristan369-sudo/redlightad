@@ -9,8 +9,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-const API_BASE = "http://76.13.154.9:3001"
-const WS_URL = "ws://76.13.154.9:3001/ws"
+const API_BASE = "/api/messenger"
+// All backend routes start with /api/ which maps to /api/messenger/api/ via proxy
+const WS_URL = "wss://redlightad.com/api/messenger/ws"  // WebSocket needs direct connection for now
+const DIRECT_WS_URL = "ws://76.13.154.9:3001/ws"  // Fallback
 
 // Types
 interface Account {
@@ -150,54 +152,74 @@ export default function MessengerHubPage() {
     init()
   }, [loadAccounts, loadRules])
 
-  // WebSocket
+  // WebSocket with fallback to polling
   useEffect(() => {
-    const connect = () => {
-      const ws = new WebSocket(WS_URL)
-      ws.onopen = () => {
-        console.log("[WS] Connected")
-        if (accounts.length > 0) {
-          ws.send(JSON.stringify({ type: "subscribe", accountIds: accounts.map(a => a.id) }))
-        }
+    let ws: WebSocket | null = null
+    let pollInterval: NodeJS.Timeout | null = null
+    let wsConnected = false
+
+    const handleEvent = (data: Record<string, unknown>) => {
+      switch (data.type) {
+        case "qr_code":
+          setQrImage(data.qrImage as string)
+          setShowQr(true)
+          break
+        case "account_ready":
+          loadAccounts()
+          setShowQr(false)
+          setShowTelegramCode(false)
+          break
+        case "account_disconnected":
+          loadAccounts()
+          break
+        case "new_message":
+          if (data.conversationId === selectedConvo) loadMessages(data.conversationId as string)
+          if (selectedAccount) loadConversations(selectedAccount)
+          break
+        case "message_status":
+          setMessages(prev => prev.map(m => m.id === data.messageId ? { ...m, status: data.status as string } : m))
+          break
+        case "auto_reply_sent":
+          if (data.conversationId === selectedConvo) loadMessages(data.conversationId as string)
+          break
+        case "telegram_code_required":
+          setPendingTelegramAccount(data.accountId as string)
+          setShowTelegramCode(true)
+          break
       }
-      ws.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data)
-          switch (data.type) {
-            case "qr_code":
-              setQrImage(data.qrImage)
-              setShowQr(true)
-              break
-            case "account_ready":
-              loadAccounts()
-              setShowQr(false)
-              setShowTelegramCode(false)
-              break
-            case "account_disconnected":
-              loadAccounts()
-              break
-            case "new_message":
-              if (data.conversationId === selectedConvo) loadMessages(data.conversationId)
-              if (selectedAccount) loadConversations(selectedAccount)
-              break
-            case "message_status":
-              setMessages(prev => prev.map(m => m.id === data.messageId ? { ...m, status: data.status } : m))
-              break
-            case "auto_reply_sent":
-              if (data.conversationId === selectedConvo) loadMessages(data.conversationId)
-              break
-            case "telegram_code_required":
-              setPendingTelegramAccount(data.accountId)
-              setShowTelegramCode(true)
-              break
-          }
-        } catch {}
-      }
-      ws.onclose = () => setTimeout(connect, 3000)
-      wsRef.current = ws
     }
-    connect()
-    return () => { wsRef.current?.close() }
+
+    const connectWs = () => {
+      try {
+        ws = new WebSocket(DIRECT_WS_URL)
+        ws.onopen = () => {
+          console.log("[WS] Connected")
+          wsConnected = true
+          if (accounts.length > 0) ws?.send(JSON.stringify({ type: "subscribe", accountIds: accounts.map(a => a.id) }))
+        }
+        ws.onmessage = (e) => { try { handleEvent(JSON.parse(e.data)) } catch {} }
+        ws.onerror = () => { wsConnected = false }
+        ws.onclose = () => { wsConnected = false; setTimeout(connectWs, 5000) }
+        wsRef.current = ws
+      } catch {
+        // WebSocket blocked (mixed content) — use polling
+        wsConnected = false
+      }
+    }
+
+    // Polling fallback — refresh accounts + conversations periodically
+    pollInterval = setInterval(() => {
+      loadAccounts()
+      if (selectedAccount) loadConversations(selectedAccount)
+      if (selectedConvo) loadMessages(selectedConvo)
+    }, 5000)
+
+    connectWs()
+
+    return () => {
+      ws?.close()
+      if (pollInterval) clearInterval(pollInterval)
+    }
   }, [accounts.length])
 
   // When account selected
@@ -284,12 +306,13 @@ export default function MessengerHubPage() {
 
   // Submit Telegram code
   const submitTelegramCode = () => {
-    if (wsRef.current && pendingTelegramAccount && telegramCode) {
-      wsRef.current.send(JSON.stringify({
-        type: "telegram_code",
-        accountId: pendingTelegramAccount,
-        code: telegramCode,
-      }))
+    if (pendingTelegramAccount && telegramCode) {
+      // Try WebSocket first, then API
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "telegram_code", accountId: pendingTelegramAccount, code: telegramCode }))
+      } else {
+        api(`/accounts/${pendingTelegramAccount}/code`, { method: "POST", body: JSON.stringify({ code: telegramCode }) }).catch(console.error)
+      }
       setTelegramCode("")
       setShowTelegramCode(false)
     }
