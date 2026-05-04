@@ -277,9 +277,19 @@ export default function MessengerHubPage() {
       console.log("[MessengerHub] Connecting account:", acc.id)
       const res = await api(`/api/accounts/${acc.id}/connect`, { method: "POST" })
       console.log("[MessengerHub] Connect response:", res)
-      if (platform === "whatsapp" && res.qrImage) {
-        setQrImage(res.qrImage)
-        setShowQr(true)
+      if (platform === "whatsapp") {
+        if (res.qrImage || res.dataUrl) {
+          setQrImage(res.dataUrl || res.qrImage)
+          setShowQr(true)
+        } else {
+          // QR may take a few seconds to generate
+          setTimeout(async () => {
+            try {
+              const qrRes = await api(`/api/accounts/${acc.id}/qr`)
+              if (qrRes.dataUrl) { setQrImage(qrRes.dataUrl); setShowQr(true) }
+            } catch {}
+          }, 5000)
+        }
       }
       await loadAccounts()
     } catch (e) { console.error("[MessengerHub] Error:", e); alert("Connection failed: " + (e as Error).message) }
@@ -288,8 +298,15 @@ export default function MessengerHubPage() {
   // Connect/disconnect
   const connectAccount = async (id: string) => {
     const res = await api(`/api/accounts/${id}/connect`, { method: "POST" })
-    if (res.qrImage) { setQrImage(res.qrImage); setShowQr(true) }
+    if (res.qrImage || res.dataUrl) { setQrImage(res.dataUrl || res.qrImage); setShowQr(true) }
     loadAccounts()
+    // Poll for QR if not received immediately
+    setTimeout(async () => {
+      try {
+        const qrRes = await api(`/api/accounts/${id}/qr`)
+        if (qrRes.dataUrl) { setQrImage(qrRes.dataUrl); setShowQr(true) }
+      } catch {}
+    }, 3000)
   }
 
   const disconnectAccount = async (id: string) => {
