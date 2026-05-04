@@ -55,9 +55,8 @@ export async function GET(request: NextRequest) {
       .in('id', otherUserIds);
 
     // Fetch listing display names for providers
-    const providerIds = conversations.filter(c => c.provider_id !== userId).map(c => c.provider_id);
-    const { data: listings } = providerIds.length > 0
-      ? await supabase.from('listings').select('user_id, display_name').in('user_id', providerIds)
+    const { data: listings } = otherUserIds.length > 0
+      ? await supabase.from('listings').select('user_id, display_name, profile_image').in('user_id', otherUserIds)
       : { data: [] };
 
     // Build display name map
@@ -69,9 +68,10 @@ export async function GET(request: NextRequest) {
       });
     }
     for (const l of listings || []) {
-      if (l.display_name) {
-        const existing = nameMap.get(l.user_id);
-        if (existing) existing.display_name = l.display_name;
+      const existing = nameMap.get(l.user_id);
+      if (existing) {
+        if (l.display_name) existing.display_name = l.display_name;
+        if (l.profile_image && !existing.avatar_url) existing.avatar_url = l.profile_image;
       }
     }
 

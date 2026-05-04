@@ -46,24 +46,15 @@ export async function GET(request: NextRequest) {
         let displayName = profile?.full_name || profile?.username || profile?.email || 'User';
         let avatarUrl = profile?.avatar_url || null;
 
-        if (otherId === conv.provider_id) {
-          const { data: listing } = await supabase
-            .from('listings')
-            .select('display_name, title')
-            .eq('user_id', otherId)
-            .limit(1)
-            .maybeSingle();
-          if (listing?.display_name) displayName = listing.display_name;
-        }
-
-        // Get last message from messages table
-        const { data: lastMsg } = await supabase
-          .from('messages')
-          .select('content, created_at, sender_id')
-          .eq('conversation_id', conv.id)
-          .order('created_at', { ascending: false })
+        // Get listing info (display name + profile image)
+        const { data: listing } = await supabase
+          .from('listings')
+          .select('display_name, title, profile_image')
+          .eq('user_id', otherId)
           .limit(1)
           .maybeSingle();
+        if (listing?.display_name) displayName = listing.display_name;
+        if (listing?.profile_image && !avatarUrl) avatarUrl = listing.profile_image;
 
         // Get unread count
         const { count: unreadCount } = await supabase
@@ -73,17 +64,37 @@ export async function GET(request: NextRequest) {
           .neq('sender_id', userId)
           .is('read_at', null);
 
+        // Check online status
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const { data: session } = await supabase
+          .from('user_sessions')
+          .select('last_seen')
+          .eq('user_id', otherId)
+          .maybeSingle();
+        const isOnline = session?.last_seen ? new Date(session.last_seen) > new Date(fiveMinAgo) : false;
+
+        // Get last message read status
+        const { data: lastMsg } = await supabase
+          .from('messages')
+          .select('id, content, created_at, sender_id, read_at')
+          .eq('conversation_id', conv.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         return {
           ...conv,
           other_user: {
             id: otherId,
             display_name: displayName,
             avatar_url: avatarUrl,
+            is_online: isOnline,
           },
           last_message: lastMsg ? {
             content: lastMsg.content,
             created_at: lastMsg.created_at,
             sender_id: lastMsg.sender_id,
+            read_at: lastMsg.read_at,
           } : conv.last_message ? {
             content: conv.last_message,
             created_at: conv.last_message_at,

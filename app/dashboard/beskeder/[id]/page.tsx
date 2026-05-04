@@ -9,6 +9,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
+const SUGGESTION_NONE = 'none' as const;
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -58,6 +59,7 @@ export default function ChatPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [otherOnline, setOtherOnline] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [clearedBefore, setClearedBefore] = useState<string | null>(null);
@@ -76,8 +78,11 @@ export default function ChatPage() {
         const otherId = currentUserId === conv.provider_id ? conv.customer_id : conv.provider_id;
         const { data: profile } = await s.from('profiles').select('id, full_name, avatar_url, email, username').eq('id', otherId).maybeSingle();
         let dn = profile?.full_name || profile?.username || profile?.email || 'User';
-        if (otherId === conv.provider_id) { const { data: l } = await s.from('listings').select('display_name').eq('user_id', otherId).limit(1).maybeSingle(); if (l?.display_name) dn = l.display_name; }
-        setOtherUser({ id: otherId, display_name: dn, avatar_url: profile?.avatar_url || null });
+        let avatarUrl = profile?.avatar_url || null;
+        const { data: listing } = await s.from('listings').select('display_name, profile_image').eq('user_id', otherId).limit(1).maybeSingle();
+        if (listing?.display_name) dn = listing.display_name;
+        if (listing?.profile_image && !avatarUrl) avatarUrl = listing.profile_image;
+        setOtherUser({ id: otherId, display_name: dn, avatar_url: avatarUrl });
       } catch (e) { console.error(e); }
       setLoading(false);
     }; f();
@@ -102,6 +107,13 @@ export default function ChatPage() {
     ch.on('broadcast', { event: 'typing' }, (p) => { if (p?.payload?.user_id !== currentUserId) { setIsTyping(true); setTimeout(() => setIsTyping(false), 3000); } }).subscribe();
     return () => { s.removeChannel(ch); };
   }, [conversationId, currentUserId]);
+
+  // Check other user online status
+  useEffect(() => {
+    if (!otherUser?.id) return;
+    const check = async () => { try { const r=await fetch(`/api/status?user_id=${otherUser.id}`); if(r.ok){const d=await r.json();setOtherOnline(d?.online??false);} } catch{setOtherOnline(false);} };
+    check(); const i=setInterval(check,15000); return ()=>clearInterval(i);
+  }, [otherUser?.id]);
 
   const sendTypingIndicator = useCallback(() => {
     if (!conversationId || !currentUserId || typingTimeoutRef.current) return;
@@ -153,10 +165,13 @@ export default function ChatPage() {
           <div className="flex items-center gap-3">
             <Link href="/dashboard/beskeder"><ChevronLeft className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900" /></Link>
             <div className="flex items-center gap-2">
-              {otherUser.avatar_url ? <img src={otherUser.avatar_url} alt={otherUser.display_name} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>{getInitials(otherUser.display_name)}</div>}
+              <div className="relative">
+                {otherUser.avatar_url ? <img src={otherUser.avatar_url} alt={otherUser.display_name} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>{getInitials(otherUser.display_name)}</div>}
+                {otherOnline && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"/>}
+              </div>
               <div>
                 <div className="flex items-center gap-1.5"><h2 className="font-semibold text-sm">{otherUser.display_name}</h2>{isMuted && <BellOff className="w-3.5 h-3.5 text-gray-400" />}</div>
-                {isTyping && <p className="text-xs text-green-500">typing...</p>}
+                {isTyping ? <p className="text-xs text-green-500">typing...</p> : otherOnline ? <p className="text-xs text-green-500">Online</p> : null}
               </div>
             </div>
           </div>
@@ -208,7 +223,7 @@ export default function ChatPage() {
           <div className="flex gap-2 items-end">
             <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" id="dash-image-input" onChange={handleImageSelect} />
             <label htmlFor="dash-image-input" className="cursor-pointer text-gray-500 hover:text-gray-700 flex-shrink-0"><Paperclip className="w-5 h-5" /></label>
-            <div className="relative flex-shrink-0"><button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-500 hover:text-gray-700"><Smile className="w-5 h-5" /></button>{showEmojiPicker && <div className="absolute bottom-10 left-0 z-50"><EmojiPicker onEmojiClick={onEmojiClick} width={320} height={400} /></div>}</div>
+            <div className="relative flex-shrink-0"><button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-500 hover:text-gray-700"><Smile className="w-5 h-5" /></button>{showEmojiPicker && <div className="absolute bottom-10 left-0 z-50"><EmojiPicker onEmojiClick={onEmojiClick} width={320} height={400} suggestedEmojisMode={SUGGESTION_NONE as any} searchPlaceholder="Search emoji..."/></div>}</div>
             <input type="text" value={messageInput} onChange={(e) => { setMessageInput(e.target.value); sendTypingIndicator(); }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}} placeholder="Write a message..." className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
             <button onClick={sendMessage} disabled={uploading} className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0">{uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}</button>
           </div>
