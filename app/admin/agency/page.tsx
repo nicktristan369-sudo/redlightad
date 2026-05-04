@@ -8,6 +8,7 @@ import {
   Wifi, WifiOff, Battery, BatteryLow, X, ChevronRight, Bot, Hand,
   Volume2, VolumeX, Trash2, Edit, Filter, RefreshCw, Ban, Paperclip, Image
 } from "lucide-react"
+import Link from "next/link"
 
 // Types
 interface Phone {
@@ -343,6 +344,7 @@ export default function AgencyPage() {
             <Smartphone className="w-5 h-5" />
           </div>
           <h1 className="font-bold text-lg">Agency SMS Management</h1>
+          <Link href="/admin/agency/messenger" className="ml-2 px-3 py-1 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 rounded text-xs font-medium transition">💬 MessengerHub</Link>
           <span className="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400">
             {phones.length} phones • {phones.filter(p => p.is_online).length} online
           </span>
