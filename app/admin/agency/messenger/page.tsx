@@ -278,18 +278,16 @@ export default function MessengerHubPage() {
       const res = await api(`/api/accounts/${acc.id}/connect`, { method: "POST" })
       console.log("[MessengerHub] Connect response:", res)
       if (platform === "whatsapp") {
-        if (res.qrImage || res.dataUrl) {
-          setQrImage(res.dataUrl || res.qrImage)
-          setShowQr(true)
-        } else {
-          // QR may take a few seconds to generate
-          setTimeout(async () => {
-            try {
-              const qrRes = await api(`/api/accounts/${acc.id}/qr`)
-              if (qrRes.dataUrl) { setQrImage(qrRes.dataUrl); setShowQr(true) }
-            } catch {}
-          }, 5000)
+        // Poll for QR code
+        const pollQr = async (attempts: number) => {
+          if (attempts <= 0) return
+          try {
+            const qrRes = await api(`/api/accounts/${acc.id}/qr`)
+            if (qrRes.dataUrl) { setQrImage(qrRes.dataUrl); setShowQr(true); return }
+          } catch {}
+          setTimeout(() => pollQr(attempts - 1), 2000)
         }
+        pollQr(15)
       }
       await loadAccounts()
     } catch (e) { console.error("[MessengerHub] Error:", e); alert("Connection failed: " + (e as Error).message) }
@@ -297,16 +295,24 @@ export default function MessengerHubPage() {
 
   // Connect/disconnect
   const connectAccount = async (id: string) => {
-    const res = await api(`/api/accounts/${id}/connect`, { method: "POST" })
-    if (res.qrImage || res.dataUrl) { setQrImage(res.dataUrl || res.qrImage); setShowQr(true) }
-    loadAccounts()
-    // Poll for QR if not received immediately
-    setTimeout(async () => {
-      try {
-        const qrRes = await api(`/api/accounts/${id}/qr`)
-        if (qrRes.dataUrl) { setQrImage(qrRes.dataUrl); setShowQr(true) }
-      } catch {}
-    }, 3000)
+    try {
+      await api(`/api/accounts/${id}/connect`, { method: "POST" })
+      loadAccounts()
+      // Poll for QR code (takes a few seconds to generate)
+      const pollQr = async (attempts: number) => {
+        if (attempts <= 0) return
+        try {
+          const qrRes = await api(`/api/accounts/${id}/qr`)
+          if (qrRes.dataUrl) {
+            setQrImage(qrRes.dataUrl)
+            setShowQr(true)
+            return
+          }
+        } catch {}
+        setTimeout(() => pollQr(attempts - 1), 2000)
+      }
+      pollQr(15) // Try for 30 seconds
+    } catch (e) { console.error(e) }
   }
 
   const disconnectAccount = async (id: string) => {
@@ -617,11 +623,22 @@ export default function MessengerHubPage() {
       {showQr && qrImage && (
         <Modal onClose={() => setShowQr(false)}>
           <div className="text-center">
-            <QrCode className="w-8 h-8 mx-auto mb-3 text-green-400" />
-            <h3 className="text-lg font-bold mb-1">Scan QR Code</h3>
-            <p className="text-sm text-gray-400 mb-4">Open WhatsApp on your phone → Linked Devices → Scan this code</p>
-            <img src={qrImage} alt="QR Code" className="mx-auto rounded-lg" style={{ width: 280, height: 280 }} />
-            <p className="text-xs text-gray-500 mt-3">QR code expires in 60 seconds</p>
+            <div className="text-4xl mb-3">💬</div>
+            <h3 className="text-lg font-bold mb-1">Link WhatsApp</h3>
+            <div className="text-sm text-gray-400 mb-4 text-left space-y-1">
+              <p>1. Open <strong className="text-white">WhatsApp</strong> on your phone</p>
+              <p>2. Go to <strong className="text-white">Settings → Linked Devices</strong></p>
+              <p>3. Tap <strong className="text-white">Link a Device</strong></p>
+              <p>4. Scan this QR code with WhatsApp</p>
+            </div>
+            <div className="bg-white p-3 rounded-xl inline-block">
+              <img src={qrImage} alt="QR Code" style={{ width: 260, height: 260 }} />
+            </div>
+            <p className="text-xs text-gray-500 mt-3">QR code refreshes automatically</p>
+            <button onClick={() => {
+              const acc = accounts.find(a => a.status === 'connecting' || a.status === 'qr_pending')
+              if (acc) connectAccount(acc.id)
+            }} className="mt-3 text-xs text-blue-400 hover:text-blue-300">↻ Refresh QR Code</button>
           </div>
         </Modal>
       )}
@@ -682,11 +699,25 @@ function AddAccountModal({ onClose, onAdd }: { onClose: () => void; onAdd: (plat
           ✈️ Telegram
         </button>
       </div>
-      <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+45 XX XX XX XX"
-        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-gray-600 mb-4" />
+      {platform === "whatsapp" ? (
+        <div className="text-center mb-4">
+          <p className="text-sm text-gray-400 mb-2">Enter a label for this WhatsApp account</p>
+          <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Account name or phone number"
+            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-gray-600" />
+          <p className="text-xs text-gray-500 mt-2">After adding, click Connect to get a QR code to scan with WhatsApp</p>
+        </div>
+      ) : (
+        <div className="mb-4">
+          <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+45 XX XX XX XX"
+            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-gray-600" />
+        </div>
+      )}
       <div className="flex gap-2">
         <button onClick={onClose} className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition">Cancel</button>
-        <button onClick={() => phone && onAdd(platform, phone)} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition">Connect</button>
+        <button onClick={() => {
+          const label = phone || (platform === 'whatsapp' ? 'WhatsApp Account' : '')
+          if (label) onAdd(platform, label)
+        }} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition">Add Account</button>
       </div>
     </Modal>
   )
