@@ -224,7 +224,7 @@ export default function MessagesPage() {
                   {/* ⋮ Menu button */}
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); const rect = (e.target as HTMLElement).getBoundingClientRect(); setConvMenu({ convId: conv.id, x: rect.right - 192, y: rect.bottom + 4 }); }}
-                    className="opacity-0 group-hover:opacity-100 transition flex-shrink-0 p-1 hover:bg-gray-200 rounded"
+                    className="flex-shrink-0 p-1.5 hover:bg-gray-200 rounded-full text-gray-400 hover:text-gray-600 transition"
                   >
                     <MoreVertical className="w-4 h-4 text-gray-400" />
                   </button>
