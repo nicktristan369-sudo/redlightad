@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { ChevronLeft, MoreVertical, Paperclip, Smile, Send, X, Loader2, BellOff, Bell, Reply, Pin, PinOff } from 'lucide-react';
 import Link from 'next/link';
@@ -27,7 +27,9 @@ function setPinnedMessages(convId: string, pins: PinnedMsg[]) { localStorage.set
 
 export default function ChatPage() {
   const params = useParams();
+  const searchParamsObj = useSearchParams();
   const conversationId = params?.conversationId as string;
+  const highlightId = searchParamsObj?.get('highlight') || null;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,6 +53,7 @@ export default function ChatPage() {
   const [pinnedMsgs, setPinnedMsgs] = useState<PinnedMsg[]>([]);
   const [contextMenu, setContextMenu] = useState<{ msg: Message; x: number; y: number } | null>(null);
   const [showPinnedPanel, setShowPinnedPanel] = useState(false);
+  const [highlightedMsgId, setHighlightedMsgId] = useState<string | null>(null);
 
   // Load local state
   useEffect(() => {
@@ -62,7 +65,19 @@ export default function ChatPage() {
     } catch {}
   }, [conversationId]);
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
+  // Scroll to highlighted message or bottom
+  useEffect(() => {
+    if (highlightId && messages.length > 0 && !highlightedMsgId) {
+      const el = document.getElementById(`msg-${highlightId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightedMsgId(highlightId);
+        setTimeout(() => setHighlightedMsgId(null), 3000);
+        return;
+      }
+    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping, highlightId, highlightedMsgId]);
 
   useEffect(() => { const g = async () => { try { const s=createClient(); const{data:{user}}=await s.auth.getUser(); if(user?.id) setCurrentUserId(user.id); } catch(e){ console.error(e); } }; g(); }, []);
 
@@ -270,9 +285,9 @@ export default function ChatPage() {
           const replyInfo = getReplyPreview(msg);
 
           return (
-            <div key={msg.id}>
+            <div key={msg.id} id={`msg-${msg.id}`}>
               {showDate && <div className="flex justify-center my-3"><span className="bg-white/80 text-gray-500 text-xs px-3 py-1 rounded-full shadow-sm">{formatDateSep(msg.created_at)}</span></div>}
-              <div className={`flex ${isMe?'justify-end':'justify-start'} ${sameSender&&!showDate?'mt-1':'mt-3'}`} style={{marginTop:i===0&&!showDate?0:undefined}}>
+              <div className={`flex ${isMe?'justify-end':'justify-start'} ${sameSender&&!showDate?'mt-1':'mt-3'} ${highlightedMsgId===msg.id?'animate-pulse':''}`} style={{marginTop:i===0&&!showDate?0:undefined}}>
                 {!isMe && <div className="mr-2 flex-shrink-0 self-end" style={{width:32}}>{(!sameSender||showDate)?(otherUser.avatar_url?<img src={otherUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover"/>:<div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{backgroundColor:getAvatarColor(otherUser.id)}}>{getInitials(otherUser.display_name)}</div>):null}</div>}
                 {isEmoji ? (
                   <div className="flex flex-col items-end" onContextMenu={(e)=>handleContextMenu(e,msg)} onTouchStart={handleTouchStart(msg)} onTouchEnd={handleTouchEnd}>
@@ -282,7 +297,7 @@ export default function ChatPage() {
                   </div>
                 ) : (
                   <div
-                    className={`max-w-[75%] sm:max-w-[65%] px-3 py-2 cursor-default ${isMe?'bg-red-500 text-white rounded-2xl rounded-br-md':'bg-white text-gray-900 rounded-2xl rounded-bl-md shadow-sm'}`}
+                    className={`max-w-[75%] sm:max-w-[65%] px-3 py-2 cursor-default ${isMe?'bg-red-500 text-white rounded-2xl rounded-br-md':'bg-white text-gray-900 rounded-2xl rounded-bl-md shadow-sm'} ${highlightedMsgId===msg.id?'ring-2 ring-yellow-400 ring-offset-2':''}`}
                     onContextMenu={(e)=>handleContextMenu(e,msg)}
                     onTouchStart={handleTouchStart(msg)}
                     onTouchEnd={handleTouchEnd}
