@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { conversation_id, sender_id, content, image_url } = body;
+    const { conversation_id, sender_id, content, image_url, reply_to_id } = body;
 
     if (!conversation_id || !sender_id) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -67,15 +67,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert message
+    const insertData: Record<string, unknown> = {
+      conversation_id,
+      sender_id,
+      content: content || null,
+      image_url: image_url || null,
+      created_at: new Date().toISOString()
+    };
+    // Add reply_to_id if provided (column may not exist yet, will be ignored)
+    if (reply_to_id) insertData.reply_to_id = reply_to_id;
+
     const { data, error } = await supabase
       .from('messages')
-      .insert([{
-        conversation_id,
-        sender_id,
-        content: content || null,
-        image_url: image_url || null,
-        created_at: new Date().toISOString()
-      }])
+      .insert([insertData])
       .select('*')
       .single();
 
