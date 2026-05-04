@@ -14,7 +14,7 @@ const WS_URL = "ws://76.13.154.9:3001/ws"
 
 // Types
 interface Account {
-  id: number
+  id: string
   phone_number: string
   platform: "whatsapp" | "telegram"
   display_name: string | null
@@ -24,9 +24,9 @@ interface Account {
 }
 
 interface Conversation {
-  id: number
-  account_id: number
-  contact_id: number
+  id: string
+  account_id: string
+  contact_id: string
   last_message: string | null
   last_message_at: string | null
   unread_count: number
@@ -40,8 +40,8 @@ interface Conversation {
 }
 
 interface Message {
-  id: number
-  conversation_id: number
+  id: string
+  conversation_id: string
   direction: "inbound" | "outbound"
   message_type: string
   body: string | null
@@ -52,7 +52,7 @@ interface Message {
 }
 
 interface AutoReplyRule {
-  id: number
+  id: string
   name: string
   enabled: boolean
   priority: number
@@ -92,8 +92,8 @@ export default function MessengerHubPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [rules, setRules] = useState<AutoReplyRule[]>([])
-  const [selectedAccount, setSelectedAccount] = useState<number | null>(null)
-  const [selectedConvo, setSelectedConvo] = useState<number | null>(null)
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
+  const [selectedConvo, setSelectedConvo] = useState<string | null>(null)
   const [msgInput, setMsgInput] = useState("")
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<"chat" | "autoreply">("chat")
@@ -103,7 +103,7 @@ export default function MessengerHubPage() {
   const [showQr, setShowQr] = useState(false)
   const [telegramCode, setTelegramCode] = useState("")
   const [showTelegramCode, setShowTelegramCode] = useState(false)
-  const [pendingTelegramAccount, setPendingTelegramAccount] = useState<number | null>(null)
+  const [pendingTelegramAccount, setPendingTelegramAccount] = useState<string | null>(null)
   const [showRuleEditor, setShowRuleEditor] = useState(false)
   const [editingRule, setEditingRule] = useState<AutoReplyRule | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -123,13 +123,13 @@ export default function MessengerHubPage() {
   }, [api])
 
   // Load conversations for account
-  const loadConversations = useCallback(async (accountId: number) => {
+  const loadConversations = useCallback(async (accountId: string) => {
     try { const data = await api(`/api/conversations?account_id=${accountId}`); setConversations(data || []) }
     catch (e) { console.error(e) }
   }, [api])
 
   // Load messages for conversation
-  const loadMessages = useCallback(async (convoId: number) => {
+  const loadMessages = useCallback(async (convoId: string) => {
     try { const data = await api(`/api/conversations/${convoId}/messages`); setMessages(data || []) }
     catch (e) { console.error(e) }
   }, [api])
@@ -241,35 +241,41 @@ export default function MessengerHubPage() {
   // Add account
   const addAccount = async (platform: "whatsapp" | "telegram", phoneNumber: string) => {
     try {
+      console.log("[MessengerHub] Adding account:", platform, phoneNumber)
       const acc = await api("/api/accounts", {
         method: "POST",
         body: JSON.stringify({ platform, phone_number: phoneNumber }),
       })
+      console.log("[MessengerHub] Account created:", acc)
+      if (!acc?.id) { alert("Failed to create account"); return }
       await loadAccounts()
       setShowAddAccount(false)
 
       // Connect
+      console.log("[MessengerHub] Connecting account:", acc.id)
       const res = await api(`/api/accounts/${acc.id}/connect`, { method: "POST" })
+      console.log("[MessengerHub] Connect response:", res)
       if (platform === "whatsapp" && res.qrImage) {
         setQrImage(res.qrImage)
         setShowQr(true)
       }
-    } catch (e) { console.error(e) }
+      await loadAccounts()
+    } catch (e) { console.error("[MessengerHub] Error:", e); alert("Connection failed: " + (e as Error).message) }
   }
 
   // Connect/disconnect
-  const connectAccount = async (id: number) => {
+  const connectAccount = async (id: string) => {
     const res = await api(`/api/accounts/${id}/connect`, { method: "POST" })
     if (res.qrImage) { setQrImage(res.qrImage); setShowQr(true) }
     loadAccounts()
   }
 
-  const disconnectAccount = async (id: number) => {
+  const disconnectAccount = async (id: string) => {
     await api(`/api/accounts/${id}/disconnect`, { method: "POST" })
     loadAccounts()
   }
 
-  const deleteAccount = async (id: number) => {
+  const deleteAccount = async (id: string) => {
     if (!confirm("Delete this account?")) return
     await api(`/api/accounts/${id}`, { method: "DELETE" })
     if (selectedAccount === id) { setSelectedAccount(null); setConversations([]); setMessages([]) }
@@ -290,13 +296,13 @@ export default function MessengerHubPage() {
   }
 
   // Toggle auto-reply rule
-  const toggleRule = async (id: number) => {
+  const toggleRule = async (id: string) => {
     await api(`/api/autoreply/rules/${id}/toggle`, { method: "PATCH" })
     loadRules()
   }
 
   // Delete rule
-  const deleteRule = async (id: number) => {
+  const deleteRule = async (id: string) => {
     if (!confirm("Delete this rule?")) return
     await api(`/api/autoreply/rules/${id}`, { method: "DELETE" })
     loadRules()
