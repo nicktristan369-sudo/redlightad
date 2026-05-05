@@ -119,7 +119,7 @@ export default function VoiceMessagePlayer({ url, compact = false }: VoiceMessag
         <div className="flex-1 h-1.5 bg-gray-200 rounded-full cursor-pointer" onClick={seek}>
           <div className="h-1.5 bg-gray-900 rounded-full" style={{ width: `${progress}%` }} />
         </div>
-        <span className="text-[11px] text-gray-400 flex-shrink-0 tabular-nums">{fmt(current)}</span>
+        <span className="text-[11px] text-gray-500 flex-shrink-0 tabular-nums">{fmt(current)}</span>
       </div>
     )
   }
@@ -132,7 +132,7 @@ export default function VoiceMessagePlayer({ url, compact = false }: VoiceMessag
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zM7 9.5A5 5 0 0 0 17 9.5v1a7 7 0 0 1-4 6.32V19h3v2H8v-2h3v-2.18A7 7 0 0 1 7 10.5v-1z"/>
         </svg>
         <h3 className="font-semibold text-gray-900">Voice Message</h3>
-        <span className="ml-auto text-xs text-gray-400">{fmt(duration)}</span>
+        <span className="ml-auto text-xs text-gray-500">{fmt(duration)}</span>
       </div>
 
       {loadError ? (
@@ -149,7 +149,7 @@ export default function VoiceMessagePlayer({ url, compact = false }: VoiceMessag
             <div className="h-2 w-full rounded-full bg-gray-100 cursor-pointer" onClick={seek}>
               <div className="h-2 rounded-full bg-red-600 transition-all" style={{ width: `${progress}%` }} />
             </div>
-            <div className="mt-1 flex justify-between text-[11px] text-gray-400 tabular-nums">
+            <div className="mt-1 flex justify-between text-[11px] text-gray-500 tabular-nums">
               <span>{fmt(current)}</span>
               <span>{fmt(duration)}</span>
             </div>

@@ -6,25 +6,25 @@ const DUMMY_REVIEWS = [
   {
     rating: 5,
     title: "Fantastisk oplevelse!",
-    body: "Meget professionel og imødekommende. Alt var præcis som beskrevet, og kommunikationen var hurtig og let. Kan varmt anbefales til alle.",
+    body: "Very professional and welcoming. Everything was exactly as described, and communication was quick and easy. Highly recommended.",
     reviewer_name: "Thomas K.",
   },
   {
     rating: 5,
     title: "Absolut den bedste",
-    body: "Utrolig charmerende og god til at få en til at føle sig velkommen. Tidsplanen blev overholdt og alt forløb perfekt. 10/10 ville booke igen!",
+    body: "Incredibly charming and good at making you feel welcome. Schedule was kept and everything went perfectly. 10/10 would book again!",
     reviewer_name: "Michael",
   },
   {
     rating: 4,
     title: "Rigtig god oplevelse",
-    body: "Dejlig og imødekommende. Lidt forsinkelse, men ellers en fantastisk tid. Billederne matcher virkeligheden.",
+    body: "Lovely and welcoming. Slight delay, but otherwise a fantastic time. Pictures match reality.",
     reviewer_name: "Anonymous",
   },
   {
     rating: 5,
     title: null,
-    body: "Wow! Overgik alle forventninger. Meget professionel tilgang og fantastisk service. Tak for en mindeværdig aften.",
+    body: "Wow! Exceeded all expectations. Very professional approach and fantastic service. Thanks for a memorable evening.",
     reviewer_name: "JakobC",
   },
   {

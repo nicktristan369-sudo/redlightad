@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import StoryViewer from "./StoryViewer"
 
 interface Story {
@@ -152,10 +153,13 @@ export default function StoryCircles({ country, listingId }: StoryCirclesProps) 
                           background: "#F3F4F6",
                         }}>
                           {g.listing.profile_image ? (
-                            <img
+                            <Image
                               src={g.listing.profile_image}
                               alt={name}
-                              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                              fill
+                              className="object-cover"
+                              sizes="72px"
+                              loading="lazy"
                             />
                           ) : (
                             <div style={{

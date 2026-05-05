@@ -53,7 +53,7 @@ export default function AdSidebar({
     { label: t.sidebar_gender, value: gender },
     { label: t.sidebar_category, value: category },
     { label: t.sidebar_location, value: [city, country].filter(Boolean).join(", ") },
-    { label: t.sidebar_languages, value: languages?.join(", ") || null },
+    { label: t.sidebar_languages, value: languages && languages.length > 0 ? [...new Set(languages)].join(", ") : null },
     { label: t.sidebar_nationality, value: nationality || null },
     { label: t.sidebar_ethnicity, value: ethnicity || null },
   ].filter(r => r.value);
@@ -83,12 +83,25 @@ export default function AdSidebar({
     { label: t.sidebar_travel, value: travel || null },
   ].filter(r => r.value);
 
-  const InfoRow = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex items-center justify-between py-2.5">
-      <span className="text-[13px] text-gray-500">{label}</span>
-      <span className="text-[13px] font-medium text-gray-900 text-right max-w-[60%]">{value}</span>
-    </div>
-  );
+  const InfoRow = ({ label, value }: { label: string; value: string }) => {
+    // Try to parse as JSON array and format nicely, deduplicate
+    let displayValue = value;
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        // Remove duplicates with Set
+        displayValue = [...new Set(parsed)].join(", ");
+      }
+    } catch {
+      // Not JSON, use as-is
+    }
+    return (
+      <div className="flex items-center justify-between py-2.5">
+        <span className="text-[13px] text-gray-500">{label}</span>
+        <span className="text-[13px] font-medium text-gray-900 text-right max-w-[60%]">{displayValue}</span>
+      </div>
+    );
+  };
 
   const Section = ({ title, rows }: { title?: string; rows: { label: string; value: string | null }[] }) => {
     if (rows.length === 0) return null;
@@ -96,7 +109,7 @@ export default function AdSidebar({
       <div className="px-5">
         {title && (
           <div className="pt-4 pb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{title}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{title}</span>
           </div>
         )}
         <div className="divide-y divide-gray-100">

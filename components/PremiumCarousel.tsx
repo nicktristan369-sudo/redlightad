@@ -1,5 +1,7 @@
 "use client"
 import { useState, useEffect, useRef, useCallback } from "react"
+import Image from "next/image"
+import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { createClient } from "@/lib/supabase"
 import { getCountryVariants } from "@/lib/countries"
 import { getLocaleFromDomain } from "@/lib/seo"
@@ -39,30 +41,16 @@ function CyclingImage({
   profileVideoUrl?: string | null
   staggerDelay?: number
 }) {
-  // ── Levende profilbillede (video) ─────────────────────────────────────────
-  if (profileVideoUrl) {
-    return (
-      <div className="absolute inset-0">
-        <video
-          src={profileVideoUrl}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full h-full object-cover"
-        />
-      </div>
-    )
-  }
+  // ── All hooks FIRST ─────────────────────────────────────────────────────
+  const [videoFailed, setVideoFailed] = useState(false)
+  const [current, setCurrent] = useState(0)
+  const [prev, setPrev] = useState<number | null>(null)
+  const [transitioning, setTransitioning] = useState(false)
 
   const pool = [
     ...(profileImage ? [profileImage] : []),
     ...(images ?? []),
   ].filter((v, i, a) => a.indexOf(v) === i)
-
-  const [current, setCurrent] = useState(0)
-  const [prev, setPrev] = useState<number | null>(null)
-  const [transitioning, setTransitioning] = useState(false)
 
   // Randomise starting image once on mount
   useEffect(() => {
@@ -91,6 +79,19 @@ function CyclingImage({
     return () => clearTimeout(startTimer)
   }, [pool.length, staggerDelay])
 
+  // ── Video profil: vis autoplay video direkte ────────────────────────────────
+  if (profileVideoUrl && !videoFailed) {
+    return (
+      <div className="absolute inset-0">
+        <AutoPlayVideo
+          src={profileVideoUrl}
+          className="w-full h-full object-cover"
+          onError={() => setVideoFailed(true)}
+        />
+      </div>
+    )
+  }
+
   if (pool.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -105,21 +106,27 @@ function CyclingImage({
     <div className="absolute inset-0">
       {/* Previous image fading out */}
       {prev !== null && (
-        <img
+        <Image
           src={pool[prev]}
           alt={alt}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          className="object-cover"
           style={{ opacity: transitioning ? 0 : 1, transition: "opacity 0.7s ease" }}
+          sizes="(max-width: 768px) 50vw, 25vw"
+          loading="lazy"
         />
       )}
       {/* Current image fading in */}
-      <img
+      <Image
         src={pool[current]}
         alt={alt}
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: transitioning ? 1 : 1, transition: "opacity 0.7s ease" }}
+        fill
+        className="object-cover"
+        style={{ opacity: 1, transition: "opacity 0.7s ease" }}
+        sizes="(max-width: 768px) 50vw, 25vw"
+        loading="lazy"
       />
-      {/* Video icon */}
+      {/* Video icon overlay for profiles with video_url (not profile_video) */}
       {hasVideo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div style={{
@@ -161,7 +168,7 @@ interface PremiumListing {
   onlyfans_username?: string | null
 }
 
-const VISIBLE_COUNT = 7
+const VISIBLE_COUNT = 6
 
 function timeAgo(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -325,13 +332,14 @@ export default function PremiumCarousel({
       // Client-side country filter - strict matching for regional domains
       if (effectiveCountry) {
         const countryLower = effectiveCountry.toLowerCase()
-        filtered = filtered.filter(l => {
+        const localFiltered = filtered.filter(l => {
           const listingCountry = (l.country || '').toLowerCase()
-          // Must contain the country name (e.g. "netherlands" in country field)
           return listingCountry.includes(countryLower) || 
                  countryLower.includes(listingCountry) ||
                  listingCountry === countryLower
         })
+        // Fallback to global if fewer than 6 local premium profiles
+        filtered = localFiltered.length >= 6 ? localFiltered : filtered
       }
       const sorted = sortListings(filtered)
       setListings(sorted.slice(0, 40))
@@ -400,7 +408,7 @@ export default function PremiumCarousel({
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-gray-900 tracking-tight">{title}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
           </div>
           {listings.length > VISIBLE_COUNT && (
             <div className="flex gap-2">
@@ -426,8 +434,8 @@ export default function PremiumCarousel({
 
         {/* Cards */}
         <div
-          className={`flex gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden transition-opacity duration-300 ${fading ? "opacity-0" : "opacity-100"}`}
-          style={{ scrollbarWidth: "none" }}
+          className={`flex gap-2 transition-opacity duration-300 overflow-x-auto ${fading ? "opacity-0" : "opacity-100"}`}
+          style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
@@ -439,8 +447,13 @@ export default function PremiumCarousel({
             const isFeatured = l.premium_tier === "featured"
 
             return (
-              <Link href={`/ads/${l.slug || l.id}`} key={l.id} className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[173px]">
-                <div className="relative overflow-hidden cursor-pointer w-full" style={{ aspectRatio: "173/260" }}>
+              <Link
+                href={`/ads/${l.slug || l.id}`}
+                key={l.id}
+                className="flex-shrink-0"
+                style={{ width: "calc((100% - 40px) / 6)", minWidth: 120, maxWidth: 200 }}
+              >
+                <div className="relative overflow-hidden cursor-pointer w-full rounded-lg" style={{ aspectRatio: "173/260" }}>
                   {/* Cycling gallery image — staggered per card */}
                   <CyclingImage
                     profileImage={l.profile_image}
@@ -463,12 +476,12 @@ export default function PremiumCarousel({
                     <p className="text-white text-xs font-black tracking-wider uppercase leading-tight truncate">
                       {l.title.toUpperCase()}
                     </p>
-                    <p className="text-gray-400 text-[10px] leading-tight truncate mt-0.5">
+                    <p className="text-gray-500 text-[10px] leading-tight truncate mt-0.5">
                       {[l.city, l.country].filter(Boolean).join(", ").toUpperCase()}
                     </p>
                     <p className="text-gray-500 text-[10px] mt-1">{ago}</p>
                     {l.about && (
-                      <p className="text-gray-400 text-[10px] mt-0.5 leading-tight line-clamp-1">{l.about}</p>
+                      <p className="text-gray-500 text-[10px] mt-0.5 leading-tight line-clamp-1">{l.about}</p>
                     )}
                   </div>
                 </div>

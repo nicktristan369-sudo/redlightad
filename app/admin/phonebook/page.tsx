@@ -69,7 +69,7 @@ const SMS_BADGES: Record<string, { label: string; bg: string; color: string }> =
   pending:   { label: "Pending",  bg: "#FEF3C7", color: "#92400E" },
   sent:      { label: "Sendt",    bg: "#DBEAFE", color: "#1E40AF" },
   clicked:   { label: "Klikket",  bg: "#EDE9FE", color: "#6D28D9" },
-  converted: { label: "Oprettet", bg: "#DCFCE7", color: "#14532D" },
+  converted: { label: "Created", bg: "#DCFCE7", color: "#14532D" },
 };
 
 function SmsBadge({ status }: { status: string }) {
@@ -88,7 +88,7 @@ const EMPTY: ContactForm = {
   name: "", email: "", phone: "", signal_username: "", telegram: "", category: "other", notes: "",
 };
 
-const DEFAULT_SMS_TEMPLATE = `Hej! Vi har set din annonce og inviterer dig til RedLightAD. Opret dig GRATIS i 30 dage med kode: GRATIS30 på redlightad.com`;
+const DEFAULT_SMS_TEMPLATE = `Hi! We saw your ad and invite you to RedLightAD. Sign up FREE for 30 days with code: FREE30 at redlightad.com`;
 
 function AdminPhonebookPage() {
   const searchParams = useSearchParams();
@@ -317,7 +317,7 @@ function AdminPhonebookPage() {
 
   async function deleteAll() {
     const confirmed = window.confirm(
-      "Er du sikker? Dette sletter ALLE numre i phonebook. Denne handling kan ikke fortrydes."
+      "Are you sure? This will delete ALL numbers in the phonebook. This action cannot be undone."
     );
     if (!confirmed) return;
 
@@ -344,7 +344,7 @@ function AdminPhonebookPage() {
       body: JSON.stringify({ country: 'Denmark' }),
     });
     const data = await res.json();
-    alert(`${data.added} tilføjet til Contacts · ${data.skipped} duplikater sprunget over`);
+    alert(`${data.added} added to Contacts · ${data.skipped} duplicates skipped`);
     await load();
   }
 
@@ -440,8 +440,8 @@ function AdminPhonebookPage() {
       {showDeleteAllModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" style={{ border: "1px solid #E5E5E5" }}>
-            <h3 className="text-[16px] font-bold text-gray-900 mb-2">Slet alle numre?</h3>
-            <p className="text-[13px] text-gray-500 mb-5">Er du sikker? Dette sletter alle {totalCount} numre permanent.</p>
+            <h3 className="text-[16px] font-bold text-gray-900 mb-2">Delete all numbers?</h3>
+            <p className="text-[13px] text-gray-500 mb-5">Are you sure? This will delete all {totalCount} numbers permanently.</p>
             <div className="flex gap-2">
               <button onClick={deleteAllScraped} className="flex-1 py-2.5 text-[13px] font-semibold text-white rounded-lg" style={{ background: "#DC2626" }}>Slet alt</button>
               <button onClick={() => setShowDeleteAllModal(false)} className="px-4 py-2.5 text-[13px] font-medium rounded-lg" style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}>Annuller</button>
@@ -604,7 +604,7 @@ function AdminPhonebookPage() {
                 className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-lg disabled:opacity-40 transition-colors"
                 style={{ border: "1px solid #D1FAE5", color: "#059669", background: "#ECFDF5" }}
               >
-                Tilføj til Contacts ({scrapedPhones.filter(p => p.sms_status === 'pending').length})
+                Add to Contacts ({scrapedPhones.filter(p => p.sms_status === 'pending').length})
               </button>
               <button onClick={() => setShowDeleteAllModal(true)} disabled={scrapedPhones.length === 0}
                 className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-lg disabled:opacity-40 transition-colors"
@@ -709,7 +709,7 @@ function AdminPhonebookPage() {
                   {c.signal_username && <a href={`https://signal.me/#p/${c.signal_username}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors"><MessageCircle size={12} color="#9CA3AF" className="flex-shrink-0" />Signal: {c.signal_username}</a>}
                   {c.telegram && <a href={`https://t.me/${c.telegram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-gray-500 hover:text-gray-900 transition-colors"><MessageCircle size={12} color="#9CA3AF" className="flex-shrink-0" />Telegram: {c.telegram}</a>}
                 </div>
-                {c.source_domain && <p className="text-[11px] text-gray-400 mb-1">Kilde: {c.source_domain}</p>}
+                {c.source_domain && <p className="text-[11px] text-gray-400 mb-1">Source: {c.source_domain}</p>}
                 {c.notes && <p className="text-[12px] text-gray-400 italic line-clamp-2 mb-3">{c.notes}</p>}
                 <div className="flex items-center justify-between pt-3" style={{ borderTop: "1px solid #F3F4F6" }}>
                   <p className="text-[11px]" style={{ color: "#9CA3AF" }}>{new Date(c.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}</p>
@@ -769,12 +769,12 @@ function AdminPhonebookPage() {
             </select>
             <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 flex-1 min-w-[140px] max-w-[220px]" style={{ border: "1px solid #E5E5E5" }}>
               <Search size={13} color="#9CA3AF" />
-              <input value={phoneSearch} onChange={e => setPhoneSearch(e.target.value)} placeholder="Søg telefon..."
+              <input value={phoneSearch} onChange={e => setPhoneSearch(e.target.value)} placeholder="Search phone..."
                 className="flex-1 text-[13px] bg-transparent outline-none text-gray-900 placeholder-gray-400" />
             </div>
             <label className="flex items-center gap-2 text-[13px] text-gray-600 cursor-pointer select-none">
               <input type="checkbox" checked={allFilteredSelected && filteredScraped.length > 0} onChange={toggleSelectAll} className="rounded" />
-              Vælg alle
+              Select all
             </label>
             <button
               onClick={() => setShowSmsModal(true)}
@@ -804,7 +804,7 @@ function AdminPhonebookPage() {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
                       <th className="px-4 py-2.5 text-left w-10"></th>
-                      {["Phone", "Kilde", "SMS Status", "SMS Dato", "Tilføjet", "Actions"].map(h => (
+                      {["Phone", "Source", "SMS Status", "SMS Dato", "Added", "Actions"].map(h => (
                         <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                       ))}
                     </tr>
@@ -922,7 +922,7 @@ function AdminPhonebookPage() {
             )}
 
             {scrapeError && (
-              <p className="text-sm text-red-500 mt-2">Fejl: {scrapeError}</p>
+              <p className="text-sm text-red-500 mt-2">Error: {scrapeError}</p>
             )}
 
             {scrapeResult && (

@@ -7,6 +7,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import LocationSelector from "@/components/LocationSelector";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import SocialLinksEditor from "@/components/SocialLinksEditor";
+import PhoneInput from "@/components/PhoneInput";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 import { Crown, CheckCircle, AlertTriangle, Plus, Trash2, Eye, EyeOff } from "lucide-react";
 import LocationSwitchPanel from "@/components/LocationSwitchPanel";
@@ -24,7 +25,7 @@ import {
 
 const DAYS_OF_WEEK = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const;
 type DayKey = typeof DAYS_OF_WEEK[number];
-const DAY_LABELS: Record<DayKey, string> = { monday:"Mandag", tuesday:"Tirsdag", wednesday:"Onsdag", thursday:"Torsdag", friday:"Fredag", saturday:"Lørdag", sunday:"Søndag" };
+const DAY_LABELS: Record<DayKey, string> = { monday:"Monday", tuesday:"Tuesday", wednesday:"Wednesday", thursday:"Thursday", friday:"Friday", saturday:"Saturday", sunday:"Sunday" };
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = Math.floor(i / 2); const m = i % 2 === 0 ? "00" : "30";
   return `${String(h).padStart(2, "0")}:${m}`;
@@ -45,19 +46,19 @@ const defaultHours = (): OpeningHours => {
 };
 
 const SERVICE_OPTIONS = ["Dinner dates","Social events","Travel companion","Private meetings","Weekend getaways"];
-const LANGUAGE_OPTIONS = ["Dansk","Engelsk","Tysk","Fransk","Spansk"];
+const LANGUAGE_OPTIONS = ["Danish","English","German","French","Spanish","Italian","Portuguese","Russian","Arabic","Chinese","Japanese","Korean"];
 
 const TIER_INFO: Record<string, { label: string; color: string; bg: string; features: string[] }> = {
-  vip:      { label: "VIP", color: "#92400E", bg: "#FEF3C7", features: ["Voice message","Social links med lås","Fremhævet i søgning (topplacering)","VIP badge"] },
-  featured: { label: "Featured", color: "#1E40AF", bg: "#EFF6FF", features: ["Voice message","Social links med lås","Featured badge"] },
-  basic:    { label: "Basic", color: "#374151", bg: "#F3F4F6", features: ["Voice message","Social links (gratis)","Basic badge"] },
+  vip:      { label: "VIP", color: "#92400E", bg: "#FEF3C7", features: ["Voice message","Social links with lock","Highlighted in search (top placement)","VIP badge"] },
+  featured: { label: "Featured", color: "#1E40AF", bg: "#EFF6FF", features: ["Voice message","Social links with lock","Featured badge"] },
+  basic:    { label: "Basic", color: "#374151", bg: "#F3F4F6", features: ["Voice message","Social links (free)","Basic badge"] },
 };
 
 export default function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); // Keep for internal logic but hide UI
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -133,7 +134,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   /* ── Travel helpers ── */
   const addTravelEntry = async () => {
     const { from_date, to_date, city, country } = newTravel;
-    if (!from_date || !to_date || !city || !country) { setTravelError("Udfyld alle felter"); return; }
+    if (!from_date || !to_date || !city || !country) { setTravelError("Fill in all fields"); return; }
     setTravelLoading(true); setTravelError("");
     try {
       const res = await fetch(`/api/listings/${id}/travel`, {
@@ -142,10 +143,10 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         body: JSON.stringify({ from_date, to_date, city, country }),
       });
       const json = await res.json();
-      if (!res.ok) { setTravelError(json.error ?? "Fejl"); return; }
+      if (!res.ok) { setTravelError(json.error ?? "Error"); return; }
       setTravelEntries(prev => [...prev, json.entry].sort((a, b) => a.from_date.localeCompare(b.from_date)));
       setNewTravel({ from_date: "", to_date: "", city: "", country: "" });
-    } catch { setTravelError("Noget gik galt"); }
+    } catch { setTravelError("Something went wrong"); }
     finally { setTravelLoading(false); }
   };
 
@@ -291,24 +292,28 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
     load();
   }, [id, router]);
 
-  /* ─── Validate step 1 ─── */
-  const validateStep1 = () => {
+  /* ─── Validate ─── */
+  const validateForm = () => {
     if (!form.title || !form.category || !form.gender || !form.age || !form.country) {
-      setError("Udfyld venligst alle påkrævede felter."); return false;
+      setError("Please fill in all required fields."); return false;
     }
     if (parseInt(form.age) < 18) {
-      setError("Du skal være mindst 18 år."); return false;
+      setError("You must be at least 18 years old."); return false;
+    }
+    if (form.about.length < 400) {
+      setError("About me must be at least 400 characters."); return false;
     }
     setError(""); return true;
   };
 
   /* ─── Save ─── */
   const handleSave = async () => {
+    if (!validateForm()) { return; }
     setSaving(true); setError("");
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.id !== userId) throw new Error("Ikke autoriseret");
+      if (!user || user.id !== userId) throw new Error("Not authorized");
 
       // Upload new images
       let newUrls: string[] = [];
@@ -414,7 +419,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
       setSuccess(true);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Noget gik galt. Prøv igen.");
+      setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
     } finally {
       setSaving(false);
     }
@@ -434,11 +439,11 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   if (notFound) return (
     <DashboardLayout>
       <div className="max-w-lg mx-auto py-16 text-center">
-        <p className="text-[16px] font-semibold text-gray-900 mb-2">Annonce ikke fundet</p>
-        <p className="text-[14px] text-gray-500 mb-6">Annoncen eksisterer ikke eller du har ikke adgang.</p>
+        <p className="text-[16px] font-semibold text-gray-900 mb-2">Listing not found</p>
+        <p className="text-[14px] text-gray-500 mb-6">This listing does not exist or you don't have access.</p>
         <button onClick={() => router.push("/dashboard/annoncer")}
           className="px-6 py-2.5 rounded-xl text-[13px] font-semibold text-white"
-          style={{ background: "#000" }}>Tilbage</button>
+          style={{ background: "#000" }}>Back</button>
       </div>
     </DashboardLayout>
   );
@@ -450,8 +455,8 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={28} color="#16A34A" />
           </div>
-          <h2 className="text-[20px] font-bold text-gray-900 mb-2">Ændringer gemt</h2>
-          <p className="text-[14px] text-gray-500 mb-6">Dine ændringer er gemt og er synlige på din profil med det samme.</p>
+          <h2 className="text-[20px] font-bold text-gray-900 mb-2">Changes saved</h2>
+          <p className="text-[14px] text-gray-500 mb-6">Your changes are saved and visible on your profile immediately.</p>
           <button onClick={() => router.push(`/ads/${id}`)}
             className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white"
             style={{ background: "#000" }}>Se min profil</button>
@@ -461,37 +466,39 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   );
 
   const steps = [
-    { num: 1, label: "Basis info" },
+    { num: 1, label: "Basic info" },
     { num: 2, label: "Detaljer" },
-    { num: 3, label: "Kontakt & Billeder" },
+    { num: 3, label: "Contact & Images" },
   ];
 
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto px-4 py-6">
 
-        {/* Plan banner */}
-        {userTier && TIER_INFO[userTier] ? (
-          <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl"
-            style={{ background: TIER_INFO[userTier].bg, border: `1px solid ${TIER_INFO[userTier].color}22` }}>
-            <Crown size={16} color={TIER_INFO[userTier].color} />
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: TIER_INFO[userTier].color }}>
-                {TIER_INFO[userTier].label} Plan
-              </p>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                {TIER_INFO[userTier].features.join(" · ")}
-              </p>
+        {/* Plan banner - hide for VIP users, show upgrade for non-VIP */}
+        {userTier !== "vip" && (
+          userTier && TIER_INFO[userTier] ? (
+            <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl"
+              style={{ background: TIER_INFO[userTier].bg, border: `1px solid ${TIER_INFO[userTier].color}22` }}>
+              <Crown size={16} color={TIER_INFO[userTier].color} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: TIER_INFO[userTier].color }}>
+                  {TIER_INFO[userTier].label} Plan
+                </p>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  {TIER_INFO[userTier].features.join(" · ")}
+                </p>
+              </div>
+              <a href="/premium" className="text-[11px] font-semibold underline flex-shrink-0"
+                style={{ color: TIER_INFO[userTier].color }}>Opgrader</a>
             </div>
-            <a href="/premium" className="text-[11px] font-semibold underline flex-shrink-0"
-              style={{ color: TIER_INFO[userTier].color }}>Opgrader</a>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
-            <AlertTriangle size={15} color="#9CA3AF" />
-            <p className="text-[12px] text-gray-500 flex-1">Gratis plan — premium features ikke aktiveret</p>
-            <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline flex-shrink-0">Opgrader</a>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
+              <AlertTriangle size={15} color="#9CA3AF" />
+              <p className="text-[12px] text-gray-500 flex-1">Free plan — premium features not activated</p>
+              <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline flex-shrink-0">Opgrader</a>
+            </div>
+          )
         )}
 
         {/* Header */}
@@ -501,33 +508,12 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Mine annoncer
+            My listings
           </button>
-          <h1 className="text-[22px] font-bold text-gray-900">Rediger annonce</h1>
+          <h1 className="text-[22px] font-bold text-gray-900">Edit Listing</h1>
         </div>
 
-        {/* Step indicator */}
-        <div className="flex items-center justify-center mb-8">
-          {steps.map((s, i) => (
-            <div key={s.num} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
-                  step > s.num ? "bg-gray-900 text-white"
-                  : step === s.num ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-400"
-                }`}>
-                  {step > s.num
-                    ? <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
-                    : s.num}
-                </div>
-                <span className="mt-1 text-[11px] text-gray-400">{s.label}</span>
-              </div>
-              {i < steps.length - 1 && (
-                <div className={`mx-2 mb-5 h-px w-12 ${step > s.num ? "bg-gray-900" : "bg-gray-200"}`} />
-              )}
-            </div>
-          ))}
-        </div>
+        {/* Step indicator removed - single page layout */}
 
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
@@ -538,19 +524,19 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           )}
 
           {/* ──────── STEP 1 ──────── */}
-          {step === 1 && (
+          {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Trin 1: Basis information</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Basic Information</h2>
               <div className="space-y-5">
                 {/* Navn */}
                 <div>
                   <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    Dit navn <span style={{ color: "#DC2626" }}>*</span>
+                    Your name <span style={{ color: "#DC2626" }}>*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Eks. Sofia, Anna, Maria..."
+                    placeholder="e.g. Sofia, Anna, Maria..."
                     value={form.display_name ?? ""}
                     onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
                     style={{ width: "100%", padding: "10px 14px", border: "1px solid #D1D5DB", borderRadius: 0, fontSize: 14, outline: "none", boxSizing: "border-box" }}
@@ -560,7 +546,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 {/* Alder */}
                 <div>
                   <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-                    Din alder <span style={{ color: "#DC2626" }}>*</span>
+                    Your age <span style={{ color: "#DC2626" }}>*</span>
                   </label>
                   <input
                     type="number"
@@ -575,23 +561,23 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Annonce titel <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Ad title <span className="text-red-500">*</span></label>
                   <input type="text" value={form.title} onChange={e => updateField("title", e.target.value)}
-                    placeholder="F.eks. Sofia - Diskret escort i København"
+                    placeholder="e.g. Sofia - Discreet escort in Copenhagen"
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none focus:ring-0" />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Kategori <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Category <span className="text-red-500">*</span></label>
                   <select value={form.category} onChange={e => updateField("category", e.target.value)}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
-                    <option value="">Vælg kategori</option>
+                    <option value="">Select category</option>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Køn <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Gender <span className="text-red-500">*</span></label>
                   <div className="flex gap-3 flex-wrap">
                     {GENDERS.map(g => (
                       <button key={g} type="button" onClick={() => updateField("gender", g)}
@@ -604,14 +590,14 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Alder <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Age <span className="text-red-500">*</span></label>
                   <input type="number" min={18} max={99} value={form.age} onChange={e => updateField("age", e.target.value)}
                     placeholder="18"
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none focus:ring-0" />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Lokation <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Location <span className="text-red-500">*</span></label>
                   <LocationSelector
                     value={{ country: form.country, countryName: form.countryName, region: form.region, regionName: form.regionName, city: form.location }}
                     onChange={val => setForm(prev => ({ ...prev, country: val.country, countryName: val.countryName, region: val.region, regionName: val.regionName, location: val.city }))}
@@ -619,25 +605,32 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              <button onClick={() => validateStep1() && setStep(2)}
-                className="mt-6 w-full rounded-xl py-2.5 text-[13px] font-semibold text-white"
-                style={{ background: "#000" }}>
-                Fortsæt →
-              </button>
+              {/* Auto-advance to next section when scrolling */}
             </div>
           )}
 
           {/* ──────── STEP 2 ──────── */}
-          {step === 2 && (
+          {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Trin 2: Om dig og dine services</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">About You & Services</h2>
               <div className="space-y-5">
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Om mig</label>
-                  <textarea rows={5} value={form.about} onChange={e => updateField("about", e.target.value)}
-                    placeholder="Beskriv dig selv og hvad du tilbyder..."
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none focus:ring-0 resize-none" />
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">About me <span className="text-red-500">*</span></label>
+                  <textarea rows={6} value={form.about} onChange={e => updateField("about", e.target.value)}
+                    placeholder="Describe yourself and what you offer... (minimum 400 characters)"
+                    className={`w-full rounded-xl border px-4 py-2.5 text-[13px] focus:outline-none focus:ring-0 resize-none ${
+                      form.about.length > 0 && form.about.length < 400 
+                        ? "border-red-300 focus:border-red-400" 
+                        : "border-gray-200 focus:border-gray-400"
+                    }`} />
+                  <div className="flex justify-end mt-1">
+                    <span className={`text-[11px] ${
+                      form.about.length < 400 ? "text-red-500" : "text-green-600"
+                    }`}>
+                      {form.about.length} / 400 characters {form.about.length < 400 ? "(minimum)" : "✓"}
+                    </span>
+                  </div>
                 </div>
 
                 <div>
@@ -654,28 +647,41 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Sprog</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Languages</label>
+                  <p className="text-[11px] text-gray-400 mb-2">Select up to 2 languages</p>
                   <div className="flex flex-wrap gap-2">
-                    {LANGUAGE_OPTIONS.map(l => (
-                      <button key={l} type="button" onClick={() => toggleArray("languages", l)}
-                        className="rounded-full border px-4 py-1.5 text-[12px] transition"
-                        style={{ borderColor: form.languages.includes(l) ? "#000" : "#E5E7EB", background: form.languages.includes(l) ? "#000" : "#fff", color: form.languages.includes(l) ? "#fff" : "#6B7280" }}>
-                        {l}
-                      </button>
-                    ))}
+                    {LANGUAGE_OPTIONS.map(l => {
+                      const isSelected = form.languages.includes(l);
+                      const isDisabled = !isSelected && form.languages.length >= 2;
+                      return (
+                        <button key={l} type="button" 
+                          onClick={() => !isDisabled && toggleArray("languages", l)}
+                          disabled={isDisabled}
+                          className={`rounded-full border px-4 py-1.5 text-[12px] transition ${
+                            isDisabled ? "opacity-40 cursor-not-allowed" : ""
+                          }`}
+                          style={{ 
+                            borderColor: isSelected ? "#000" : "#E5E7EB", 
+                            background: isSelected ? "#000" : "#fff", 
+                            color: isSelected ? "#fff" : "#6B7280" 
+                          }}>
+                          {l}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Priser */}
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Priser</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-gray-700">Rates</label>
                   <div className="grid grid-cols-2 gap-3">
-                    {[{ field: "rate_1hour", label: "1 time" }, { field: "rate_2hours", label: "2 timer" }, { field: "rate_overnight", label: "Overnat" }, { field: "rate_weekend", label: "Weekend" }].map(r => (
+                    {[{ field: "rate_1hour", label: "1 hour" }, { field: "rate_2hours", label: "2 hours" }, { field: "rate_overnight", label: "Overnight" }, { field: "rate_weekend", label: "Weekend" }].map(r => (
                       <div key={r.field}>
                         <span className="mb-1 block text-[11px] text-gray-400">{r.label}</span>
                         <input type="text" value={form[r.field as keyof typeof form] as string}
                           onChange={e => updateField(r.field, e.target.value)}
-                          placeholder="f.eks. 500 DKK"
+                          placeholder="e.g. 500 DKK"
                           className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none" />
                       </div>
                     ))}
@@ -684,19 +690,27 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 {/* Udseende */}
                 <div className="pt-1">
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Udseende & Detaljer</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Appearance & Details</p>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
-                      <span className="mb-1 block text-[11px] text-gray-400">Højde (cm)</span>
-                      <input type="number" min={100} max={250} value={form.height} onChange={e => updateField("height", e.target.value)}
-                        placeholder="170"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none" />
+                      <span className="mb-1 block text-[11px] text-gray-400">Height (cm)</span>
+                      <select value={form.height} onChange={e => updateField("height", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
+                        <option value="">Select height</option>
+                        {Array.from({ length: 71 }, (_, i) => 140 + i).map(h => (
+                          <option key={h} value={h}>{h} cm</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
-                      <span className="mb-1 block text-[11px] text-gray-400">Vægt (kg)</span>
-                      <input type="number" min={30} max={200} value={form.weight} onChange={e => updateField("weight", e.target.value)}
-                        placeholder="60"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none" />
+                      <span className="mb-1 block text-[11px] text-gray-400">Weight (kg)</span>
+                      <select value={form.weight} onChange={e => updateField("weight", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-[13px] focus:border-gray-400 focus:outline-none bg-white">
+                        <option value="">Select weight</option>
+                        {Array.from({ length: 111 }, (_, i) => 40 + i).map(w => (
+                          <option key={w} value={w}>{w} kg</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
@@ -814,52 +828,68 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
-                <button onClick={() => setStep(1)} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50">← Tilbage</button>
-                <button onClick={() => setStep(3)} className="flex-1 rounded-xl py-2.5 text-[13px] font-semibold text-white" style={{ background: "#000" }}>Fortsæt →</button>
-              </div>
+              {/* Navigation hidden - single page view */}
             </div>
           )}
 
           {/* ──────── STEP 3 ──────── */}
-          {step === 3 && (
+          {step >= 1 && (
             <div>
-              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Trin 3: Kontakt & Billeder</h2>
+              <h2 className="text-[18px] font-bold text-gray-900 mb-6">Contact & Images</h2>
               <div className="space-y-6">
 
                 {/* Kontakt */}
                 <div>
                   <p className="text-[13px] font-semibold text-gray-900 mb-3">Contact</p>
                   <div className="space-y-2.5">
-                    {[
-                      { label: "📞 Phone",    field: "phone" },
-                      { label: "📞 Phone 2",  field: "phone2" },
-                      { label: "Email",        field: "email" },
-                    ].map(c => (
-                      <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                        <span className="w-20 text-[12px] text-gray-400 flex-shrink-0">{c.label}</span>
-                        <input type={c.field === "email" ? "email" : "text"}
-                          value={form[c.field as keyof typeof form] as string}
-                          onChange={e => updateField(c.field, e.target.value)}
-                          placeholder={c.label}
-                          className="flex-1 text-[13px] bg-transparent border-0 outline-none text-gray-900" />
-                      </div>
-                    ))}
+                    <PhoneInput
+                      label="📞 Phone"
+                      value={form.phone as string}
+                      onChange={v => updateField("phone", v)}
+                      required
+                    />
+                    <PhoneInput
+                      label="📞 Phone 2"
+                      value={(form as { phone2?: string }).phone2 ?? ""}
+                      onChange={v => updateField("phone2", v)}
+                    />
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
+                      <span className="w-20 text-[12px] text-gray-400 flex-shrink-0">Email</span>
+                      <input type="email"
+                        value={form.email as string}
+                        onChange={e => updateField("email", e.target.value)}
+                        placeholder="Email"
+                        className="flex-1 text-[13px] bg-transparent border-0 outline-none text-gray-900" />
+                    </div>
                   </div>
                   {/* Messaging apps */}
                   <p className="text-[12px] text-gray-500 mt-4 mb-2">Messaging apps</p>
                   <div className="space-y-2">
+                    {/* WhatsApp med PhoneInput */}
+                    <div>
+                      <PhoneInput
+                        label="💬 WhatsApp"
+                        value={form.whatsapp as string}
+                        onChange={v => updateField("whatsapp", v)}
+                      />
+                      <label className="flex items-center gap-1.5 text-[11px] text-gray-400 cursor-pointer mt-1.5 ml-1">
+                        <input type="checkbox"
+                          checked={form.contact_whatsapp as boolean}
+                          onChange={e => updateField("contact_whatsapp", e.target.checked)}
+                          className="rounded border-gray-300" />
+                        Show WhatsApp button
+                      </label>
+                    </div>
                     {[
-                      { app: "WhatsApp", field: "whatsapp", toggle: "contact_whatsapp", icon: "💬" },
-                      { app: "Telegram", field: "telegram", toggle: "contact_telegram", icon: "✈️" },
-                      { app: "Viber",    field: "viber",    toggle: "contact_viber",    icon: "📳" },
-                      { app: "WeChat",   field: "wechat",   toggle: "contact_wechat",   icon: "💚" },
-                      { app: "LINE",     field: "line_app", toggle: "contact_line",     icon: "🟢" },
-                      { app: "Signal",   field: "signal",   toggle: "contact_signal",   icon: "🔒" },
-                      { app: "Snapchat", field: "snapchat", toggle: "", icon: "👻" },
+                      { app: "Telegram", field: "telegram", toggle: "contact_telegram", logo: "/logos/telegram.svg" },
+                      { app: "Viber",    field: "viber",    toggle: "contact_viber",    logo: "/logos/viber.svg" },
+                      { app: "WeChat",   field: "wechat",   toggle: "contact_wechat",   logo: "/logos/wechat.svg" },
+                      { app: "LINE",     field: "line_app", toggle: "contact_line",     logo: "/logos/line.svg" },
+                      { app: "Signal",   field: "signal",   toggle: "contact_signal",   logo: "/logos/signal.svg" },
+                      { app: "Snapchat", field: "snapchat", toggle: "", logo: "/logos/snapchat.svg" },
                     ].map(c => (
                       <div key={c.field} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
-                        <span className="text-base">{c.icon}</span>
+                        <img src={c.logo} alt={c.app} className="w-6 h-6 rounded flex-shrink-0" />
                         <span className="w-16 text-[12px] text-gray-400 flex-shrink-0">{c.app}</span>
                         <input type="text"
                           value={form[c.field as keyof typeof form] as string}
@@ -885,7 +915,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[13px] font-semibold text-gray-900">Social Media Links</p>
                     {!isPremium && (
-                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Låsning kræver premium</span>
+                      <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Locking requires premium</span>
                     )}
                   </div>
                   <SocialLinksEditor value={socialLinks} onChange={setSocialLinks} isPremium={isPremium} />
@@ -923,7 +953,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 {/* ── Skift Lokation (Premium only) ── */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-[13px] font-semibold text-gray-900">Skift Lokation</p>
+                    <p className="text-[13px] font-semibold text-gray-900">Change Location</p>
                     {!isPremium && (
                       <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">Premium only</span>
                     )}
@@ -943,9 +973,9 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   ) : (
                     <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
                       <Crown size={18} color="#B45309" className="mx-auto mb-2" />
-                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
-                      <p className="text-[12px] text-amber-700 mb-3">Skift din lokation 1 gang om dagen</p>
-                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Upgrade to Premium</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Change your location once a day</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">See premium plans →</a>
                     </div>
                   )}
                 </div>
@@ -971,7 +1001,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         }}
                       >
                         {showTravelSchedule ? <Eye size={14} /> : <EyeOff size={14} />}
-                        {showTravelSchedule ? "Travel schedule er offentligt" : "Travel schedule er skjult"}
+                        {showTravelSchedule ? "Travel schedule is public" : "Travel schedule is hidden"}
                       </button>
 
                       {/* Existing entries */}
@@ -980,7 +1010,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                           {travelEntries.map(e => (
                             <div key={e.id} className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2.5">
                               <span className="text-[12px] text-gray-500 flex-shrink-0 whitespace-nowrap">
-                                {new Date(e.from_date + "T00:00:00").toLocaleDateString("da-DK", { day: "numeric", month: "short" })} – {new Date(e.to_date + "T00:00:00").toLocaleDateString("da-DK", { day: "numeric", month: "short" })}
+                                {new Date(e.from_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {new Date(e.to_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                               </span>
                               <span className="text-[13px] text-gray-700 flex-1 truncate">{e.city}, {e.country}</span>
                               <button onClick={() => deleteTravelEntry(e.id)}
@@ -997,29 +1027,29 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                       {/* Add new entry */}
                       <div className="rounded-xl border border-dashed border-gray-300 p-4 space-y-2.5">
-                        <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider">Tilføj destination</p>
+                        <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider">Add destination</p>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-[11px] text-gray-400 block mb-1">Fra dato</label>
+                            <label className="text-[11px] text-gray-400 block mb-1">From date</label>
                             <input type="date" value={newTravel.from_date}
                               onChange={e => setNewTravel(p => ({ ...p, from_date: e.target.value }))}
                               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none" />
                           </div>
                           <div>
-                            <label className="text-[11px] text-gray-400 block mb-1">Til dato</label>
+                            <label className="text-[11px] text-gray-400 block mb-1">To date</label>
                             <input type="date" value={newTravel.to_date}
                               onChange={e => setNewTravel(p => ({ ...p, to_date: e.target.value }))}
                               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none" />
                           </div>
                         </div>
-                        <input type="text" placeholder="By (fx København)"
+                        <input type="text" placeholder="City (e.g. Copenhagen)"
                           value={newTravel.city}
                           onChange={e => setNewTravel(p => ({ ...p, city: e.target.value }))}
                           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none placeholder-gray-400" />
                         <select value={newTravel.country}
                           onChange={e => setNewTravel(p => ({ ...p, country: e.target.value }))}
                           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none bg-white">
-                          <option value="">Vælg land…</option>
+                          <option value="">Select country…</option>
                           {SUPPORTED_COUNTRIES_SORTED.map(c => (
                             <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
                           ))}
@@ -1029,16 +1059,16 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                           className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold text-white transition-colors disabled:opacity-50"
                           style={{ background: "#000" }}>
                           <Plus size={14} />
-                          {travelLoading ? "Gemmer…" : "Tilføj"}
+                          {travelLoading ? "Saving…" : "Add"}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
                       <Crown size={18} color="#B45309" className="mx-auto mb-2" />
-                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
-                      <p className="text-[12px] text-amber-700 mb-3">Vis fremtidige rejseplaner på din profil</p>
-                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Upgrade to Premium</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Show future travel plans on your profile</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">See premium plans →</a>
                     </div>
                   )}
                 </div>
@@ -1063,25 +1093,25 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                         }}
                       >
                         {showReviews ? <Eye size={14} /> : <EyeOff size={14} />}
-                        {showReviews ? "Reviews er aktiveret på din profil" : "Reviews er deaktiveret"}
+                        {showReviews ? "Reviews are enabled on your profile" : "Reviews are disabled"}
                       </button>
                       <p className="text-[12px] text-gray-400">
-                        Når reviews er aktiveret, kan kunder skrive anmeldelser på din profil.
+                        When reviews are enabled, customers can write reviews on your profile.
                       </p>
                     </div>
                   ) : (
                     <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-center">
                       <Crown size={18} color="#B45309" className="mx-auto mb-2" />
-                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Opgrader til Premium</p>
-                      <p className="text-[12px] text-amber-700 mb-3">Aktivér reviews på din profil for at bygge troværdighed</p>
-                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">Se premium planer →</a>
+                      <p className="text-[13px] font-semibold text-amber-900 mb-1">Upgrade to Premium</p>
+                      <p className="text-[12px] text-amber-700 mb-3">Enable reviews on your profile to build credibility</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-amber-700 underline">See premium plans →</a>
                     </div>
                   )}
                 </div>
 
-                {/* Åbningstider */}
+                {/* Opening hours */}
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Åbningstider & Tilgængelighed</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-100">Opening Hours & Availability</p>
                   <div className="mb-3">
                     <label className="text-[12px] font-medium text-gray-600 block mb-1">Tidszone</label>
                     <select value={timezone} onChange={e => setTimezone(e.target.value)}
@@ -1095,7 +1125,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className="rounded-xl overflow-hidden border border-gray-100">
                     <div className="grid grid-cols-[110px_1fr_1fr_70px] bg-gray-50 px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
-                      <span>Dag</span><span>Åbner</span><span>Lukker</span><span className="text-right">Lukket</span>
+                      <span>Day</span><span>Opens</span><span>Closes</span><span className="text-right">Closed</span>
                     </div>
                     {DAYS_OF_WEEK.map(day => {
                       const h = openingHours[day];
@@ -1126,7 +1156,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 {/* Billeder */}
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Billeder</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Images</p>
 
                   {/* Existing images */}
                   {existingImages.filter(u => !removedImages.includes(u)).length > 0 && (
@@ -1155,7 +1185,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
                     onClick={() => document.getElementById("edit-image-input")?.click()}>
                     <svg className="w-7 h-7 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4"/></svg>
-                    <p className="text-[13px] text-gray-400">Tilføj billeder</p>
+                    <p className="text-[13px] text-gray-400">Add photos</p>
                     <input id="edit-image-input" type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
                       onChange={e => {
                         const files = Array.from(e.target.files || []);
@@ -1187,12 +1217,12 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 {/* Videoer */}
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-900 mb-3">Mine Videoer</p>
+                  <p className="text-[13px] font-semibold text-gray-900 mb-3">My Videos</p>
 
-                  {/* Levende profilbillede — info */}
+                  {/* Animated profile picture — info */}
                   {existingVideos.length > 0 && (
                     <div className="mb-3 p-3 rounded-lg text-[12px]" style={{ background: "#FFF7ED", border: "1px solid #FED7AA", color: "#92400E" }}>
-                      🎬 <strong>Levende profilbillede:</strong> Vælg en video nedenfor som dit profilbillede. Det vises levende i kortvisning, premium-carousel og liste.
+                      🎬 <strong>Animated profile picture:</strong> Select a video below as your profile picture. It will display animated in card view, premium carousel and listings.
                     </div>
                   )}
 
@@ -1220,7 +1250,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                           className="text-[11px] font-semibold px-2 py-1 rounded flex-shrink-0"
                           style={{ background: profileVideoUrl === v.url ? "#DC2626" : "#F3F4F6", color: profileVideoUrl === v.url ? "#fff" : "#374151" }}
                         >
-                          {profileVideoUrl === v.url ? "✓ Profilbillede" : "🎬 Sæt som profil"}
+                          {profileVideoUrl === v.url ? "✓ Profile image" : "🎬 Set as profile"}
                         </button>
                         <button
                           type="button"
@@ -1232,7 +1262,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                           }}
                           className="text-red-500 hover:text-red-700 text-sm font-medium"
                         >
-                          Slet
+                          Delete
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
@@ -1246,7 +1276,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                               setExistingVideos(prev => prev.map(x => x.id === v.id ? { ...x, is_locked: e.target.checked } : x));
                             }}
                           />
-                          Låst (kræver RedCoins)
+                          Locked (requires RedCoins)
                         </label>
                         {v.is_locked && (
                           <input type="number" min={0} placeholder="Pris i RC" value={v.redcoin_price ?? 0}
@@ -1262,7 +1292,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                     </div>
                   ))}
 
-                  {/* Upload nye videoer */}
+                  {/* Upload new videos */}
                   <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-gray-400 transition-colors">
                     <input
                       type="file"
@@ -1278,7 +1308,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                       }}
                     />
                     <svg className="w-7 h-7 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
-                    <span className="text-[13px] text-gray-400">+ Upload video (maks 10 i alt)</span>
+                    <span className="text-[13px] text-gray-400">+ Upload video (max 10 total)</span>
                   </label>
 
                   {/* Preview nye videoer */}
@@ -1309,7 +1339,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                             checked={newVideoLocked[i]}
                             onChange={e => setNewVideoLocked(prev => prev.map((v, j) => j === i ? e.target.checked : v))}
                           />
-                          Låst
+                          Locked
                         </label>
                         {newVideoLocked[i] && (
                           <input type="number" min={0} placeholder="Pris i RC" value={newVideoPrices[i] ?? 0}
@@ -1321,7 +1351,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                   ))}
 
                   {videoUploading && (
-                    <p className="text-sm text-gray-500 mt-2">Uploader videoer...</p>
+                    <p className="text-sm text-gray-500 mt-2">Uploading videos...</p>
                   )}
                 </div>
 
@@ -1336,20 +1366,19 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                     <VoiceRecorder onUpload={url => setVoiceMessageUrl(url)} existingUrl={voiceMessageUrl || null} />
                   ) : (
                     <div className="rounded-xl bg-white border border-dashed border-gray-200 p-4 text-center">
-                      <p className="text-[12px] text-gray-400">Opgrader til Premium for at tilføje en voice message</p>
-                      <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline mt-1 inline-block">Se planer</a>
+                      <p className="text-[12px] text-gray-400">Upgrade to Premium to add a voice message</p>
+                      <a href="/premium" className="text-[12px] font-semibold text-gray-900 underline mt-1 inline-block">See plans</a>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <button onClick={() => setStep(2)} className="sm:w-auto rounded-xl border border-gray-200 px-6 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50">← Tilbage</button>
+              <div className="mt-6 flex gap-3">
                 <button onClick={handleSave} disabled={saving}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-semibold text-white disabled:opacity-50"
                   style={{ background: "#000" }}>
                   {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  Gem ændringer
+                  Save changes
                 </button>
               </div>
             </div>

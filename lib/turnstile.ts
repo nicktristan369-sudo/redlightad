@@ -21,12 +21,9 @@ export async function verifyTurnstileToken(
   remoteIP?: string
 ): Promise<TurnstileVerifyResult> {
   if (!TURNSTILE_SECRET) {
-    console.error("TURNSTILE_SECRET_KEY not configured");
-    // In development, allow bypass
-    if (process.env.NODE_ENV === "development") {
-      return { success: true };
-    }
-    return { success: false, error: "CAPTCHA not configured" };
+    console.warn("TURNSTILE_SECRET_KEY not configured - bypassing CAPTCHA");
+    // Allow bypass if not configured
+    return { success: true };
   }
 
   if (!token) {

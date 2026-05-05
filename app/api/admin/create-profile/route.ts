@@ -532,7 +532,7 @@ export async function POST(req: NextRequest) {
 
   // Send SMS med login info
   if (sendSMSNotification && profile.phone) {
-    const smsMessage = `Hej! Din profil på RedLightAD er klar.\n\nLog ind på: redlightad.com/login\nBrugernavn: ${email}\nKode: ${password}\n\n30 dages gratis adgang med kode: GRATIS30`
+    const smsMessage = `Hi! Your profile on RedLightAD is ready.\n\nLog in at: redlightad.com/login\nUsername: ${email}\nPassword: ${password}\n\n30 days free access with code: FREE30`
     await sendSMS({ to: profile.phone, message: smsMessage, sender: 'REDLIGHTAD' })
   }
 

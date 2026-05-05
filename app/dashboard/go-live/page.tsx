@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef, useCallback, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import { Video, Radio, Square, Users, Clock, Mic, MicOff, VideoOff, Trash2, Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase"
@@ -131,7 +131,7 @@ function BroadcastControls({ onViewerCount, onStreamReady }: { onViewerCount: (n
 }
 
 // ── Main page ────────────────────────────────────────────────────────────────
-export default function GoLivePage() {
+function GoLiveContent() {
   const router = useRouter()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [adminListings, setAdminListings] = useState<any[]>([])
@@ -787,7 +787,7 @@ export default function GoLivePage() {
                     min={1} />
                   <button onClick={addTipMenuItem} disabled={!newAction.trim()}
                     style={{ padding: "8px 14px", background: newAction.trim() ? "#DC2626" : "#D1D5DB", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: newAction.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 4 }}>
-                    <Plus size={14} /> Tilføj
+                    <Plus size={14} /> Add
                   </button>
                 </div>
               </div>
@@ -864,5 +864,13 @@ export default function GoLivePage() {
         )}
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function GoLivePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /></div>}>
+      <GoLiveContent />
+    </Suspense>
   )
 }

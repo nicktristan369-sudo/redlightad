@@ -177,7 +177,7 @@ export default function LocationAutocomplete({
 
   return (
     <div className="relative">
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (

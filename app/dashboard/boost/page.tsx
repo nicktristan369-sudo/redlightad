@@ -125,7 +125,7 @@ export default function BoostPage() {
           <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${toast.type === "success" ? "bg-green-500" : "bg-red-500"}`}>
             {toast.msg}
             {toast.type === "error" && (
-              <Link href="/dashboard/buy-coins" className="ml-2 underline font-bold">Buy coins</Link>
+              <Link href="/dashboard/buy-points" className="ml-2 underline font-bold">Buy points</Link>
             )}
           </div>
         )}
@@ -136,9 +136,17 @@ export default function BoostPage() {
             <h1 className="text-2xl font-bold text-gray-900">Premium & Boost</h1>
             <p className="text-gray-500 text-sm mt-1">Use your Red Coins to reach the top</p>
           </div>
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
-            <span className="text-red-500 text-lg font-bold">{balance.toLocaleString()}</span>
-            <span className="text-red-400 text-sm">Red Coins</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2">
+              <span className="text-red-500 text-lg font-bold">{balance.toLocaleString()}</span>
+              <span className="text-red-400 text-sm">Red Coins</span>
+            </div>
+            <Link
+              href="/dashboard/buy-points"
+              className="flex items-center gap-1.5 bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition-colors"
+            >
+              + Buy Points
+            </Link>
           </div>
         </div>
 
@@ -147,7 +155,7 @@ export default function BoostPage() {
             <div className="w-7 h-7 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : listings.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
+          <div className="text-center py-20 text-gray-500">
             <p className="text-lg font-medium mb-2">No active listings</p>
             <Link href="/create-profile" className="text-red-500 underline">Create a listing first</Link>
           </div>
@@ -197,8 +205,8 @@ export default function BoostPage() {
                     )}
                     <p className="text-gray-900 font-bold text-base mt-2">{pkg.label}</p>
                     <p className="text-red-500 text-3xl font-extrabold mt-3">{pkg.coins.toLocaleString()}</p>
-                    <p className="text-gray-400 text-xs mt-1">Red Coins</p>
-                    <p className="text-gray-400 text-xs mt-1">{Math.round(pkg.coins / pkg.months)} coins/mo</p>
+                    <p className="text-gray-500 text-xs mt-1">Red Coins</p>
+                    <p className="text-gray-500 text-xs mt-1">{Math.round(pkg.coins / pkg.months)} coins/mo</p>
                     <button
                       onClick={() => handleBuy(pkg.id)}
                       disabled={buyingId !== null}
@@ -229,8 +237,8 @@ export default function BoostPage() {
                     )}
                     <p className="text-gray-900 font-bold text-base mt-2">{pkg.label}</p>
                     <p className="text-red-500 text-3xl font-extrabold mt-3">{pkg.coins}</p>
-                    <p className="text-gray-400 text-xs mt-1">Red Coins</p>
-                    <p className="text-gray-400 text-xs mt-3">Your profile will be #1 on the front page for {pkg.label.toLowerCase()}</p>
+                    <p className="text-gray-500 text-xs mt-1">Red Coins</p>
+                    <p className="text-gray-500 text-xs mt-3">Your profile will be #1 on the front page for {pkg.label.toLowerCase()}</p>
                     <button
                       onClick={() => handleBuy(pkg.id)}
                       disabled={buyingId !== null}

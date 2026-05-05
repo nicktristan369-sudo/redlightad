@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     const action = body.action as string;
 
     if (!listingId || !action) {
-      return NextResponse.json({ error: "id og action påkrævet" }, { status: 400 });
+      return NextResponse.json({ error: "id and action required" }, { status: 400 });
     }
 
     const supabase = getClient();
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
     // ── delete_image ──
     if (action === "delete_image") {
       const imageUrl = body.image_url as string;
-      if (!imageUrl) return NextResponse.json({ error: "image_url påkrævet" }, { status: 400 });
+      if (!imageUrl) return NextResponse.json({ error: "image_url required" }, { status: 400 });
       // Remove from images array
       const { data: listing } = await supabase.from("listings").select("images").eq("id", listingId).single();
       if (!listing) return NextResponse.json({ error: "Ikke fundet" }, { status: 404 });
@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
     // ── set_tier ──
     if (action === "set_tier") {
       const newTier = (body.tier ?? null) as string | null;
-      const allowed = [null, "basic", "featured", "vip"];
+      const allowed = [null, "basic", "featured"];
       if (!allowed.includes(newTier)) {
         return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
       }

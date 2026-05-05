@@ -4,8 +4,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
   
   // ── Production Optimizations ───────────────────────────────────────────────
-  // Minify and obfuscate production builds (makes code harder to steal)
-  productionBrowserSourceMaps: false, // Don't expose source maps in production
+  productionBrowserSourceMaps: false,
+  compress: true,
+  poweredByHeader: false,
   
   async redirects() {
     return [
@@ -30,8 +31,8 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https: http:",
-              "media-src 'self' blob: https: http:",
+              "img-src 'self' data: blob: https:",
+              "media-src 'self' blob: https:",
               "font-src 'self' data:",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://challenges.cloudflare.com https://*.livekit.cloud wss://*.livekit.cloud https://*.sentry.io",
               "frame-src https://challenges.cloudflare.com https://*.stripe.com",
@@ -76,6 +77,19 @@ const nextConfig: NextConfig = {
         source: "/uploads/:path*",
         headers: [
           { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+        ],
+      },
+      // ── Static asset caching ──────────────────────────────────────────────
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/images/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
         ],
       },
     ]

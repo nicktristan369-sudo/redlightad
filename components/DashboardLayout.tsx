@@ -30,13 +30,20 @@ import {
 } from "lucide-react"
 
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false })
-// OnboardingPopup disabled
+const UpgradeToPremiumModal = dynamic(() => import("@/components/UpgradeToPremiumModal"), { ssr: false })
 
-const NAV_ITEMS = [
+interface NavItem {
+  href: string
+  label: string
+  icon: any
+  premiumOnly?: boolean
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard",                label: "Overview",            icon: LayoutDashboard },
   { href: "/dashboard/beskeder",       label: "Messages",            icon: MessageSquare },
-  { href: "/dashboard/locked-content", label: "Exclusive Content",   icon: Lock },
-  { href: "/dashboard/marketplace",    label: "Marketplace",         icon: Tag },
+  { href: "/dashboard/locked-content", label: "Exclusive Content",   icon: Lock, premiumOnly: true },
+  { href: "/dashboard/marketplace",    label: "Marketplace",         icon: Tag, premiumOnly: true },
   { href: "/dashboard/mine-kob",       label: "My Purchases",        icon: ShoppingBag },
   { href: "/dashboard/wallet",         label: "Wallet",              icon: Wallet },
   { href: "/dashboard/buy-coins",      label: "Buy Coins",           icon: Coins },
@@ -44,6 +51,8 @@ const NAV_ITEMS = [
   { href: "/dashboard/analytics",      label: "Analytics",           icon: BarChart3 },
   { href: "/dashboard/invoices",       label: "Invoices",            icon: Receipt },
   { href: "/dashboard/profil",         label: "Profile Settings",    icon: Settings },
+  { href: "/dashboard/go-live",        label: "Go Live",             icon: Radio, premiumOnly: true },
+  { href: "/dashboard/recordings",     label: "Recordings",          icon: Film, premiumOnly: true },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -59,6 +68,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [pushPoints, setPushPoints] = useState<number>(0)
   const [quickPushing, setQuickPushing] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>()
 
   useEffect(() => {
     const supabase = createClient()
@@ -80,7 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .from("listings")
         .select("id, premium_tier")
         .eq("user_id", user.id)
-        .eq("status", "active")
+        .in("status", ["active", "pending"])
         .limit(1)
         .single()
       setListingId(listing?.id ?? null)
@@ -147,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const dynamicItems = listingChecked
     ? listingId
       ? [
-          { href: `/dashboard/annoncer/${listingId}/edit`, label: "My Profile", icon: FileText },
+          { href: listingId ? `/dashboard/annoncer/${listingId}/edit` : `/dashboard/edit-profile`, label: "Edit my profile", icon: FileText },
           { href: `/ads/${listingId}`, label: "Preview", icon: Eye, target: "_blank" as const },
         ]
       : [
@@ -159,8 +170,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     NAV_ITEMS[0], // Oversigt
     ...dynamicItems,
     ...NAV_ITEMS.slice(1),
-    { href: "/dashboard/go-live", label: "Go Live", icon: Radio },
-    { href: "/dashboard/recordings", label: "Recordings", icon: Film },
     { href: "/dashboard/social-links", label: "Social Links", icon: Share2 },
     { href: "/dashboard/onlyfans", label: "OnlyFans", icon: ExternalLink },
     ...(isAdmin ? [{ href: "/admin", label: "Admin panel", icon: Shield }] : []),
@@ -183,13 +192,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <NotificationBell />
           </div>
           {email && (
-            <p className="text-[11px] text-gray-400 mt-2 truncate">{email}</p>
+            <p className="text-[11px] text-gray-500 mt-2 truncate">{email}</p>
           )}
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {allNavItems.map((item) => {
+            const navItem = item as NavItem
             const isActive = item.href === "/dashboard"
               ? pathname === item.href
               : item.href === "/admin"
@@ -199,15 +209,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 : pathname === item.href
             const Icon = item.icon
             const target = "target" in item ? (item as { target?: string }).target : undefined
+            const isPremiumLocked = navItem.premiumOnly && !isPremium
+
+            const handleClick = (e: React.MouseEvent) => {
+              if (isPremiumLocked) {
+                e.preventDefault()
+                setUpgradeFeature(navItem.label)
+                setShowUpgradeModal(true)
+              }
+            }
+
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={isPremiumLocked ? "#" : item.href}
+                onClick={handleClick}
                 {...(target ? { target, rel: "noopener noreferrer" } : {})}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors group relative"
                 style={{
                   background: isActive ? "#000" : "transparent",
                   color: isActive ? "#fff" : "#374151",
+                  opacity: isPremiumLocked ? 0.7 : 1,
                 }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#F5F5F5" }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent" }}
@@ -217,6 +239,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   style={{ color: isActive ? "#fff" : "#6B7280", flexShrink: 0 }}
                 />
                 <span className="flex-1 truncate">{item.label}</span>
+                {/* Premium badge for locked items */}
+                {isPremiumLocked && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">PRO</span>
+                )}
                 {item.href === "/dashboard/beskeder" && totalUnread > 0 && (
                   <span className="text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
                     style={{ background: isActive ? "#fff" : "#000", color: isActive ? "#000" : "#fff" }}>
@@ -294,26 +320,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* All nav items */}
         <div className="px-4 pb-2">
           {allNavItems.map((item) => {
+            const navItem = item as NavItem
             const isActive = item.href === "/dashboard"
               ? pathname === item.href
               : pathname.startsWith(item.href) && item.href !== "/create-profile"
                 ? pathname.startsWith(item.href)
                 : pathname === item.href
             const Icon = item.icon
+            const isPremiumLocked = navItem.premiumOnly && !isPremium
+
+            const handleMobileClick = (e: React.MouseEvent) => {
+              setMobileDrawerOpen(false)
+              if (isPremiumLocked) {
+                e.preventDefault()
+                setUpgradeFeature(navItem.label)
+                setShowUpgradeModal(true)
+              }
+            }
+
             return (
               <Link
                 key={item.href}
-                href={item.href}
-                onClick={() => setMobileDrawerOpen(false)}
+                href={isPremiumLocked ? "#" : item.href}
+                onClick={handleMobileClick}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl transition-colors"
                 style={{
                   background: isActive ? "#000" : "transparent",
                   color: isActive ? "#fff" : "#374151",
                   marginBottom: 2,
+                  opacity: isPremiumLocked ? 0.7 : 1,
                 }}
               >
                 <Icon size={18} style={{ color: isActive ? "#fff" : "#6B7280", flexShrink: 0 }} />
                 <span className="text-[14px] font-medium flex-1">{item.label}</span>
+                {isPremiumLocked && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">PRO</span>
+                )}
                 {item.href === "/dashboard/beskeder" && totalUnread > 0 && (
                   <span className="text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
                     style={{ background: isActive ? "#fff" : "#000", color: isActive ? "#000" : "#fff" }}>
@@ -382,7 +424,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </main>
 
-      {/* OnboardingPopup disabled */}
+      {/* Upgrade to Premium Modal */}
+      {showUpgradeModal && (
+        <UpgradeToPremiumModal
+          featureName={upgradeFeature}
+          onClose={() => { setShowUpgradeModal(false); setUpgradeFeature(undefined) }}
+        />
+      )}
     </div>
   )
 }

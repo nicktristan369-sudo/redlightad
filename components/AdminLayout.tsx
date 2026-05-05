@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, Users, BadgeCheck, UserPlus,
   CreditCard, Coins, ArrowDownToLine, Mail, MessageCircle,
   Megaphone, BarChart2, BookUser, Settings, LogOut, ChevronRight,
-  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2,
+  ShieldCheck, Menu, X, Link2, Smartphone, Flag, Tag, Building2, Contact, CircleDot, Bitcoin,
 } from "lucide-react";
 
 type NavItem = {
@@ -223,6 +223,7 @@ export default function AdminLayout({
       items: [
         { href: "/admin",                label: "Overview",         icon: LayoutDashboard },
         { href: "/admin/annoncer",        label: "Profiles",        icon: FileText,    badge: pendingListings },
+        { href: "/admin/stories",         label: "Stories",         icon: CircleDot },
         { href: "/admin/create-profile",  label: "Create Profile",  icon: UserPlus },
         { href: "/admin/marketplace",     label: "Marketplace",     icon: ShoppingBag, badge: pendingMarketplace },
         { href: "/admin/brugere",         label: "Users",           icon: Users },
@@ -238,6 +239,7 @@ export default function AdminLayout({
       title: "BUSINESS",
       items: [
         { href: "/admin/payments",     label: "Payments",    icon: CreditCard },
+        { href: "/admin/crypto",       label: "Crypto Wallet", icon: Bitcoin },
         { href: "/admin/redcoins",     label: "RedCoins",    icon: Coins },
         { href: "/admin/udbetalinger", label: "Payouts",     icon: ArrowDownToLine },
       ],
@@ -255,6 +257,7 @@ export default function AdminLayout({
       title: "DATA",
       items: [
         { href: "/admin/statistics",  label: "Statistics",  icon: BarChart2 },
+        { href: "/admin/contacts",    label: "Contacts",    icon: Contact },
         { href: "/admin/phonebook",   label: "Phonebook",   icon: BookUser },
         { href: "/admin/invites",    label: "Invites",     icon: Link2 },
       ],
@@ -358,7 +361,7 @@ export default function AdminLayout({
             </button>
 
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-[13px] text-gray-400">
+            <div className="flex items-center gap-2 text-[13px] text-gray-500">
               <Link href="/admin" className="hover:text-gray-900 transition-colors hidden md:inline">
                 Admin
               </Link>

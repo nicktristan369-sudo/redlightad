@@ -111,22 +111,14 @@ export async function GET(req: NextRequest) {
     const majorCitiesFound = filteredCities.filter(c => majorCitySet.has(c.name.toLowerCase()));
     const otherCities = filteredCities.filter(c => !majorCitySet.has(c.name.toLowerCase()));
     
-    // For display: show major cities first, then others
-    const displayLimit = query ? 50 : 30;
-    const topCities = [
-      ...majorCitiesFound.map(c => ({
-        name: c.name,
-        count: 0,
-        region: c.region,
-        isMajor: true,
-      })),
-      ...otherCities.slice(0, displayLimit - majorCitiesFound.length).map(c => ({
-        name: c.name,
-        count: 0,
-        region: c.region,
-        isMajor: false,
-      }))
-    ];
+    // For the quick-access bar: ONLY major cities (no small towns)
+    // Other cities are available via the search modal only
+    const topCities = query
+      ? [
+          ...majorCitiesFound.map(c => ({ name: c.name, count: 0, region: c.region, isMajor: true })),
+          ...otherCities.slice(0, 50 - majorCitiesFound.length).map(c => ({ name: c.name, count: 0, region: c.region, isMajor: false }))
+        ]
+      : majorCitiesFound.map(c => ({ name: c.name, count: 0, region: c.region, isMajor: true }))
 
     // Group by region (only for non-search)
     let regions: { name: string; cities: { name: string; count: number; region?: string }[] }[] = [];

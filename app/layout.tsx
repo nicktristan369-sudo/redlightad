@@ -1,26 +1,29 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import dynamic from "next/dynamic";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
-
-import AgeVerificationModal from "@/components/AgeVerificationModal";
-import SentryInit from "@/components/SentryInit";
-import CookieBanner from "@/components/CookieBanner";
-import PWARegister from "@/components/PWARegister";
-import MobileBottomNav from "@/components/MobileBottomNav";
 import { ThemeProvider } from "@/lib/theme-context";
+
+// Dynamic imports for non-critical components (server-side rendering)
+const AgeVerificationModal = dynamic(() => import("@/components/AgeVerificationModal"));
+const SentryInit = dynamic(() => import("@/components/SentryInit"));
+const CookieBanner = dynamic(() => import("@/components/CookieBanner"));
+const PWARegister = dynamic(() => import("@/components/PWARegister"));
+const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 }
 
 export const metadata: Metadata = {
@@ -53,9 +56,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Preconnect to image CDN for faster loading */}
+        {/* Preconnect to critical third-party domains */}
         <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="preconnect" href="https://kkkqvhfgjofppimwxtub.supabase.co" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://kkkqvhfgjofppimwxtub.supabase.co" />
+        {/* Preload critical LCP image */}
+        <link rel="preload" href="/age-verify-bg.jpg" as="image" fetchPriority="high" />
         {/* PWA theme color */}
         <meta name="theme-color" content="#DC2626" />
         <meta name="mobile-web-app-capable" content="yes" />

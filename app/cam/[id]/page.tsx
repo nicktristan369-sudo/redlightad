@@ -487,7 +487,7 @@ export default function CamRoomPage() {
         // Rollback optimistic updates
         setUserBalance(prevBalance)
         setMessages(prev => prev.filter(m => m.id !== optimisticId))
-        setTipError(data.error || "Tip fejlede. Prøv igen.")
+        setTipError(data.error || "Tip failed. Try again.")
         setTimeout(() => setTipError(null), 4000)
         return
       }
@@ -508,7 +508,7 @@ export default function CamRoomPage() {
       // Network error — rollback
       setUserBalance(prevBalance)
       setMessages(prev => prev.filter(m => m.id !== optimisticId))
-      setTipError("Netværksfejl. Prøv igen.")
+      setTipError("Network error. Try again.")
       setTimeout(() => setTipError(null), 4000)
     }
   }

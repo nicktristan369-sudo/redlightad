@@ -58,7 +58,7 @@ export default function SocialLinksEditor({ value, onChange, isPremium }: Props)
               <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: meta.color }} />
               <span className="text-[13px] font-semibold text-gray-700 flex-1">{meta.label}</span>
               <button onClick={() => removePlatform(platform)}
-                className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors">
+                className="p-1 rounded text-gray-500 hover:text-red-500 transition-colors">
                 <Trash2 size={13} />
               </button>
             </div>
@@ -89,11 +89,11 @@ export default function SocialLinksEditor({ value, onChange, isPremium }: Props)
                   border: `1px solid ${cfg.locked ? "#FDE68A" : "#E5E5E5"}`,
                 }}>
                 {cfg.locked ? <Lock size={11} /> : <Unlock size={11} />}
-                {cfg.locked ? "Låst" : "Gratis"}
+                {cfg.locked ? "Locked" : "Free"}
               </button>
 
               {!isPremium && (
-                <span className="text-[11px] text-gray-400">Premium kræves for at låse</span>
+                <span className="text-[11px] text-gray-500">Premium kræves for at låse</span>
               )}
 
               {cfg.locked && isPremium && (

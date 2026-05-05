@@ -118,7 +118,7 @@ export default function FavoriteButton({
           transition-all duration-200
           ${isFavorite 
             ? "fill-red-500 text-red-500" 
-            : "text-gray-400 hover:text-red-400"
+            : "text-gray-500 hover:text-red-400"
           }
         `}
       />

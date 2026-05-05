@@ -72,7 +72,7 @@ export async function POST(
 
     const tier = profile?.subscription_tier || listing.premium_tier;
     if (!["basic", "featured", "vip"].includes(tier ?? "")) {
-      return NextResponse.json({ error: "Premium krævet" }, { status: 403 });
+      return NextResponse.json({ error: "Premium required" }, { status: 403 });
     }
 
     const body = await req.json() as {
@@ -98,7 +98,7 @@ export async function POST(
     // Add travel entry
     const { from_date, to_date, city, country } = body;
     if (!from_date || !to_date || !city || !country) {
-      return NextResponse.json({ error: "Alle felter er påkrævet" }, { status: 400 });
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
     const { data: entry, error } = await db
@@ -126,7 +126,7 @@ export async function DELETE(
     if (!user) return NextResponse.json({ error: "Ikke autoriseret" }, { status: 401 });
 
     const { travel_id } = await req.json() as { travel_id: string };
-    if (!travel_id) return NextResponse.json({ error: "travel_id påkrævet" }, { status: 400 });
+    if (!travel_id) return NextResponse.json({ error: "travel_id required" }, { status: 400 });
 
     const db = getServiceClient();
 

@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare, Home, Star, Zap, Play, ShoppingBag, Heart, Video, CircleDollarSign, LifeBuoy, ExternalLink, Moon, Sun } from "lucide-react";
+import { Menu, X, Search, ChevronDown, MapPin, Globe, Bell, LogOut, MessageSquare, Home, Star, Zap, Play, ShoppingBag, Heart, Video, CircleDollarSign, LifeBuoy, ExternalLink } from "lucide-react";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase";
 import CountrySelector from "@/components/CountrySelector";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { useTheme } from "@/lib/theme-context";
+
 
 interface UserState {
   email: string;
@@ -26,7 +26,7 @@ interface NavbarProps {
 export default function Navbar({ variant = "light" }: NavbarProps) {
   const isDark = variant === "dark";
   const { t } = useLanguage();
-  const { resolvedTheme, toggleTheme } = useTheme();
+  // Theme removed - always light mode
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [navSearch, setNavSearch] = useState("");
@@ -34,6 +34,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
   const [user, setUser] = useState<UserState | null>(null);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [recentConversations, setRecentConversations] = useState<{ id: string; lastMessage: string; senderName: string; updatedAt: string }[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<{ code: string; flag: string; name: string } | null>(null);
   const [showCountrySelector, setShowCountrySelector] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -96,20 +97,124 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
       supabase.from("wallets").select("balance").eq("user_id", authUser.id).single()
         .then(({ data }) => { if (data) setCoinBalance(data.balance); });
 
-      // Ulæste beskeder
-      supabase.from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", authUser.id)
-        .eq("read", false)
-        .then(({ count }) => { if (count) setUnreadMessages(count); });
+      // Ulæste beskeder - tjek conversations tabel
+      const fetchUnread = async () => {
+        try {
+          // Check if user is provider (has listing)
+          const { data: listing } = await supabase
+            .from("listings")
+            .select("id")
+            .eq("user_id", authUser.id)
+            .maybeSingle();
+        
+        const isProvider = !!listing;
+        const unreadField = isProvider ? "provider_unread" : "customer_unread";
+        const idField = isProvider ? "provider_id" : "customer_id";
+        
+        // Get conversations with unread count
+        const { data: convs } = await supabase
+          .from("conversations")
+          .select(`id, last_message, last_message_at, ${unreadField}, customer_id, provider_id`)
+          .eq(idField, authUser.id)
+          .order("last_message_at", { ascending: false })
+          .limit(5);
+        
+        const total = convs?.reduce((sum, c) => sum + ((c as Record<string, number>)[unreadField] || 0), 0) || 0;
+        setUnreadMessages(total);
+        
+        // Set recent conversations for dropdown
+        if (convs && convs.length > 0) {
+          setRecentConversations(convs.map(c => ({
+            id: c.id,
+            lastMessage: c.last_message || "",
+            senderName: "New message",
+            updatedAt: c.last_message_at || "",
+          })));
+        } else {
+          setRecentConversations([]);
+        }
+        } catch (err) {
+          console.error("[Navbar] fetchUnread error:", err);
+        }
+      };
+      fetchUnread();
+
+      // Subscribe to realtime message updates
+      const channel = supabase
+        .channel("navbar-messages")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "conversations",
+        }, () => {
+          // Refetch unread count when conversations change
+          fetchUnread();
+        })
+        .on("postgres_changes", {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        }, (payload) => {
+          // Play notification sound for new messages not from me
+          const msg = payload.new as { sender_id: string };
+          if (msg.sender_id !== authUser.id) {
+            try {
+              const audio = new Audio("/sounds/notification.mp3");
+              audio.volume = 0.3;
+              audio.play().catch(() => {});
+            } catch {}
+            fetchUnread();
+          }
+        })
+        .subscribe();
+      
+      return channel;
     };
 
-    supabase.auth.getUser().then(({ data: { user: u } }) => loadUser(u));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let msgChannel: any = null;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      loadUser(session?.user ?? null);
+    supabase.auth.getUser().then(async ({ data: { user: u } }) => {
+      msgChannel = await loadUser(u);
     });
-    return () => subscription.unsubscribe();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (msgChannel) {
+        await supabase.removeChannel(msgChannel);
+      }
+      msgChannel = await loadUser(session?.user ?? null);
+    });
+
+    // Polling fallback - check for new messages every 30 seconds
+    // This ensures notifications work even if Realtime is not configured
+    const pollInterval = setInterval(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Re-run fetchUnread logic
+        const { data: listing } = await supabase
+          .from("listings")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const isProvider = !!listing;
+        const unreadField = isProvider ? "provider_unread" : "customer_unread";
+        const idField = isProvider ? "provider_id" : "customer_id";
+        const { data: convs } = await supabase
+          .from("conversations")
+          .select(`id, ${unreadField}`)
+          .eq(idField, user.id);
+        const total = convs?.reduce((sum, c) => sum + ((c as Record<string, number>)[unreadField] || 0), 0) || 0;
+        setUnreadMessages(total);
+      }
+    }, 30000); // Poll every 30 seconds
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(pollInterval);
+      if (msgChannel) {
+        supabase.removeChannel(msgChannel).catch(() => {});
+      }
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -213,19 +318,14 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
 
 
 
-            {/* Theme Toggle - Desktop */}
-            <button onClick={toggleTheme} style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
-              onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-              title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
-              {resolvedTheme === "dark" ? <Sun size={20} color="#fbbf24" /> : <Moon size={20} color="#374151" />}
-            </button>
+            {/* Theme toggle removed */}
 
             {user ? (
               <>
                 {/* Notifikationer / beskeder */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
+                    aria-label="Messages"
                     style={{ position: "relative", padding: 8, borderRadius: 8, border: "none", background: showNotifications ? (isDark ? "#222" : "#F5F5F7") : "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
                     onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
                     onMouseLeave={e => { if (!showNotifications) e.currentTarget.style.background = "transparent"; }}>
@@ -242,7 +342,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                     )}
                   </button>
 
-                  {/* Besked-dropdown */}
+                  {/* Message dropdown */}
                   {showNotifications && (
                     <>
                       <div onClick={() => setShowNotifications(false)} style={{ position: "fixed", inset: 0, zIndex: 49 }} />
@@ -253,14 +353,49 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                         zIndex: 50, overflow: "hidden",
                       }}>
                         <div style={{ padding: "12px 16px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Beskeder</span>
-                          {unreadMessages > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: "#DC2626" }}>{unreadMessages} ulæste</span>}
+                          <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Messages</span>
+                          {unreadMessages > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: "#DC2626" }}>{unreadMessages} unread</span>}
                         </div>
-                        <div style={{ padding: "24px 16px", textAlign: "center" }}>
-                          <MessageSquare size={28} color="#E5E7EB" style={{ margin: "0 auto 8px" }} />
-                          <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>
-                            {unreadMessages > 0 ? `Du har ${unreadMessages} ulæste beskeder` : "Ingen nye beskeder"}
-                          </p>
+                        <div style={{ maxHeight: 250, overflowY: "auto" }}>
+                          {recentConversations.length > 0 ? (
+                            recentConversations.map(conv => (
+                              <Link
+                                key={conv.id}
+                                href={`${dashboardHref}/beskeder/${conv.id}`}
+                                onClick={() => setShowNotifications(false)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 10,
+                                  padding: "10px 16px",
+                                  borderBottom: "1px solid #F3F4F6",
+                                  textDecoration: "none",
+                                  background: "#fff",
+                                  transition: "background 0.15s",
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "#F9FAFB"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+                              >
+                                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                  <MessageSquare size={16} color="#fff" />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ fontSize: 12, color: "#111", margin: 0, fontWeight: 600 }}>{conv.senderName}</p>
+                                  <p style={{ fontSize: 11, color: "#6B7280", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {conv.lastMessage.slice(0, 40)}{conv.lastMessage.length > 40 ? "..." : ""}
+                                  </p>
+                                </div>
+                                <span style={{ fontSize: 10, color: "#6B7280", flexShrink: 0 }}>
+                                  {conv.updatedAt ? new Date(conv.updatedAt).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" }) : ""}
+                                </span>
+                              </Link>
+                            ))
+                          ) : (
+                            <div style={{ padding: "24px 16px", textAlign: "center" }}>
+                              <MessageSquare size={28} color="#E5E7EB" style={{ margin: "0 auto 8px" }} />
+                              <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>No new messages</p>
+                            </div>
+                          )}
                         </div>
                         <div style={{ padding: "0 12px 12px" }}>
                           <Link href={`${dashboardHref}/beskeder`} onClick={() => setShowNotifications(false)}
@@ -276,6 +411,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                 {/* Avatar → user menu */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }}
+                    aria-label="User menu"
                     style={{ padding: 4, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", borderRadius: "50%" }}>
                     <Avatar size={32} />
                   </button>
@@ -296,14 +432,14 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                             <Avatar size={36} />
                             <div style={{ minWidth: 0 }}>
                               <p style={{ fontSize: 12, fontWeight: 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
-                              <p style={{ fontSize: 10, color: "#9CA3AF", margin: "1px 0 0" }}>{user.accountType === "customer" ? "Kunde" : "Profil"}</p>
+                              <p style={{ fontSize: 10, color: "#6B7280", margin: "1px 0 0" }}>{user.accountType === "customer" ? "Kunde" : "Profil"}</p>
                             </div>
                           </div>
                         </div>
                         {/* Menu items */}
                         {[
                           ...(hasActivePlan || user?.accountType === "customer" ? [{ href: dashboardHref, label: "Dashboard" }] : []),
-                          ...(hasActivePlan || user?.accountType === "customer" ? [{ href: `${dashboardHref}/profil`, label: "Indstillinger" }] : []),
+                          ...(hasActivePlan || user?.accountType === "customer" ? [{ href: `${dashboardHref}/profil`, label: "Settings" }] : []),
                           ...(!hasActivePlan && user?.accountType !== "customer" ? [{ href: "/create-profile", label: "Complete Profile" }] : []),
                           ...(coinBalance !== null ? [{ href: `${dashboardHref}/coins`, label: `🔴 ${coinBalance} coins` }] : []),
                         ].map(({ href, label }) => (
@@ -331,6 +467,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
 
             {/* Hamburger */}
             <button onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
               style={{ padding: 8, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
               onMouseEnter={e => { e.currentTarget.style.background = isDark ? "#222" : "#F5F5F7"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
@@ -351,7 +488,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                 onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
                 placeholder={t.search_placeholder} autoFocus
                 style={{ width: "100%", borderRadius: "9999px", border: "1px solid #E5E5E5", background: "#F9F9F9", padding: "10px 16px 10px 40px", fontSize: "14px", color: "#111", outline: "none" }} />
-              <button onClick={handleSearch} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+              <button onClick={handleSearch} aria-label="Search" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
                 <Search size={16} color="#9CA3AF" />
               </button>
             </div>
@@ -384,6 +521,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
             <Logo variant="light" height={24} />
           </Link>
           <button onClick={closeDrawer}
+            aria-label="Close menu"
             style={{ width: 30, height: 30, borderRadius: "50%", border: "none", background: "#F2F2F2", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <X size={15} color="#555" strokeWidth={2.5} />
           </button>
@@ -396,7 +534,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
             <div style={{ minWidth: 0, flex: 1 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                <span style={{ fontSize: 10, color: "#9CA3AF" }}>{user.accountType === "customer" ? "Customer" : "Provider"}</span>
+                <span style={{ fontSize: 10, color: "#6B7280" }}>{user.accountType === "customer" ? "Customer" : "Provider"}</span>
                 {coinBalance !== null && <>
                   <span style={{ width: 2, height: 2, borderRadius: "50%", background: "#D1D5DB", display: "inline-block" }} />
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#DC2626" }}>{coinBalance} RC</span>
@@ -454,19 +592,34 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
                 {user.accountType === "provider" && providerListingId && (
                   <button
                     onClick={async () => {
-                      if (pushPoints < 1) { router.push("/dashboard"); closeDrawer(); return; }
+                      if (pushPoints < 1) {
+                        alert("You need push points. Go to Premium & Boost to buy more.");
+                        return;
+                      }
                       setQuickPushing(true);
-                      const supabase = createClient();
-                      const token = (await supabase.auth.getSession()).data.session?.access_token;
-                      const res = await fetch("/api/push-points/push", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-                        body: JSON.stringify({ listingId: providerListingId }),
-                      });
-                      const data = await res.json();
-                      setQuickPushing(false);
-                      if (res.ok) { setPushPoints(data.points_remaining); closeDrawer(); }
-                      else { router.push("/dashboard"); closeDrawer(); }
+                      try {
+                        const supabase = createClient();
+                        const token = (await supabase.auth.getSession()).data.session?.access_token;
+                        const res = await fetch("/api/push-points/push", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                          body: JSON.stringify({ listingId: providerListingId }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setPushPoints(data.points_remaining);
+                          alert(`✓ Profile pushed to top!\n${data.points_remaining} points remaining.`);
+                        } else if (res.status === 402) {
+                          alert("Insufficient push points. Buy more in Premium & Boost.");
+                        } else {
+                          alert(`Error: ${data.error || "Failed to push"}`);
+                        }
+                      } catch (e) {
+                        alert("Error pushing profile. Please try again.");
+                        console.error(e);
+                      } finally {
+                        setQuickPushing(false);
+                      }
                     }}
                     disabled={quickPushing}
                     style={{
@@ -530,19 +683,7 @@ export default function Navbar({ variant = "light" }: NavbarProps) {
               <LanguageSelector />
             </div>
 
-            {/* Theme Toggle */}
-            <button onClick={toggleTheme}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "4px 14px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#F7F7F7"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                {resolvedTheme === "dark" ? <Sun size={14} color="#8E8E93" strokeWidth={2} /> : <Moon size={14} color="#8E8E93" strokeWidth={2} />}
-                <span style={{ fontSize: 13, color: "#555", fontWeight: 450 }}>Theme</span>
-              </div>
-              <span style={{ fontSize: 13, color: "#1A1A1A", fontWeight: 500 }}>
-                {resolvedTheme === "dark" ? "Dark" : "Light"}
-              </span>
-            </button>
+            {/* Theme toggle removed */}
 
             {/* Location */}
             {selectedCountry && (

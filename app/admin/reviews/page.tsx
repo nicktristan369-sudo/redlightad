@@ -38,7 +38,7 @@ const timeAgo = (dateStr: string) => {
   const diff = Date.now() - new Date(dateStr).getTime();
   const days = Math.floor(diff / 86400000);
   if (days === 0) return "I dag";
-  if (days === 1) return "I går";
+  if (days === 1) return "Yesterday";
   if (days < 7) return `${days} dage siden`;
   return new Date(dateStr).toLocaleDateString("da-DK");
 };
@@ -110,7 +110,7 @@ export default function AdminReviewsPage() {
   };
 
   const deleteReview = async (reviewId: string) => {
-    if (!confirm("Er du sikker på du vil slette denne anmeldelse?")) return;
+    if (!confirm("Are you sure you want to delete this review?")) return;
 
     const supabase = createClient();
     const review = reviews.find((r) => r.id === reviewId);
@@ -304,7 +304,7 @@ export default function AdminReviewsPage() {
                       }
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
                     >
-                      <Eye size={14} /> Se på profil
+                      <Eye size={14} /> View profile
                     </button>
 
                     <button

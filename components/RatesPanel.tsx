@@ -61,7 +61,7 @@ function CurrencyPicker({
       >
         <Flag iso={selected.iso} size={16} />
         <span>{selected.code}</span>
-        <ChevronDown size={12} className="text-gray-400" />
+        <ChevronDown size={12} className="text-gray-500" />
       </button>
 
       {open && (
@@ -190,13 +190,13 @@ export default function RatesPanel({
                     <span className="text-[16px] font-semibold text-gray-900">
                       {convert(dkk)}
                     </span>
-                    <span className="text-[12px] text-gray-400 ml-1">{currency.code}</span>
+                    <span className="text-[12px] text-gray-500 ml-1">{currency.code}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <div className="text-right">
                       <span className="text-[16px] font-semibold" style={{ color: "#DC2626" }}>{rc.toLocaleString()}</span>
-                      <span className="text-[12px] text-gray-400 ml-1">RC</span>
+                      <span className="text-[12px] text-gray-500 ml-1">RC</span>
                     </div>
                     <button
                       onClick={() => payRC(rate)}
@@ -221,12 +221,12 @@ export default function RatesPanel({
       {/* Footer */}
       <div className="px-5 py-3 border-t border-gray-50">
         {mode === "rc" ? (
-          <p className="text-[11px] text-gray-400 flex items-center gap-1">
+          <p className="text-[11px] text-gray-500 flex items-center gap-1">
             <Coins size={10} className="text-red-500" />
             <span>RedCoins = anonymous & secure payment · 1 {baseCurrency} = {RC_RATE} RC</span>
           </p>
         ) : (
-          <p className="text-[11px] text-gray-400">
+          <p className="text-[11px] text-gray-500">
             Rates are indicative · Prices listed in {baseCurrency}
           </p>
         )}

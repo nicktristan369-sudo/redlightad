@@ -141,7 +141,7 @@ export default function AnalyticsPage() {
             </div>
           ))}
         </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-400">
+        <div className="flex justify-between mt-2 text-xs text-gray-500">
           <span>{chartData.slice(-14)[0]?.date.slice(5)}</span>
           <span>{chartData.slice(-1)[0]?.date.slice(5)}</span>
         </div>
@@ -153,7 +153,7 @@ export default function AnalyticsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
         </div>
       </DashboardLayout>
     );

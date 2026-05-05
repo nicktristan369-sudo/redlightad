@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { uploadImages } from "@/lib/uploadImages";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
-import { SUPPORTED_COUNTRIES, COUNTRY_CITIES } from "@/lib/countries";
+import { SUPPORTED_COUNTRIES } from "@/lib/countries";
 import { CATEGORIES } from "@/lib/constants/categories";
 import {
   NATIONALITY_OPTIONS,
@@ -26,7 +26,9 @@ import {
   AVAILABLE_FOR_OPTIONS,
 } from "@/lib/listingOptions";
 import Logo from "@/components/Logo";
-import { findNearestMajorCity, getDisplayLocation } from "@/lib/majorCities";
+import PhoneInput from "@/components/PhoneInput";
+import CountrySelect from "@/components/CountrySelect";
+// majorCities functions moved to API endpoints to reduce bundle size
 
 const GENDER_OPTIONS = [
   { value: "Woman", label: "Woman" },
@@ -36,6 +38,8 @@ const GENDER_OPTIONS = [
 ];
 
 const AGE_OPTIONS = Array.from({ length: 53 }, (_, i) => i + 18);
+const HEIGHT_OPTIONS = Array.from({ length: 81 }, (_, i) => ({ value: String(i + 140), label: `${i + 140} cm` }));
+const WEIGHT_OPTIONS = Array.from({ length: 101 }, (_, i) => ({ value: String(i + 30), label: `${i + 30} kg` }));
 
 const STEPS = [
   { num: 1, label: "Basic Info" },
@@ -123,7 +127,7 @@ function InputField({
         required={required}
         minLength={minLength}
       />
-      {note && <p className="text-xs text-gray-400 mt-1">{note}</p>}
+      {note && <p className="text-xs text-gray-500 mt-1">{note}</p>}
     </div>
   );
 }
@@ -134,17 +138,21 @@ function ChipSelect({
   selected,
   onChange,
   required = false,
+  max,
 }: {
   label: string;
   options: string[];
   selected: string[];
   onChange: (v: string[]) => void;
   required?: boolean;
+  max?: number;
 }) {
   const toggle = (opt: string) => {
     if (selected.includes(opt)) {
       onChange(selected.filter((s) => s !== opt));
     } else {
+      // Respect max limit
+      if (max && selected.length >= max) return;
       onChange([...selected, opt]);
     }
   };
@@ -255,14 +263,31 @@ export default function RegisterProviderPage() {
     }
     
     try {
-      // Use GeoNames API - search globally or within country
-      const url = countryCode 
-        ? `/api/geo/search?q=${encodeURIComponent(query)}&country=${countryCode}&limit=15`
-        : `/api/geo/search?q=${encodeURIComponent(query)}&limit=15`;
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      setCityResults(data.results || []);
+      // Detect if query is a postal code (only digits / alphanumeric short)
+      const isPostal = /^[0-9][0-9\s\-]{1,8}$/.test(query.trim());
+
+      let results: any[] = [];
+
+      if (isPostal) {
+        // Search by postal code via Nominatim
+        const cc = countryCode ? `&country=${countryCode}` : "";
+        const res = await fetch(`/api/geo/postal-search?postal=${encodeURIComponent(query.trim())}${cc}`);
+        const data = await res.json();
+        results = data.results || [];
+
+        // Also auto-set postal code field
+        if (results.length > 0 && results[0].postal_code) {
+          setPostalCode(results[0].postal_code);
+        }
+      } else {
+        // Use new /api/geo/cities endpoint (Nominatim + country-state-city)
+        const cc = countryCode ? `&country=${countryCode}` : "";
+        const res = await fetch(`/api/geo/cities?q=${encodeURIComponent(query)}&limit=20${cc}`);
+        const data = await res.json();
+        results = data.results || [];
+      }
+
+      setCityResults(results);
       setShowCityDropdown(true);
     } catch (err) {
       console.error('City search error:', err);
@@ -290,6 +315,23 @@ export default function RegisterProviderPage() {
     setShowCityDropdown(false);
     setLatitude(cityData.latitude);
     setLongitude(cityData.longitude);
+
+    // Auto-fill postal code — use existing if provided (from postal-search), else lookup
+    if (cityData.postal_code) {
+      setPostalCode(cityData.postal_code);
+    } else {
+      try {
+        const lat = cityData.latitude;
+        const lng = cityData.longitude;
+        const cc = (cityData.country_code || "").toLowerCase();
+        const url = lat && lng
+          ? `/api/geo/postal?lat=${lat}&lng=${lng}&country=${cc}`
+          : `/api/geo/postal?city=${encodeURIComponent(cityData.name)}&country=${cc}`;
+        const posRes = await fetch(url);
+        const posData = await posRes.json();
+        if (posData.postal_code) setPostalCode(posData.postal_code);
+      } catch { /* silent fail */ }
+    }
     
     // Auto-fill country if from global search
     if (cityData.country_code && !countryCode) {
@@ -538,7 +580,7 @@ export default function RegisterProviderPage() {
           <Link href="/">
             <Logo />
           </Link>
-          <span className="text-[13px] text-gray-400">
+          <span className="text-[13px] text-gray-500">
             Already a member?{" "}
             <Link href="/login" className="text-[#DC2626] hover:underline font-medium">
               Sign in
@@ -558,7 +600,7 @@ export default function RegisterProviderPage() {
                     className={`w-8 h-8 flex items-center justify-center text-[13px] font-semibold transition-all ${
                       step >= s.num
                         ? "bg-[#DC2626] text-white"
-                        : "bg-gray-100 text-gray-400"
+                        : "bg-gray-100 text-gray-500"
                     }`}
                     style={{ borderRadius: 0 }}
                   >
@@ -572,7 +614,7 @@ export default function RegisterProviderPage() {
                   </div>
                   <span
                     className={`text-[13px] font-medium hidden sm:block ${
-                      step >= s.num ? "text-gray-900" : "text-gray-400"
+                      step >= s.num ? "text-gray-900" : "text-gray-500"
                     }`}
                   >
                     {s.label}
@@ -725,7 +767,7 @@ export default function RegisterProviderPage() {
 
               {/* Appearance */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Appearance
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -743,19 +785,17 @@ export default function RegisterProviderPage() {
                   />
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <InputField
+                  <SelectField
                     label="Height (cm)"
                     value={height}
                     onChange={setHeight}
-                    type="number"
-                    placeholder="170"
+                    options={HEIGHT_OPTIONS}
                   />
-                  <InputField
+                  <SelectField
                     label="Weight (kg)"
                     value={weight}
                     onChange={setWeight}
-                    type="number"
-                    placeholder="60"
+                    options={WEIGHT_OPTIONS}
                   />
                   <SelectField
                     label="Hair Color"
@@ -830,7 +870,7 @@ export default function RegisterProviderPage() {
 
               {/* Services */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Services & Languages
                 </h2>
                 <ChipSelect
@@ -840,10 +880,11 @@ export default function RegisterProviderPage() {
                   onChange={setServices}
                 />
                 <ChipSelect
-                  label="Languages Spoken"
+                  label="Languages Spoken (max 2)"
                   options={LANGUAGE_OPTIONS}
                   selected={languages}
                   onChange={setLanguages}
+                  max={2}
                 />
               </div>
 
@@ -863,10 +904,10 @@ export default function RegisterProviderPage() {
                   minLength={50}
                 />
                 <div className="flex justify-between">
-                  <p className="text-xs text-gray-400">Min. 50 characters</p>
+                  <p className="text-xs text-gray-500">Min. 50 characters</p>
                   <p
                     className={`text-xs ${
-                      about.length >= 50 ? "text-green-500" : "text-gray-400"
+                      about.length >= 50 ? "text-green-500" : "text-gray-500"
                     }`}
                   >
                     {about.length}/50
@@ -909,26 +950,20 @@ export default function RegisterProviderPage() {
 
               {/* Location */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Location
                 </h2>
-                <SelectField
-                  label="Country"
+                <CountrySelect
                   value={country}
-                  onChange={(v) => {
-                    const selected = SUPPORTED_COUNTRIES.find(c => c.name === v);
-                    setCountry(v);
-                    setCountryCode(selected?.code || "");
+                  onChange={(name, code) => {
+                    setCountry(name);
+                    setCountryCode(code);
                     setCity("");
                     setCitySearch("");
                     setCityResults([]);
                     setMajorCity(null);
+                    setPostalCode("");
                   }}
-                  options={SUPPORTED_COUNTRIES.map((c) => ({
-                    value: c.name,
-                    label: `${c.flag} ${c.name}`,
-                  }))}
-                  placeholder="Select country..."
                   required
                 />
                 
@@ -996,23 +1031,22 @@ export default function RegisterProviderPage() {
 
               {/* Contact */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Contact
                 </h2>
-                <InputField
+                <PhoneInput
                   label="Phone (with country code)"
                   value={phone}
                   onChange={setPhone}
-                  type="tel"
-                  placeholder="+45 12345678"
                   required
+                  defaultCountry={countryCode}
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <InputField
+                  <PhoneInput
                     label="WhatsApp"
                     value={whatsapp}
                     onChange={setWhatsapp}
-                    placeholder="+45 12345678"
+                    defaultCountry={countryCode}
                   />
                   <InputField
                     label="Telegram"
@@ -1025,7 +1059,7 @@ export default function RegisterProviderPage() {
 
               {/* Photos */}
               <div className="bg-white border border-gray-100 p-6 space-y-5">
-                <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-widest">
+                <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">
                   Photos
                 </h2>
 
@@ -1064,7 +1098,7 @@ export default function RegisterProviderPage() {
                     <button
                       type="button"
                       onClick={() => frontPhotoRef.current?.click()}
-                      className="w-36 h-48 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors"
+                      className="w-36 h-48 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-500 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors"
                       style={{ borderRadius: 0 }}
                     >
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1080,7 +1114,7 @@ export default function RegisterProviderPage() {
                 {/* Gallery */}
                 <div>
                   <label className="block text-[13px] font-medium text-gray-500 uppercase tracking-wide mb-2">
-                    Gallery Photos <span className="text-gray-400 font-normal normal-case">(optional, max 15)</span>
+                    Gallery Photos <span className="text-gray-500 font-normal normal-case">(optional, max 15)</span>
                   </label>
                   <input
                     ref={galleryRef}
@@ -1112,7 +1146,7 @@ export default function RegisterProviderPage() {
                       <button
                         type="button"
                         onClick={() => galleryRef.current?.click()}
-                        className="w-24 h-32 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors"
+                        className="w-24 h-32 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-500 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors"
                         style={{ borderRadius: 0 }}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1165,7 +1199,7 @@ export default function RegisterProviderPage() {
                 </button>
               </div>
 
-              <p className="text-center text-[13px] text-gray-400">
+              <p className="text-center text-[13px] text-gray-500">
                 Your profile will be reviewed and go live within 24 hours.
               </p>
             </div>

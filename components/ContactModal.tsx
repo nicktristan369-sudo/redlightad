@@ -44,7 +44,7 @@ export function ContactModal({ phone, whatsapp, profileImage, name, onClose }: {
             />
           )}
           <h3 className="text-[18px] font-bold text-gray-900">Contact me</h3>
-          <p className="text-[13px] text-gray-400 text-center mt-1 leading-relaxed">
+          <p className="text-[13px] text-gray-500 text-center mt-1 leading-relaxed">
             Please mention you found me on<br />
             <span className="font-semibold text-gray-500">RedLightAD.com</span>
           </p>
@@ -89,7 +89,7 @@ export function ContactModal({ phone, whatsapp, profileImage, name, onClose }: {
 
           {/* Empty State */}
           {!phone && !whatsapp && (
-            <p className="text-[14px] text-gray-400 text-center py-4">
+            <p className="text-[14px] text-gray-500 text-center py-4">
               Ingen kontaktinfo tilgængeligt
             </p>
           )}
@@ -99,7 +99,7 @@ export function ContactModal({ phone, whatsapp, profileImage, name, onClose }: {
             onClick={onClose} 
             className="w-full py-3 rounded-xl text-[14px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
           >
-            Luk
+            Close
           </button>
         </div>
       </div>

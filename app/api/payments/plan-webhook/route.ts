@@ -94,6 +94,25 @@ export async function POST(req: NextRequest) {
       console.log("Note: plan_purchases table not found (optional)");
     }
 
+    // Log til crypto_payments for admin oversigt
+    try {
+      await (supabase.from("crypto_payments").insert({
+        payment_id: data.payment_id?.toString(),
+        order_id: order_id,
+        user_id: userId,
+        listing_id: listing.id,
+        payment_type: "plan",
+        status: payment_status,
+        pay_amount: data.pay_amount,
+        pay_currency: data.pay_currency,
+        price_amount: data.price_amount,
+        price_currency: data.price_currency,
+        actually_paid: data.actually_paid,
+        outcome_amount: data.outcome_amount,
+        outcome_currency: data.outcome_currency,
+      } as any) as any);
+    } catch { /* table might not exist yet */ }
+
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

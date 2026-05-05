@@ -42,8 +42,18 @@ export default function SendMessageBox({ listingId, listingTitle, profileImage, 
         },
         body: JSON.stringify({ listing_id: listingId, content: msg.trim() }),
       })
+
+      if (!res.ok) {
+        const errorText = await res.text()
+        try {
+          const data = JSON.parse(errorText)
+          throw new Error(data.error || `Error: ${res.status}`)
+        } catch {
+          throw new Error(`Error: ${res.status} - ${errorText || "Unknown error"}`)
+        }
+      }
+
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Fejl")
       setSent(true)
       setMsg("")
     } catch (e: unknown) {

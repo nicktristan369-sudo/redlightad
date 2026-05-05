@@ -1,10 +1,13 @@
-import Navbar from "@/components/Navbar";
-import FilterBar from "@/components/FilterBar";
-import PremiumCarousel from "@/components/PremiumCarousel";
-import AdList from "@/components/AdList";
-import StoryCircles from "@/components/StoryCircles";
-import CityFilter from "@/components/CityFilter";
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import Navbar from "@/components/Navbar";
+import AdList from "@/components/AdList";
+import FilterBar from "@/components/FilterBar";
+
+// Dynamic imports for below-fold components
+const StoryCircles = dynamic(() => import("@/components/StoryCircles"));
+const PremiumCarousel = dynamic(() => import("@/components/PremiumCarousel"));
+const CityFilter = dynamic(() => import("@/components/CityFilter"));
 
 export default function Home() {
   return (

@@ -44,12 +44,12 @@ export async function POST(req: NextRequest) {
     const dewatermarkRes = await fetch(`${vpsProxy}/dewatermark?url=${encodeURIComponent(cloudinaryUrl)}`)
     if (!dewatermarkRes.ok) {
       // Cloudinary upload OK, men dewatermark fejlede — returner ren Cloudinary URL
-      return NextResponse.json({ url: cloudinaryUrl, warning: "Video uploadet men vandmærke ikke fjernet" })
+      return NextResponse.json({ url: cloudinaryUrl, warning: "Video uploaded but watermark not removed" })
     }
 
     const dewatermarkedBuffer = Buffer.from(await dewatermarkRes.arrayBuffer())
     if (dewatermarkedBuffer.length < 10000) {
-      return NextResponse.json({ url: cloudinaryUrl, warning: "Vandmærke-fjernelse fejlede — originalen bevaret" })
+      return NextResponse.json({ url: cloudinaryUrl, warning: "Watermark removal failed — original preserved" })
     }
 
     // Trin 4: Upload den rene video til Cloudinary

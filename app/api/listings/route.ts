@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from("listings")
-      .select("id, title, profile_image, profile_video_url, video_url, age, gender, category, location, city, country, about, languages, premium_tier, premium_until, boost_score, boost_purchased_at, created_at, voice_message_url, images, opening_hours, timezone, social_links, onlyfans_username, onlyfans_price_usd, onlyfans_bio, onlyfans_cover_url, onlyfans_photos_count, onlyfans_videos_count, onlyfans_likes_count, onlyfans_subscribers, video_count")
+      .select("id, title, profile_image, profile_video_url, video_url, age, gender, category, location, city, country, major_city, about, languages, premium_tier, premium_until, boost_score, boost_purchased_at, created_at, voice_message_url, images, opening_hours, timezone, social_links, onlyfans_username, onlyfans_price_usd, onlyfans_bio, onlyfans_cover_url, onlyfans_photos_count, onlyfans_videos_count, onlyfans_likes_count, onlyfans_subscribers, video_count")
       .eq("status", "active")
       .limit(limit);
 
@@ -196,10 +196,26 @@ export async function GET(req: NextRequest) {
     else if (sortBy === "oldest") query = query.order("created_at", { ascending: true });
     else query = query.order("created_at", { ascending: false }); // default, re-sort client-side by tier
 
-    const { data: listings, error } = await query;
+    let { data: listings, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Fallback: hvis domain-country-filter giver for få resultater,
+    // hent globale profiler i stedet (ingen country-filter)
+    const MIN_LOCAL_RESULTS = 10
+    const usedDomainFilter = !country && !q && domainCountries && domainCountries.length > 0
+    if (usedDomainFilter && (listings?.length ?? 0) < MIN_LOCAL_RESULTS) {
+      console.log(`[Listings API] Only ${listings?.length} local results — falling back to global`)
+      const fallbackQuery = getClient()
+        .from("listings")
+        .select("id, title, profile_image, profile_video_url, video_url, age, gender, category, location, city, country, major_city, about, languages, premium_tier, premium_until, boost_score, boost_purchased_at, created_at, voice_message_url, images, opening_hours, timezone, social_links, onlyfans_username, onlyfans_price_usd, onlyfans_bio, onlyfans_cover_url, onlyfans_photos_count, onlyfans_videos_count, onlyfans_likes_count, onlyfans_subscribers, video_count")
+        .eq("status", "active")
+        .limit(limit)
+        .order("created_at", { ascending: false })
+      const { data: globalData, error: globalError } = await fallbackQuery
+      if (!globalError && globalData) listings = globalData
     }
 
     // Sort: Boost (score-baseret) → Premium → Gratis

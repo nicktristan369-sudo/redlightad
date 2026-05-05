@@ -41,20 +41,17 @@ const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }>
 };
 
 const TIERS: { value: string | null; label: string; color: string }[] = [
-  { value: "vip",      label: "VIP",      color: "#C9A84C" },
-  { value: "featured", label: "Featured", color: "#2563EB" },
-  { value: "basic",    label: "Basic",    color: "#6B7280" },
-  { value: null,       label: "Standard", color: "#9CA3AF" },
+  { value: "featured", label: "Premium",  color: "#C9A84C" },
+  { value: "basic",    label: "Standard", color: "#6B7280" },
 ];
 
 const TIER_COLOR: Record<string, string> = {
-  vip: "#C9A84C", featured: "#2563EB", basic: "#6B7280",
+  featured: "#C9A84C", basic: "#6B7280",
 };
 
 /* ── Inline Tier Dropdown ── */
 const TIER_STYLE: Record<string, { bg: string; color: string; border: string }> = {
-  vip:      { bg: "#FEF08A", color: "#78350F", border: "#F59E0B" },
-  featured: { bg: "#BFDBFE", color: "#1E3A8A", border: "#3B82F6" },
+  featured: { bg: "#FEF08A", color: "#78350F", border: "#F59E0B" },
   basic:    { bg: "#E5E7EB", color: "#374151", border: "#D1D5DB" },
   standard: { bg: "#F3F4F6", color: "#6B7280", border: "#E5E7EB" },
 };
@@ -143,7 +140,7 @@ function TierDropdown({ listingId, currentTier, onSet }: {
           }}
         >
           <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sæt Tier</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Set Tier</p>
           </div>
           {TIERS.map(t => {
             const active = t.value === currentTier;
@@ -402,13 +399,9 @@ export default function AdminAnnoncerPage() {
                       <td className="px-4 py-3 max-w-[220px]">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-[13px] font-semibold text-gray-900 truncate">{l.title}</p>
-                          {l.tier === "vip" && (
-                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full flex-shrink-0"
-                              style={{ background: "#FFFBEB", color: "#B45309", border: "1px solid #FCD34D" }}>VIP</span>
-                          )}
                           {l.tier === "featured" && (
                             <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full flex-shrink-0"
-                              style={{ background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>FEAT</span>
+                              style={{ background: "#FEF9C3", color: "#92400E", border: "1px solid #FCD34D" }}>PREMIUM</span>
                           )}
                         </div>
                       </td>
@@ -452,7 +445,7 @@ export default function AdminAnnoncerPage() {
                         <button
                           onClick={() => toggleCarousel(l.id, l.in_carousel)}
                           disabled={carouselBusy === l.id}
-                          title={l.in_carousel ? "Fjern fra carousel" : "Tilføj til carousel"}
+                          title={l.in_carousel ? "Remove from carousel" : "Add to carousel"}
                           className="p-1.5 rounded-md transition-all disabled:opacity-40"
                           style={{ color: l.in_carousel ? "#F59E0B" : "#D1D5DB" }}
                           onMouseEnter={e => { e.currentTarget.style.background = "#FFFBEB"; e.currentTarget.style.color = "#F59E0B"; }}

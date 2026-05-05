@@ -83,8 +83,8 @@ export default function CookieBanner() {
                   </div>
                   <div className="flex-shrink-0">
                     {item.locked
-                      ? <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-md">Always on</span>
-                      : <span className="text-[11px] font-medium text-gray-400">Optional</span>
+                      ? <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md">Always on</span>
+                      : <span className="text-[11px] font-medium text-gray-500">Optional</span>
                     }
                   </div>
                 </div>

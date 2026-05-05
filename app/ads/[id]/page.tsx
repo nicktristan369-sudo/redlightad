@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import AdDetailClient from "./AdDetailClient";
 import PhotoGallery from "@/components/PhotoGallery";
 import VoicePlayer from "@/components/VoicePlayer";
 import AdSidebar from "@/components/AdSidebar";
 import ContactSection from "@/components/ContactSection";
+import MapMeSection from "@/components/MapMeSection";
 import VideoSection from "@/components/VideoSection";
 import SocialLinksSection from "@/components/SocialLinksSection";
 import TravelBox from "@/components/TravelBox";
@@ -19,11 +21,13 @@ import ReportModal from "@/components/ReportModal";
 import PayMeBox from "@/components/PayMeBox";
 import PhotoGrid from "@/components/PhotoGrid";
 import PrivateContentPreview from "@/components/PrivateContentPreview";
-import MarketplaceSection from "@/components/MarketplaceSection";
-import LockedContentSection from "@/components/LockedContentSection";
 import ReadMoreText from "@/components/ReadMoreText";
-import ReviewsSection from "@/components/ReviewsSection";
 import StoryCircles from "@/components/StoryCircles";
+
+// Dynamic imports for below-the-fold components
+const MarketplaceSection = dynamic(() => import("@/components/MarketplaceSection"), { ssr: false });
+const LockedContentSection = dynamic(() => import("@/components/LockedContentSection"), { ssr: false });
+const ReviewsSection = dynamic(() => import("@/components/ReviewsSection"), { ssr: false });
 import { createClient } from "@/lib/supabase";
 import type { SocialLinks } from "@/components/SocialLinksSection";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -92,6 +96,10 @@ interface Listing {
   has_own_place?: boolean | null;
   opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null;
   timezone?: string | null;
+  // Map Me fields
+  show_exact_address?: boolean | null;
+  exact_latitude?: number | null;
+  exact_longitude?: number | null;
 }
 
 export default function AdDetailPage() {
@@ -107,25 +115,26 @@ export default function AdDetailPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient();
+      try {
+        const supabase = createClient();
 
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id ?? null);
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id ?? null);
 
-      // Fetch listing - try by ID first, then by slug
-      let data = null;
-      
-      // Check if id looks like a UUID
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        // Fetch listing - try by ID first, then by slug
+        let data = null;
+        
+        // Check if id looks like a UUID
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       
       if (isUuid) {
         const result = await supabase
           .from("listings")
           .select("*")
           .eq("id", id)
-          .eq("status", "active")
-          .single();
+          .in("status", ["active", "pending"])
+          .maybeSingle();
         data = result.data;
       }
       
@@ -135,8 +144,8 @@ export default function AdDetailPage() {
           .from("listings")
           .select("*")
           .eq("slug", id)
-          .eq("status", "active")
-          .single();
+          .in("status", ["active", "pending"])
+          .maybeSingle();
         data = result.data;
       }
 
@@ -177,7 +186,11 @@ export default function AdDetailPage() {
           .catch(() => {});
       }
 
-      setLoading(false);
+        setLoading(false);
+      } catch (err) {
+        console.error("[Ads] Load error:", err);
+        setLoading(false);
+      }
     };
     load();
   }, [id]);
@@ -224,7 +237,7 @@ export default function AdDetailPage() {
       <main className="bg-gray-50 min-h-screen pb-20" style={{ paddingTop: 12 }}>
         {/* Mobile-only: full-width gallery at top */}
         <div className="md:hidden px-3">
-          <PhotoGallery images={ad.images ?? []} totalPhotos={(ad.images ?? []).length} name={ad.title} isLoggedIn={currentUserId !== null} />
+          <PhotoGallery images={[...(ad.profile_image ? [ad.profile_image] : []), ...(ad.images ?? [])]} totalPhotos={1 + (ad.images ?? []).length} name={ad.title} isLoggedIn={currentUserId !== null} />
         </div>
 
         <div className="mx-auto max-w-7xl px-4 pt-3 md:pt-8 pb-8">
@@ -233,7 +246,7 @@ export default function AdDetailPage() {
             const shortTitle = ad.title.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim().slice(0, 28).trim();
             const crumbLabel = shortTitle.length < ad.title.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim().length ? shortTitle + '…' : shortTitle;
             return (
-              <nav className="mb-3 flex items-center gap-1 text-[12px] text-gray-400">
+              <nav className="mb-3 flex items-center gap-1 text-[12px] text-gray-500">
                 <a href="/" className="hover:text-red-600 transition-colors">{t.ad_home}</a>
                 <span className="text-red-400">/</span>
                 <a href={`/country/${ad.country.toLowerCase()}`} className="hover:text-red-600 transition-colors capitalize">{ad.country}</a>
@@ -246,7 +259,7 @@ export default function AdDetailPage() {
           {/* Stories */}
           <StoryCircles listingId={ad.id} />
 
-          {/* Title — udenfor grid, max 2/3 bredde på desktop så sidebar flugter med galleriet */}
+          {/* Title — outside grid, max 2/3 width on desktop so sidebar aligns with gallery */}
           <div className="mb-4 w-full lg:max-w-[calc(66.666%-1.5rem)]">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-lg md:text-xl font-bold text-gray-900 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ad.title}</h1>
@@ -268,7 +281,7 @@ export default function AdDetailPage() {
                 </span>
               )}
             </div>
-            {(ad as any).short_id && <span className="text-[11px] text-gray-400 mt-1 block">ID #{(ad as any).short_id}</span>}
+            {(ad as any).short_id && <span className="text-[11px] text-gray-500 mt-1 block">ID #{(ad as any).short_id}</span>}
           </div>
 
           {/* Two-column layout — sidebar flugter med galleriet */}
@@ -365,7 +378,7 @@ export default function AdDetailPage() {
                       </span>
                     </h2>
                   </div>
-                  <PhotoGrid images={ad.images ?? []} onImageClick={(i) => setGridLightbox(i)} />
+                  <PhotoGrid images={[...(ad.profile_image ? [ad.profile_image] : []), ...(ad.images ?? [])]} onImageClick={(i) => setGridLightbox(i)} />
                 </div>
               )}
 
@@ -436,6 +449,16 @@ export default function AdDetailPage() {
                   travel={ad.travel}
                   body_build={(ad as any).body_build}
                 />
+                {/* Map Me section — only render when ALL data exists */}
+                {ad?.show_exact_address === true &&
+                 typeof ad?.exact_latitude === "number" &&
+                 typeof ad?.exact_longitude === "number" && (
+                  <MapMeSection
+                    latitude={ad.exact_latitude}
+                    longitude={ad.exact_longitude}
+                    profileImage={ad.profile_image ?? ad.images?.[0] ?? null}
+                  />
+                )}
                 <ContactSection contact={{
                   phone: ad.phone,
                   whatsapp: ad.whatsapp,
@@ -476,6 +499,9 @@ export default function AdDetailPage() {
         isLoggedIn={currentUserId !== null}
         profileImage={ad.images?.[0] ?? null}
         name={ad.title}
+        showExactAddress={ad?.show_exact_address ?? false}
+        exactLatitude={ad?.exact_latitude ?? null}
+        exactLongitude={ad?.exact_longitude ?? null}
       />
 
       {/* Grid lightbox */}
@@ -492,7 +518,7 @@ export default function AdDetailPage() {
               alt=""
               style={{ maxHeight: "90vh", maxWidth: "90vw", objectFit: "contain", display: "block" }}
             />
-            {/* Vandmærke */}
+            {/* Watermark */}
             <div style={{ position: "absolute", bottom: 12, right: 14, pointerEvents: "none", userSelect: "none", zIndex: 10 }}>
               <span style={{
                 fontSize: 13, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",

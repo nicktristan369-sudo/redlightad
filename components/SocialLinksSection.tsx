@@ -199,8 +199,8 @@ export default function SocialLinksSection({ listingId, socialLinks, isPremium, 
                 {/* Lock indicator for locked links */}
                 {isLocked && !isUnlocked && (
                   <div className="flex items-center gap-1">
-                    <Lock size={12} className="text-gray-400" />
-                    <span className="text-[11px] text-gray-400 font-medium">{cfg.price_coins}</span>
+                    <Lock size={12} className="text-gray-500" />
+                    <span className="text-[11px] text-gray-500 font-medium">{cfg.price_coins}</span>
                   </div>
                 )}
 
@@ -244,7 +244,7 @@ export default function SocialLinksSection({ listingId, socialLinks, isPremium, 
             {/* Close button */}
             <button 
               onClick={() => setUnlockModal(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-600"
             >
               <X size={20} />
             </button>

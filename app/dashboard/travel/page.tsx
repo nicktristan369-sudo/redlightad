@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import DashboardLayout from "@/components/DashboardLayout"
 import { 
   Plane, MapPin, Plus, Trash2, AlertCircle, CheckCircle, 
   ArrowLeft, Crown, Calendar, Globe, Clock, X 
@@ -83,10 +84,33 @@ export default function TravelPage() {
   // Form state
   const [showForm, setShowForm] = useState(false)
   const [city, setCity] = useState("")
+  const [citySearch, setCitySearch] = useState("")
+  const [cityResults, setCityResults] = useState<{name: string; region?: string; is_major_city?: boolean}[]>([])
+  const [showCityDropdown, setShowCityDropdown] = useState(false)
   const [country, setCountry] = useState("")
   const [countryCode, setCountryCode] = useState("")
   const [arrivalDate, setArrivalDate] = useState("")
   const [departureDate, setDepartureDate] = useState("")
+  const [majorCity, setMajorCity] = useState<string | null>(null)
+
+  // City autocomplete
+  useEffect(() => {
+    if (!citySearch || citySearch.length < 2 || !countryCode) {
+      setCityResults([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/cities?country=${countryCode}&search=${encodeURIComponent(citySearch)}&limit=10`)
+        const data = await res.json()
+        setCityResults(data.cities || [])
+        setShowCityDropdown(true)
+      } catch (e) {
+        console.error(e)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [citySearch, countryCode])
 
   useEffect(() => {
     loadData()
@@ -146,9 +170,9 @@ export default function TravelPage() {
 
     const data = await res.json()
     if (!res.ok) {
-      setMessage({ type: 'error', text: data.error || 'Fejl' })
+      setMessage({ type: 'error', text: data.error || 'Error' })
     } else {
-      setMessage({ type: 'success', text: 'Rejse tilføjet!' })
+      setMessage({ type: 'success', text: 'Travel added!' })
       setShowForm(false)
       setCity("")
       setCountry("")
@@ -161,7 +185,7 @@ export default function TravelPage() {
   }
 
   async function deleteTravel(id: string) {
-    if (!confirm("Er du sikker på du vil slette denne rejse?")) return
+    if (!confirm("Are you sure you want to delete this travel?")) return
     
     const res = await fetch('/api/travel', {
       method: 'DELETE',
@@ -188,7 +212,7 @@ export default function TravelPage() {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-2xl mx-auto px-4 py-8">
           <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-6 text-sm">
-            <ArrowLeft size={16} /> Tilbage til Dashboard
+            <ArrowLeft size={16} /> Back to Dashboard
           </Link>
           
           <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
@@ -197,13 +221,13 @@ export default function TravelPage() {
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Travel er en Premium Feature</h1>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              Med Premium kan du planlægge rejser, så kunder kan se hvornår du besøger deres by.
+              With Premium you can plan travels, so customers can see when you visit their city.
             </p>
             <Link 
               href="/upgrade"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
             >
-              <Crown size={18} /> Opgrader til Premium
+              <Crown size={18} /> Upgrade to Premium
             </Link>
           </div>
         </div>
@@ -214,7 +238,7 @@ export default function TravelPage() {
   const activeTravel = travels.find(t => t.is_current)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -223,14 +247,14 @@ export default function TravelPage() {
               <ArrowLeft size={16} /> Dashboard
             </Link>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              <Plane className="text-gray-400" /> Travel
+              <Plane className="text-gray-500" /> Travel
             </h1>
           </div>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
           >
-            <Plus size={16} /> Tilføj rejse
+            <Plus size={16} /> Add travel
           </button>
         </div>
 
@@ -253,15 +277,15 @@ export default function TravelPage() {
               <MapPin size={22} className={activeTravel ? 'text-red-500' : 'text-green-500'} />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-                {activeTravel ? 'Nuværende rejse-lokation' : 'Din hjem-lokation'}
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                {activeTravel ? 'Current travel location' : 'Your home location'}
               </p>
               <p className="text-xl font-semibold text-gray-900">
                 {activeTravel ? `${activeTravel.city}, ${activeTravel.country}` : `${listing?.city}, ${listing?.country}`}
               </p>
               {activeTravel && (
                 <p className="text-sm text-gray-500 mt-1">
-                  Hjem: {listing?.city}, {listing?.country}
+                  Home: {listing?.city}, {listing?.country}
                 </p>
               )}
             </div>
@@ -271,28 +295,29 @@ export default function TravelPage() {
         {/* Travels List */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Planlagte rejser</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Planned travels</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Rejser vises på din profil, så kunder ved hvornår du besøger deres by
+              Travels are displayed on your profile so customers know when you visit their city
             </p>
           </div>
 
           {travels.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                <Globe size={24} className="text-gray-400" />
+                <Globe size={24} className="text-gray-500" />
               </div>
-              <p className="text-gray-500 mb-4">Ingen rejser planlagt endnu</p>
+              <p className="text-gray-500 mb-4">No travels planned yet</p>
               <button
                 onClick={() => setShowForm(true)}
                 className="text-sm font-medium text-red-600 hover:text-red-700"
               >
-                Tilføj din første rejse →
+                Add your first travel →
               </button>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
               {travels
+                .filter(t => !t.is_current)
                 .sort((a, b) => new Date(a.arrival_date).getTime() - new Date(b.arrival_date).getTime())
                 .map(travel => {
                   const isPast = new Date(travel.departure_date) < new Date()
@@ -325,7 +350,7 @@ export default function TravelPage() {
                           )}
                           <button
                             onClick={() => deleteTravel(travel.id)}
-                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                            className="p-2 text-gray-500 hover:text-red-500 transition-colors"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -343,15 +368,15 @@ export default function TravelPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900">Tilføj ny rejse</h3>
-                <button onClick={() => setShowForm(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                <h3 className="text-lg font-semibold text-gray-900">Add new travel</h3>
+                <button onClick={() => setShowForm(false)} className="p-1 text-gray-500 hover:text-gray-600">
                   <X size={20} />
                 </button>
               </div>
               <div className="p-6 space-y-4">
                 {/* Country Select */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Land</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Country</label>
                   <select
                     value={countryCode}
                     onChange={e => {
@@ -359,9 +384,9 @@ export default function TravelPage() {
                       setCountryCode(e.target.value)
                       setCountry(selected?.name || "")
                     }}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   >
-                    <option value="">Vælg land...</option>
+                    <option value="">Select country...</option>
                     {COUNTRIES.map(c => (
                       <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
                     ))}
@@ -370,43 +395,83 @@ export default function TravelPage() {
 
                 {/* City */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">By</label>
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    placeholder="f.eks. København, Stockholm..."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={citySearch || city}
+                      onChange={e => {
+                        setCitySearch(e.target.value)
+                        setCity("")
+                        setMajorCity(null)
+                      }}
+                      placeholder="e.g. Copenhagen, Stockholm..."
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      disabled={!countryCode}
+                    />
+                    {showCityDropdown && cityResults.length > 0 && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {cityResults.map((c, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={async () => {
+                              setCity(c.name)
+                              setCitySearch(c.name)
+                              setShowCityDropdown(false)
+                              setCityResults([])
+                              // Find major city if not already major
+                              if (!c.is_major_city) {
+                                try {
+                                  const res = await fetch(`/api/geo/nearest-major?city=${encodeURIComponent(c.name)}&country=${countryCode}`)
+                                  const data = await res.json()
+                                  setMajorCity(data.city?.name || null)
+                                } catch (e) { console.error(e) }
+                              } else {
+                                setMajorCity(c.name)
+                              }
+                            }}
+                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center justify-between text-sm"
+                          >
+                            <span className="text-gray-900">{c.name}{c.region ? `, ${c.region}` : ''}</span>
+                            {c.is_major_city && <span className="text-xs text-green-600 font-medium">Major</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {majorCity && majorCity !== city && (
+                    <p className="text-xs text-gray-500 mt-1">📍 Mapped to: {majorCity} area</p>
+                  )}
                 </div>
 
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Ankomst</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Arrival</label>
                     <input
                       type="date"
                       value={arrivalDate}
                       onChange={e => setArrivalDate(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Afrejse</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Departure</label>
                     <input
                       type="date"
                       value={departureDate}
                       onChange={e => setDepartureDate(e.target.value)}
                       min={arrivalDate || new Date().toISOString().split('T')[0]}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                     />
                   </div>
                 </div>
 
                 {/* Info */}
                 <div className="p-3 bg-blue-50 rounded-xl text-sm text-blue-800">
-                  <p>💡 Dine rejser vises på din profil, så kunder kan se hvornår du besøger deres by.</p>
+                  <p>💡 Your travels are displayed on your profile so customers can see when you visit their city.</p>
                 </div>
               </div>
               <div className="p-6 border-t border-gray-100 flex gap-3">
@@ -414,20 +479,20 @@ export default function TravelPage() {
                   onClick={() => setShowForm(false)}
                   className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                 >
-                  Annuller
+                  Cancel
                 </button>
                 <button
                   onClick={addTravel}
                   disabled={!city || !country || !arrivalDate || !departureDate || saving}
                   className="flex-1 py-3 text-sm font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
-                  {saving ? 'Gemmer...' : 'Tilføj rejse'}
+                  {saving ? 'Saving...' : 'Add travel'}
                 </button>
               </div>
             </div>
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

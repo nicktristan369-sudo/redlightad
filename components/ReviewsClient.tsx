@@ -134,7 +134,7 @@ export default function ReviewsClient({ reviews }: Props) {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-gray-400" />
+                    <User className="w-5 h-5 text-gray-500" />
                   </div>
                 )}
               </div>
@@ -152,11 +152,11 @@ export default function ReviewsClient({ reviews }: Props) {
                         style={{ width: 16, height: 11, display: "inline-block", verticalAlign: "middle" }}
                       />
                     )}
-                    <span className="text-xs text-gray-400 ml-2">
+                    <span className="text-xs text-gray-500 ml-2">
                       {[review.listings.city, review.listings.country].filter(Boolean).join(", ")}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400 flex-shrink-0">
+                  <span className="text-xs text-gray-500 flex-shrink-0">
                     {timeAgo(review.created_at)}
                   </span>
                 </div>
@@ -164,7 +164,7 @@ export default function ReviewsClient({ reviews }: Props) {
                 <StarRating rating={review.rating} />
 
                 {review.reviewer_name && (
-                  <p className="text-xs text-gray-400 mt-1">by {review.reviewer_name}</p>
+                  <p className="text-xs text-gray-500 mt-1">by {review.reviewer_name}</p>
                 )}
 
                 {review.text && (
@@ -180,7 +180,7 @@ export default function ReviewsClient({ reviews }: Props) {
                           e.stopPropagation()
                           toggleExpanded(review.id)
                         }}
-                        className="text-xs text-gray-400 hover:text-gray-600 mt-1 transition-colors"
+                        className="text-xs text-gray-500 hover:text-gray-600 mt-1 transition-colors"
                       >
                         {expanded.has(review.id) ? "Show less" : "Read more"}
                       </button>
@@ -205,7 +205,7 @@ export default function ReviewsClient({ reviews }: Props) {
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-gray-500">
           <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No reviews found</p>
         </div>

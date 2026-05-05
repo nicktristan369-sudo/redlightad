@@ -22,7 +22,7 @@ function PremiumContent() {
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url
-      else throw new Error(data.error || "Fejl")
+      else throw new Error(data.error || "Error")
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Noget gik galt")
       setLoading(null)
@@ -40,8 +40,8 @@ function PremiumContent() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Vælg din Premium pakke</h1>
-          <p className="text-gray-500 text-lg">Nå flere kunder og få mere synlighed</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Premium Plan</h1>
+          <p className="text-gray-500 text-lg">Reach more customers and get more visibility</p>
         </div>
 
         {error && (
@@ -67,7 +67,7 @@ function PremiumContent() {
               >
                 {isFeatured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-4 py-1 rounded-full">
-                    MEST POPULÆR
+                    MOST POPULAR
                   </div>
                 )}
                 {isVip && (
@@ -83,7 +83,7 @@ function PremiumContent() {
                   <h2 className="text-xl font-bold text-gray-900">{plan.name}</h2>
                   <div className="mt-3">
                     <span className="text-4xl font-bold text-gray-900">{plan.priceDisplay}</span>
-                    <span className="text-gray-500 text-sm">/måned</span>
+                    <span className="text-gray-500 text-sm">/month</span>
                   </div>
                 </div>
 
@@ -113,7 +113,7 @@ function PremiumContent() {
                       Behandler...
                     </span>
                   ) : (
-                    `Vælg ${plan.name}`
+                    `Choose ${plan.name}`
                   )}
                 </button>
               </div>
@@ -121,8 +121,8 @@ function PremiumContent() {
           })}
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-8">
-          Sikker betaling via Stripe • Test mode aktiv • Brug kort 4242 4242 4242 4242
+        <p className="text-center text-xs text-gray-500 mt-8">
+          Secure payment via Stripe • Test mode active • Use card 4242 4242 4242 4242
         </p>
       </div>
     </div>

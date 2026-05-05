@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Phone, Star, MessageCircle, Flag, X, Send, MessageSquare } from "lucide-react"
+import { Phone, Star, MessageCircle, Flag, X, Send, MessageSquare, MapPin } from "lucide-react"
 import Link from "next/link"
 import { Sheet, ContactModal as SharedContactModal } from "@/components/ContactModal"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
@@ -14,6 +14,10 @@ interface Props {
   isLoggedIn: boolean
   profileImage?: string | null
   name?: string
+  // Map Me props — all optional with strict null checks
+  showExactAddress?: boolean | null
+  exactLatitude?: number | null
+  exactLongitude?: number | null
 }
 
 // Sheet re-exported from shared module (imported above)
@@ -62,7 +66,7 @@ function MessageModal({
               <X size={15} color="#6B7280" />
             </button>
           </div>
-          <p className="text-[12px] text-gray-400">{t.sticky_to} <strong className="text-gray-700">{listingTitle}</strong></p>
+          <p className="text-[12px] text-gray-500">{t.sticky_to} <strong className="text-gray-700">{listingTitle}</strong></p>
           {sent ? (
             <p className="text-[14px] text-green-600 font-semibold text-center py-6">{t.sticky_msg_sent}</p>
           ) : (
@@ -122,7 +126,7 @@ function MessageModal({
               <MessageSquare size={18} color="#6B7280" />
               <div>
                 <p className="text-[14px] font-semibold text-gray-700">{t.sticky_platform_msg}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{t.sticky_platform_anonymous}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">{t.sticky_platform_anonymous}</p>
               </div>
             </div>
             <p className="text-[12px] text-gray-500">{t.sticky_create_free}</p>
@@ -222,7 +226,7 @@ function scrollToReviews() {
 // ── Main component ────────────────────────────────────────────────────────────
 type Modal = "contact" | "message" | "report" | "review-gate" | null
 
-export default function StickyActionBar({ phone, whatsapp, listingId, listingTitle, isLoggedIn, profileImage, name }: Props) {
+export default function StickyActionBar({ phone, whatsapp, listingId, listingTitle, isLoggedIn, profileImage, name, showExactAddress, exactLatitude, exactLongitude }: Props) {
   const { t } = useLanguage()
   const [modal, setModal] = useState<Modal>(null)
 
@@ -231,11 +235,29 @@ export default function StickyActionBar({ phone, whatsapp, listingId, listingTit
     scrollToReviews()
   }
 
+  // Safe check for Map Me button — only show when ALL data exists
+  const hasMapData = showExactAddress === true &&
+    typeof exactLatitude === "number" &&
+    typeof exactLongitude === "number"
+
+  const handleMapMe = () => {
+    if (hasMapData) {
+      try {
+        window.open(`https://www.google.com/maps?q=${exactLatitude},${exactLongitude}`, "_blank")
+      } catch {
+        // Ignore errors
+      }
+    }
+  }
+
   const buttons = [
     { icon: <Phone size={20} />,          label: t.sticky_contact, primary: true,  action: () => setModal("contact") },
     { icon: <Star size={20} />,           label: t.sticky_review,  primary: false, action: handleReview },
     { icon: <MessageCircle size={20} />,  label: t.sticky_message, primary: false, action: () => setModal("message") },
-    { icon: <Flag size={20} />,           label: t.sticky_report,  primary: false, action: () => setModal("report") },
+    // Show Map me when available, otherwise Report
+    hasMapData
+      ? { icon: <MapPin size={20} />,     label: "Map me",         primary: false, action: handleMapMe }
+      : { icon: <Flag size={20} />,       label: t.sticky_report,  primary: false, action: () => setModal("report") },
   ]
 
   return (

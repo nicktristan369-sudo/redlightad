@@ -35,6 +35,7 @@ const FEATURES: { icon: React.ElementType; label: string; standard: string | boo
   { icon: MapPin,       label: "Locations",                     standard: "1 only",    premium: "Multiple countries" },
   { icon: Globe,        label: "Change location anytime",       standard: false,       premium: true },
   { icon: Link2,        label: "Social media links",            standard: false,       premium: true },
+  { icon: Link2,        label: "Personal share link (redlightad.com/p/you)", standard: false, premium: true },
   { icon: Star,         label: "OnlyFans promotion",            standard: false,       premium: true },
   { icon: Camera,       label: "Post stories",                  standard: false,       premium: true },
   { icon: ShoppingBag,  label: "Sell on Marketplace",           standard: false,       premium: "Global" },
@@ -191,7 +192,7 @@ export default function ChoosePlanPage() {
         <div className="rounded-2xl border border-[#2a2a2a] overflow-hidden">
           {/* Header */}
           <div className="grid grid-cols-[1fr_90px_90px] bg-[#1a1a1a]">
-            <div className="px-4 py-3 text-sm font-semibold text-gray-400">Compare plans</div>
+            <div className="px-4 py-3 text-sm font-semibold text-gray-500">Compare plans</div>
             <div className={`px-2 py-3 text-center text-sm font-bold ${plan === "standard" ? "bg-[#f5a623]/10 text-[#f5a623] border-t-2 border-[#f5a623]" : "text-white"}`}>
               Standard
             </div>
@@ -220,7 +221,7 @@ export default function ChoosePlanPage() {
                   ) : f.standard === false ? (
                     <X className="w-4 h-4 text-red-500/70" />
                   ) : (
-                    <span className="text-gray-400 text-xs">{f.standard}</span>
+                    <span className="text-gray-500 text-xs">{f.standard}</span>
                   )}
                 </div>
                 {/* Premium value */}

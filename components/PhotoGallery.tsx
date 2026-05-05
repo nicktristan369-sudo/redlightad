@@ -293,7 +293,7 @@ export default function PhotoGallery({
                       outlineOffset: 1,
                     }}
                   >
-                    <img src={highQualityUrl(img, 140)} alt="" className="w-full h-full object-cover" draggable={false} />
+                    <img src={highQualityUrl(img, 140)} alt="" loading="lazy" className="w-full h-full object-cover" draggable={false} />
                     {isLocked(i) && (
                       <div className="absolute inset-0 flex items-center justify-center"
                         style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
@@ -338,7 +338,7 @@ export default function PhotoGallery({
                     outlineOffset: 1,
                   }}
                 >
-                  <img src={highQualityUrl(img, 120)} alt="" className="w-full h-full object-cover" draggable={false} />
+                  <img src={highQualityUrl(img, 120)} alt="" loading="lazy" className="w-full h-full object-cover" draggable={false} />
                   {isLocked(i) && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>

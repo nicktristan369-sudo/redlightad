@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
           send(`✅ ${listing.display_name || listing.id} — ${newImages.length} billeder opdateret`)
         }
 
-        send(`\nFærdig! ${updated} profiler opdateret, ${skipped} sprunget over.`)
+        send(`\nDone! ${updated} profiles updated, ${skipped} skipped.`)
       } catch (e) {
         send(`Fejl: ${e instanceof Error ? e.message : String(e)}`)
       } finally {

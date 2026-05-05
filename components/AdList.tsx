@@ -1,8 +1,9 @@
 "use client"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
-
+import { AutoPlayVideo } from "@/components/AutoPlayVideo"
 import { useEffect, useState, Suspense, useRef } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import { FileText, LayoutList, LayoutGrid } from "lucide-react"
 import AdCardGrid from "./AdCardGrid"
@@ -20,18 +21,33 @@ interface Listing {
   location: string
   city: string | null
   country: string | null
+  major_city?: string | null
   about: string | null
   languages: string[]
   premium_tier: string | null
   created_at: string
   voice_message_url?: string | null
   images?: string[] | null
+  videos?: string[] | null
+  video_count?: number | null
   opening_hours?: Record<string, { open: string; close: string; closed: boolean }> | null
   timezone?: string | null
 }
 
 import { isAvailableNow } from "@/lib/isAvailableNow"
-import { formatLocation } from "@/lib/getRegionForCity"
+// Format location with major city info
+const formatLocation = (city?: string | null, country?: string | null, majorCity?: string | null) => {
+  if (!city && !country) return "";
+  if (!city) return country || "";
+  
+  // Show "City (Major City area)" format if different
+  const cityPart = majorCity && majorCity !== city 
+    ? `${city} (${majorCity} area)` 
+    : city;
+  
+  if (!country) return cityPart;
+  return `${cityPart}, ${country}`;
+};
 
 // ── Mobile listing card with auto-cycling images ──────────────────────────
 function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 }: { // i18n-ready
@@ -64,7 +80,7 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
     : [null, null, null]
 
   const photoCount = allImgs.length
-  const videoCount = ad.video_url ? 1 : 0
+  const videoCount = ad.video_count ?? ((ad.videos?.length ?? 0) > 0 ? ad.videos!.length : (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0))
 
   return (
     <div className="md:hidden bg-white overflow-hidden rounded-none"
@@ -82,13 +98,13 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         {/* Left panel - static image */}
         <div className="relative overflow-hidden bg-gray-300 flex-1">
           {panels[0] && (
-            <img 
+            <Image 
               src={panels[0]} 
               alt="" 
-              className="w-full h-full object-cover"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 50vw, 33vw"
             />
           )}
         </div>
@@ -96,21 +112,18 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         {/* Center panel - LIVE video or static image */}
         <div className="relative overflow-hidden bg-gray-300 flex-1">
           {ad.profile_video_url ? (
-            <video
+            <AutoPlayVideo
               src={ad.profile_video_url}
-              autoPlay
-              muted
-              loop
-              playsInline
               className="w-full h-full object-cover"
             />
           ) : panels[1] && (
-            <img 
+            <Image 
               src={panels[1]} 
               alt="" 
-              className="w-full h-full object-cover"
-              loading="eager"
-              decoding="async"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 50vw, 33vw"
             />
           )}
         </div>
@@ -118,9 +131,9 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         {/* Right panel - static image */}
         <div className="relative overflow-hidden bg-gray-300 flex-1">
           {ad.profile_video_url ? (
-            panels[1] && <img src={panels[1]} alt="" className="w-full h-full object-cover" loading="eager" decoding="async" />
+            panels[1] && <Image src={panels[1]} alt="" fill className="object-cover" priority sizes="(max-width: 768px) 50vw, 33vw" />
           ) : (
-            panels[2] && <img src={panels[2]} alt="" className="w-full h-full object-cover" loading="eager" decoding="async" />
+            panels[2] && <Image src={panels[2]} alt="" fill className="object-cover" priority sizes="(max-width: 768px) 50vw, 33vw" />
           )}
         </div>
       </div>
@@ -135,13 +148,14 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
           </svg>
           <span className="font-medium">{photoCount}</span>
         </div>
-        {/* Video play icon */}
+        {/* Video play icon + count */}
         {videoCount > 0 && (
-          <div className="flex items-center">
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-1 text-[12px] text-gray-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="9" strokeWidth={1.8}/>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 9l5 3-5 3V9z"/>
             </svg>
+            <span className="font-medium">{videoCount}</span>
           </div>
         )}
         {/* Posted time — right */}
@@ -171,7 +185,7 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
         </a>
         {/* Location */}
         <div className="flex items-center justify-center gap-1 py-3.5 text-[10px] sm:text-[11px] font-medium min-w-0"
-          style={{ flex: 1.4, color: "#9CA3AF", borderRight: "1px solid #333" }}>
+          style={{ flex: 1.4, color: "#6B7280", borderRight: "1px solid #333" }}>
           <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -191,26 +205,14 @@ function MobileAdCard({ ad, displayLocation, description, ago, staggerDelay = 0 
 
 // ── Desktop thumbnail cycling ─────────────────────────────────────────────
 function DesktopThumb({ ad, staggerDelay = 0 }: { ad: Listing; staggerDelay?: number }) {
-  // Levende profilbillede — vis video direkte
-  if (ad.profile_video_url) {
-    return (
-      <video
-        src={ad.profile_video_url}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="w-full h-full object-cover"
-      />
-    )
-  }
-
+  // ALL hooks first — no conditional returns before hooks
+  const [videoFailed, setVideoFailed] = useState(false)
   const pool = [ad.profile_image, ...(ad.images ?? [])].filter((v): v is string => !!v).filter((v, i, a) => a.indexOf(v) === i)
   const [current, setCurrent] = useState(0)
   const [fading, setFading] = useState(false)
 
   useEffect(() => {
-    if (pool.length <= 1) return
+    if (pool.length <= 1 || (ad.profile_video_url && !videoFailed)) return
     const start = setTimeout(() => {
       const t = setInterval(() => {
         setFading(true)
@@ -227,12 +229,23 @@ function DesktopThumb({ ad, staggerDelay = 0 }: { ad: Listing; staggerDelay?: nu
     }, staggerDelay)
     return () => clearTimeout(start)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pool.length, staggerDelay])
+  }, [pool.length, staggerDelay, videoFailed])
+
+  // Levende profilbillede — autoplay video
+  if (ad.profile_video_url && !videoFailed) {
+    return (
+      <AutoPlayVideo
+        src={ad.profile_video_url}
+        className="w-full h-full object-cover"
+        onError={() => setVideoFailed(true)}
+      />
+    )
+  }
 
   if (pool.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-200">
-        <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-10 h-10 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       </div>
@@ -262,41 +275,8 @@ function Waveform() {
   )
 }
 
-function tierBadge(tier: string | null | undefined) {
-  if (!tier) return null
-  const labels: Record<string, { label: string; gold: boolean }> = {
-    vip:      { label: "VIP",     gold: true  },
-    featured: { label: "TOP",     gold: false },
-    basic:    { label: "PREMIUM", gold: true  },
-  }
-  const b = labels[tier]
-  if (!b) return null
-  return b.gold ? (
-    <span style={{
-      position: "absolute", top: 10, left: 10,
-      fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
-      padding: "3px 7px",
-      background: "linear-gradient(135deg, #C9A84C, #F0D080, #C9A84C)",
-      color: "#1a0f00",
-      borderRadius: 4,
-      boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
-    }}>
-      {b.label}
-    </span>
-  ) : (
-    <span style={{
-      position: "absolute", top: 10, left: 10,
-      fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
-      padding: "3px 7px",
-      background: "rgba(0,0,0,0.75)",
-      color: "#E5E7EB",
-      borderRadius: 4,
-      border: "1px solid rgba(255,255,255,0.15)",
-      backdropFilter: "blur(4px)",
-    }}>
-      {b.label}
-    </span>
-  )
+function tierBadge(_tier: string | null | undefined) {
+  return null
 }
 
 function timeAgo(dateStr: string): string {
@@ -374,7 +354,7 @@ function MiniVoiceChip({ url }: { url: string }) {
         })}
       </div>
       {(duration > 0 && isFinite(duration)) && (
-        <span className="text-[10px] text-gray-400 tabular-nums">
+        <span className="text-[10px] text-gray-500 tabular-nums">
           {Math.floor(duration / 60)}:{String(Math.floor(duration % 60)).padStart(2, "0")}
         </span>
       )}
@@ -472,7 +452,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
   if (listings.length === 0) {
     return (
       <section style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 16px' }}>
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-gray-500">
           <FileText size={40} color="#D1D5DB" className="mx-auto mb-4" />
           <p className="text-lg">No active listings yet</p>
         </div>
@@ -546,7 +526,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
       ) : (
         <div className="space-y-3">
           {listings.map((ad, idx) => {
-            const displayLocation = formatLocation(ad.city, ad.country) || ad.location || ""
+            const displayLocation = formatLocation(ad.city, ad.country, ad.major_city) || ad.location || ""
             const description = cleanDescription(ad.about || "")
             return (
               <Link key={ad.id} href={`/ads/${ad.slug || ad.id}`} className="block">
@@ -583,30 +563,18 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       {/* Tier badge */}
                       {tierBadge(ad.premium_tier)}
 
-                      {/* Available Now bar - bottom of thumbnail */}
-                      {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                        <div className="absolute bottom-0 left-0 right-0 flex items-center gap-1.5 bg-[#1a1a1a]/90 px-3 py-2">
-                          <span className="relative flex h-1.5 w-1.5 flex-shrink-0">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400"></span>
-                          </span>
-                          <span className="text-green-400 text-[10px] font-bold tracking-widest uppercase">Available Now</span>
-                        </div>
-                      )}
+
                     </div>
 
                     {/* Right: content */}
                     <div className="flex-1 p-3 flex flex-col min-w-0">
                       {/* Title */}
                       <div className="flex items-center gap-1.5 mb-1 min-w-0">
-                        {isAvailableNow(ad.opening_hours, ad.timezone) && (
-                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} />
-                        )}
                         <h3 className="font-bold text-[17px] text-gray-900 leading-tight line-clamp-2">{ad.title}</h3>
                       </div>
 
                       {/* Timestamp */}
-                      <p className="text-xs text-gray-400 mb-2">{timeAgo(ad.created_at)}</p>
+                      <p className="text-xs text-gray-500 mb-2">{timeAgo(ad.created_at)}</p>
 
                       {/* Description */}
                       <p className="text-sm text-gray-600 line-clamp-3 mb-2">{description}</p>
@@ -614,13 +582,13 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                       {/* Photo/video/voice count chips */}
                       {(() => {
                         const photoCount = (ad.images?.length ?? 0) + (ad.profile_image ? 1 : 0)
-                        const videoCount = (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0) + ((ad as any).video_count ?? 0)
+                        const videoCount = ad.video_count ?? ((ad.videos?.length ?? 0) > 0 ? ad.videos!.length : (ad.video_url ? 1 : 0) + (ad.profile_video_url ? 1 : 0))
                         const hasVoice = !!ad.voice_message_url
                         if (photoCount === 0 && videoCount === 0 && !hasVoice) return null
                         return (
                           <div className="flex items-center gap-2 mb-2">
                             {photoCount > 0 && (
-                              <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
+                              <span className="flex items-center gap-0.5 text-[11px] text-gray-500">
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -629,7 +597,7 @@ function AdListInner({ country: propCountry, category: propCategory, city: propC
                               </span>
                             )}
                             {videoCount > 0 && (
-                              <span className="flex items-center gap-0.5 text-[11px] text-gray-400">
+                              <span className="flex items-center gap-0.5 text-[11px] text-gray-500">
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                   <circle cx="12" cy="12" r="9"/>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 9l5 3-5 3V9z"/>

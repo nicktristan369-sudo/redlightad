@@ -20,6 +20,19 @@ interface Profile {
   avatar_url: string | null;
   subscription_tier: string | null;
   created_at: string;
+  // From listings join
+  listing_id: string | null;
+  premium_tier: string | null;
+  premium_until: string | null;
+  listing_status: string | null;
+  // Contact info from listing
+  listing_phone: string | null;
+  listing_whatsapp: string | null;
+  listing_telegram: string | null;
+  listing_country: string | null;
+  listing_city: string | null;
+  listing_name: string | null;
+  listing_image: string | null;
 }
 
 interface ArchivedUser {
@@ -44,24 +57,37 @@ const PAGE_SIZE = 25;
 
 /* ───── Tier ───── */
 const TIERS: { value: string | null; label: string; price: string; color: string }[] = [
-  { value: "vip",      label: "VIP",      price: "$49.99/mo", color: "#CA8A04" },
-  { value: "featured", label: "Featured", price: "$24.99/mo", color: "#2563EB" },
-  { value: "basic",    label: "Basic",    price: "$9.99/mo",  color: "#6B7280" },
-  { value: null,       label: "Free",     price: "fjern",     color: "#DC2626" },
+  { value: "featured", label: "Premium",  price: "$42/mo", color: "#CA8A04" },
+  { value: "basic",    label: "Standard", price: "$21/mo", color: "#6B7280" },
 ];
 
-function TierBadge({ tier }: { tier: string | null }) {
+function TierBadge({ tier, until }: { tier: string | null; until?: string | null }) {
   if (!tier) return <span className="text-[11px] text-gray-300">—</span>;
-  const map: Record<string, { bg: string; color: string }> = {
-    vip:      { bg: "#FEF9C3", color: "#92400E" },
-    featured: { bg: "#EFF6FF", color: "#1E40AF" },
-    basic:    { bg: "#F3F4F6", color: "#374151" },
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    featured: { bg: "#FEF9C3", color: "#92400E", label: "PREMIUM" },
+    basic:    { bg: "#F3F4F6", color: "#374151", label: "STANDARD" },
   };
   const s = map[tier];
-  if (!s) return null;
+  if (!s) return <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{tier}</span>;
+  
+  // Calculate days remaining
+  let daysLeft: number | null = null;
+  if (until) {
+    const untilDate = new Date(until);
+    const now = new Date();
+    daysLeft = Math.ceil((untilDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  }
+  
   return (
-    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-      style={{ background: s.bg, color: s.color }}>{tier}</span>
+    <div className="flex flex-col items-start gap-0.5">
+      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+        style={{ background: s.bg, color: s.color }}>{s.label}</span>
+      {daysLeft !== null && (
+        <span className={`text-[9px] ${daysLeft > 30 ? "text-green-600" : daysLeft > 7 ? "text-amber-600" : "text-red-600"}`}>
+          {daysLeft > 0 ? `${daysLeft} days left` : "Expired"}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -82,8 +108,116 @@ function Avatar({ url, name }: { url: string | null; name: string | null }) {
   );
 }
 
-/* ───── Premium dropdown ───── */
-function PremiumDropdown({ userId, currentTier, onSet }: {
+/* ───── Premium dropdown with months ───── */
+const MONTH_OPTIONS = [
+  { months: 1, label: "1 month" },
+  { months: 3, label: "3 months" },
+  { months: 6, label: "6 months" },
+  { months: 12, label: "12 months" },
+];
+
+function PremiumDropdown({ userId, listingId, currentTier, currentUntil, onSet }: {
+  userId: string;
+  listingId: string | null;
+  currentTier: string | null;
+  currentUntil: string | null;
+  onSet: (id: string, tier: string | null, until: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<"tier" | "months">("tier");
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setStep("tier"); } };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const selectTier = (tier: string | null) => {
+    if (tier === null) {
+      // Remove premium
+      confirmSet(null, 0);
+      return;
+    }
+    setSelectedTier(tier);
+    setStep("months");
+  };
+
+  const confirmSet = async (tier: string | null, months: number) => {
+    setBusy(true);
+    const res = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, listingId, action: "set_premium", tier, months }),
+    });
+    const data = await res.json();
+    onSet(userId, tier, data.premium_until || null);
+    setBusy(false);
+    setOpen(false);
+    setStep("tier");
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen(v => !v)} disabled={busy}
+        className="p-1.5 rounded-md disabled:opacity-40 transition-colors"
+        title="Set premium"
+        style={{ color: currentTier ? "#CA8A04" : "#9CA3AF" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "#FEF9C3"; e.currentTarget.style.color = "#CA8A04"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = currentTier ? "#CA8A04" : "#9CA3AF"; }}>
+        <Crown size={14} />
+      </button>
+      {open && (
+        <div className="absolute z-50 right-0 mt-1 w-52 rounded-xl shadow-xl overflow-hidden"
+          style={{ background: "#fff", border: "1px solid #E5E5E5", top: "100%" }}>
+          {step === "tier" ? (
+            <>
+              <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Select Plan</p>
+              </div>
+              {TIERS.map(t => {
+                const active = t.value === currentTier;
+                return (
+                  <button key={String(t.value)} onClick={() => selectTier(t.value)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-left transition-colors"
+                    style={{ background: active ? "#F9FAFB" : "transparent", borderBottom: "1px solid #F9FAFB" }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#F9FAFB"; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}>
+                    <div className="flex items-center gap-2">
+                      {t.value && <Crown size={12} color={t.color} />}
+                      <span className="text-[12px] font-semibold" style={{ color: t.color }}>{t.label}</span>
+                    </div>
+                    {t.value === null && <span className="text-[10px] text-red-500">Fjern</span>}
+                  </button>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: "1px solid #F3F4F6" }}>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Select Period</p>
+                <button onClick={() => setStep("tier")} className="text-[10px] text-gray-400 hover:text-gray-600">← Tilbage</button>
+              </div>
+              {MONTH_OPTIONS.map(m => (
+                <button key={m.months} onClick={() => confirmSet(selectedTier, m.months)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
+                  style={{ borderBottom: "1px solid #F9FAFB" }}>
+                  <span className="text-[12px] font-medium text-gray-700">{m.label}</span>
+                  <span className="text-[10px] text-gray-400">{selectedTier?.toUpperCase()}</span>
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* OLD Premium dropdown preserved for reference */
+function _OldPremiumDropdown({ userId, currentTier, onSet }: {
   userId: string; currentTier: string | null;
   onSet: (id: string, tier: string | null) => void;
 }) {
@@ -114,7 +248,7 @@ function PremiumDropdown({ userId, currentTier, onSet }: {
     <div className="relative" ref={ref}>
       <button onClick={() => setOpen(v => !v)} disabled={busy}
         className="p-1.5 rounded-md disabled:opacity-40 transition-colors"
-        title="Sæt premium"
+        title="Set premium"
         style={{ color: currentTier ? "#CA8A04" : "#9CA3AF" }}
         onMouseEnter={e => { e.currentTarget.style.background = "#FEF9C3"; e.currentTarget.style.color = "#CA8A04"; }}
         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = currentTier ? "#CA8A04" : "#9CA3AF"; }}>
@@ -124,7 +258,7 @@ function PremiumDropdown({ userId, currentTier, onSet }: {
         <div className="absolute z-50 right-0 mt-1 w-44 rounded-xl shadow-xl overflow-hidden"
           style={{ background: "#fff", border: "1px solid #E5E5E5", top: "100%" }}>
           <div className="px-3 py-2" style={{ borderBottom: "1px solid #F3F4F6" }}>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Sæt Premium</p>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Set Premium</p>
           </div>
           {TIERS.map(t => {
             const active = t.value === currentTier;
@@ -220,8 +354,8 @@ export default function AdminBrugerePage() {
     setDeleteId(null);
   };
 
-  const setPremium = (id: string, tier: string | null) =>
-    setProfiles(p => p.map(u => u.id === id ? { ...u, subscription_tier: tier } : u));
+  const setPremium = (id: string, tier: string | null, until: string | null) =>
+    setProfiles(p => p.map(u => u.id === id ? { ...u, premium_tier: tier, premium_until: until, subscription_tier: tier } : u));
 
   /* counts — server-side total for active tab, local for archived */
   const counts = {
@@ -268,7 +402,7 @@ export default function AdminBrugerePage() {
             <div className="flex gap-2">
               <button onClick={remove} disabled={busy !== null}
                 className="flex-1 py-2.5 text-[13px] font-semibold text-white rounded-lg disabled:opacity-50"
-                style={{ background: "#DC2626" }}>Slet & Arkivér</button>
+                style={{ background: "#DC2626" }}>Delete & Archive</button>
               <button onClick={() => setDeleteId(null)}
                 className="px-4 py-2.5 text-[13px] font-medium rounded-lg"
                 style={{ border: "1px solid #E5E5E5", color: "#6B7280" }}>Annuller</button>
@@ -332,7 +466,7 @@ export default function AdminBrugerePage() {
           style={{ border: "1px solid #E5E5E5" }}>
           <Search size={13} color="#9CA3AF" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Søg navn, email…"
+            placeholder="Search name, email..."
             className="flex-1 text-[13px] bg-transparent outline-none text-gray-900 placeholder-gray-400" />
         </div>
       </div>
@@ -355,7 +489,7 @@ export default function AdminBrugerePage() {
             <table className="w-full">
               <thead>
                 <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
-                  {["Bruger", "Email", "Telefon", "WhatsApp", "Land", "Type", "Slettet", "Handlinger"].map(h => (
+                  {["User", "Email", "Phone", "WhatsApp", "Country", "Type", "Deleted", "Actions"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#9CA3AF" }}>{h}</th>
                   ))}
                 </tr>
@@ -372,7 +506,7 @@ export default function AdminBrugerePage() {
                           <p className="text-[13px] font-semibold text-gray-900">{a.full_name ?? "Intet navn"}</p>
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
                             style={{ background: "#FEE2E2", color: "#7F1D1D" }}>
-                            {a.deleted_by === "admin" ? "Slettet af admin" : "Selvslettede"}
+                            {a.deleted_by === "admin" ? "Deleted by admin" : "Self-deleted"}
                           </span>
                         </div>
                       </div>
@@ -403,7 +537,7 @@ export default function AdminBrugerePage() {
             <table className="w-full">
               <thead>
                 <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
-                  {["Billede", "Navn", "Email", "Telefon", "WhatsApp", "Land", "Status", "Premium", "Oprettet", "Handlinger"].map(h => (
+                  {["Image", "Name", "Email", "Phone", "WhatsApp", "Telegram", "Country", "Status", "Premium", "Created", "Actions"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#9CA3AF" }}>{h}</th>
                   ))}
                 </tr>
@@ -413,53 +547,48 @@ export default function AdminBrugerePage() {
                   <tr key={u.id} style={{ borderBottom: "1px solid #F9FAFB" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#FAFAFA")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    {/* Billede */}
+                    {/* Image */}
                     <td className="px-4 py-3">
-                      <Avatar url={u.avatar_url} name={u.full_name} />
+                      <Avatar url={u.listing_image || u.avatar_url} name={u.listing_name || u.full_name} />
                     </td>
                     {/* Navn */}
                     <td className="px-4 py-3">
                       <div>
-                        <p className="text-[13px] font-semibold text-gray-900">{u.full_name ?? "Intet navn"}</p>
+                        <p className="text-[13px] font-semibold text-gray-900">{u.listing_name || u.full_name || "Intet navn"}</p>
                         {u.is_admin && <span className="text-[10px] font-semibold" style={{ color: "#2563EB" }}>Admin</span>}
+                        {u.listing_city && <p className="text-[10px] text-gray-400">{u.listing_city}</p>}
                       </div>
                     </td>
                     {/* Email */}
                     <td className="px-4 py-3 text-[12px] text-gray-500 max-w-[180px] truncate">{u.email ?? "—"}</td>
                     {/* Telefon */}
                     <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
-                      {u.phone ? (
-                        <span className="flex items-center gap-1">
-                          {u.phone}
-                          {u.phone_verified
-                            ? <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#16A34A" }} title="Verified" />
-                            : (
-                              <button
-                                title="Manually verify phone"
-                                onClick={async () => {
-                                  if (!confirm(`Manually verify ${u.phone}?`)) return
-                                  const { createClient } = await import("@/lib/supabase")
-                  const { data: { session } } = await createClient().auth.getSession()
-                                  const res = await fetch("/api/admin/verify-phone", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-                                    body: JSON.stringify({ phone: u.phone }),
-                                  })
-                                  if (res.ok) setProfiles(p => p.map(x => x.id === u.id ? { ...x, phone_verified: true } : x))
-                                  else alert("Failed")
-                                }}
-                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1 }}
-                              >
-                                <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#F59E0B" }} title="Not verified — click to verify manually" />
-                              </button>
-                            )}
-                        </span>
+                      {(u.listing_phone || u.phone) ? (
+                        <a href={`tel:${u.listing_phone || u.phone}`} className="text-blue-600 hover:underline">
+                          {u.listing_phone || u.phone}
+                        </a>
                       ) : "—"}
                     </td>
                     {/* WhatsApp */}
-                    <td className="px-4 py-3 text-[12px] text-gray-500">{u.whatsapp ?? "—"}</td>
+                    <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
+                      {(u.listing_whatsapp || u.whatsapp) ? (
+                        <a href={`https://wa.me/${(u.listing_whatsapp || u.whatsapp || "").replace(/[^0-9]/g, "")}`} 
+                           target="_blank" rel="noopener" className="text-green-600 hover:underline">
+                          {u.listing_whatsapp || u.whatsapp}
+                        </a>
+                      ) : "—"}
+                    </td>
+                    {/* Telegram */}
+                    <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">
+                      {u.listing_telegram ? (
+                        <a href={`https://t.me/${u.listing_telegram.replace("@", "")}`} 
+                           target="_blank" rel="noopener" className="text-blue-500 hover:underline">
+                          {u.listing_telegram}
+                        </a>
+                      ) : "—"}
+                    </td>
                     {/* Land */}
-                    <td className="px-4 py-3 text-[12px] text-gray-500">{u.country ?? "—"}</td>
+                    <td className="px-4 py-3 text-[12px] text-gray-500">{u.listing_country || u.country || "—"}</td>
                     {/* Status */}
                     <td className="px-4 py-3">
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
@@ -468,7 +597,7 @@ export default function AdminBrugerePage() {
                       </span>
                     </td>
                     {/* Premium */}
-                    <td className="px-4 py-3"><TierBadge tier={u.subscription_tier} /></td>
+                    <td className="px-4 py-3"><TierBadge tier={u.premium_tier} until={u.premium_until} /></td>
                     {/* Oprettet */}
                     <td className="px-4 py-3 text-[12px] text-gray-400 whitespace-nowrap">
                       {new Date(u.created_at).toLocaleDateString("da-DK", { day: "2-digit", month: "short", year: "2-digit" })}
@@ -491,10 +620,10 @@ export default function AdminBrugerePage() {
                             <BadgeCheck size={14} />
                           </button>
                         )}
-                        <PremiumDropdown userId={u.id} currentTier={u.subscription_tier} onSet={setPremium} />
+                        <PremiumDropdown userId={u.id} listingId={u.listing_id} currentTier={u.premium_tier} currentUntil={u.premium_until} onSet={setPremium} />
                         <button onClick={() => mutate(u.id, u.is_banned ? "unban" : "ban")} disabled={busy === u.id}
                           className="p-1.5 rounded-md disabled:opacity-40 transition-colors"
-                          title={u.is_banned ? "Ophæv ban" : "Ban bruger"}
+                          title={u.is_banned ? "Unban" : "Ban user"}
                           style={{ color: u.is_banned ? "#16A34A" : "#DC2626" }}
                           onMouseEnter={e => { e.currentTarget.style.background = u.is_banned ? "#DCFCE7" : "#FEE2E2"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
@@ -502,7 +631,7 @@ export default function AdminBrugerePage() {
                         </button>
                         {!u.is_admin && (
                           <button onClick={() => setDeleteId(u.id)} disabled={busy === u.id}
-                            className="p-1.5 rounded-md disabled:opacity-40 transition-colors" title="Slet & Arkivér"
+                            className="p-1.5 rounded-md disabled:opacity-40 transition-colors" title="Delete & Archive"
                             style={{ color: "#9CA3AF" }}
                             onMouseEnter={e => { e.currentTarget.style.color = "#DC2626"; e.currentTarget.style.background = "#FEE2E2"; }}
                             onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}>

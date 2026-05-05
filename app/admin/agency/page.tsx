@@ -8,6 +8,7 @@ import {
   Wifi, WifiOff, Battery, BatteryLow, X, ChevronRight, Bot, Hand,
   Volume2, VolumeX, Trash2, Edit, Filter, RefreshCw, Ban, Paperclip, Image
 } from "lucide-react"
+import Link from "next/link"
 
 // Types
 interface Phone {
@@ -343,6 +344,7 @@ export default function AgencyPage() {
             <Smartphone className="w-5 h-5" />
           </div>
           <h1 className="font-bold text-lg">Agency SMS Management</h1>
+          <Link href="/admin/agency/messenger" className="ml-2 px-3 py-1 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 rounded text-xs font-medium transition">💬 MessengerHub</Link>
           <span className="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400">
             {phones.length} phones • {phones.filter(p => p.is_online).length} online
           </span>
@@ -563,13 +565,13 @@ export default function AgencyPage() {
                   {/* Contact name edit */}
                   <button
                     onClick={() => {
-                      const name = prompt("Gem kontakt som:", (selectedConvData as any).contact_name || "")
+                      const name = prompt("Save contact as:", (selectedConvData as any).contact_name || "")
                       if (name !== null) {
                         updateContactName(selectedConversation, name)
                       }
                     }}
                     className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
-                    title="Gem kontakt"
+                    title="Save contact"
                   >
                     <User className="w-4 h-4 text-gray-400" />
                   </button>
@@ -590,12 +592,12 @@ export default function AgencyPage() {
                   {/* Delete conversation */}
                   <button
                     onClick={() => {
-                      if (confirm("Slet hele samtalen?")) {
+                      if (confirm("Delete entire conversation?")) {
                         deleteConversation(selectedConversation)
                       }
                     }}
                     className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
-                    title="Slet samtale"
+                    title="Delete conversation"
                   >
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </button>
@@ -661,10 +663,10 @@ export default function AgencyPage() {
                   {/* Attachment button */}
                   <button
                     onClick={() => {
-                      alert("📷 MMS (billede/video) kommer snart!\n\nSMS Bridge understøtter kun tekst-SMS lige nu.")
+                      alert("📷 MMS (image/video) coming soon!\n\nSMS Bridge only supports text SMS for now.")
                     }}
                     className="w-11 h-11 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center justify-center transition-colors"
-                    title="Vedhæft billede/video"
+                    title="Attach image/video"
                   >
                     <Paperclip className="w-5 h-5 text-gray-400" />
                   </button>
@@ -936,7 +938,7 @@ function PhoneModal({ onClose, onSave }: { onClose: () => void; onSave: () => vo
             <textarea
               value={form.persona_description}
               onChange={e => setForm({ ...form, persona_description: e.target.value })}
-              placeholder="Jeg er en charmerende pige der elsker at møde nye mennesker..."
+              placeholder="I am a charming girl who loves meeting new people..."
               rows={3}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
             />
@@ -1333,13 +1335,13 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">👁️ Dit sprog (dashboard oversættelse)</label>
+                <label className="block text-sm text-gray-400 mb-1">👁️ Your language (dashboard translation)</label>
                 <select
                   value={form.dashboard_language || "none"}
                   onChange={e => setForm({ ...form, dashboard_language: e.target.value })}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
                 >
-                  <option value="none">❌ Ingen oversættelse</option>
+                  <option value="none">❌ No translation</option>
                   <option value="da">🇩🇰 Dansk</option>
                   <option value="en">🇬🇧 English</option>
                   <option value="de">🇩🇪 Deutsch</option>
@@ -1356,7 +1358,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                   <option value="ar">🇸🇦 العربية</option>
                   <option value="zh">🇨🇳 中文</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">Oversæt beskeder i dashboard til dit sprog</p>
+                <p className="text-xs text-gray-500 mt-1">Translate messages in dashboard to your language</p>
               </div>
             </div>
           </div>
@@ -1392,7 +1394,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Opret en bot via <a href="https://t.me/BotFather" target="_blank" className="text-blue-400 hover:underline">@BotFather</a> på Telegram og indsæt token her
+                Create a bot via <a href="https://t.me/BotFather" target="_blank" className="text-blue-400 hover:underline">@BotFather</a> on Telegram and paste the token here
               </p>
             </div>
             
@@ -1407,7 +1409,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                     if (data.success) {
                       alert("✅ Telegram webhook aktiveret! Bot er klar til at modtage beskeder.")
                     } else {
-                      alert("❌ Fejl: " + JSON.stringify(data))
+                      alert("❌ Error: " + JSON.stringify(data))
                     }
                   }}
                   className="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-medium"
@@ -1569,7 +1571,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
               onClick={() => setRates([...rates, { service: "", incall: "", outcall: "" }])}
               className="mt-2 w-full py-1.5 border border-dashed border-gray-600 rounded text-xs text-gray-400 hover:border-gray-500"
             >
-              + Tilføj pris
+              + Add price
             </button>
           </div>
 
@@ -1606,7 +1608,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                 type="text"
                 value={newService}
                 onChange={e => setNewService(e.target.value)}
-                placeholder="Tilføj custom service..."
+                placeholder="Add custom service..."
                 className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-red-500"
                 onKeyDown={e => {
                   if (e.key === "Enter" && newService.trim()) {
@@ -1641,12 +1643,12 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
               placeholder="f.eks. Vesterbrogade 45, 1620 København V"
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
             />
-            <p className="text-xs text-gray-500 mt-1">AI bruger denne adresse når kunder spørger hvor du er</p>
+            <p className="text-xs text-gray-500 mt-1">AI uses this address when customers ask where you are</p>
           </div>
 
           {/* Availability */}
           <div>
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">🕐 Tilgængelighed</p>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">🕐 Availability</p>
             <input
               type="text"
               value={form.persona_availability}
@@ -1659,7 +1661,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
           {/* Custom Q&A */}
           <div>
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">❓ Custom Q&A (Auto-svar)</p>
-            <p className="text-xs text-gray-500 mb-3">Tilføj spørgsmål og svar. Hvis kunden skriver noget der matcher spørgsmålet, svarer AI automatisk med dit svar.</p>
+            <p className="text-xs text-gray-500 mb-3">Add questions and answers. If the customer writes something that matches the question, AI automatically responds with your answer.</p>
             
             <div className="space-y-3">
               {customQA.map((qa, index) => (
@@ -1681,7 +1683,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                       newQA[index].q = e.target.value
                       setCustomQA(newQA)
                     }}
-                    placeholder="Hvis de spørger om... (f.eks. 'pris', 'hvor bor du')"
+                    placeholder="If they ask about... (e.g. 'price', 'where do you live')"
                     className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:border-red-500"
                   />
                   <textarea
@@ -1691,7 +1693,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                       newQA[index].a = e.target.value
                       setCustomQA(newQA)
                     }}
-                    placeholder="Så svar... (dit svar)"
+                    placeholder="Then answer... (your answer)"
                     rows={2}
                     className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 resize-none"
                   />
@@ -1702,15 +1704,15 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                 onClick={() => setCustomQA([...customQA, { q: "", a: "" }])}
                 className="w-full py-2 border border-dashed border-gray-600 rounded-lg text-sm text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors"
               >
-                + Tilføj Q&A regel
+                + Add Q&A rule
               </button>
             </div>
           </div>
 
           {/* AI Rules - Things AI must never do */}
           <div>
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">⛔ Regler / AI må aldrig...</p>
-            <p className="text-xs text-gray-500 mb-3">Tilføj regler for hvad AI aldrig må gøre eller sige.</p>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">⛔ Rules / AI must never...</p>
+            <p className="text-xs text-gray-500 mb-3">Add rules for what AI must never do or say.</p>
             
             <div className="space-y-2">
               {aiRules.map((rule, index) => (
@@ -1740,7 +1742,7 @@ function PhoneSettingsModal({ phone, onClose, onSave }: {
                   type="text"
                   value={newRule}
                   onChange={e => setNewRule(e.target.value)}
-                  placeholder="f.eks. Må aldrig give adresse, Må aldrig aftale pris under 1000kr..."
+                  placeholder="e.g. Must never give address, Must never agree to price under 1000kr..."
                   className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
                   onKeyDown={e => {
                     if (e.key === "Enter" && newRule.trim()) {

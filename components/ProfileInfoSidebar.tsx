@@ -3,7 +3,13 @@
 import { Calendar, User, Tag, MapPin, Globe } from "lucide-react"
 import { useCurrency } from "@/lib/useCurrency"
 import { convertPrice } from "@/lib/currency"
-import { formatLocation } from "@/lib/getRegionForCity"
+// Simple location format without heavy country-state-city package
+const formatLocation = (city?: string | null, country?: string | null) => {
+  if (!city && !country) return "";
+  if (!city) return country || "";
+  if (!country) return city;
+  return `${city}, ${country}`;
+};
 
 interface Rate {
   duration: string
@@ -35,7 +41,7 @@ export default function ProfileInfoSidebar({
     { icon: <Calendar size={14} />, label: "Alder",    value: age ? `${age} år` : "—" },
     { icon: <User size={14} />,     label: "Køn",      value: gender || "—" },
     { icon: <Tag size={14} />,      label: "Kategori", value: category || "—" },
-    { icon: <MapPin size={14} />,   label: "Lokation", value: formatLocation(city, country) || "—" },
+    { icon: <MapPin size={14} />,   label: "Location", value: formatLocation(city, country) || "—" },
     { icon: <Globe size={14} />,    label: "Sprog",    value: languages?.join(", ") || "—" },
   ]
 
@@ -73,7 +79,7 @@ export default function ProfileInfoSidebar({
         <div className="rounded bg-white p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-gray-900">Priser</h3>
-            <span className="text-[11px] text-gray-400">{currency.code}</span>
+            <span className="text-[11px] text-gray-500">{currency.code}</span>
           </div>
           <div className="space-y-0">
             {rates.map((rate, i) => {
@@ -91,7 +97,7 @@ export default function ProfileInfoSidebar({
               )
             })}
           </div>
-          <p className="mt-3 text-[11px] text-gray-400">
+          <p className="mt-3 text-[11px] text-gray-500">
             *Prices shown in {currency.code} based on your location
           </p>
         </div>

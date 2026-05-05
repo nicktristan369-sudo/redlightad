@@ -7,6 +7,7 @@ import { FileText, Image as ImageIcon } from "lucide-react"
 
 interface Listing {
   id: string
+  slug: string
   title: string
   category: string
   location: string
@@ -29,7 +30,7 @@ export default function MineAnnoncer() {
 
       const { data } = await supabase
         .from("listings")
-        .select("id, title, category, location, status, created_at, profile_image")
+        .select("id, slug, title, category, location, status, created_at, profile_image")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
@@ -109,7 +110,7 @@ export default function MineAnnoncer() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 truncate">{listing.title}</h3>
                     <p className="text-sm text-gray-500">{listing.category} • {listing.location}</p>
-                    <p className="text-xs text-gray-400 mt-1">{new Date(listing.created_at).toLocaleDateString("en-US")}</p>
+                    <p className="text-xs text-gray-500 mt-1">{new Date(listing.created_at).toLocaleDateString("en-US")}</p>
                   </div>
 
                   {/* Status badge */}
@@ -120,7 +121,7 @@ export default function MineAnnoncer() {
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 flex-shrink-0 w-full sm:w-auto">
                     <a
-                      href={`/ads/${listing.id}`}
+                      href={`/ads/${listing.slug || listing.id}`}
                       className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-900 hover:bg-black text-white transition-colors"
                     >
                       View Profile

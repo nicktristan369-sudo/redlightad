@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     await supabase.from("coin_purchases").insert({ user_id: userId, coins_amount: coinsAmount, price_usd: priceUsd, stripe_payment_id: paymentId })
 
     // Log transaction
-    await supabase.from("coin_transactions").insert({ user_id: userId, type: "purchase", amount: coinsAmount, note: `Købt ${coinsAmount} coins` })
+    await supabase.from("coin_transactions").insert({ user_id: userId, type: "purchase", amount: coinsAmount, note: `Purchased coins` })
   }
 
   return NextResponse.json({ ok: true })

@@ -32,7 +32,7 @@ export default function OnboardingPopup() {
     if (!listing.photos || listing.photos?.length === 0)
       missingFields.push('Profilbilleder')
     if (!listing.description)
-      missingFields.push('Beskrivelse')
+      missingFields.push('Description')
 
     if (missingFields.length > 0) {
       setMissing(missingFields)
@@ -45,8 +45,8 @@ export default function OnboardingPopup() {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
-        <h2 className="text-xl font-bold mb-2">Tillykke med din profil!</h2>
-        <p className="text-gray-500 mb-4">Tilføj de manglende informationer for at få flere kunder.</p>
+        <h2 className="text-xl font-bold mb-2">Congratulations on your profile!</h2>
+        <p className="text-gray-500 mb-4">Add the missing information to get more customers.</p>
         <div className="space-y-2 mb-6">
           {missing.map((item, i) => (
             <div key={i} className="p-3 bg-amber-50 rounded-lg text-sm">{item}</div>

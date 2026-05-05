@@ -1,355 +1,234 @@
-"use client"
-import { useEffect, useState, useRef } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { createClient } from "@/lib/supabase"
-import DashboardLayout from "@/components/DashboardLayout"
-import { ArrowLeft, Send } from "lucide-react"
-import CustomerProfileCard from "@/components/CustomerProfileCard"
-import { useLanguage } from "@/lib/i18n/LanguageContext"
+'use client';
 
-interface Message {
-  id: string
-  sender_id: string
-  content: string
-  created_at: string
-  read_at?: string | null
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
+import DashboardLayout from '@/components/DashboardLayout';
+import { ChevronLeft, MoreVertical, Paperclip, Smile, Send, X, Loader2, BellOff, Bell } from 'lucide-react';
+import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
+const SUGGESTION_NONE = 'none' as const;
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const AVATAR_COLORS = ['#EF4444','#3B82F6','#10B981','#8B5CF6','#F97316','#EC4899','#14B8A6','#6366F1'];
+
+interface OtherUser { id: string; display_name: string; avatar_url?: string | null; }
+interface Message { id: string; sender_id: string; content?: string; image_url?: string; created_at: string; read_at?: string; }
+
+function getAvatarColor(id?: string): string { if (!id) return AVATAR_COLORS[0]; let h = 0; for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h); return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]; }
+function getInitials(name?: string): string { if (!name) return '?'; const p = name.trim().split(/\s+/); if (p.length >= 2) return (p[0][0] + p[p.length-1][0]).toUpperCase(); return name[0]?.toUpperCase() || '?'; }
+function formatDateSeparator(dateStr: string): string {
+  const d = new Date(dateStr); const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.floor((today.getTime() - msgDate.getTime()) / 86400000);
+  if (diffDays === 0) return 'Today'; if (diffDays === 1) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
-interface Conv {
-  id: string
-  provider_id: string
-  customer_id: string
-  listing_id: string | null
-  listings?: { title: string; profile_image: string | null } | null
-}
-
-interface CustomerProfile {
-  user_id: string
-  username: string | null
-  avatar_url: string | null
-  age?: number | null
-  gender?: string | null
-  nationality?: string | null
-  height_cm?: number | null
-  weight_kg?: number | null
-  languages?: string[] | null
-  kinks?: string[] | null
-  kink_bio?: string | null
-  phone_verified?: boolean
-  created_at?: string
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1 px-3 py-2 bg-white rounded-2xl rounded-bl-md shadow-sm w-fit">
+      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+    </div>
+  );
 }
 
 export default function ChatPage() {
-  const { t } = useLanguage()
-  const params = useParams()
-  const convId = params.id as string
-  const router = useRouter()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [conv, setConv] = useState<Conv | null>(null)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [customer, setCustomer] = useState<CustomerProfile | null>(null)
-  const [newMessage, setNewMessage] = useState("")
-  const [sending, setSending] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [showProfile, setShowProfile] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
-  const [otherTyping, setOtherTyping] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const params = useParams();
+  const conversationId = params?.id as string;
+  const router = useRouter();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
+  const [messageInput, setMessageInput] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [otherOnline, setOtherOnline] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [clearedBefore, setClearedBefore] = useState<string | null>(null);
+
+  useEffect(() => { if (!conversationId) return; try { const m = JSON.parse(localStorage.getItem('muted_conversations') || '{}'); setIsMuted(!!m[conversationId]); const c = JSON.parse(localStorage.getItem('cleared_conversations') || '{}'); setClearedBefore(c[conversationId] || null); } catch {} }, [conversationId]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
+
+  useEffect(() => { const g = async () => { try { const s = createClient(); const { data: { user } } = await s.auth.getUser(); if (user?.id) setCurrentUserId(user.id); } catch (e) { console.error(e); } }; g(); }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    if (!conversationId || !currentUserId) return;
+    const f = async () => {
+      try {
+        const s = createClient(); const { data: conv } = await s.from('conversations').select('*').eq('id', conversationId).single();
+        if (!conv) { setLoading(false); return; }
+        const otherId = currentUserId === conv.provider_id ? conv.customer_id : conv.provider_id;
+        const { data: profile } = await s.from('profiles').select('id, full_name, avatar_url, email, username').eq('id', otherId).maybeSingle();
+        let dn = profile?.full_name || profile?.username || profile?.email || 'User';
+        let avatarUrl = profile?.avatar_url || null;
+        const { data: listing } = await s.from('listings').select('display_name, profile_image').eq('user_id', otherId).limit(1).maybeSingle();
+        if (listing?.display_name) dn = listing.display_name;
+        if (listing?.profile_image && !avatarUrl) avatarUrl = listing.profile_image;
+        setOtherUser({ id: otherId, display_name: dn, avatar_url: avatarUrl });
+      } catch (e) { console.error(e); }
+      setLoading(false);
+    }; f();
+  }, [conversationId, currentUserId]);
 
   useEffect(() => {
-    const supabase = createClient()
+    if (!conversationId || !currentUserId) return;
+    const f = async () => { try { const s = createClient(); const { data } = await s.from('messages').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: true }); if (data) { setMessages(data); fetch('/api/messages/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId }) }).catch(() => {}); } } catch (e) { console.error(e); } };
+    f();
+    const rt = createClient();
+    const sub = rt.channel(`messages:${conversationId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (p) => { setMessages(prev => [...prev, p.new as Message]); if ((p.new as Message).sender_id !== currentUserId) fetch('/api/messages/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId }) }).catch(() => {}); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (p) => { setMessages(prev => prev.map(m => m.id === (p.new as Message).id ? { ...m, ...p.new } : m)); })
+      .subscribe();
+    return () => { sub.unsubscribe(); };
+  }, [conversationId, currentUserId]);
 
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace("/login"); return }
-      setUserId(user.id)
+  useEffect(() => {
+    if (!conversationId || !currentUserId) return;
+    const s = createClient();
+    const ch = s.channel(`typing:${conversationId}`);
+    ch.on('broadcast', { event: 'typing' }, (p) => { if (p?.payload?.user_id !== currentUserId) { setIsTyping(true); setTimeout(() => setIsTyping(false), 3000); } }).subscribe();
+    return () => { s.removeChannel(ch); };
+  }, [conversationId, currentUserId]);
 
-      const { data: c } = await supabase
-        .from("conversations")
-        .select("*, listings(title, profile_image)")
-        .eq("id", convId)
-        .single()
-      if (!c || (c.provider_id !== user.id && c.customer_id !== user.id)) {
-        router.replace("/dashboard/beskeder"); return
-      }
-      setConv(c)
+  // Check other user online status
+  useEffect(() => {
+    if (!otherUser?.id) return;
+    const check = async () => { try { const r=await fetch(`/api/status?user_id=${otherUser.id}`); if(r.ok){const d=await r.json();setOtherOnline(d?.online??false);} } catch{setOtherOnline(false);} };
+    check(); const i=setInterval(check,15000); return ()=>clearInterval(i);
+  }, [otherUser?.id]);
 
-      const customerId = c.provider_id === user.id ? c.customer_id : c.provider_id
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (token) {
-        const cpRes = await fetch(`/api/customer-profile/${customerId}`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        })
-        if (cpRes.ok) {
-          const cp = await cpRes.json()
-          setCustomer(cp)
-        } else {
-          setCustomer({ user_id: customerId, username: null, avatar_url: null })
-        }
-      }
+  const sendTypingIndicator = useCallback(() => {
+    if (!conversationId || !currentUserId || typingTimeoutRef.current) return;
+    createClient().channel(`typing:${conversationId}`).send({ type: 'broadcast', event: 'typing', payload: { user_id: currentUserId } }).catch(() => {});
+    typingTimeoutRef.current = setTimeout(() => { typingTimeoutRef.current = null; }, 2000);
+  }, [conversationId, currentUserId]);
 
-      const { data: msgs } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true })
-      setMessages(msgs || [])
-      setLoading(false)
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; setUploadError(null); if (!file) return;
+    if (!ALLOWED_TYPES.includes(file.type)) { setUploadError('Only JPG, PNG, GIF and WEBP'); return; }
+    if (file.size > MAX_FILE_SIZE) { setUploadError('Max 10MB'); return; }
+    setSelectedImage(file); const r = new FileReader(); r.onloadend = () => setPreviewUrl(r.result as string); r.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, []);
 
-      const unreadField = user.id === c.provider_id ? "provider_unread" : "customer_unread"
-      await supabase.from("conversations").update({ [unreadField]: 0 }).eq("id", convId)
-
-      // Subscribe to new messages
-      const channel = supabase
-        .channel(`chat:${convId}`)
-        .on("postgres_changes", {
-          event: "INSERT", schema: "public", table: "messages",
-          filter: `conversation_id=eq.${convId}`,
-        }, (payload) => {
-          setMessages(prev => [...prev, payload.new as Message])
-        })
-        .on("postgres_changes", {
-          event: "*", schema: "public", table: "typing_status",
-          filter: `conversation_id=eq.${convId}`,
-        }, (payload) => {
-          const status = payload.new as { user_id: string; is_typing: boolean; updated_at: string }
-          if (status.user_id !== user.id) {
-            setOtherTyping(status.is_typing)
-            // Auto-clear typing after 3 seconds
-            if (status.is_typing) {
-              setTimeout(() => setOtherTyping(false), 3000)
-            }
-          }
-        })
-        .subscribe()
-      return () => { supabase.removeChannel(channel) }
-    }
-    init()
-  }, [convId, router])
-
-  // Broadcast typing status
-  const broadcastTyping = async (typing: boolean) => {
-    if (!conv) return
-    const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) return
-    
-    fetch("/api/chat/typing", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ conversation_id: convId, is_typing: typing }),
-    }).catch(() => {})
-  }
-
-  // Handle input change with typing indicator
-  const handleInputChange = (value: string) => {
-    setNewMessage(value)
-    
-    if (value.trim() && !isTyping) {
-      setIsTyping(true)
-      broadcastTyping(true)
-    }
-    
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-    
-    // Set new timeout to stop typing indicator
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false)
-      broadcastTyping(false)
-    }, 2000)
-  }
+  const onEmojiClick = (d: { emoji: string }) => { setMessageInput(p => p + d.emoji); setShowEmojiPicker(false); };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending || !userId || !conv) return
-    setSending(true)
-    
-    // Clear typing status
-    setIsTyping(false)
-    broadcastTyping(false)
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-    
-    const content = newMessage.trim()
-    setNewMessage("")
-    const supabase = createClient()
-    await supabase.from("messages").insert({ conversation_id: convId, sender_id: userId, content })
-    await supabase.from("conversations").update({
-      last_message: content,
-      last_message_at: new Date().toISOString(),
-    }).eq("id", convId)
-    await supabase.rpc("increment_provider_unread", { conv_id: convId }).then(() => {})
-    setSending(false)
-    inputRef.current?.focus()
-  }
+    if ((!messageInput.trim() && !selectedImage) || uploading) return;
+    if (!conversationId || !currentUserId) return;
+    try {
+      let imageUrl: string | null = null;
+      if (selectedImage) { setUploading(true); try { const fd = new FormData(); fd.append('file', selectedImage); const r = await fetch('/api/messages/upload', { method: 'POST', body: fd }); if (r.ok) imageUrl = (await r.json()).url; else { setUploadError((await r.json())?.error || 'Upload failed'); if (!messageInput.trim()) { setUploading(false); return; } } } catch { setUploadError('Upload failed'); } finally { setUploading(false); } }
+      const res = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conversationId, sender_id: currentUserId, content: messageInput.trim() || null, image_url: imageUrl }) });
+      if (res.ok) { setMessageInput(''); setSelectedImage(null); setPreviewUrl(null); setUploadError(null); }
+    } catch (e) { console.error(e); }
+  };
 
-  const fmt = (ts: string) => new Date(ts).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-  const fmtDate = (ts: string) => new Date(ts).toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })
+  const toggleMute = () => { const m = JSON.parse(localStorage.getItem('muted_conversations') || '{}'); if (isMuted) delete m[conversationId]; else m[conversationId] = true; localStorage.setItem('muted_conversations', JSON.stringify(m)); setIsMuted(!isMuted); setShowMenu(false); };
+  const clearHistory = () => { if (!confirm('Clear chat history? Hidden for you only.')) return; const c = JSON.parse(localStorage.getItem('cleared_conversations') || '{}'); c[conversationId] = new Date().toISOString(); localStorage.setItem('cleared_conversations', JSON.stringify(c)); setClearedBefore(c[conversationId]); setShowMenu(false); };
+  const blockUser = async () => { if (!currentUserId || !otherUser) return; try { await fetch('/api/blocked', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, blocked_user_id: otherUser.id }) }); router.push('/dashboard/beskeder'); } catch (e) { console.error(e); } };
+  const deleteConversation = async () => { if (!conversationId || !currentUserId || !confirm('Delete?')) return; try { await fetch('/api/conversations', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conversationId, user_id: currentUserId }) }); router.push('/dashboard/beskeder'); } catch (e) { console.error(e); } };
 
-  const grouped: { date: string; msgs: Message[] }[] = []
-  for (const m of messages) {
-    const d = fmtDate(m.created_at)
-    if (!grouped.length || grouped[grouped.length - 1].date !== d) grouped.push({ date: d, msgs: [m] })
-    else grouped[grouped.length - 1].msgs.push(m)
-  }
+  const visibleMessages = clearedBefore ? messages.filter(m => new Date(m.created_at) > new Date(clearedBefore)) : messages;
 
-  const customerName = customer?.username || t.preview_anon
-  const customerAvatar = customer?.avatar_url || null
-  const customerInitials = customerName.slice(0, 2).toUpperCase()
-
-  const AvatarBubble = ({ size = 28 }: { size?: number }) => (
-    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "#E5E7EB", border: "2px solid #F3F4F6" }}>
-      {customerAvatar
-        ? <img src={customerAvatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        : <div style={{ width: "100%", height: "100%", background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: size * 0.35, fontWeight: 800, color: "#fff" }}>{customerInitials}</span>
-          </div>}
-    </div>
-  )
+  if (!currentUserId || loading) return <DashboardLayout><div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" /></div></DashboardLayout>;
+  if (!otherUser) return <DashboardLayout><div className="flex items-center justify-center h-96 text-gray-500">Conversation not found</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
-      <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 8rem)" }}>
-
-        {/* ── Header ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexShrink: 0 }}>
-          <button onClick={() => router.push("/dashboard/beskeder")}
-            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: 0 }}>
-            <ArrowLeft size={16} /> {t.chat_back}
-          </button>
-
-          <button onClick={() => setShowProfile(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 10 }}>
-            <AvatarBubble size={38} />
-            <div style={{ textAlign: "left" }}>
-              <p style={{ fontSize: 14, fontWeight: 800, color: "#111", margin: 0 }}>{customerName}</p>
-              <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>{t.chat_view_profile}</p>
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" onClick={() => setLightboxUrl(null)}>
+          <button onClick={() => setLightboxUrl(null)} className="absolute top-4 right-4 text-white hover:text-gray-300 z-[101]"><X className="w-8 h-8" /></button>
+          <img src={lightboxUrl} alt="Full size" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+      <div className="max-w-2xl h-[calc(100vh-120px)] flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard/beskeder"><ChevronLeft className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900" /></Link>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                {otherUser.avatar_url ? <img src={otherUser.avatar_url} alt={otherUser.display_name} className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>{getInitials(otherUser.display_name)}</div>}
+                {otherOnline && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"/>}
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5"><h2 className="font-semibold text-sm">{otherUser.display_name}</h2>{isMuted && <BellOff className="w-3.5 h-3.5 text-gray-400" />}</div>
+                {isTyping ? <p className="text-xs text-green-500">typing...</p> : otherOnline ? <p className="text-xs text-green-500">Online</p> : null}
+              </div>
             </div>
-          </button>
+          </div>
+          <div className="relative">
+            <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg"><MoreVertical className="w-5 h-5 text-gray-600" /></button>
+            {showMenu && (<><div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} /><div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1">
+              <button onClick={toggleMute} className="flex items-center gap-2 w-full text-left px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700">{isMuted ? <><Bell className="w-4 h-4" /> Unmute</> : <><BellOff className="w-4 h-4" /> Mute</>}</button>
+              <button onClick={clearHistory} className="flex items-center gap-2 w-full text-left px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700">🗑️ Clear history</button>
+              <button onClick={() => { setShowMenu(false); blockUser(); }} className="flex items-center gap-2 w-full text-left px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700">🚫 Block user</button>
+              <div className="border-t border-gray-100" /><button onClick={() => { setShowMenu(false); deleteConversation(); }} className="flex items-center gap-2 w-full text-left px-4 py-2.5 hover:bg-red-50 text-sm text-red-600">❌ Delete chat</button>
+            </div></>)}
+          </div>
         </div>
 
-        {/* ── Chat area ── */}
-        <div style={{ flex: 1, background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
-            {loading ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-                <div style={{ width: 24, height: 24, border: "3px solid #E5E7EB", borderTopColor: "#DC2626", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-              </div>
-            ) : messages.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 20px" }}>
-                <p style={{ fontSize: 13, color: "#9CA3AF" }}>{t.chat_no_messages}</p>
-              </div>
-            ) : (
-              grouped.map(({ date, msgs }) => (
-                <div key={date}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0" }}>
-                    <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
-                    <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, textTransform: "capitalize" }}>{date}</span>
-                    <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
-                  </div>
-                  {msgs.map((m, i) => {
-                    const isMe = m.sender_id === userId
-                    const showAvatar = !isMe && (i === 0 || msgs[i-1]?.sender_id !== m.sender_id)
-                    return (
-                      <div key={m.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", marginBottom: 4, alignItems: "flex-end", gap: 6 }}>
-                        {!isMe && (
-                          <div style={{ visibility: showAvatar ? "visible" : "hidden" }}>
-                            <AvatarBubble size={28} />
-                          </div>
-                        )}
-                        <div style={{ maxWidth: "72%" }}>
-                          <div style={{
-                            padding: "9px 13px",
-                            borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                            background: isMe ? "#DC2626" : "#F3F4F6",
-                            color: isMe ? "#fff" : "#111",
-                            fontSize: 14, lineHeight: 1.45,
-                          }}>
-                            {m.content}
-                          </div>
-                          <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, textAlign: isMe ? "right" : "left", display: "flex", alignItems: "center", gap: 4, justifyContent: isMe ? "flex-end" : "flex-start" }}>
-                            {fmt(m.created_at)}
-                            {isMe && (
-                              <span style={{ color: m.read_at ? "#10B981" : "#9CA3AF" }}>
-                                {m.read_at ? "✓✓" : "✓"}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))
-            )}
-            {/* Typing indicator */}
-            {otherTyping && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, marginBottom: 4 }}>
-                <AvatarBubble size={24} />
-                <div style={{ 
-                  padding: "8px 14px", 
-                  background: "#F3F4F6", 
-                  borderRadius: "18px 18px 18px 4px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4
-                }}>
-                  <div style={{ display: "flex", gap: 3 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0s" }} />
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0.2s" }} />
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", animation: "bounce 1.4s infinite", animationDelay: "0.4s" }} />
-                  </div>
+        <div className="flex-1 overflow-y-auto px-4 py-3" style={{ background: '#f5f5f5' }}>
+          {visibleMessages.map((msg, i) => {
+            const isMe = msg.sender_id === currentUserId;
+            const isEmoji = msg.content && !msg.image_url && /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s]+$/u.test(msg.content) && msg.content.length <= 12;
+            const prev = visibleMessages[i - 1];
+            const sameSender = prev && prev.sender_id === msg.sender_id;
+            const msgDate = new Date(msg.created_at).toDateString();
+            const prevDate = prev ? new Date(prev.created_at).toDateString() : null;
+            const showDate = msgDate !== prevDate;
+            return (
+              <div key={msg.id}>
+                {showDate && <div className="flex justify-center my-3"><span className="bg-white/80 text-gray-500 text-xs px-3 py-1 rounded-full shadow-sm">{formatDateSeparator(msg.created_at)}</span></div>}
+                <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${sameSender && !showDate ? 'mt-1' : 'mt-3'}`} style={{ marginTop: i === 0 && !showDate ? 0 : undefined }}>
+                  {!isMe && <div className="mr-2 flex-shrink-0 self-end" style={{ width: 32 }}>{(!sameSender || showDate) ? (otherUser.avatar_url ? <img src={otherUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>{getInitials(otherUser.display_name)}</div>) : null}</div>}
+                  {isEmoji ? (
+                    <div className="flex flex-col items-end"><span className="text-4xl leading-tight">{msg.content}</span><span className="text-[10px] text-gray-400 mt-0.5">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{isMe && <span className="ml-1" style={{ color: msg.read_at ? '#3B82F6' : '#9CA3AF' }}>{msg.read_at ? '✓✓' : '✓'}</span>}</span></div>
+                  ) : (
+                    <div className={`max-w-[75%] px-3 py-2 ${isMe ? 'bg-red-500 text-white rounded-2xl rounded-br-md' : 'bg-white text-gray-900 rounded-2xl rounded-bl-md shadow-sm'}`}>
+                      {msg.image_url && <img src={msg.image_url} alt="attachment" className="rounded-lg mb-1.5 cursor-pointer hover:opacity-90 transition" style={{ maxWidth: 280, maxHeight: 280, objectFit: 'cover' }} onClick={() => setLightboxUrl(msg.image_url!)} />}
+                      {msg.content && <p className="text-[15px] leading-snug break-words whitespace-pre-wrap">{msg.content}</p>}
+                      <div className={`text-[10px] flex items-center justify-end gap-1 mt-0.5 ${isMe ? 'text-red-200' : 'text-gray-400'}`}><span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>{isMe && <span style={{ color: msg.read_at ? '#FDE8E8' : 'rgba(255,255,255,0.5)' }}>{msg.read_at ? '✓✓' : '✓'}</span>}</div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
+            );
+          })}
+          {isTyping && <div className="flex justify-start mt-2"><div className="mr-2 flex-shrink-0 self-end" style={{ width: 32 }}>{otherUser.avatar_url ? <img src={otherUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{ backgroundColor: getAvatarColor(otherUser.id) }}>{getInitials(otherUser.display_name)}</div>}</div><TypingIndicator /></div>}
+          <div ref={messagesEndRef} />
+        </div>
 
-          {/* ── Input ── */}
-          <div style={{ padding: "10px 12px", borderTop: "1px solid #F3F4F6", display: "flex", gap: 8, alignItems: "center" }}>
-            <input
-              ref={inputRef}
-              type="text"
-              value={newMessage}
-              onChange={e => handleInputChange(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") sendMessage() }}
-              placeholder={t.chat_placeholder}
-              style={{ flex: 1, padding: "10px 16px", fontSize: 14, border: "1px solid #E5E7EB", borderRadius: 24, outline: "none", background: "#F9FAFB" }}
-            />
-            <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-              style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: newMessage.trim() ? "#DC2626" : "#E5E7EB", cursor: newMessage.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              {sending
-                ? <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-                : <Send size={16} color={newMessage.trim() ? "#fff" : "#9CA3AF"} />}
-            </button>
+        <div className="border-t border-gray-200 p-4">
+          {uploadError && <div className="mb-2 text-xs text-red-500 flex items-center gap-1"><span>⚠️ {uploadError}</span><button onClick={() => setUploadError(null)} className="text-red-400 hover:text-red-600">✕</button></div>}
+          {previewUrl && <div className="mb-3 relative w-fit"><img src={previewUrl} alt="preview" className="max-w-[200px] max-h-[150px] rounded object-cover" /><button onClick={() => { setSelectedImage(null); setPreviewUrl(null); setUploadError(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">×</button></div>}
+          <div className="flex gap-2 items-end">
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" id="dash-image-input" onChange={handleImageSelect} />
+            <label htmlFor="dash-image-input" className="cursor-pointer text-gray-500 hover:text-gray-700 flex-shrink-0"><Paperclip className="w-5 h-5" /></label>
+            <div className="relative flex-shrink-0"><button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-500 hover:text-gray-700"><Smile className="w-5 h-5" /></button>{showEmojiPicker && <div className="absolute bottom-10 left-0 z-50"><EmojiPicker onEmojiClick={onEmojiClick} width={320} height={400} suggestedEmojisMode={SUGGESTION_NONE as any} searchPlaceholder="Search emoji..."/></div>}</div>
+            <input type="text" value={messageInput} onChange={(e) => { setMessageInput(e.target.value); sendTypingIndicator(); }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}} placeholder="Write a message..." className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+            <button onClick={sendMessage} disabled={uploading} className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0">{uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}</button>
           </div>
         </div>
       </div>
-
-      {showProfile && customer && (
-        <CustomerProfileCard profile={customer} onClose={() => setShowProfile(false)} />
-      )}
-
-      <style>{`
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes bounce{
-          0%,60%,100%{transform:translateY(0)}
-          30%{transform:translateY(-4px)}
-        }
-      `}</style>
     </DashboardLayout>
-  )
+  );
 }

@@ -6,7 +6,7 @@ import AdminLayout from "@/components/AdminLayout"
 
 const TEST_EMAIL = "test@redlightad.com"
 
-export default function AdminIndstillingerPage() {
+export default function AdminSettingsPage() {
   const [currentEmail, setCurrentEmail] = useState("")
   const [grantEmail, setGrantEmail] = useState("")
   const [revokeEmail, setRevokeEmail] = useState("")
@@ -158,7 +158,7 @@ export default function AdminIndstillingerPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({ userId, action: "delete" }),
       })
-      if (!delRes.ok) throw new Error("Sletning fejlede")
+      if (!delRes.ok) throw new Error("Deletion failed")
       setTestMsg(`✅ Test-bruger slettet — du kan nu teste igen med ${TEST_EMAIL}`)
     } catch (err) {
       setTestMsg(err instanceof Error ? `❌ ${err.message}` : "❌ Noget gik galt")
@@ -169,7 +169,7 @@ export default function AdminIndstillingerPage() {
 
   return (
     <AdminLayout>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Indstillinger</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
 
       <div className="space-y-6 max-w-xl">
 
@@ -193,11 +193,11 @@ export default function AdminIndstillingerPage() {
               disabled={testLoading}
               className="flex-shrink-0 rounded-xl px-4 py-2 text-sm font-bold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
-              {testLoading ? "Sletter..." : "Nulstil test"}
+              {testLoading ? "Deleting..." : "Reset test"}
             </button>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-800">
-            <p className="text-xs text-gray-500 mb-2">Tip: Bekræftelsesmail sendes til test@redlightad.com — du finder bekræftelseslinket i <span className="text-gray-300">Resend dashboard → Emails</span></p>
+            <p className="text-xs text-gray-500 mb-2">Tip: Confirmation email is sent to test@redlightad.com — you can find the confirmation link in <span className="text-gray-300">Resend dashboard → Emails</span></p>
           </div>
         </div>
 
@@ -205,11 +205,11 @@ export default function AdminIndstillingerPage() {
         <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-gray-900">Adgangskode-lås</h2>
+              <h2 className="text-base font-bold text-gray-900">Password lock</h2>
               <p className="text-sm text-gray-500 mt-0.5">
                 {siteLocked
-                  ? "Siden er låst — kun med adgangskode"
-                  : "Siden er åben for alle"}
+                  ? "Site is locked — password required"
+                  : "Site is open to everyone"}
               </p>
             </div>
             <button
@@ -265,7 +265,7 @@ export default function AdminIndstillingerPage() {
               disabled={grantLoading || !hasEmailColumn}
               className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
             >
-              {grantLoading ? "Gemmer..." : "Giv admin adgang"}
+              {grantLoading ? "Saving..." : "Grant admin access"}
             </button>
           </div>
           {grantError && (
@@ -293,7 +293,7 @@ export default function AdminIndstillingerPage() {
               disabled={revokeLoading || !hasEmailColumn}
               className="rounded-xl bg-gray-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-900 disabled:opacity-50"
             >
-              {revokeLoading ? "Gemmer..." : "Fjern admin adgang"}
+              {revokeLoading ? "Saving..." : "Remove admin access"}
             </button>
           </div>
           <p className="mt-2 text-xs text-gray-500">

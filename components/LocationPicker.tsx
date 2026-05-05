@@ -207,10 +207,10 @@ export default function LocationPicker({
             type="button"
             onClick={() => setShowCountryDropdown(!showCountryDropdown)}
             disabled={disabled}
-            className="w-full px-4 py-3 border border-gray-200 bg-white text-left flex items-center justify-between focus:outline-none focus:border-[#DC2626] transition-colors disabled:bg-gray-50 disabled:text-gray-400"
+            className="w-full px-4 py-3 border border-gray-200 bg-white text-left flex items-center justify-between focus:outline-none focus:border-[#DC2626] transition-colors disabled:bg-gray-50 disabled:text-gray-500"
             style={{ borderRadius: 0 }}
           >
-            <span className={countryCode ? "text-gray-900" : "text-gray-400"}>
+            <span className={countryCode ? "text-gray-900" : "text-gray-500"}>
               {countryCode ? (
                 <span className="flex items-center gap-2">
                   <span className={`fi fi-${countryCode.toLowerCase()} fis`} style={{ width: 20, height: 15 }} />
@@ -220,7 +220,7 @@ export default function LocationPicker({
                 "Select country..."
               )}
             </span>
-            <ChevronDown size={18} className="text-gray-400" />
+            <ChevronDown size={18} className="text-gray-500" />
           </button>
 
           {/* Country dropdown */}
@@ -261,14 +261,14 @@ export default function LocationPicker({
             onFocus={() => results.length > 0 && setShowDropdown(true)}
             placeholder={countryCode ? `Search city in ${countryName}...` : "Search any city worldwide..."}
             disabled={disabled}
-            className="w-full px-4 py-3 pr-10 border border-gray-200 bg-white text-gray-900 focus:outline-none focus:border-[#DC2626] transition-colors disabled:bg-gray-50 disabled:text-gray-400"
+            className="w-full px-4 py-3 pr-10 border border-gray-200 bg-white text-gray-900 focus:outline-none focus:border-[#DC2626] transition-colors disabled:bg-gray-50 disabled:text-gray-500"
             style={{ borderRadius: 0 }}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             {loading ? (
-              <Loader2 size={18} className="text-gray-400 animate-spin" />
+              <Loader2 size={18} className="text-gray-500 animate-spin" />
             ) : (
-              <Search size={18} className="text-gray-400" />
+              <Search size={18} className="text-gray-500" />
             )}
           </div>
         </div>
@@ -284,7 +284,7 @@ export default function LocationPicker({
                 className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0"
               >
                 <div className="flex items-start gap-3">
-                  <MapPin size={16} className={city.is_major_city ? "text-red-500 mt-0.5" : "text-gray-400 mt-0.5"} />
+                  <MapPin size={16} className={city.is_major_city ? "text-red-500 mt-0.5" : "text-gray-500 mt-0.5"} />
                   <div>
                     <div className={city.is_major_city ? "font-semibold text-gray-900" : "text-gray-800"}>
                       {city.name}

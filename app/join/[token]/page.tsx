@@ -63,11 +63,11 @@ export default function JoinPage() {
 
   const handleSubmit = async () => {
     if (!email || !password) {
-      setError("Udfyld venligst email og kodeord");
+      setError("Please fill in email and password");
       return;
     }
     if (password.length < 6) {
-      setError("Kodeord skal være mindst 6 tegn");
+      setError("Password must be at least 6 characters");
       return;
     }
     setError("");
@@ -218,10 +218,10 @@ export default function JoinPage() {
               marginBottom: 8,
             }}
           >
-            Din profil er oprettet!
+            Your profile is created!
           </p>
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
-            Sender dig til dit dashboard...
+            Redirecting to your dashboard...
           </p>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function JoinPage() {
               marginBottom: 6,
             }}
           >
-            Din profil er klar! &#127881;
+            Your profile is ready! &#127881;
           </p>
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
             Tilf&oslash;j bare email og kodeord for at g&aring; live
@@ -359,7 +359,7 @@ export default function JoinPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <input
             type="email"
-            placeholder="Din email"
+            placeholder="Your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={{
@@ -433,7 +433,7 @@ export default function JoinPage() {
               transition: "opacity 0.2s",
             }}
           >
-            {submitting ? "Opretter..." : "Opret min gratis profil"}
+            {submitting ? "Creating..." : "Create my free profile"}
           </button>
         </div>
 

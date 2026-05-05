@@ -1,5 +1,6 @@
 "use client"
 import { Suspense, useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase"
@@ -7,7 +8,17 @@ import DashboardLayout from "@/components/DashboardLayout"
 import Link from "next/link"
 import { FileText, Eye, MessageSquare, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { shareCodeFromId } from "@/lib/shareCode"
 import { PUSH_POINT_PACKAGES } from "@/lib/spendPackages"
+import {
+  PaymentMethodsList,
+  SecurePaymentFooter,
+  type PaymentMethodId
+} from "@/components/PaymentMethodBadges"
+
+// Dynamic imports for modals
+const ProfileCompletionModal = dynamic(() => import("@/components/ProfileCompletionModal"), { ssr: false });
+const UpgradeToPremiumModal = dynamic(() => import("@/components/UpgradeToPremiumModal"), { ssr: false });
 
 const STATS = [
   { label: "Active listings", value: "0", Icon: FileText },
@@ -58,8 +69,16 @@ function DashboardContent() {
   const planActivated = searchParams.get("plan_activated")
   const plan = searchParams.get("plan")
   const tier = searchParams.get("tier")
+  const pointsPurchased = searchParams.get("points_purchased")
+  const pointsAmount = searchParams.get("points")
   const [checking, setChecking] = useState(true)
+  const [showCompletion, setShowCompletion] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [upgradeFeatureName, setUpgradeFeatureName] = useState<string | undefined>()
   const [listingId, setListingId] = useState<string | null>(null)
+  const [listingSlug, setListingSlug] = useState<string | null>(null)
+  const [shareCode, setShareCode] = useState<string | null>(null)
+  const [listingPremium, setListingPremium] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [camStatus, setCamStatus] = useState<"offline"|"available"|"scheduled">("offline")
   const [camAvailableUntil, setCamAvailableUntil] = useState<string|null>(null)
@@ -74,10 +93,44 @@ function DashboardContent() {
       if (!user) return
       setUserId(user.id)
 
+      // If redirected from payment, activate the plan first
+      if (planActivated && plan) {
+        const months = searchParams.get("months") || "1"
+        try {
+          await fetch("/api/payment/activate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plan, months, userId: user.id }),
+          })
+        } catch (e) {
+          console.error("Failed to activate plan:", e)
+        }
+      }
+
+      // If redirected from push points purchase, add points as fallback
+      if (pointsPurchased && pointsAmount) {
+        try {
+          const points = parseInt(pointsAmount)
+          const { data: wallet } = await supabase
+            .from("wallets")
+            .select("push_points")
+            .eq("user_id", user.id)
+            .single()
+          const current = wallet?.push_points ?? 0
+          if (current < (current + points)) {
+            await supabase
+              .from("wallets")
+              .upsert({ user_id: user.id, push_points: current + points }, { onConflict: "user_id" })
+          }
+        } catch (e) {
+          console.error("Failed to add points fallback:", e)
+        }
+      }
+
       // Check if user has a listing and whether they have paid
       const { data: listing } = await supabase
         .from("listings")
-        .select("id, premium_tier, status")
+        .select("id, slug, premium_tier, status")
         .eq("user_id", user.id)
         .limit(1)
         .single()
@@ -95,9 +148,15 @@ function DashboardContent() {
       }
 
       setChecking(false)
+      // Show completion modal when redirected from payment
+      if (planActivated) setShowCompletion(true)
 
       if (listing?.id) {
         setListingId(listing.id)
+        setListingSlug((listing as any).slug || null)
+        setListingPremium(listing.premium_tier || null)
+        // Generate code deterministically from listing ID — no DB column needed
+        setShareCode(shareCodeFromId(listing.id))
         // Fetch cam availability
         const res = await fetch(`/api/cam/availability?listingId=${listing.id}`)
         const d = await res.json()
@@ -135,6 +194,23 @@ function DashboardContent() {
   }
 
   return (
+    <>
+      {/* Profile Completion Modal (Premium only) */}
+      {showCompletion && (
+        <ProfileCompletionModal
+          listingId={listingId}
+          plan={plan}
+          onClose={() => setShowCompletion(false)}
+        />
+      )}
+
+      {/* Upgrade to Premium Modal (Standard users clicking premium features) */}
+      {showUpgradeModal && (
+        <UpgradeToPremiumModal
+          featureName={upgradeFeatureName}
+          onClose={() => { setShowUpgradeModal(false); setUpgradeFeatureName(undefined) }}
+        />
+      )}
     <DashboardLayout>
       <div>
         {/* Plan activated banner */}
@@ -149,9 +225,9 @@ function DashboardContent() {
             </div>
             <div className="bg-green-50 px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <p className="text-[13px] text-green-800 flex-1">Your profile is now visible on RedLightAD and clients can find you.</p>
-              {listingId && (
+              {listingSlug && (
                 <a
-                  href={`/ads/${listingId}`}
+                  href={`/ads/${listingSlug}`}
                   className="inline-flex items-center gap-2 bg-green-600 text-white text-[13px] font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
                 >
                   <Eye size={14} /> View my profile
@@ -178,8 +254,66 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-[24px] font-bold text-gray-900">Overview</h1>
-          <p className="text-[14px] text-gray-400 mt-0.5">Welcome to your dashboard</p>
+          <p className="text-[14px] text-gray-500 mt-0.5">Welcome to your dashboard</p>
         </div>
+
+        {/* Personal Link Card — premium only */}
+        {listingPremium && ["vip","featured","basic"].includes(listingPremium) && (
+          <div className="mb-8 rounded-2xl overflow-hidden border border-gray-900 bg-gray-950">
+            <div className="px-5 py-4 border-b border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-bold tracking-widest text-yellow-400 uppercase">✦ Premium Feature</span>
+              </div>
+              <h2 className="text-[17px] font-black text-white">Your personal link</h2>
+              <p className="text-[13px] text-gray-500 mt-0.5">Share this link anywhere — it shows only your profile, no navigation, no distractions.</p>
+            </div>
+            <div className="px-5 py-4">
+              {shareCode && (<>
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
+                    <span className="text-[13px] text-gray-300 flex-1 truncate font-mono">
+                      redlightad.com/me/{shareCode}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://redlightad.com/me/${shareCode}`)
+                        const el = document.getElementById("copy-feedback")
+                        if (el) { el.textContent = "Copied!"; setTimeout(() => { if (el) el.textContent = "Copy" }, 2000) }
+                      }}
+                      className="text-[12px] font-bold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <span id="copy-feedback">Copy</span>
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={`/me/${shareCode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-[13px] font-bold py-2.5 rounded-xl hover:bg-gray-100 transition-colors"
+                    >
+                      <Eye size={14} /> Preview my page
+                    </a>
+                    <button
+                      onClick={async () => {
+                        const url = `https://redlightad.com/me/${shareCode}`
+                        if (navigator.share) {
+                          await navigator.share({ title: "My profile", url })
+                        } else {
+                          navigator.clipboard.writeText(url)
+                        }
+                      }}
+                      className="flex items-center gap-2 bg-white/10 text-white text-[13px] font-semibold px-4 py-2.5 rounded-xl hover:bg-white/20 transition-colors"
+                    >
+                      Share
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-600 mt-3 text-center">
+                    Share on Instagram, Twitter, Linktree, WhatsApp, Telegram — anywhere you want
+                  </p>
+                </>)}
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
@@ -201,7 +335,7 @@ function DashboardContent() {
             <div className="flex flex-wrap gap-3">
               <QuickBtn href={`/dashboard/annoncer/${listingId}/edit`} style="black">Edit my profile</QuickBtn>
               <Link
-                href={`/ads/${listingId}`}
+                href={`/ads/${listingSlug || listingId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-5 py-2.5 rounded-lg text-[13px] font-semibold inline-block transition-colors duration-200"
@@ -377,13 +511,224 @@ function DashboardContent() {
         )}
       </div>
     </DashboardLayout>
+    </>  
   )
 }
 
+// ─── Payment Modal for Push Points ────────────────────────────────────────────
+// Payment modal for Push Points
+function PushPayModal({ pkg, userId, onClose }: {
+  pkg: { id: string; points: number; price_usd: number; label: string }
+  userId: string
+  onClose: () => void
+}) {
+  const [method, setMethod] = useState<PaymentMethodId>("card")
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [cardNum, setCardNum] = useState("")
+  const [expiry, setExpiry] = useState("")
+  const [cvc, setCvc] = useState("")
+  const [name, setName] = useState("")
+  const [promoCode, setPromoCode] = useState("")
+  const [promoApplied, setPromoApplied] = useState(false)
+  const [discount, setDiscount] = useState(0)
+  const finalPrice = discount > 0 ? Math.max(0, pkg.price_usd * (1 - discount / 100)) : pkg.price_usd
+
+  const fmtCard = (v: string) => v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim()
+  const fmtExp  = (v: string) => { const d = v.replace(/\D/g, "").slice(0, 4); return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d }
+
+  const applyPromo = async () => {
+    if (!promoCode.trim()) return
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode }),
+      })
+      const data = await res.json()
+      if (data.valid && data.discount_percent) {
+        setDiscount(data.discount_percent)
+        setPromoApplied(true)
+      } else {
+        setError(data.error || "Invalid promo code")
+      }
+    } catch { setError("Could not validate code") }
+  }
+
+  const handlePay = async () => {
+    setProcessing(true)
+    setError(null)
+    try {
+      if (method === "crypto") {
+        const res = await fetch("/api/push-points/crypto-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ packageId: pkg.id, userId }),
+        })
+        const data = await res.json()
+        if (data.url) { window.location.href = data.url; return }
+        throw new Error(data.error || "Crypto payment failed")
+      }
+      if (method === "card") {
+        const res = await fetch("/api/push-points/stripe-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ packageId: pkg.id, userId }),
+        })
+        const data = await res.json()
+        if (data.url) { window.location.href = data.url; return }
+        throw new Error(data.error || "Card payment failed")
+      }
+      setError(`${method} coming soon. Use card or crypto.`)
+      setProcessing(false)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Payment error. Try again.")
+      setProcessing(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 transition-opacity duration-350" 
+        style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(8px)" }} 
+      />
+
+      {/* Modal */}
+      <div
+        className="relative w-full sm:max-w-[440px] max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white animate-slide-up"
+        style={{ boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 4px 20px rgba(0,0,0,0.06)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#F0F0F0]">
+          <button 
+            onClick={onClose} 
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F5F5F5] hover:bg-[#EEE] transition-colors"
+          >
+            <svg className="w-4 h-4 text-[#666]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="flex-1">
+            <p className="text-[17px] font-bold text-[#111]">{pkg.points} Push Points</p>
+            <p className="text-[13px] text-[#999]">{pkg.points} × Push to Top</p>
+          </div>
+          <p className="text-[22px] font-bold tabular-nums text-[#111]">€{finalPrice.toFixed(2)}</p>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          {/* Payment methods */}
+          <PaymentMethodsList selected={method} onSelect={setMethod} />
+
+          {/* Card form */}
+          {method === "card" && (
+            <div className="space-y-3 animate-fade-in">
+              <input
+                type="text" inputMode="numeric" placeholder="Card number"
+                value={cardNum} onChange={e => setCardNum(fmtCard(e.target.value))}
+                className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[13px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white focus:shadow-[0_0_0_3px_rgba(230,57,70,0.08)] font-mono tracking-widest transition-all"
+              />
+              <div className="grid grid-cols-2 gap-[10px]">
+                <input
+                  type="text" inputMode="numeric" placeholder="MM/YY"
+                  value={expiry} onChange={e => setExpiry(fmtExp(e.target.value))}
+                  className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[13px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white focus:shadow-[0_0_0_3px_rgba(230,57,70,0.08)] font-mono transition-all"
+                />
+                <input
+                  type="text" inputMode="numeric" placeholder="CVC"
+                  value={cvc} onChange={e => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[13px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white focus:shadow-[0_0_0_3px_rgba(230,57,70,0.08)] font-mono transition-all"
+                />
+              </div>
+              <input
+                type="text" placeholder="Name on card"
+                value={name} onChange={e => setName(e.target.value)}
+                className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[13px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white focus:shadow-[0_0_0_3px_rgba(230,57,70,0.08)] transition-all"
+              />
+            </div>
+          )}
+
+          {/* Promo code */}
+          <div>
+            <p className="text-[11px] text-[#999] font-semibold uppercase tracking-[0.08em] mb-2">Promo code</p>
+            {promoApplied ? (
+              <div className="flex items-center gap-2 text-green-600 text-sm bg-green-50 rounded-[10px] px-4 py-3">
+                <span>✓ {promoCode.toUpperCase()} — {discount}% off</span>
+                <button onClick={() => { setPromoApplied(false); setDiscount(0); setPromoCode("") }} className="ml-auto text-[#999] hover:text-[#E63946] text-xs transition-colors">Remove</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <input
+                  type="text" placeholder="Enter promo code"
+                  value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                  onKeyDown={e => e.key === "Enter" && applyPromo()}
+                  className="w-full bg-[#FAFAFA] border-[1.5px] border-[#E5E5E5] rounded-[10px] px-4 py-[10px] text-[#222] text-sm placeholder-[#999] focus:outline-none focus:border-[#E63946] focus:bg-white uppercase tracking-widest transition-all"
+                />
+                <button 
+                  onClick={applyPromo} 
+                  className="px-4 py-[10px] rounded-[10px] border-[1.5px] border-[#E5E5E5] text-[#666] text-sm font-semibold hover:border-[#E63946] hover:text-[#E63946] transition-colors flex-shrink-0"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="rounded-[10px] bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</div>
+          )}
+
+          {/* CTA */}
+          <button
+            onClick={handlePay}
+            disabled={processing}
+            className="w-full py-4 rounded-xl text-white font-bold text-sm uppercase tracking-wide disabled:opacity-50 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
+            style={{ 
+              background: "linear-gradient(135deg, #E63946 0%, #C62828 100%)",
+              boxShadow: "0 4px 16px rgba(230,57,70,0.25)"
+            }}
+          >
+            {processing ? (
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="40" strokeDashoffset="10" />
+              </svg>
+            ) : null}
+            {processing ? "Processing..." : `BUY ${pkg.points} POINTS — €${finalPrice.toFixed(2)}`}
+          </button>
+
+          {/* Trust footer */}
+          <SecurePaymentFooter />
+        </div>
+      </div>
+
+      {/* Animation styles */}
+      <style jsx>{`
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { transform: translateY(4px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+          animation: slideUp 350ms ease;
+        }
+        .animate-fade-in {
+          animation: fadeIn 200ms ease;
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// ─── Push to Top Widget ────────────────────────────────────────────────────────
 function PushToTopWidget({ listingId, userId }: { listingId: string; userId: string }) {
   const [points, setPoints] = useState<number | null>(null)
   const [pushing, setPushing] = useState(false)
-  const [buying, setBuying] = useState<string | null>(null)
+  const [modalPkg, setModalPkg] = useState<{ id: string; points: number; price_usd: number; label: string } | null>(null)
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null)
 
   useEffect(() => {
@@ -423,119 +768,100 @@ function PushToTopWidget({ listingId, userId }: { listingId: string; userId: str
     }
   }
 
-  const handleBuy = async (packageId: string, pts: number) => {
-    if (!userId) return
-    setBuying(packageId)
-    const res = await fetch("/api/push-points/buy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ packageId, userId }),
-    })
-    const data = await res.json()
-    setBuying(null)
-    if (res.ok) {
-      setPoints((prev) => (prev ?? 0) + pts)
-      showToast("success", `\u2705 ${pts} push points added!`)
-    } else {
-      showToast("error", data.error || "Purchase failed")
-    }
-  }
-
   return (
-    <div
-      className="bg-white border border-gray-100 rounded-none p-5 mb-6"
-      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-    >
-      {toast && (
-        <div
-          className={`mb-4 px-4 py-2.5 rounded text-sm font-medium ${
-            toast.type === "success"
-              ? "bg-green-50 text-green-700 border border-green-200"
-              : "bg-red-50 text-red-700 border border-red-200"
-          }`}
-        >
-          {toast.msg}
-        </div>
+    <>
+      {/* Payment modal */}
+      {modalPkg && (
+        <PushPayModal
+          pkg={modalPkg}
+          userId={userId}
+          onClose={() => setModalPkg(null)}
+        />
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <svg
-              className="w-4 h-4 text-red-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-            </svg>
-            Push to Top
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Move your profile to the top of search results instantly. 1 push = 1 point.
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-gray-900">{points ?? "\u2014"}</div>
-          <div className="text-[11px] text-gray-400">points left</div>
-        </div>
-      </div>
-
-      {/* Push button */}
-      {(points ?? 0) > 0 ? (
-        <button
-          onClick={handlePush}
-          disabled={pushing}
-          className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-2.5 rounded transition-colors disabled:opacity-60 mb-5"
-        >
-          {pushing ? (
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="40" strokeDashoffset="10" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-            </svg>
-          )}
-          {pushing ? "Pushing..." : "Push to Top Now"}
-        </button>
-      ) : (
-        <div className="text-center py-3 mb-5 bg-gray-50 border border-gray-100 rounded text-sm text-gray-500">
-          No push points \u2014 buy a package below to get started
-        </div>
-      )}
-
-      {/* Packages */}
-      <div className="grid grid-cols-3 gap-2">
-        {PUSH_POINT_PACKAGES.map((pkg) => (
-          <button
-            key={pkg.id}
-            onClick={() => handleBuy(pkg.id, pkg.points)}
-            disabled={buying === pkg.id}
-            className={`relative border rounded p-3 text-left transition-all hover:border-red-300 hover:bg-red-50 ${
-              pkg.popular ? "border-red-400 bg-red-50" : "border-gray-200"
+      <div
+        className="bg-white border border-gray-100 rounded-none p-5 mb-6"
+        style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+      >
+        {toast && (
+          <div
+            className={`mb-4 px-4 py-2.5 rounded text-sm font-medium ${
+              toast.type === "success"
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-700 border border-red-200"
             }`}
           >
-            {pkg.popular && (
-              <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                POPULAR
-              </span>
+            {toast.msg}
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+              </svg>
+              Push to Top
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Move your profile to the top of search results instantly. 1 push = 1 point.
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-gray-900">{points ?? "\u2014"}</div>
+            <div className="text-[11px] text-gray-500">points left</div>
+          </div>
+        </div>
+
+        {/* Push button */}
+        {(points ?? 0) > 0 ? (
+          <button
+            onClick={handlePush}
+            disabled={pushing}
+            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-2.5 rounded transition-colors disabled:opacity-60 mb-5"
+          >
+            {pushing ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={3} strokeDasharray="40" strokeDashoffset="10" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+              </svg>
             )}
-            <div className="font-bold text-gray-900 text-lg">{pkg.points}</div>
-            <div className="text-[10px] text-gray-500 font-medium">pushes</div>
-            <div className="text-sm font-semibold text-red-600 mt-1">&euro;{pkg.price_usd}</div>
-            <div className="text-[10px] text-gray-400 mt-0.5">{pkg.description}</div>
-            {buying === pkg.id && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
-                <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
+            {pushing ? "Pushing..." : "Push to Top Now"}
           </button>
-        ))}
+        ) : (
+          <div className="text-center py-3 mb-5 bg-gray-50 border border-gray-100 rounded text-sm text-gray-500">
+            No push points \u2014 buy a package below to get started
+          </div>
+        )}
+
+        {/* Packages — click opens payment modal */}
+        <div className="grid grid-cols-3 gap-2">
+          {PUSH_POINT_PACKAGES.map((pkg) => (
+            <button
+              key={pkg.id}
+              onClick={() => setModalPkg({ id: pkg.id, points: pkg.points, price_usd: pkg.price_usd, label: pkg.label })}
+              className={`relative border rounded p-3 text-left transition-all hover:border-red-300 hover:bg-red-50 ${
+                pkg.popular ? "border-red-400 bg-red-50" : "border-gray-200"
+              }`}
+            >
+              {pkg.popular && (
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                  POPULAR
+                </span>
+              )}
+              <div className="font-bold text-gray-900 text-lg">{pkg.points}</div>
+              <div className="text-[10px] text-gray-500 font-medium">pushes</div>
+              <div className="text-sm font-semibold text-red-600 mt-1">&euro;{pkg.price_usd}</div>
+              <div className="text-[10px] text-gray-500 mt-0.5">{pkg.description}</div>
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 

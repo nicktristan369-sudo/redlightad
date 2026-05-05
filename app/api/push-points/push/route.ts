@@ -40,8 +40,9 @@ export async function POST(req: NextRequest) {
     if (points < 1) return NextResponse.json({ error: "insufficient_points" }, { status: 402 })
 
     const now = new Date().toISOString()
+    const boostScore = Math.floor(Date.now() / 1000) // Unix timestamp in seconds (fits in integer)
 
-    // Deduct 1 point + update listing created_at to now (moves to top) + boost_purchased_at
+    // Deduct 1 point + update listing with boost score to move to top
     const [deductResult, updateResult] = await Promise.all([
       adminSupabase
         .from("wallets")
@@ -50,9 +51,8 @@ export async function POST(req: NextRequest) {
       adminSupabase
         .from("listings")
         .update({
-          created_at: now,
+          boost_score: boostScore,
           boost_purchased_at: now,
-          boost_score: 0, // reset boost_score so it competes on equal terms with created_at
         })
         .eq("id", listingId),
     ])

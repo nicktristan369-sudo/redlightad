@@ -193,9 +193,9 @@ export default function LocationSelector({ value, onChange, compact = false }: L
               <span className="truncate">{selectedCountry.name}</span>
             </>
           ) : (
-            <span className="text-gray-400">Select country...</span>
+            <span className="text-gray-500">Select country...</span>
           )}
-          <svg className="w-4 h-4 ml-auto text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4 ml-auto text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
@@ -214,13 +214,13 @@ export default function LocationSelector({ value, onChange, compact = false }: L
             </div>
             <div className="overflow-y-auto max-h-60">
               {loading.countries ? (
-                <div className="p-4 text-center text-gray-400 text-sm">Loading...</div>
+                <div className="p-4 text-center text-gray-500 text-sm">Loading...</div>
               ) : filteredCountries.length === 0 ? (
-                <div className="p-4 text-center text-gray-400 text-sm">No countries found</div>
+                <div className="p-4 text-center text-gray-500 text-sm">No countries found</div>
               ) : (
                 <>
                   {!countrySearch && (
-                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase bg-gray-50">Popular</div>
+                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase bg-gray-50">Popular</div>
                   )}
                   {filteredCountries.map((c, i) => (
                     <button
@@ -288,9 +288,9 @@ export default function LocationSelector({ value, onChange, compact = false }: L
             {value.city ? (
               <span className="truncate">{value.city}</span>
             ) : (
-              <span className="text-gray-400">Select city...</span>
+              <span className="text-gray-500">Select city...</span>
             )}
-            <svg className="w-4 h-4 ml-auto text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 ml-auto text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -309,9 +309,9 @@ export default function LocationSelector({ value, onChange, compact = false }: L
               </div>
               <div className="overflow-y-auto max-h-60">
                 {loading.cities ? (
-                  <div className="p-4 text-center text-gray-400 text-sm">Loading...</div>
+                  <div className="p-4 text-center text-gray-500 text-sm">Loading...</div>
                 ) : filteredCities.length === 0 ? (
-                  <div className="p-4 text-center text-gray-400 text-sm">
+                  <div className="p-4 text-center text-gray-500 text-sm">
                     {citySearch ? "No cities found" : "No cities available"}
                   </div>
                 ) : (
@@ -330,7 +330,7 @@ export default function LocationSelector({ value, onChange, compact = false }: L
                     >
                       <span className="text-sm font-medium text-gray-800">{c.name}</span>
                       {c.population > 0 && (
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-500">
                           {c.population > 1000000 
                             ? `${(c.population / 1000000).toFixed(1)}M`
                             : c.population > 1000 

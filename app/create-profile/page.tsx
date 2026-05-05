@@ -298,7 +298,6 @@ export default function OpretAnnoncePage() {
       const { data: listing } = await supabase
         .from("listings").select("id").eq("user_id", user.id).neq("status", "deleted").limit(1).maybeSingle();
       if (listing?.id) {
-        alert("You already have a profile. Edit it here.");
         router.replace(`/dashboard/annoncer/${listing.id}/edit`);
         return;
       }
@@ -506,8 +505,12 @@ export default function OpretAnnoncePage() {
       // Upload images
       let imageUrls: string[] = [];
       if (imageFiles.length > 0) {
-        const { uploadImages } = await import("@/lib/uploadImages");
-        imageUrls = await uploadImages(imageFiles);
+        try {
+          const { uploadImages } = await import("@/lib/uploadImages");
+          imageUrls = await uploadImages(imageFiles);
+        } catch (uploadErr: unknown) {
+          throw new Error(`Photo upload failed: ${uploadErr instanceof Error ? uploadErr.message : 'Unknown error'}`);
+        }
       }
 
       // Generate URL slug from display name or title
@@ -864,7 +867,7 @@ export default function OpretAnnoncePage() {
                                 } else {
                                   langs[idx] = val
                                 }
-                                return { ...prev, languages: langs.slice(0, 3) }
+                                return { ...prev, languages: langs.slice(0, 2) }
                               })
                             }}
                             style={{ fontSize: 16 }}
@@ -947,6 +950,11 @@ export default function OpretAnnoncePage() {
                     style={{ fontSize: 16 }}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                   />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, fontSize: 12 }}>
+                    <p style={{ color: form.about.length < 400 ? "#DC2626" : "#059669" }}>
+                      {form.about.length}/400 characters (minimum)
+                    </p>
+                  </div>
                   <p style={{ fontSize: 11, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 6, padding: "6px 10px", marginTop: 6 }}>
                     ⚠️ NOT ALLOWED in description: phone numbers, email addresses, website URLs, social media (FB, IG, TikTok) or OnlyFans links.
                   </p>
@@ -1505,8 +1513,8 @@ export default function OpretAnnoncePage() {
                       setError("Please enter your age (minimum 18).");
                       return;
                     }
-                    if (!form.about || form.about.trim().length < 50) {
-                      setError("Please write at least 50 characters in your bio (About me).");
+                    if (!form.about || form.about.trim().length < 400) {
+                      setError("Please write at least 400 characters in your bio (About me).");
                       return;
                     }
                     setError("");

@@ -82,7 +82,7 @@ export default function CompleteRegistrationPage() {
         </div>
 
         {/* Sign out link */}
-        <p className="text-center text-[13px] text-gray-400 mt-8">
+        <p className="text-center text-[13px] text-gray-500 mt-8">
           Wrong account?{" "}
           <button
             onClick={async () => {
