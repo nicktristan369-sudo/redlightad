@@ -42,13 +42,15 @@ interface Account {
   phone_number: string | null; display_name: string | null
   session_data: Record<string, unknown>; status: string
   last_connected_at: string | null; error_message: string | null
-  created_at: string; updated_at: string
+  created_at: string; updated_at: string; country_code?: string | null
   live_status?: { accountId: string; platform: string; status: string; uptime: number; messageCount: { sent: number; received: number }; reconnectAttempts: number }
 }
 interface Contact {
   id: string; account_id: string; platform_contact_id: string
   display_name: string | null; phone_number: string | null
   avatar_url?: string | null; notes?: string | null; tags?: string[]; is_blocked?: boolean
+  country_code?: string | null; country_name?: string | null; custom_name?: string | null
+  email?: string | null; is_favorite?: boolean
 }
 interface Conversation {
   id: string; account_id: string; contact_id: string | null
@@ -356,7 +358,7 @@ export default function MessengerHubPage() {
 
   // Contact page actions
   function selectContactForEdit(c: Contact) {
-    setSelectedContact(c); setCeCustomName(c.custom_name || c.display_name || ""); setCeEmail((c as any).email || ""); setCeNotes(c.notes || ""); setCeTags(Array.isArray(c.tags) ? c.tags as string[] : []); setCeCountry(c.country_code || phoneToCC(c.phone_number) || ""); setCeFavorite(c.is_favorite || false)
+    setSelectedContact(c); setCeCustomName(c.custom_name || c.display_name || ""); setCeEmail(c.email || ""); setCeNotes(c.notes || ""); setCeTags(Array.isArray(c.tags) ? c.tags as string[] : []); setCeCountry(c.country_code || phoneToCC(c.phone_number) || ""); setCeFavorite(c.is_favorite || false)
   }
   async function saveContactEdit() {
     if (!selectedContact) return; setCeSaving(true)
@@ -462,7 +464,7 @@ export default function MessengerHubPage() {
                         <div className="absolute -bottom-0.5 -right-0.5"><StatusDot status={eff} /></div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{(account as any).country_code ? ccToFlag((account as any).country_code)+' ' : ''}{account.display_name || "Unnamed"}</p>
+                        <p className="text-sm font-medium truncate">{account.country_code ? ccToFlag(account.country_code)+' ' : ''}{account.display_name || "Unnamed"}</p>
                         <p className="text-xs text-gray-500 truncate">{account.phone_number || account.platform}</p>
                         <span className="text-[10px] text-gray-600 capitalize">{eff.replace("_", " ")}</span>
                       </div>
@@ -705,7 +707,7 @@ export default function MessengerHubPage() {
               <div className="flex-1 overflow-y-auto">
                 {allContacts.length === 0 ? <div className="text-center py-16"><BookOpen size={32} className="mx-auto text-gray-700 mb-3" /><p className="text-sm text-gray-500">Ingen kontakter</p></div>
                 : allContacts.map(c => {
-                  const name = (c as any).custom_name || c.display_name || c.phone_number || 'Ukendt'
+                  const name = c.custom_name || c.display_name || c.phone_number || 'Ukendt'
                   const flag = ccToFlag(c.country_code)
                   return (
                     <div key={c.id} onClick={() => selectContactForEdit(c)} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b border-[#2a3942]/30 transition-colors ${selectedContact?.id === c.id ? 'bg-[#2a3942]/60' : 'hover:bg-[#2a3942]/30'}`}>
@@ -731,8 +733,8 @@ export default function MessengerHubPage() {
               {selectedContact ? (
                 <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
                   <div className="text-center">
-                    <Avatar name={(selectedContact as any).custom_name || selectedContact.display_name || '?'} url={selectedContact.avatar_url} size={80} />
-                    <p className="text-lg font-bold mt-3">{ccToFlag(selectedContact.country_code)} {(selectedContact as any).custom_name || selectedContact.display_name || 'Ukendt'}</p>
+                    <Avatar name={selectedContact.custom_name || selectedContact.display_name || '?'} url={selectedContact.avatar_url} size={80} />
+                    <p className="text-lg font-bold mt-3">{ccToFlag(selectedContact.country_code)} {selectedContact.custom_name || selectedContact.display_name || 'Ukendt'}</p>
                     <p className="text-xs text-gray-500">{selectedContact.phone_number}</p>
                   </div>
                   <div className="space-y-3">
