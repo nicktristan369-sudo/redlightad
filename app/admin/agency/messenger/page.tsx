@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { createClient } from "@/lib/supabase"
+import PhoneSettingsModal from "./PhoneSettingsModal"
 import {
   ArrowLeft, Plus, Search, Send, Trash2, X,
   MessageCircle, QrCode, Loader2, Phone,
@@ -187,6 +188,10 @@ export default function MessengerHubPage() {
   // Pair link state
   const [pairLink, setPairLink] = useState<string | null>(null)
   const [pairCopied, setPairCopied] = useState(false)
+
+  // Phone Settings modal
+  const [settingsAccountId, setSettingsAccountId] = useState<string | null>(null)
+  const settingsAccount = accounts.find(a => a.id === settingsAccountId) || null
 
   // Health
   const [healthStatus, setHealthStatus] = useState<{ status: string; accounts: { id: string; platform: string; status: string; uptime: string }[]; autoReply: { activeRules: number; sentToday: number }; database: string } | null>(null)
@@ -471,6 +476,7 @@ export default function MessengerHubPage() {
                       <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         {(eff === "disconnected" || eff === "error") ? <button onClick={e => { e.stopPropagation(); connectAccount(account.id) }} className="p-1 text-green-500 hover:text-green-400" title="Connect"><LogIn size={13} /></button>
                         : eff === "connected" ? <button onClick={e => { e.stopPropagation(); disconnectAccount(account.id) }} className="p-1 text-yellow-500 hover:text-yellow-400" title="Disconnect"><LogOut size={13} /></button> : null}
+                        <button onClick={e => { e.stopPropagation(); setSettingsAccountId(account.id) }} className="p-1 text-gray-600 hover:text-white" title="Settings"><Settings size={13} /></button>
                         <button onClick={e => { e.stopPropagation(); deleteAccount(account.id) }} className="p-1 text-gray-600 hover:text-red-500" title="Slet"><Trash2 size={13} /></button>
                       </div>
                     </div>
@@ -854,6 +860,22 @@ export default function MessengerHubPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ═══ Phone Settings Modal ═══ */}
+      {settingsAccountId && settingsAccount && (
+        <PhoneSettingsModal
+          accountId={settingsAccount.id}
+          accountName={settingsAccount.display_name || ""}
+          phoneNumber={settingsAccount.phone_number}
+          avatarUrl={null}
+          config={(settingsAccount as any).persona_config || {}}
+          onClose={() => setSettingsAccountId(null)}
+          onSave={async (cfg) => {
+            await apiFetch(`/accounts/${settingsAccountId}`, { method: "PATCH", body: JSON.stringify({ persona_config: cfg }) })
+            loadAccounts()
+          }}
+        />
       )}
     </div>
   )
