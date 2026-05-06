@@ -202,6 +202,8 @@ export default function MessengerHubPage() {
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [inviteCopied, setInviteCopied] = useState(false)
   const [inviteLoading, setInviteLoading] = useState(false)
+  const [pairingCode, setPairingCode] = useState<string | null>(null)
+  const [pairingCodeCopied, setPairingCodeCopied] = useState(false)
 
   // Phone Settings modal
   const [settingsAccountId, setSettingsAccountId] = useState<string | null>(null)
@@ -464,7 +466,7 @@ export default function MessengerHubPage() {
               ))}
             </div>
           )}
-          <button onClick={() => { setShowAddModal(true); setAddMode("choose"); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false); setPairLink(null); setPairCopied(false); setInviteLink(null); setInviteCopied(false) }}
+          <button onClick={() => { setShowAddModal(true); setAddMode("choose"); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false); setPairLink(null); setPairCopied(false); setInviteLink(null); setInviteCopied(false); setPairingCode(null); setPairingCodeCopied(false) }}
             className="flex items-center gap-2 px-3 py-2 bg-[#00a884] hover:bg-[#00c49a] text-white text-sm font-medium rounded-lg"><Plus size={16} /><span className="hidden md:inline">Add Account</span></button>
         </div>
       </header>
@@ -898,27 +900,65 @@ export default function MessengerHubPage() {
                 </>
               )}
 
-              {/* Mode: Invite link */}
+              {/* Mode: Invite — pairing code flow */}
               {addMode === "invite" && (
                 <>
-                  <button onClick={() => setAddMode("choose")} className="text-xs text-gray-500 hover:text-gray-300">← Tilbage</button>
-                  {inviteLoading ? (
-                    <div className="text-center py-6"><Loader2 size={24} className="mx-auto text-gray-500 animate-spin mb-2" /><p className="text-sm text-gray-400">Genererer link...</p></div>
-                  ) : inviteLink ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-300">Send dette link til personen der skal forbinde sin WhatsApp:</p>
-                      <div className="flex items-center gap-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg px-3 py-2.5">
-                        <input type="text" readOnly value={inviteLink} className="flex-1 bg-transparent text-xs text-[#00a884] outline-none truncate font-mono" />
-                        <button onClick={copyInviteLink} className={`px-3 py-1.5 text-xs font-medium rounded-md shrink-0 transition-colors ${inviteCopied ? 'bg-[#00a884] text-white' : 'bg-[#2a3942] text-gray-300 hover:bg-[#3a4a52]'}`}>{inviteCopied ? '✓ Kopieret' : 'Kopiér'}</button>
+                  <button onClick={() => { setAddMode("choose"); setPairingCode(null) }} className="text-xs text-gray-500 hover:text-gray-300">← Tilbage</button>
+                  {!pairingCode ? (
+                    <>
+                      <div><label className="block text-sm text-gray-400 mb-1.5">Konto Navn *</label><input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Deres navn" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+                      <div><label className="block text-sm text-gray-400 mb-1.5">Deres telefonnummer *</label><input type="tel" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+45 12 34 56 78" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+                      <button onClick={async () => {
+                        if (!newName.trim() || !newPhone.trim()) return; setInviteLoading(true)
+                        // Create account, start session, request pairing code
+                        const acc = await apiFetch<Account>("/accounts", { method: "POST", body: JSON.stringify({ platform: "whatsapp", display_name: newName.trim(), phone_number: newPhone.trim() }) })
+                        if (!acc) { setInviteLoading(false); return }
+                        await apiFetch(`/accounts/${acc.id}/connect`, { method: "POST" })
+                        setSelectedAccountId(acc.id)
+                        // Generate invite link too
+                        const inv = await apiFetch<{token:string}>("/pair/invite", { method: "POST" })
+                        if (inv) setInviteLink(`${window.location.origin}/invite/${inv.token}`)
+                        // Wait for session + request pairing code
+                        const cleanPhone = newPhone.trim().replace(/[^0-9]/g, '')
+                        const codeRes = await apiFetch<{code:string}>(`/pair/invite/${inv?.token || 'x'}/pairing-code`, { method: "POST", body: JSON.stringify({ phone_number: cleanPhone }) })
+                        if (codeRes?.code) setPairingCode(codeRes.code)
+                        setInviteLoading(false)
+                        loadAccounts()
+                      }} disabled={inviteLoading || !newName.trim() || !newPhone.trim()}
+                        className="w-full py-2.5 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2">
+                        {inviteLoading && <Loader2 size={14} className="animate-spin" />}
+                        {inviteLoading ? "Starter session..." : "Generér kode"}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-300 text-center">Send denne kode til brugeren:</p>
+                      <div className="bg-[#1f2c34] rounded-2xl py-5 px-4 text-center">
+                        <p className="text-3xl font-mono font-bold tracking-[0.25em] text-white">{pairingCode.replace(/(.{4})/g, '$1-').replace(/-$/, '')}</p>
                       </div>
-                      <div className="bg-[#1f2c34] rounded-lg p-3 space-y-1.5">
-                        <p className="text-[10px] text-gray-500">• Modtageren udfylder selv navn og scanner QR</p>
-                        <p className="text-[10px] text-gray-500">• Ingen login krævet</p>
-                        <p className="text-[10px] text-gray-500">• Udløber efter 24 timer</p>
-                        <p className="text-[10px] text-gray-500">• Kan kun bruges én gang</p>
+                      <button onClick={() => { navigator.clipboard.writeText(pairingCode || ''); setPairingCodeCopied(true); setTimeout(() => setPairingCodeCopied(false), 2000) }}
+                        className={`w-full py-2 text-sm font-medium rounded-lg transition-colors ${pairingCodeCopied ? 'bg-[#00a884] text-white' : 'bg-[#2a3942] text-gray-300 hover:bg-[#3a4a52]'}`}>
+                        {pairingCodeCopied ? '✓ Kode kopieret' : 'Kopiér kode'}
+                      </button>
+                      <div className="bg-[#1f2c34] rounded-lg p-3 text-xs text-gray-400 space-y-1">
+                        <p className="font-medium text-gray-300 mb-1.5">Brugeren skal:</p>
+                        <p>1. Åbne WhatsApp → Indstillinger → Linkede enheder</p>
+                        <p>2. Trykke &quot;Link en enhed&quot;</p>
+                        <p>3. Trykke &quot;Link med telefonnummer&quot;</p>
+                        <p>4. Indtaste koden ovenfor</p>
+                      </div>
+                      {inviteLink && (
+                        <div className="flex items-center gap-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg px-3 py-2">
+                          <input type="text" readOnly value={inviteLink} className="flex-1 bg-transparent text-[10px] text-gray-500 outline-none truncate font-mono" />
+                          <button onClick={copyInviteLink} className={`px-2 py-1 text-[10px] font-medium rounded shrink-0 ${inviteCopied ? 'bg-[#00a884] text-white' : 'bg-[#2a3942] text-gray-400'}`}>{inviteCopied ? '✓' : 'Link'}</button>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-2 h-2 bg-[#00a884] rounded-full animate-pulse" />
+                        <span className="text-xs text-gray-500">Venter på at brugeren taster koden ind...</span>
                       </div>
                     </div>
-                  ) : null}
+                  )}
                 </>
               )}
             </div>
