@@ -488,10 +488,22 @@ export default function MessengerHubPage() {
   async function toggleFavorite(c: Contact) {
     await apiFetch(`/contacts/${c.id}`, { method: "PATCH", body: JSON.stringify({ is_favorite: !c.is_favorite }) }); loadContacts()
   }
-  function openChatWithContact(c: Contact) {
-    // Find conversation for this contact and switch to chat
-    const conv = conversations.find(cv => cv.contact_id === c.id)
-    if (conv) { setMainView("chat"); setSelectedConvId(conv.id) }
+  async function openChatWithContact(c: Contact) {
+    // Load conversations for this contact's account, find matching one
+    if (c.account_id) setSelectedAccountId(c.account_id)
+    // Fetch all conversations to find match
+    const allConvs = await apiFetch<Conversation[]>(`/conversations?account_id=${c.account_id}`)
+    const conv = allConvs?.find(cv => cv.contact_id === c.id)
+    if (conv) {
+      if (c.account_id) setSelectedAccountId(c.account_id)
+      setConversations(allConvs || [])
+      setMainView("chat")
+      setSelectedConvId(conv.id)
+    } else {
+      // No conversation yet — switch to chat view with account selected
+      if (c.account_id) setSelectedAccountId(c.account_id)
+      setMainView("chat")
+    }
   }
 
   // Auto-reply actions
