@@ -530,7 +530,7 @@ export default function MessengerHubPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Telefon</p>
-                      <p className="text-sm text-gray-300">{contactDetail?.phone_number || displayPhone(selectedConv) || "Ukendt"}</p>
+                      <p className="text-sm text-gray-300">{displayPhone(selectedConv) || contactDetail?.phone_number || "Ukendt"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Noter</p>
