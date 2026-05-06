@@ -9,173 +9,137 @@ import {
   MessageSquare, Bot, Users, RefreshCw, Wifi, WifiOff,
   LogIn, LogOut, Image as ImageIcon, Zap, Settings,
   ToggleLeft, ToggleRight, Edit2, ChevronDown, Activity,
-  AlertCircle, Hash, Type, Calendar, Brain, Radio
+  AlertCircle, Hash, Type, Calendar, Brain, Radio,
+  Pin, BellOff, Eye, Ban, Archive, UserPlus, Tag, FileText,
+  Shield, ShieldOff, Volume2, VolumeX, BookOpen
 } from "lucide-react"
+
+// ─── Platform SVG Icons ─────────────────────────────────────────────────
+function WhatsAppIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="12" fill="#25D366" />
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="white" />
+    </svg>
+  )
+}
+
+function TelegramIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="12" fill="#2AABEE" />
+      <path d="M9.417 15.181l-.397 5.584c.568 0 .814-.244 1.109-.537l2.663-2.545 5.518 4.041c1.012.564 1.725.267 1.998-.931L23.93 4.488c.321-1.496-.543-2.081-1.527-1.714l-21.29 8.151c-1.453.564-1.431 1.374-.247 1.741l5.443 1.693L18.953 6.37c.529-.33 1.012-.148.614.21L9.417 15.18z" fill="white" />
+    </svg>
+  )
+}
 
 // ─── Constants ──────────────────────────────────────────────────────────
 const API = "/api/messenger/api"
 
 // ─── Types ──────────────────────────────────────────────────────────────
 interface Account {
-  id: string
-  user_id: string | null
-  platform: "whatsapp" | "telegram"
-  phone_number: string | null
-  display_name: string | null
-  session_data: Record<string, unknown>
-  status: string
-  last_connected_at: string | null
-  error_message: string | null
-  created_at: string
-  updated_at: string
-  live_status?: {
-    accountId: string
-    platform: string
-    status: string
-    uptime: number
-    messageCount: { sent: number; received: number }
-    reconnectAttempts: number
-  }
+  id: string; user_id: string | null; platform: "whatsapp" | "telegram"
+  phone_number: string | null; display_name: string | null
+  session_data: Record<string, unknown>; status: string
+  last_connected_at: string | null; error_message: string | null
+  created_at: string; updated_at: string
+  live_status?: { accountId: string; platform: string; status: string; uptime: number; messageCount: { sent: number; received: number }; reconnectAttempts: number }
 }
-
 interface Contact {
-  id: string
-  account_id: string
-  platform_contact_id: string
-  display_name: string | null
-  phone_number: string | null
+  id: string; account_id: string; platform_contact_id: string
+  display_name: string | null; phone_number: string | null
+  avatar_url?: string | null; notes?: string | null; tags?: string[]; is_blocked?: boolean
 }
-
 interface Conversation {
-  id: string
-  account_id: string
-  contact_id: string | null
-  platform_chat_id: string
-  chat_name: string | null
-  is_group: boolean
-  unread_count: number
-  last_message_at: string | null
-  last_message_preview: string | null
-  contact?: Contact | null
+  id: string; account_id: string; contact_id: string | null
+  platform_chat_id: string; chat_name: string | null; is_group: boolean
+  unread_count: number; last_message_at: string | null; last_message_preview: string | null
+  contact?: Contact | null; is_archived?: boolean; is_pinned?: boolean; is_muted?: boolean; marked_unread?: boolean
 }
-
 interface Message {
-  id: string
-  conversation_id: string
-  account_id: string
-  platform_message_id: string | null
-  direction: "inbound" | "outbound"
-  message_type: string
-  content: string | null
-  status: string
-  is_auto_reply: boolean
-  auto_reply_rule_id?: string | null
-  created_at: string
+  id: string; conversation_id: string; account_id: string
+  platform_message_id: string | null; direction: "inbound" | "outbound"
+  message_type: string; content: string | null; status: string
+  is_auto_reply: boolean; auto_reply_rule_id?: string | null; created_at: string
 }
-
 interface AutoReplyRule {
-  id: string
-  name: string
-  trigger_type: string
-  trigger_config: Record<string, unknown>
-  response_text: string | null
-  enabled: boolean
-  priority: number
-  delay_seconds: number
-  delay_randomize: boolean
-  platforms: string[]
-  schedule_active: Record<string, unknown>
-  max_per_contact: number
-  cooldown_minutes: number
-  stats_sent: number
-  stats_last_used: string | null
-  created_at: string
+  id: string; name: string; trigger_type: string; trigger_config: Record<string, unknown>
+  response_text: string | null; enabled: boolean; priority: number
+  delay_seconds: number; delay_randomize: boolean; platforms: string[]
+  schedule_active: Record<string, unknown>; max_per_contact: number
+  cooldown_minutes: number; stats_sent: number; stats_last_used: string | null; created_at: string
 }
-
 interface AutoReplyLogEntry {
-  id: string
-  rule_name: string
-  contact_name: string
-  platform: string
-  response_sent: string
-  trigger_message: string
-  processing_time_ms: number
-  created_at: string
+  id: string; rule_name: string; contact_name: string; platform: string
+  response_sent: string; trigger_message: string; processing_time_ms: number; created_at: string
 }
-
 interface AutoReplyStats {
-  totalSent: number
-  sentToday: number
-  activeRules: number
-  topRule: { name: string; count: number } | null
-  avgResponseTime: number
+  totalSent: number; sentToday: number; activeRules: number
+  topRule: { name: string; count: number } | null; avgResponseTime: number
 }
-
 type TabFilter = "all" | "whatsapp" | "telegram"
 type MainView = "chat" | "autoreply"
 
 // ─── Helpers ────────────────────────────────────────────────────────────
-function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return ""
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "nu"
-  if (mins < 60) return `${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}t`
-  const days = Math.floor(hrs / 24)
-  return `${days}d`
+function timeAgo(d: string | null) {
+  if (!d) return ""; const diff = Date.now() - new Date(d).getTime(); const m = Math.floor(diff / 60000)
+  if (m < 1) return "nu"; if (m < 60) return `${m}m`; const h = Math.floor(m / 60)
+  if (h < 24) return `${h}t`; return `${Math.floor(h / 24)}d`
 }
-
-function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString("da-DK", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString("da-DK", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
-function getEffectiveStatus(account: Account): string {
-  return account.live_status?.status || account.status || "disconnected"
-}
+function formatTime(d: string) { return new Date(d).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" }) }
+function formatDateTime(d: string) { return new Date(d).toLocaleString("da-DK", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) }
+function getEffectiveStatus(a: Account) { return a.live_status?.status || a.status || "disconnected" }
 
 function StatusDot({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    connected: "bg-green-500",
-    online: "bg-green-500",
-    connecting: "bg-yellow-500 animate-pulse",
-    qr_required: "bg-orange-500 animate-pulse",
-    awaiting_code: "bg-orange-500 animate-pulse",
-    disconnected: "bg-gray-500",
-    error: "bg-red-500",
+  const c: Record<string, string> = { connected: "bg-green-500", online: "bg-green-500", connecting: "bg-yellow-500 animate-pulse", qr_required: "bg-orange-500 animate-pulse", awaiting_code: "bg-orange-500 animate-pulse", disconnected: "bg-gray-500", error: "bg-red-500" }
+  return <span className={`inline-block w-2.5 h-2.5 rounded-full ${c[status] || "bg-gray-500"}`} />
+}
+
+function Avatar({ name, url, size = 40, platform }: { name: string; url?: string | null; size?: number; platform?: string }) {
+  const [imgErr, setImgErr] = useState(false)
+  const initial = (name || "?").charAt(0).toUpperCase()
+  if (url && !imgErr) {
+    return (
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <img src={url} alt={name} className="rounded-full object-cover" style={{ width: size, height: size }} onError={() => setImgErr(true)} />
+        {platform && <div className="absolute -bottom-0.5 -right-0.5">{platform === "telegram" ? <TelegramIcon size={12} /> : <WhatsAppIcon size={12} />}</div>}
+      </div>
+    )
   }
-  return <span className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status] || "bg-gray-500"}`} />
+  return (
+    <div className="relative shrink-0">
+      <div className="rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-sm font-medium" style={{ width: size, height: size }}>
+        {initial}
+      </div>
+      {platform && <div className="absolute -bottom-0.5 -right-0.5">{platform === "telegram" ? <TelegramIcon size={12} /> : <WhatsAppIcon size={12} />}</div>}
+    </div>
+  )
 }
 
-const TRIGGER_ICONS: Record<string, typeof Bot> = {
-  first_message: MessageCircle,
-  keyword: Hash,
-  regex: Type,
-  schedule: Calendar,
-  ai_fallback: Brain,
-  all_messages: Radio,
+function PlatformBadge({ platform }: { platform?: string }) {
+  if (platform === "telegram") return <TelegramIcon size={14} />
+  if (platform === "whatsapp") return <WhatsAppIcon size={14} />
+  return null
 }
 
-const TRIGGER_LABELS: Record<string, string> = {
-  first_message: "Første besked",
-  keyword: "Nøgleord",
-  regex: "Regex",
-  schedule: "Tidsplan",
-  ai_fallback: "AI Fallback",
-  all_messages: "Alle beskeder",
+const TRIGGER_ICONS: Record<string, typeof Bot> = { first_message: MessageCircle, keyword: Hash, regex: Type, schedule: Calendar, ai_fallback: Brain, all_messages: Radio }
+const TRIGGER_LABELS: Record<string, string> = { first_message: "Første besked", keyword: "Nøgleord", regex: "Regex", schedule: "Tidsplan", ai_fallback: "AI Fallback", all_messages: "Alle beskeder" }
+
+// Format display name for chat header - hide raw chat IDs
+function displayName(conv: Conversation) {
+  if (conv.contact?.display_name) return conv.contact.display_name
+  if (conv.chat_name && !conv.chat_name.includes("@")) return conv.chat_name
+  // Extract phone from chat_id like "4553710369@c.us"
+  const match = conv.platform_chat_id.match(/^(\d+)@/)
+  if (match) return `+${match[1]}`
+  return conv.chat_name || "Ukendt"
+}
+
+function displayPhone(conv: Conversation) {
+  if (conv.contact?.phone_number) return conv.contact.phone_number
+  const match = conv.platform_chat_id.match(/^(\d+)@/)
+  if (match) return `+${match[1]}`
+  return null
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────
@@ -183,7 +147,6 @@ export default function MessengerHubPage() {
   const supabase = createClient()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Core state
   const [accounts, setAccounts] = useState<Account[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -203,13 +166,23 @@ export default function MessengerHubPage() {
   const [newPlatform, setNewPlatform] = useState<"whatsapp" | "telegram">("whatsapp")
   const [addingAccount, setAddingAccount] = useState(false)
 
-  // QR code state
+  // QR state
   const [qrAccountId, setQrAccountId] = useState<string | null>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [qrPolling, setQrPolling] = useState(false)
 
-  // Health state
-  const [healthStatus, setHealthStatus] = useState<{status: string; accounts: {id:string;platform:string;status:string;uptime:string}[]; autoReply: {activeRules:number;sentToday:number}; database: string} | null>(null)
+  // Health
+  const [healthStatus, setHealthStatus] = useState<{ status: string; accounts: { id: string; platform: string; status: string; uptime: string }[]; autoReply: { activeRules: number; sentToday: number }; database: string } | null>(null)
+
+  // Context menu
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; convId: string } | null>(null)
+
+  // Contact detail panel
+  const [showContactPanel, setShowContactPanel] = useState(false)
+  const [contactDetail, setContactDetail] = useState<Contact | null>(null)
+  const [contactNotes, setContactNotes] = useState("")
+  const [contactNameEdit, setContactNameEdit] = useState("")
+  const [savingContact, setSavingContact] = useState(false)
 
   // Auto-reply state
   const [arRules, setArRules] = useState<AutoReplyRule[]>([])
@@ -219,7 +192,7 @@ export default function MessengerHubPage() {
   const [arShowEditor, setArShowEditor] = useState(false)
   const [arSaving, setArSaving] = useState(false)
 
-  // Editor form state
+  // Editor form
   const [edName, setEdName] = useState("")
   const [edTriggerType, setEdTriggerType] = useState("keyword")
   const [edKeywords, setEdKeywords] = useState<string[]>([])
@@ -236,386 +209,131 @@ export default function MessengerHubPage() {
   const [edScheduleTo, setEdScheduleTo] = useState("10:00")
   const [edCooldown, setEdCooldown] = useState(60)
 
-  // Derived
   const selectedAccount = accounts.find(a => a.id === selectedAccountId) || null
   const selectedConv = conversations.find(c => c.id === selectedConvId) || null
 
-  // ─── API calls ──────────────────────────────────────────────────────
+  // ─── API ──────────────────────────────────────────────────────────────
   async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T | null> {
-    try {
-      const res = await fetch(`${API}${path}`, {
-        headers: { "Content-Type": "application/json" },
-        ...opts,
-      })
-      if (!res.ok) return null
-      return await res.json()
-    } catch {
-      return null
-    }
+    try { const r = await fetch(`${API}${path}`, { headers: { "Content-Type": "application/json" }, ...opts }); if (!r.ok) return null; return await r.json() } catch { return null }
   }
 
-  const loadAccounts = useCallback(async () => {
-    const data = await apiFetch<Account[]>("/accounts")
-    if (data) setAccounts(data)
-    setLoading(false)
-  }, [])
-
-  const loadConversations = useCallback(async (accountId: string) => {
-    const data = await apiFetch<Conversation[]>(`/conversations?account_id=${accountId}`)
-    if (data) setConversations(data)
-    else setConversations([])
-  }, [])
-
-  const loadMessages = useCallback(async (convId: string) => {
-    const data = await apiFetch<Message[]>(`/conversations/${convId}/messages`)
-    if (data) setMessages([...data].reverse())
-  }, [])
-
+  const loadAccounts = useCallback(async () => { const d = await apiFetch<Account[]>("/accounts"); if (d) setAccounts(d); setLoading(false) }, [])
+  const loadConversations = useCallback(async (aid: string) => { const d = await apiFetch<Conversation[]>(`/conversations?account_id=${aid}`); if (d) setConversations(d); else setConversations([]) }, [])
+  const loadMessages = useCallback(async (cid: string) => { const d = await apiFetch<Message[]>(`/conversations/${cid}/messages`); if (d) setMessages([...d].reverse()) }, [])
+  const loadHealth = useCallback(async () => { const d = await apiFetch<typeof healthStatus>("/health"); if (d) setHealthStatus(d) }, [])
   const loadAutoReply = useCallback(async () => {
-    const [rules, log, stats] = await Promise.all([
-      apiFetch<AutoReplyRule[]>("/autoreply/rules"),
-      apiFetch<AutoReplyLogEntry[]>("/autoreply/log"),
-      apiFetch<AutoReplyStats>("/autoreply/stats"),
-    ])
-    if (rules) setArRules(rules)
-    if (log) setArLog(log)
-    if (stats) setArStats(stats)
+    const [rules, log, stats] = await Promise.all([apiFetch<AutoReplyRule[]>("/autoreply/rules"), apiFetch<AutoReplyLogEntry[]>("/autoreply/log"), apiFetch<AutoReplyStats>("/autoreply/stats")])
+    if (rules) setArRules(rules); if (log) setArLog(log); if (stats) setArStats(stats)
   }, [])
 
-  // ─── Effects ────────────────────────────────────────────────────────
-  const loadHealth = useCallback(async () => {
-    const data = await apiFetch<typeof healthStatus>("/health")
-    if (data) setHealthStatus(data)
-  }, [])
-
+  // ─── Effects ──────────────────────────────────────────────────────────
   useEffect(() => { loadAccounts(); loadHealth() }, [loadAccounts, loadHealth])
+  useEffect(() => { const iv = setInterval(() => { loadAccounts(); loadHealth() }, 5000); return () => clearInterval(iv) }, [loadAccounts, loadHealth])
+  useEffect(() => { if (selectedAccountId) { loadConversations(selectedAccountId); setSelectedConvId(null); setMessages([]) } else { setConversations([]); setSelectedConvId(null); setMessages([]) } }, [selectedAccountId, loadConversations])
+  useEffect(() => { if (selectedConvId) { loadMessages(selectedConvId); setShowContactPanel(false) } else setMessages([]) }, [selectedConvId, loadMessages])
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages])
+  useEffect(() => { if (mainView === "autoreply") { loadAutoReply(); const iv = setInterval(loadAutoReply, 10000); return () => clearInterval(iv) } }, [mainView, loadAutoReply])
+
+  // Realtime
   useEffect(() => {
-    const iv = setInterval(() => { loadAccounts(); loadHealth() }, 5000)
-    return () => clearInterval(iv)
-  }, [loadAccounts, loadHealth])
-
-  useEffect(() => {
-    if (selectedAccountId) {
-      loadConversations(selectedAccountId)
-      setSelectedConvId(null)
-      setMessages([])
-    } else {
-      setConversations([])
-      setSelectedConvId(null)
-      setMessages([])
-    }
-  }, [selectedAccountId, loadConversations])
-
-  useEffect(() => {
-    if (selectedConvId) loadMessages(selectedConvId)
-    else setMessages([])
-  }, [selectedConvId, loadMessages])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  // Load auto-reply data when tab is active
-  useEffect(() => {
-    if (mainView === "autoreply") {
-      loadAutoReply()
-      const iv = setInterval(loadAutoReply, 10000)
-      return () => clearInterval(iv)
-    }
-  }, [mainView, loadAutoReply])
-
-  // Realtime for new messages
-  useEffect(() => {
-    const msgSub = supabase
-      .channel("messenger_messages_rt")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messenger_messages" }, (payload) => {
-        const newMsg = payload.new as Message
-        if (newMsg.conversation_id === selectedConvId) {
-          setMessages(prev => {
-            if (prev.some(m => m.id === newMsg.id)) return prev
-            return [...prev, newMsg]
-          })
-        }
-        if (selectedAccountId) loadConversations(selectedAccountId)
-      })
-      .subscribe()
-
-    const convSub = supabase
-      .channel("messenger_conversations_rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messenger_conversations" }, () => {
-        if (selectedAccountId) loadConversations(selectedAccountId)
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(msgSub)
-      supabase.removeChannel(convSub)
-    }
+    const msgSub = supabase.channel("messenger_messages_rt").on("postgres_changes", { event: "INSERT", schema: "public", table: "messenger_messages" }, (p) => {
+      const m = p.new as Message; if (m.conversation_id === selectedConvId) setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m])
+      if (selectedAccountId) loadConversations(selectedAccountId)
+    }).subscribe()
+    const convSub = supabase.channel("messenger_conversations_rt").on("postgres_changes", { event: "*", schema: "public", table: "messenger_conversations" }, () => { if (selectedAccountId) loadConversations(selectedAccountId) }).subscribe()
+    return () => { supabase.removeChannel(msgSub); supabase.removeChannel(convSub) }
   }, [selectedAccountId, selectedConvId, loadConversations])
+  useEffect(() => { if (!selectedAccountId) return; const iv = setInterval(() => loadConversations(selectedAccountId), 3000); return () => clearInterval(iv) }, [selectedAccountId, loadConversations])
+  useEffect(() => { if (!selectedConvId) return; const iv = setInterval(() => loadMessages(selectedConvId), 3000); return () => clearInterval(iv) }, [selectedConvId, loadMessages])
+  useEffect(() => { if (!qrAccountId || !qrPolling) return; const iv = setInterval(async () => { const d = await apiFetch<{ qr?: string; dataUrl?: string }>(`/accounts/${qrAccountId}/qr`); if (d?.dataUrl) setQrDataUrl(d.dataUrl); const a = await apiFetch<Account>(`/accounts/${qrAccountId}`); if (a) { const e = a.live_status?.status || a.status; if (e === "connected" || e === "online") { setQrPolling(false); setQrDataUrl(null); setQrAccountId(null); setShowAddModal(false); loadAccounts() } } }, 2000); return () => clearInterval(iv) }, [qrAccountId, qrPolling, loadAccounts])
 
-  // Poll conversations
-  useEffect(() => {
-    if (!selectedAccountId) return
-    const iv = setInterval(() => loadConversations(selectedAccountId), 3000)
-    return () => clearInterval(iv)
-  }, [selectedAccountId, loadConversations])
-
-  // Poll messages
-  useEffect(() => {
-    if (!selectedConvId) return
-    const iv = setInterval(() => loadMessages(selectedConvId), 3000)
-    return () => clearInterval(iv)
-  }, [selectedConvId, loadMessages])
-
-  // QR code polling
-  useEffect(() => {
-    if (!qrAccountId || !qrPolling) return
-    const iv = setInterval(async () => {
-      const data = await apiFetch<{ qr?: string; dataUrl?: string }>(`/accounts/${qrAccountId}/qr`)
-      if (data?.dataUrl) setQrDataUrl(data.dataUrl)
-      const account = await apiFetch<Account>(`/accounts/${qrAccountId}`)
-      if (account) {
-        const eff = account.live_status?.status || account.status
-        if (eff === "connected" || eff === "online") {
-          setQrPolling(false)
-          setQrDataUrl(null)
-          setQrAccountId(null)
-          setShowAddModal(false)
-          loadAccounts()
-        }
-      }
-    }, 2000)
-    return () => clearInterval(iv)
-  }, [qrAccountId, qrPolling, loadAccounts])
-
-  // WebSocket for auto-reply events
+  // WebSocket
   useEffect(() => {
     let ws: WebSocket | null = null
     try {
-      const wsUrl = `ws://76.13.154.9:3001/ws`
-      ws = new WebSocket(wsUrl)
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (data.type === "auto_reply_sent") {
-            // Refresh auto-reply data
-            if (mainView === "autoreply") loadAutoReply()
-            // Add to messages if viewing that conversation
-            if (selectedConvId && data.data?.conversationId === selectedConvId) {
-              loadMessages(selectedConvId)
-            }
-          }
-          if (data.type === "new_message") {
-            if (selectedConvId && data.data?.conversationId === selectedConvId) {
-              loadMessages(selectedConvId)
-            }
-            if (selectedAccountId) loadConversations(selectedAccountId)
-          }
-        } catch { /* ignore parse errors */ }
-      }
-    } catch { /* WebSocket not available */ }
+      ws = new WebSocket("ws://76.13.154.9:3001/ws")
+      ws.onmessage = (ev) => { try { const d = JSON.parse(ev.data); if (d.type === "auto_reply_sent" && mainView === "autoreply") loadAutoReply(); if (d.type === "new_message") { if (selectedConvId && d.data?.conversationId === selectedConvId) loadMessages(selectedConvId); if (selectedAccountId) loadConversations(selectedAccountId) } } catch {} }
+    } catch {}
     return () => { ws?.close() }
   }, [mainView, selectedConvId, selectedAccountId])
 
-  // ─── Actions ────────────────────────────────────────────────────────
+  // Close context menu on click outside
+  useEffect(() => {
+    const handler = () => setCtxMenu(null)
+    if (ctxMenu) { document.addEventListener("click", handler); return () => document.removeEventListener("click", handler) }
+  }, [ctxMenu])
+
+  // ─── Actions ──────────────────────────────────────────────────────────
   async function createAccount() {
-    if (!newName.trim()) return
-    setAddingAccount(true)
-    try {
-      const account = await apiFetch<Account>("/accounts", {
-        method: "POST",
-        body: JSON.stringify({
-          platform: newPlatform,
-          display_name: newName.trim(),
-          phone_number: newPhone.trim() || null,
-        }),
-      })
-      if (account) {
-        await loadAccounts()
-        await apiFetch(`/accounts/${account.id}/connect`, { method: "POST" })
-        setQrAccountId(account.id)
-        setQrPolling(true)
-        setSelectedAccountId(account.id)
-      }
-    } finally {
-      setAddingAccount(false)
-    }
+    if (!newName.trim()) return; setAddingAccount(true)
+    try { const a = await apiFetch<Account>("/accounts", { method: "POST", body: JSON.stringify({ platform: newPlatform, display_name: newName.trim(), phone_number: newPhone.trim() || null }) }); if (a) { await loadAccounts(); await apiFetch(`/accounts/${a.id}/connect`, { method: "POST" }); setQrAccountId(a.id); setQrPolling(true); setSelectedAccountId(a.id) } } finally { setAddingAccount(false) }
   }
-
-  async function deleteAccount(id: string) {
-    if (!confirm("Slet denne konto? Alle samtaler og beskeder slettes.")) return
-    await apiFetch(`/accounts/${id}`, { method: "DELETE" })
-    if (selectedAccountId === id) setSelectedAccountId(null)
-    loadAccounts()
-  }
-
-  async function connectAccount(id: string) {
-    await apiFetch(`/accounts/${id}/connect`, { method: "POST" })
-    setQrAccountId(id)
-    setQrPolling(true)
-    loadAccounts()
-  }
-
-  async function disconnectAccount(id: string) {
-    await apiFetch(`/accounts/${id}/disconnect`, { method: "POST" })
-    loadAccounts()
-  }
-
+  async function deleteAccount(id: string) { if (!confirm("Slet denne konto?")) return; await apiFetch(`/accounts/${id}`, { method: "DELETE" }); if (selectedAccountId === id) setSelectedAccountId(null); loadAccounts() }
+  async function connectAccount(id: string) { await apiFetch(`/accounts/${id}/connect`, { method: "POST" }); setQrAccountId(id); setQrPolling(true); loadAccounts() }
+  async function disconnectAccount(id: string) { await apiFetch(`/accounts/${id}/disconnect`, { method: "POST" }); loadAccounts() }
   async function sendMessage() {
-    if (!msgInput.trim() || !selectedConv || !selectedAccount) return
-    const content = msgInput.trim()
-    setMsgInput("")
-    setSendingMsg(true)
+    if (!msgInput.trim() || !selectedConv || !selectedAccount) return; const content = msgInput.trim(); setMsgInput(""); setSendingMsg(true)
+    const opt: Message = { id: crypto.randomUUID(), conversation_id: selectedConv.id, account_id: selectedAccount.id, platform_message_id: null, direction: "outbound", message_type: "text", content, status: "pending", is_auto_reply: false, created_at: new Date().toISOString() }
+    setMessages(prev => [...prev, opt])
+    await apiFetch("/messages/send", { method: "POST", body: JSON.stringify({ account_id: selectedAccount.id, chat_id: selectedConv.platform_chat_id, content }) })
+    setSendingMsg(false); setTimeout(() => loadMessages(selectedConv.id), 1000)
+  }
 
-    const optimistic: Message = {
-      id: crypto.randomUUID(),
-      conversation_id: selectedConv.id,
-      account_id: selectedAccount.id,
-      platform_message_id: null,
-      direction: "outbound",
-      message_type: "text",
-      content,
-      status: "pending",
-      is_auto_reply: false,
-      created_at: new Date().toISOString(),
-    }
-    setMessages(prev => [...prev, optimistic])
+  // Context menu actions
+  async function archiveConv(convId: string) { await apiFetch(`/conversations/${convId}/archive`, { method: "PATCH" }); if (selectedConvId === convId) setSelectedConvId(null); if (selectedAccountId) loadConversations(selectedAccountId); setCtxMenu(null) }
+  async function pinConv(convId: string) { await apiFetch(`/conversations/${convId}/pin`, { method: "PATCH" }); if (selectedAccountId) loadConversations(selectedAccountId); setCtxMenu(null) }
+  async function muteConv(convId: string) { await apiFetch(`/conversations/${convId}/mute`, { method: "PATCH" }); if (selectedAccountId) loadConversations(selectedAccountId); setCtxMenu(null) }
+  async function markUnread(convId: string) { await apiFetch(`/conversations/${convId}/mark-unread`, { method: "PATCH" }); if (selectedAccountId) loadConversations(selectedAccountId); setCtxMenu(null) }
+  async function blockContact(convId: string) { await apiFetch(`/conversations/${convId}/block`, { method: "POST" }); if (selectedAccountId) loadConversations(selectedAccountId); setCtxMenu(null) }
+  async function unblockContact(convId: string) { await apiFetch(`/conversations/${convId}/unblock`, { method: "POST" }); if (selectedAccountId) loadConversations(selectedAccountId); setCtxMenu(null) }
 
-    await apiFetch("/messages/send", {
-      method: "POST",
-      body: JSON.stringify({
-        account_id: selectedAccount.id,
-        chat_id: selectedConv.platform_chat_id,
-        content,
-      }),
-    })
-
-    setSendingMsg(false)
-    setTimeout(() => loadMessages(selectedConv.id), 1000)
+  // Contact panel
+  function openContactPanel() {
+    if (!selectedConv?.contact) return
+    setContactDetail(selectedConv.contact)
+    setContactNameEdit(selectedConv.contact.display_name || "")
+    setContactNotes(selectedConv.contact.notes || "")
+    setShowContactPanel(true)
+  }
+  async function saveContact() {
+    if (!contactDetail) return; setSavingContact(true)
+    await apiFetch(`/contacts/${contactDetail.id}`, { method: "PATCH", body: JSON.stringify({ display_name: contactNameEdit, notes: contactNotes }) })
+    setSavingContact(false); setShowContactPanel(false)
+    if (selectedAccountId) loadConversations(selectedAccountId)
   }
 
   // Auto-reply actions
-  async function toggleRule(ruleId: string) {
-    await apiFetch(`/autoreply/rules/${ruleId}/toggle`, { method: "PATCH" })
-    loadAutoReply()
-  }
-
-  async function deleteRule(ruleId: string) {
-    if (!confirm("Slet denne regel?")) return
-    await apiFetch(`/autoreply/rules/${ruleId}`, { method: "DELETE" })
-    loadAutoReply()
-  }
-
+  async function toggleRule(id: string) { await apiFetch(`/autoreply/rules/${id}/toggle`, { method: "PATCH" }); loadAutoReply() }
+  async function deleteRule(id: string) { if (!confirm("Slet regel?")) return; await apiFetch(`/autoreply/rules/${id}`, { method: "DELETE" }); loadAutoReply() }
   function openRuleEditor(rule?: AutoReplyRule) {
     if (rule) {
-      setArEditRule(rule)
-      setEdName(rule.name)
-      setEdTriggerType(rule.trigger_type)
-      setEdResponseText(rule.response_text || "")
-      setEdDelay(rule.delay_seconds)
-      setEdPriority(rule.priority)
-      setEdPlatformWA((rule.platforms || []).includes("whatsapp"))
-      setEdPlatformTG((rule.platforms || []).includes("telegram"))
-      setEdCooldown(rule.cooldown_minutes)
-
-      const config = rule.trigger_config || {}
-      setEdKeywords((config.keywords as string[]) || [])
-      setEdRegexPattern((config.pattern as string) || "")
-      setEdAiPrompt((config.system_prompt as string) || "")
-      setEdScheduleAlways(!(config.outside_hours))
-      setEdScheduleFrom((config.from as string) || "22:00")
-      setEdScheduleTo((config.to as string) || "10:00")
+      setArEditRule(rule); setEdName(rule.name); setEdTriggerType(rule.trigger_type); setEdResponseText(rule.response_text || ""); setEdDelay(rule.delay_seconds); setEdPriority(rule.priority)
+      setEdPlatformWA((rule.platforms || []).includes("whatsapp")); setEdPlatformTG((rule.platforms || []).includes("telegram")); setEdCooldown(rule.cooldown_minutes)
+      const c = rule.trigger_config || {}; setEdKeywords((c.keywords as string[]) || []); setEdRegexPattern((c.pattern as string) || ""); setEdAiPrompt((c.system_prompt as string) || "")
+      setEdScheduleAlways(!c.outside_hours); setEdScheduleFrom((c.from as string) || "22:00"); setEdScheduleTo((c.to as string) || "10:00")
     } else {
-      setArEditRule(null)
-      setEdName("")
-      setEdTriggerType("keyword")
-      setEdResponseText("")
-      setEdDelay(5)
-      setEdPriority(10)
-      setEdPlatformWA(true)
-      setEdPlatformTG(false)
-      setEdCooldown(60)
-      setEdKeywords([])
-      setEdKeywordInput("")
-      setEdRegexPattern("")
-      setEdAiPrompt("")
-      setEdScheduleAlways(true)
-      setEdScheduleFrom("22:00")
-      setEdScheduleTo("10:00")
+      setArEditRule(null); setEdName(""); setEdTriggerType("keyword"); setEdResponseText(""); setEdDelay(5); setEdPriority(10); setEdPlatformWA(true); setEdPlatformTG(false); setEdCooldown(60)
+      setEdKeywords([]); setEdKeywordInput(""); setEdRegexPattern(""); setEdAiPrompt(""); setEdScheduleAlways(true); setEdScheduleFrom("22:00"); setEdScheduleTo("10:00")
     }
     setArShowEditor(true)
   }
-
   async function saveRule() {
-    if (!edName.trim()) return
-    setArSaving(true)
-
-    const platforms: string[] = []
-    if (edPlatformWA) platforms.push("whatsapp")
-    if (edPlatformTG) platforms.push("telegram")
-    if (platforms.length === 0) platforms.push("whatsapp")
-
-    let triggerConfig: Record<string, unknown> = {}
-    if (edTriggerType === "keyword") triggerConfig = { keywords: edKeywords }
-    else if (edTriggerType === "regex") triggerConfig = { pattern: edRegexPattern, flags: "i" }
-    else if (edTriggerType === "ai_fallback") triggerConfig = { system_prompt: edAiPrompt, max_tokens: 150 }
-    else if (edTriggerType === "schedule") triggerConfig = { outside_hours: !edScheduleAlways, from: edScheduleFrom, to: edScheduleTo }
-
-    const body = {
-      name: edName.trim(),
-      trigger_type: edTriggerType,
-      trigger_config: triggerConfig,
-      response_text: edTriggerType === "ai_fallback" ? null : edResponseText,
-      delay_seconds: edDelay,
-      priority: edPriority,
-      platforms,
-      cooldown_minutes: edCooldown,
-      schedule_active: edScheduleAlways ? { always: true } : { from: edScheduleFrom, to: edScheduleTo },
-    }
-
-    try {
-      if (arEditRule) {
-        await apiFetch(`/autoreply/rules/${arEditRule.id}`, {
-          method: "PUT",
-          body: JSON.stringify(body),
-        })
-      } else {
-        await apiFetch("/autoreply/rules", {
-          method: "POST",
-          body: JSON.stringify(body),
-        })
-      }
-      setArShowEditor(false)
-      loadAutoReply()
-    } finally {
-      setArSaving(false)
-    }
+    if (!edName.trim()) return; setArSaving(true)
+    const platforms: string[] = []; if (edPlatformWA) platforms.push("whatsapp"); if (edPlatformTG) platforms.push("telegram"); if (!platforms.length) platforms.push("whatsapp")
+    let tc: Record<string, unknown> = {}
+    if (edTriggerType === "keyword") tc = { keywords: edKeywords }
+    else if (edTriggerType === "regex") tc = { pattern: edRegexPattern, flags: "i" }
+    else if (edTriggerType === "ai_fallback") tc = { system_prompt: edAiPrompt, max_tokens: 150 }
+    else if (edTriggerType === "schedule") tc = { outside_hours: !edScheduleAlways, from: edScheduleFrom, to: edScheduleTo }
+    const body = { name: edName.trim(), trigger_type: edTriggerType, trigger_config: tc, response_text: edTriggerType === "ai_fallback" ? null : edResponseText, delay_seconds: edDelay, priority: edPriority, platforms, cooldown_minutes: edCooldown, schedule_active: edScheduleAlways ? { always: true } : { from: edScheduleFrom, to: edScheduleTo } }
+    try { if (arEditRule) await apiFetch(`/autoreply/rules/${arEditRule.id}`, { method: "PUT", body: JSON.stringify(body) }); else await apiFetch("/autoreply/rules", { method: "POST", body: JSON.stringify(body) }); setArShowEditor(false); loadAutoReply() } finally { setArSaving(false) }
   }
+  function addKeyword() { const kw = edKeywordInput.trim().toLowerCase(); if (kw && !edKeywords.includes(kw)) setEdKeywords([...edKeywords, kw]); setEdKeywordInput("") }
 
-  function addKeyword() {
-    const kw = edKeywordInput.trim().toLowerCase()
-    if (kw && !edKeywords.includes(kw)) {
-      setEdKeywords([...edKeywords, kw])
-    }
-    setEdKeywordInput("")
-  }
-
-  // ─── Filters ────────────────────────────────────────────────────────
-  const filteredAccounts = accounts.filter(a => {
-    if (tabFilter === "all") return true
-    return a.platform === tabFilter
-  })
-
-  const filteredConvs = conversations.filter(c => {
-    if (!searchQuery) return true
-    const q = searchQuery.toLowerCase()
-    return (
-      c.chat_name?.toLowerCase().includes(q) ||
-      c.platform_chat_id.toLowerCase().includes(q) ||
-      c.last_message_preview?.toLowerCase().includes(q) ||
-      c.contact?.display_name?.toLowerCase().includes(q)
-    )
-  })
+  // Filters
+  const filteredAccounts = accounts.filter(a => tabFilter === "all" || a.platform === tabFilter)
+  const filteredConvs = conversations.filter(c => { if (!searchQuery) return true; const q = searchQuery.toLowerCase(); return (c.chat_name?.toLowerCase().includes(q) || c.contact?.display_name?.toLowerCase().includes(q) || c.contact?.phone_number?.includes(q) || c.last_message_preview?.toLowerCase().includes(q)) })
+  const ctxConv = conversations.find(c => c.id === ctxMenu?.convId)
 
   // ─── Render ─────────────────────────────────────────────────────────
   return (
@@ -623,150 +341,68 @@ export default function MessengerHubPage() {
       {/* ═══ Header ═══ */}
       <header className="flex items-center justify-between px-4 py-3 bg-[#111b21] border-b border-[#2a3942] shrink-0">
         <div className="flex items-center gap-3">
-          <a href="/admin/agency" className="text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft size={20} />
-          </a>
-          <div className="w-8 h-8 bg-[#00a884] rounded-lg flex items-center justify-center">
-            <MessageCircle size={18} />
-          </div>
+          <a href="/admin/agency" className="text-gray-400 hover:text-white"><ArrowLeft size={20} /></a>
+          <div className="w-8 h-8 bg-[#00a884] rounded-lg flex items-center justify-center"><MessageCircle size={18} /></div>
           <h1 className="text-lg font-bold tracking-tight">MessengerHub</h1>
-          {/* Health indicator */}
           {healthStatus && (
-            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium ${
-              healthStatus.status === 'ok' ? 'bg-green-900/30 text-green-400' :
-              healthStatus.status === 'degraded' ? 'bg-yellow-900/30 text-yellow-400' :
-              'bg-red-900/30 text-red-400'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                healthStatus.status === 'ok' ? 'bg-green-500' :
-                healthStatus.status === 'degraded' ? 'bg-yellow-500 animate-pulse' :
-                'bg-red-500 animate-pulse'
-              }`} />
-              {healthStatus.status === 'ok' ? 'Online' : healthStatus.status === 'degraded' ? 'Degraded' : 'Error'}
-              {healthStatus.database !== 'connected' && <span className="text-red-400 ml-1">DB ✕</span>}
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium ${healthStatus.status === "ok" ? "bg-green-900/30 text-green-400" : healthStatus.status === "degraded" ? "bg-yellow-900/30 text-yellow-400" : "bg-red-900/30 text-red-400"}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${healthStatus.status === "ok" ? "bg-green-500" : healthStatus.status === "degraded" ? "bg-yellow-500 animate-pulse" : "bg-red-500 animate-pulse"}`} />
+              {healthStatus.status === "ok" ? "Online" : healthStatus.status === "degraded" ? "Degraded" : "Error"}
             </div>
           )}
         </div>
-
-        {/* View Tabs */}
         <div className="flex items-center gap-1 bg-[#1f2c34] rounded-lg p-1">
-          <button
-            onClick={() => setMainView("chat")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              mainView === "chat" ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"
-            }`}
-          >
-            <MessageCircle size={14} /> Chat
-          </button>
-          <button
-            onClick={() => setMainView("autoreply")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              mainView === "autoreply" ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"
-            }`}
-          >
-            <Bot size={14} /> Auto-Reply
-          </button>
+          <button onClick={() => setMainView("chat")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mainView === "chat" ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"}`}><MessageCircle size={14} /> Chat</button>
+          <button onClick={() => setMainView("autoreply")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mainView === "autoreply" ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"}`}><Bot size={14} /> Auto-Reply</button>
         </div>
-
         <div className="flex items-center gap-2">
-          {/* Platform filters (only in chat view) */}
           {mainView === "chat" && (
             <div className="flex items-center gap-1 bg-[#1f2c34] rounded-lg p-1 mr-2">
               {(["all", "whatsapp", "telegram"] as TabFilter[]).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setTabFilter(tab)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                    tabFilter === tab ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"
-                  }`}
-                >
-                  {tab === "whatsapp" && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
-                  {tab === "telegram" && <Send size={10} className="text-blue-400" />}
-                  {tab === "all" ? "All" : tab === "whatsapp" ? "WA" : "TG"}
+                <button key={tab} onClick={() => setTabFilter(tab)} className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${tabFilter === tab ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"}`}>
+                  {tab === "whatsapp" && <WhatsAppIcon size={12} />}{tab === "telegram" && <TelegramIcon size={12} />}{tab === "all" ? "Alle" : tab === "whatsapp" ? "WA" : "TG"}
                 </button>
               ))}
             </div>
           )}
-          <button
-            onClick={() => {
-              setShowAddModal(true)
-              setNewName("")
-              setNewPhone("")
-              setNewPlatform("whatsapp")
-              setQrDataUrl(null)
-              setQrAccountId(null)
-              setQrPolling(false)
-            }}
-            className="flex items-center gap-2 px-3 py-2 bg-[#00a884] hover:bg-[#00c49a] text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            <Plus size={16} />
-            <span className="hidden md:inline">Add Account</span>
-          </button>
+          <button onClick={() => { setShowAddModal(true); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false) }}
+            className="flex items-center gap-2 px-3 py-2 bg-[#00a884] hover:bg-[#00c49a] text-white text-sm font-medium rounded-lg"><Plus size={16} /><span className="hidden md:inline">Add Account</span></button>
         </div>
       </header>
 
       {/* ═══ Body ═══ */}
       <div className="flex flex-1 overflow-hidden">
         {mainView === "chat" ? (
-          /* ════ CHAT VIEW ════ */
           <>
             {/* Left: Accounts */}
             <aside className="w-[220px] shrink-0 border-r border-[#2a3942] bg-[#111b21]/50 flex flex-col">
-              <div className="px-3 py-3 border-b border-[#2a3942]">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {filteredAccounts.length} Account{filteredAccounts.length !== 1 ? "s" : ""}
-                </span>
-              </div>
+              <div className="px-3 py-3 border-b border-[#2a3942]"><span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{filteredAccounts.length} Account{filteredAccounts.length !== 1 ? "s" : ""}</span></div>
               <div className="flex-1 overflow-y-auto">
-                {loading ? (
-                  <div className="flex items-center justify-center py-10">
-                    <Loader2 className="animate-spin text-gray-500" size={20} />
-                  </div>
-                ) : filteredAccounts.length === 0 ? (
-                  <div className="text-center py-10 px-3">
-                    <Phone size={28} className="mx-auto text-gray-600 mb-2" />
-                    <p className="text-sm text-gray-500">Ingen konti</p>
-                  </div>
-                ) : (
-                  filteredAccounts.map(account => {
-                    const eff = getEffectiveStatus(account)
-                    return (
-                      <div
-                        key={account.id}
-                        onClick={() => setSelectedAccountId(account.id)}
-                        className={`flex items-start gap-2.5 px-3 py-3 cursor-pointer border-b border-[#2a3942]/50 transition-colors group ${
-                          selectedAccountId === account.id ? "bg-[#2a3942]/80" : "hover:bg-[#2a3942]/40"
-                        }`}
-                      >
-                        <div className="relative shrink-0">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${
-                            account.platform === "whatsapp"
-                              ? "bg-gradient-to-br from-green-600 to-green-800"
-                              : "bg-gradient-to-br from-blue-500 to-blue-700"
-                          }`}>
-                            {(account.display_name || "?").charAt(0).toUpperCase()}
-                          </div>
-                          <div className="absolute -bottom-0.5 -right-0.5">
-                            <StatusDot status={eff} />
-                          </div>
+                {loading ? <div className="flex items-center justify-center py-10"><Loader2 className="animate-spin text-gray-500" size={20} /></div>
+                : filteredAccounts.length === 0 ? <div className="text-center py-10 px-3"><Phone size={28} className="mx-auto text-gray-600 mb-2" /><p className="text-sm text-gray-500">Ingen konti</p></div>
+                : filteredAccounts.map(account => {
+                  const eff = getEffectiveStatus(account)
+                  return (
+                    <div key={account.id} onClick={() => setSelectedAccountId(account.id)} className={`flex items-start gap-2.5 px-3 py-3 cursor-pointer border-b border-[#2a3942]/50 transition-colors group ${selectedAccountId === account.id ? "bg-[#2a3942]/80" : "hover:bg-[#2a3942]/40"}`}>
+                      <div className="relative shrink-0">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${account.platform === "whatsapp" ? "bg-gradient-to-br from-green-600 to-green-800" : "bg-gradient-to-br from-blue-500 to-blue-700"}`}>
+                          {account.platform === "whatsapp" ? <WhatsAppIcon size={18} /> : <TelegramIcon size={18} />}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{account.display_name || "Unnamed"}</p>
-                          <p className="text-xs text-gray-500 truncate">{account.phone_number || account.platform}</p>
-                          <span className="text-[10px] text-gray-600 capitalize">{eff.replace("_", " ")}</span>
-                        </div>
-                        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                          {(eff === "disconnected" || eff === "error") ? (
-                            <button onClick={e => { e.stopPropagation(); connectAccount(account.id) }} className="p-1 text-green-500 hover:text-green-400" title="Connect"><LogIn size={13} /></button>
-                          ) : eff === "connected" ? (
-                            <button onClick={e => { e.stopPropagation(); disconnectAccount(account.id) }} className="p-1 text-yellow-500 hover:text-yellow-400" title="Disconnect"><LogOut size={13} /></button>
-                          ) : null}
-                          <button onClick={e => { e.stopPropagation(); deleteAccount(account.id) }} className="p-1 text-gray-600 hover:text-red-500" title="Slet"><Trash2 size={13} /></button>
-                        </div>
+                        <div className="absolute -bottom-0.5 -right-0.5"><StatusDot status={eff} /></div>
                       </div>
-                    )
-                  })
-                )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{account.display_name || "Unnamed"}</p>
+                        <p className="text-xs text-gray-500 truncate">{account.phone_number || account.platform}</p>
+                        <span className="text-[10px] text-gray-600 capitalize">{eff.replace("_", " ")}</span>
+                      </div>
+                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        {(eff === "disconnected" || eff === "error") ? <button onClick={e => { e.stopPropagation(); connectAccount(account.id) }} className="p-1 text-green-500 hover:text-green-400" title="Connect"><LogIn size={13} /></button>
+                        : eff === "connected" ? <button onClick={e => { e.stopPropagation(); disconnectAccount(account.id) }} className="p-1 text-yellow-500 hover:text-yellow-400" title="Disconnect"><LogOut size={13} /></button> : null}
+                        <button onClick={e => { e.stopPropagation(); deleteAccount(account.id) }} className="p-1 text-gray-600 hover:text-red-500" title="Slet"><Trash2 size={13} /></button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </aside>
 
@@ -777,147 +413,148 @@ export default function MessengerHubPage() {
                   <div className="px-3 py-3 border-b border-[#2a3942]">
                     <div className="relative">
                       <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                      <input
-                        type="text"
-                        placeholder="Søg samtaler..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]"
-                      />
+                      <input type="text" placeholder="Søg samtaler..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" />
                     </div>
                   </div>
                   <div className="flex-1 overflow-y-auto">
-                    {filteredConvs.length === 0 ? (
-                      <div className="text-center py-16 px-4">
-                        <MessageCircle size={32} className="mx-auto text-gray-700 mb-3" />
-                        <p className="text-sm text-gray-500">Ingen samtaler endnu</p>
-                      </div>
-                    ) : (
-                      filteredConvs.map(conv => {
-                        const name = conv.chat_name || conv.contact?.display_name || conv.platform_chat_id.split("@")[0]
-                        return (
-                          <div
-                            key={conv.id}
-                            onClick={() => setSelectedConvId(conv.id)}
-                            className={`flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-[#2a3942]/30 transition-colors ${
-                              selectedConvId === conv.id ? "bg-[#2a3942]/60" : "hover:bg-[#2a3942]/30"
-                            }`}
-                          >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-sm font-medium shrink-0">
-                              {conv.is_group ? <Users size={16} /> : name.charAt(0).toUpperCase()}
+                    {filteredConvs.length === 0 ? <div className="text-center py-16 px-4"><MessageCircle size={32} className="mx-auto text-gray-700 mb-3" /><p className="text-sm text-gray-500">Ingen samtaler</p></div>
+                    : filteredConvs.map(conv => {
+                      const name = displayName(conv)
+                      const isBlocked = conv.contact?.is_blocked
+                      return (
+                        <div key={conv.id} onClick={() => { setSelectedConvId(conv.id); if (conv.marked_unread) apiFetch(`/conversations/${conv.id}/mark-unread`, { method: "PATCH" }) }}
+                          onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, convId: conv.id }) }}
+                          className={`flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-[#2a3942]/30 transition-colors ${selectedConvId === conv.id ? "bg-[#2a3942]/60" : "hover:bg-[#2a3942]/30"}`}>
+                          <Avatar name={name} url={conv.contact?.avatar_url} size={40} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                {conv.is_pinned && <Pin size={10} className="text-gray-500 shrink-0" />}
+                                <p className={`text-sm font-medium truncate ${isBlocked ? "text-red-400 line-through" : ""}`}>{name}</p>
+                              </div>
+                              <span className="text-[10px] text-gray-500 shrink-0 ml-2">{timeAgo(conv.last_message_at)}</span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium truncate">{name}</p>
-                                <span className="text-[10px] text-gray-500 shrink-0 ml-2">{timeAgo(conv.last_message_at)}</span>
-                              </div>
-                              <div className="flex items-center justify-between mt-0.5">
+                            <div className="flex items-center justify-between mt-0.5">
+                              <div className="flex items-center gap-1 min-w-0">
+                                {conv.is_muted && <BellOff size={10} className="text-gray-600 shrink-0" />}
                                 <p className="text-xs text-gray-500 truncate">{conv.last_message_preview || "Ingen beskeder"}</p>
-                                {conv.unread_count > 0 && (
-                                  <span className="ml-2 shrink-0 bg-[#00a884] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                                    {conv.unread_count > 99 ? "99+" : conv.unread_count}
-                                  </span>
-                                )}
                               </div>
+                              {(conv.unread_count > 0 || conv.marked_unread) && (
+                                <span className="ml-2 shrink-0 bg-[#00a884] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                  {conv.unread_count > 99 ? "99+" : conv.unread_count || "●"}
+                                </span>
+                              )}
                             </div>
                           </div>
-                        )
-                      })
-                    )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </>
               ) : (
-                <div className="flex-1 flex items-center justify-center px-4">
-                  <div className="text-center">
-                    <MessageSquare size={32} className="mx-auto text-gray-700 mb-3" />
-                    <p className="text-sm text-gray-500">Vælg en konto</p>
-                  </div>
-                </div>
+                <div className="flex-1 flex items-center justify-center px-4"><div className="text-center"><MessageSquare size={32} className="mx-auto text-gray-700 mb-3" /><p className="text-sm text-gray-500">Vælg en konto</p></div></div>
               )}
             </div>
 
-            {/* Right: Chat View */}
-            <div className="flex-1 flex flex-col bg-[#0b141a]">
-              {selectedConv ? (
-                <>
-                  <div className="flex items-center justify-between px-4 py-3 bg-[#111b21] border-b border-[#2a3942] shrink-0">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-sm font-medium">
-                        {selectedConv.is_group ? <Users size={16} /> : (selectedConv.chat_name || selectedConv.platform_chat_id).charAt(0).toUpperCase()}
+            {/* Right: Chat + Contact Panel */}
+            <div className="flex-1 flex">
+              <div className={`flex-1 flex flex-col bg-[#0b141a] ${showContactPanel ? "" : ""}`}>
+                {selectedConv ? (
+                  <>
+                    {/* Chat Header */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-[#111b21] border-b border-[#2a3942] shrink-0">
+                      <div className="flex items-center gap-3 cursor-pointer" onClick={openContactPanel}>
+                        <Avatar name={displayName(selectedConv)} url={selectedConv.contact?.avatar_url} size={36} />
+                        <div>
+                          <p className="text-sm font-medium">{displayName(selectedConv)}</p>
+                          {displayPhone(selectedConv) && displayPhone(selectedConv) !== displayName(selectedConv) && (
+                            <p className="text-[11px] text-gray-500">{displayPhone(selectedConv)}</p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {selectedConv.chat_name || selectedConv.contact?.display_name || selectedConv.platform_chat_id.split("@")[0]}
-                        </p>
-                        <p className="text-[11px] text-gray-500">{selectedConv.contact?.phone_number || selectedConv.platform_chat_id}</p>
+                      <div className="flex items-center gap-1">
+                        <button onClick={openContactPanel} className="p-2 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg" title="Kontakt-detaljer"><UserPlus size={16} /></button>
+                        <button onClick={() => loadMessages(selectedConv.id)} className="p-2 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg"><RefreshCw size={16} /></button>
                       </div>
                     </div>
-                    <button onClick={() => loadMessages(selectedConv.id)} className="p-2 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg transition-colors"><RefreshCw size={16} /></button>
-                  </div>
 
-                  <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-                    {messages.length === 0 ? (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-sm text-gray-600">Ingen beskeder</p>
-                      </div>
-                    ) : (
-                      messages.map(msg => {
-                        const isOutbound = msg.direction === "outbound"
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+                      {messages.length === 0 ? <div className="flex items-center justify-center h-full"><p className="text-sm text-gray-600">Ingen beskeder</p></div>
+                      : messages.map(msg => {
+                        const isOut = msg.direction === "outbound"
                         return (
-                          <div key={msg.id} className={`flex ${isOutbound ? "justify-end" : "justify-start"}`}>
-                            <div className={`max-w-[65%] rounded-2xl px-3.5 py-2 ${
-                              isOutbound ? "bg-[#005c4b] rounded-br-md" : "bg-[#1f2c34] rounded-bl-md"
-                            }`}>
-                              {msg.message_type !== "text" && (
-                                <div className="flex items-center gap-1 text-xs text-gray-400 mb-1"><ImageIcon size={12} /><span className="capitalize">{msg.message_type}</span></div>
-                              )}
-                              {msg.is_auto_reply && isOutbound && (
-                                <div className="flex items-center gap-1 text-[10px] text-blue-400 mb-1"><Zap size={10} /><span>Auto-reply</span></div>
-                              )}
+                          <div key={msg.id} className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
+                            <div className={`max-w-[65%] rounded-2xl px-3.5 py-2 ${isOut ? "bg-[#005c4b] rounded-br-md" : "bg-[#1f2c34] rounded-bl-md"}`}>
+                              {msg.is_auto_reply && isOut && <div className="flex items-center gap-1 text-[10px] text-blue-400 mb-1"><Zap size={10} /><span>Auto-reply</span></div>}
                               <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.content || `[${msg.message_type}]`}</p>
                               <div className="flex items-center justify-end gap-1 mt-1">
                                 <span className="text-[10px] text-gray-500">{formatTime(msg.created_at)}</span>
-                                {isOutbound && (
-                                  <span className="text-gray-400">
-                                    {msg.status === "read" ? <CheckCheck size={12} className="text-blue-400" /> : msg.status === "delivered" ? <CheckCheck size={12} /> : msg.status === "sent" ? <Check size={12} /> : <Clock size={10} />}
-                                  </span>
-                                )}
+                                {isOut && <span className="text-gray-400">{msg.status === "read" ? <CheckCheck size={12} className="text-blue-400" /> : msg.status === "delivered" ? <CheckCheck size={12} /> : msg.status === "sent" ? <Check size={12} /> : <Clock size={10} />}</span>}
                               </div>
                             </div>
                           </div>
                         )
-                      })
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
+                      })}
+                      <div ref={messagesEndRef} />
+                    </div>
 
-                  <div className="px-4 py-3 bg-[#111b21] border-t border-[#2a3942] shrink-0">
-                    {getEffectiveStatus(selectedAccount!) !== "connected" ? (
-                      <div className="flex items-center justify-center gap-2 py-2 text-gray-500 text-sm"><WifiOff size={16} /><span>Konto ikke forbundet</span></div>
-                    ) : (
-                      <div className="flex items-end gap-2">
-                        <div className="flex-1">
-                          <textarea
-                            value={msgInput}
-                            onChange={e => setMsgInput(e.target.value)}
-                            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-                            placeholder="Skriv en besked..."
-                            rows={1}
-                            className="w-full px-4 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none"
-                          />
-                        </div>
-                        <button onClick={sendMessage} disabled={!msgInput.trim() || sendingMsg} className="p-2.5 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl transition-colors shrink-0 mb-0.5">
-                          <Send size={16} />
-                        </button>
-                      </div>
-                    )}
+                    {/* Input */}
+                    <div className="px-4 py-3 bg-[#111b21] border-t border-[#2a3942] shrink-0">
+                      {getEffectiveStatus(selectedAccount!) !== "connected" ? <div className="flex items-center justify-center gap-2 py-2 text-gray-500 text-sm"><WifiOff size={16} /><span>Konto ikke forbundet</span></div>
+                      : <div className="flex items-end gap-2">
+                        <textarea value={msgInput} onChange={e => setMsgInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() } }} placeholder="Skriv en besked..." rows={1}
+                          className="flex-1 px-4 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" />
+                        <button onClick={sendMessage} disabled={!msgInput.trim() || sendingMsg} className="p-2.5 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl shrink-0 mb-0.5"><Send size={16} /></button>
+                      </div>}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center"><div className="text-center"><div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#1f2c34] flex items-center justify-center"><MessageCircle size={28} className="text-gray-600" /></div><p className="text-gray-400 font-medium">Vælg en samtale</p></div></div>
+                )}
+              </div>
+
+              {/* Contact Detail Panel */}
+              {showContactPanel && selectedConv?.contact && (
+                <div className="w-[300px] shrink-0 border-l border-[#2a3942] bg-[#111b21] flex flex-col">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a3942]">
+                    <h3 className="text-sm font-semibold">Kontakt-detaljer</h3>
+                    <button onClick={() => setShowContactPanel(false)} className="p-1 text-gray-400 hover:text-white"><X size={16} /></button>
                   </div>
-                </>
-              ) : (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#1f2c34] flex items-center justify-center"><MessageCircle size={28} className="text-gray-600" /></div>
-                    <p className="text-gray-400 font-medium">Vælg en samtale</p>
+                  <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                    <div className="text-center">
+                      <Avatar name={contactDetail?.display_name || "?"} url={contactDetail?.avatar_url} size={80} />
+                      <input type="text" value={contactNameEdit} onChange={e => setContactNameEdit(e.target.value)} placeholder="Kontaktnavn"
+                        className="mt-3 w-full text-center px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Telefon</p>
+                      <p className="text-sm text-gray-300">{contactDetail?.phone_number || displayPhone(selectedConv) || "Ukendt"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Noter</p>
+                      <textarea value={contactNotes} onChange={e => setContactNotes(e.target.value)} rows={3} placeholder="Tilføj noter..."
+                        className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-2">Tags</p>
+                      <div className="flex flex-wrap gap-1">
+                        {(contactDetail?.tags || []).map(t => <span key={t} className="px-2 py-0.5 bg-[#1f2c34] text-xs text-gray-400 rounded">{t}</span>)}
+                        {(!contactDetail?.tags || contactDetail.tags.length === 0) && <span className="text-xs text-gray-600">Ingen tags</span>}
+                      </div>
+                    </div>
+                    <button onClick={saveContact} disabled={savingContact}
+                      className="w-full py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2">
+                      {savingContact && <Loader2 size={14} className="animate-spin" />} Gem ændringer
+                    </button>
+                    <div className="pt-2 border-t border-[#2a3942]">
+                      {contactDetail?.is_blocked ? (
+                        <button onClick={() => { if (selectedConv) unblockContact(selectedConv.id) }} className="w-full py-2 bg-green-900/30 hover:bg-green-900/50 text-green-400 text-sm rounded-lg flex items-center justify-center gap-2"><ShieldOff size={14} /> Fjern blokering</button>
+                      ) : (
+                        <button onClick={() => { if (selectedConv) blockContact(selectedConv.id) }} className="w-full py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-sm rounded-lg flex items-center justify-center gap-2"><Ban size={14} /> Bloker kontakt</button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -926,155 +563,81 @@ export default function MessengerHubPage() {
         ) : (
           /* ════ AUTO-REPLY VIEW ════ */
           <div className="flex flex-1 overflow-hidden">
-            {/* Left: Rules (60%) */}
             <div className="w-[60%] flex flex-col border-r border-[#2a3942]">
-              {/* Rules Header */}
               <div className="flex items-center justify-between px-4 py-3 bg-[#111b21] border-b border-[#2a3942]">
                 <h2 className="text-sm font-semibold text-gray-300">Auto-Reply Regler</h2>
-                <button
-                  onClick={() => openRuleEditor()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00a884] hover:bg-[#00c49a] text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                  <Plus size={14} /> Ny regel
-                </button>
+                <button onClick={() => openRuleEditor()} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00a884] hover:bg-[#00c49a] text-white text-sm font-medium rounded-lg"><Plus size={14} /> Ny regel</button>
               </div>
-
-              {/* Rules List */}
               <div className="flex-1 overflow-y-auto">
-                {arRules.length === 0 ? (
-                  <div className="text-center py-16">
-                    <Bot size={32} className="mx-auto text-gray-700 mb-3" />
-                    <p className="text-sm text-gray-500">Ingen regler oprettet</p>
-                  </div>
-                ) : (
-                  arRules.map(rule => {
-                    const Icon = TRIGGER_ICONS[rule.trigger_type] || Bot
-                    return (
-                      <div key={rule.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#2a3942]/50 hover:bg-[#1f2c34]/50 transition-colors group">
-                        {/* Icon */}
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          rule.enabled ? "bg-[#00a884]/20 text-[#00a884]" : "bg-gray-800 text-gray-600"
-                        }`}>
-                          <Icon size={16} />
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className={`text-sm font-medium truncate ${rule.enabled ? "text-white" : "text-gray-500"}`}>{rule.name}</p>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1f2c34] text-gray-400">{TRIGGER_LABELS[rule.trigger_type] || rule.trigger_type}</span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-0.5">
-                            <span className="text-[10px] text-gray-600">P{rule.priority}</span>
-                            <span className="text-[10px] text-gray-600">{rule.delay_seconds}s delay</span>
-                            <span className="text-[10px] text-gray-600">{rule.stats_sent} sendt</span>
-                            {(rule.platforms || []).map(p => (
-                              <span key={p} className={`text-[10px] ${p === "whatsapp" ? "text-green-600" : "text-blue-500"}`}>
-                                {p === "whatsapp" ? "WA" : "TG"}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Toggle + Actions */}
+                {arRules.length === 0 ? <div className="text-center py-16"><Bot size={32} className="mx-auto text-gray-700 mb-3" /><p className="text-sm text-gray-500">Ingen regler</p></div>
+                : arRules.map(rule => {
+                  const Icon = TRIGGER_ICONS[rule.trigger_type] || Bot
+                  return (
+                    <div key={rule.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#2a3942]/50 hover:bg-[#1f2c34]/50 transition-colors group">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${rule.enabled ? "bg-[#00a884]/20 text-[#00a884]" : "bg-gray-800 text-gray-600"}`}><Icon size={16} /></div>
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => toggleRule(rule.id)}
-                            className={`p-1 rounded transition-colors ${rule.enabled ? "text-[#00a884]" : "text-gray-600"}`}
-                            title={rule.enabled ? "Deaktivér" : "Aktivér"}
-                          >
-                            {rule.enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
-                          </button>
-                          <button
-                            onClick={() => openRuleEditor(rule)}
-                            className="p-1 text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
-                            title="Rediger"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => deleteRule(rule.id)}
-                            className="p-1 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                            title="Slet"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <p className={`text-sm font-medium truncate ${rule.enabled ? "text-white" : "text-gray-500"}`}>{rule.name}</p>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1f2c34] text-gray-400">{TRIGGER_LABELS[rule.trigger_type] || rule.trigger_type}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="text-[10px] text-gray-600">P{rule.priority}</span><span className="text-[10px] text-gray-600">{rule.delay_seconds}s</span><span className="text-[10px] text-gray-600">{rule.stats_sent} sendt</span>
+                          {(rule.platforms || []).map(p => <span key={p} className="text-[10px]">{p === "whatsapp" ? <WhatsAppIcon size={10} /> : <TelegramIcon size={10} />}</span>)}
                         </div>
                       </div>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Right: Log + Stats (40%) */}
-            <div className="w-[40%] flex flex-col bg-[#0b141a]">
-              {/* Log Header */}
-              <div className="px-4 py-3 bg-[#111b21] border-b border-[#2a3942]">
-                <h2 className="text-sm font-semibold text-gray-300">Seneste auto-replies</h2>
-              </div>
-
-              {/* Log List */}
-              <div className="flex-1 overflow-y-auto">
-                {arLog.length === 0 ? (
-                  <div className="text-center py-16">
-                    <Activity size={24} className="mx-auto text-gray-700 mb-2" />
-                    <p className="text-xs text-gray-600">Ingen auto-replies endnu</p>
-                  </div>
-                ) : (
-                  arLog.slice(0, 50).map(entry => (
-                    <div key={entry.id} className="px-4 py-2.5 border-b border-[#2a3942]/30 hover:bg-[#1f2c34]/30">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Zap size={12} className="text-[#00a884]" />
-                          <span className="text-xs font-medium text-white">{entry.rule_name || "Regel"}</span>
-                        </div>
-                        <span className="text-[10px] text-gray-600">{formatDateTime(entry.created_at)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-gray-400">→ {entry.contact_name || "Ukendt"}</span>
-                        <span className={`text-[10px] ${entry.platform === "telegram" ? "text-blue-500" : "text-green-600"}`}>
-                          {entry.platform === "telegram" ? "TG" : "WA"}
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => toggleRule(rule.id)} className={`p-1 rounded ${rule.enabled ? "text-[#00a884]" : "text-gray-600"}`}>{rule.enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}</button>
+                        <button onClick={() => openRuleEditor(rule)} className="p-1 text-gray-600 hover:text-white opacity-0 group-hover:opacity-100"><Edit2 size={14} /></button>
+                        <button onClick={() => deleteRule(rule.id)} className="p-1 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
                       </div>
                     </div>
-                  ))
-                )}
+                  )
+                })}
               </div>
-
-              {/* Stats */}
+            </div>
+            <div className="w-[40%] flex flex-col bg-[#0b141a]">
+              <div className="px-4 py-3 bg-[#111b21] border-b border-[#2a3942]"><h2 className="text-sm font-semibold text-gray-300">Seneste auto-replies</h2></div>
+              <div className="flex-1 overflow-y-auto">
+                {arLog.length === 0 ? <div className="text-center py-16"><Activity size={24} className="mx-auto text-gray-700 mb-2" /><p className="text-xs text-gray-600">Ingen auto-replies endnu</p></div>
+                : arLog.slice(0, 50).map(e => (
+                  <div key={e.id} className="px-4 py-2.5 border-b border-[#2a3942]/30 hover:bg-[#1f2c34]/30">
+                    <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Zap size={12} className="text-[#00a884]" /><span className="text-xs font-medium text-white">{e.rule_name || "Regel"}</span></div><span className="text-[10px] text-gray-600">{formatDateTime(e.created_at)}</span></div>
+                    <div className="flex items-center gap-2 mt-0.5"><span className="text-[10px] text-gray-400">→ {e.contact_name || "Ukendt"}</span><span className="text-[10px]">{e.platform === "telegram" ? <TelegramIcon size={10} /> : <WhatsAppIcon size={10} />}</span></div>
+                  </div>
+                ))}
+              </div>
               {arStats && (
                 <div className="p-4 bg-[#111b21] border-t border-[#2a3942] shrink-0">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#1f2c34] rounded-lg p-3">
-                      <p className="text-[10px] text-gray-500 uppercase">Sendt i dag</p>
-                      <p className="text-lg font-bold text-[#00a884]">{arStats.sentToday}</p>
-                    </div>
-                    <div className="bg-[#1f2c34] rounded-lg p-3">
-                      <p className="text-[10px] text-gray-500 uppercase">Aktive regler</p>
-                      <p className="text-lg font-bold text-white">{arStats.activeRules}</p>
-                    </div>
-                    <div className="bg-[#1f2c34] rounded-lg p-3">
-                      <p className="text-[10px] text-gray-500 uppercase">Total sendt</p>
-                      <p className="text-lg font-bold text-white">{arStats.totalSent}</p>
-                    </div>
-                    <div className="bg-[#1f2c34] rounded-lg p-3">
-                      <p className="text-[10px] text-gray-500 uppercase">Avg responstid</p>
-                      <p className="text-lg font-bold text-white">{arStats.avgResponseTime}ms</p>
-                    </div>
+                    <div className="bg-[#1f2c34] rounded-lg p-3"><p className="text-[10px] text-gray-500 uppercase">Sendt i dag</p><p className="text-lg font-bold text-[#00a884]">{arStats.sentToday}</p></div>
+                    <div className="bg-[#1f2c34] rounded-lg p-3"><p className="text-[10px] text-gray-500 uppercase">Aktive regler</p><p className="text-lg font-bold text-white">{arStats.activeRules}</p></div>
+                    <div className="bg-[#1f2c34] rounded-lg p-3"><p className="text-[10px] text-gray-500 uppercase">Total sendt</p><p className="text-lg font-bold text-white">{arStats.totalSent}</p></div>
+                    <div className="bg-[#1f2c34] rounded-lg p-3"><p className="text-[10px] text-gray-500 uppercase">Avg responstid</p><p className="text-lg font-bold text-white">{arStats.avgResponseTime}ms</p></div>
                   </div>
-                  {arStats.topRule && (
-                    <div className="mt-3 bg-[#1f2c34] rounded-lg p-3">
-                      <p className="text-[10px] text-gray-500 uppercase">Mest brugte regel</p>
-                      <p className="text-sm font-medium text-white mt-0.5">{arStats.topRule.name} <span className="text-gray-500">({arStats.topRule.count}×)</span></p>
-                    </div>
-                  )}
+                  {arStats.topRule && <div className="mt-3 bg-[#1f2c34] rounded-lg p-3"><p className="text-[10px] text-gray-500 uppercase">Mest brugte</p><p className="text-sm font-medium text-white mt-0.5">{arStats.topRule.name} <span className="text-gray-500">({arStats.topRule.count}×)</span></p></div>}
                 </div>
               )}
             </div>
           </div>
         )}
       </div>
+
+      {/* ═══ Context Menu ═══ */}
+      {ctxMenu && ctxConv && (
+        <div className="fixed z-50 bg-[#1f2c34] border border-[#2a3942] rounded-xl shadow-2xl py-1 min-w-[180px]" style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          onClick={e => e.stopPropagation()}>
+          <button onClick={() => pinConv(ctxMenu.convId)} className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-300 hover:bg-[#2a3942] hover:text-white"><Pin size={14} />{ctxConv.is_pinned ? "Unpin" : "Pin til top"}</button>
+          <button onClick={() => markUnread(ctxMenu.convId)} className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-300 hover:bg-[#2a3942] hover:text-white"><Eye size={14} />Marker som ulæst</button>
+          <button onClick={() => muteConv(ctxMenu.convId)} className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-300 hover:bg-[#2a3942] hover:text-white">{ctxConv.is_muted ? <Volume2 size={14} /> : <BellOff size={14} />}{ctxConv.is_muted ? "Unmute" : "Mute"}</button>
+          <div className="border-t border-[#2a3942] my-1" />
+          {ctxConv.contact?.is_blocked ? (
+            <button onClick={() => unblockContact(ctxMenu.convId)} className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-green-400 hover:bg-[#2a3942]"><ShieldOff size={14} />Fjern blokering</button>
+          ) : (
+            <button onClick={() => blockContact(ctxMenu.convId)} className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-400 hover:bg-[#2a3942]"><Ban size={14} />Bloker kontakt</button>
+          )}
+          <button onClick={() => archiveConv(ctxMenu.convId)} className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-400 hover:bg-[#2a3942]"><Archive size={14} />Slet samtale</button>
+        </div>
+      )}
 
       {/* ═══ Rule Editor Modal ═══ */}
       {arShowEditor && (
@@ -1084,156 +647,29 @@ export default function MessengerHubPage() {
               <h2 className="text-base font-bold">{arEditRule ? "Rediger regel" : "Ny regel"}</h2>
               <button onClick={() => setArShowEditor(false)} className="p-1 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg"><X size={18} /></button>
             </div>
-
             <div className="px-5 py-5 space-y-4">
-              {/* Name */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Regelnavn *</label>
-                <input type="text" value={edName} onChange={e => setEdName(e.target.value)} placeholder="f.eks. Velkomstbesked"
-                  className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" />
+              <div><label className="block text-xs text-gray-400 mb-1.5">Regelnavn *</label><input type="text" value={edName} onChange={e => setEdName(e.target.value)} placeholder="f.eks. Velkomstbesked" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+              <div><label className="block text-xs text-gray-400 mb-1.5">Trigger type</label>
+                <div className="grid grid-cols-3 gap-2">{Object.entries(TRIGGER_LABELS).map(([k, l]) => { const I = TRIGGER_ICONS[k] || Bot; return (<button key={k} onClick={() => setEdTriggerType(k)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border ${edTriggerType === k ? "border-[#00a884] bg-[#00a884]/20 text-[#00a884]" : "border-[#2a3942] text-gray-400 hover:border-gray-600"}`}><I size={12} /> {l}</button>) })}</div>
               </div>
-
-              {/* Trigger Type */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Trigger type</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(TRIGGER_LABELS).map(([key, label]) => {
-                    const Icon = TRIGGER_ICONS[key] || Bot
-                    return (
-                      <button key={key} onClick={() => setEdTriggerType(key)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
-                          edTriggerType === key ? "border-[#00a884] bg-[#00a884]/20 text-[#00a884]" : "border-[#2a3942] text-gray-400 hover:border-gray-600"
-                        }`}>
-                        <Icon size={12} /> {label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Keyword Input */}
-              {edTriggerType === "keyword" && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Nøgleord</label>
-                  <div className="flex gap-2 mb-2">
-                    <input type="text" value={edKeywordInput} onChange={e => setEdKeywordInput(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addKeyword() } }}
-                      placeholder="Tilføj nøgleord..."
-                      className="flex-1 px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" />
-                    <button onClick={addKeyword} className="px-3 py-2 bg-[#2a3942] hover:bg-[#3a4a52] text-white text-sm rounded-lg"><Plus size={14} /></button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {edKeywords.map(kw => (
-                      <span key={kw} className="flex items-center gap-1 px-2 py-1 bg-[#1f2c34] text-xs text-gray-300 rounded-md">
-                        {kw}
-                        <button onClick={() => setEdKeywords(edKeywords.filter(k => k !== kw))} className="text-gray-500 hover:text-red-400"><X size={10} /></button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Regex */}
-              {edTriggerType === "regex" && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Regex pattern</label>
-                  <input type="text" value={edRegexPattern} onChange={e => setEdRegexPattern(e.target.value)} placeholder="\\d{4}"
-                    className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-[#00a884]" />
-                </div>
-              )}
-
-              {/* AI Prompt */}
-              {edTriggerType === "ai_fallback" && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">AI System Prompt</label>
-                  <textarea value={edAiPrompt} onChange={e => setEdAiPrompt(e.target.value)} rows={3}
-                    placeholder="Du er en venlig assistent..."
-                    className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" />
-                </div>
-              )}
-
-              {/* Schedule */}
-              {edTriggerType === "schedule" && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Tidsplan</label>
-                  <div className="flex items-center gap-3 mb-2">
-                    <button onClick={() => setEdScheduleAlways(true)}
-                      className={`px-3 py-1.5 rounded-lg text-xs border ${edScheduleAlways ? "border-[#00a884] bg-[#00a884]/20 text-[#00a884]" : "border-[#2a3942] text-gray-400"}`}>
-                      Altid aktiv
-                    </button>
-                    <button onClick={() => setEdScheduleAlways(false)}
-                      className={`px-3 py-1.5 rounded-lg text-xs border ${!edScheduleAlways ? "border-[#00a884] bg-[#00a884]/20 text-[#00a884]" : "border-[#2a3942] text-gray-400"}`}>
-                      Uden for timer
-                    </button>
-                  </div>
-                  {!edScheduleAlways && (
-                    <div className="flex items-center gap-2">
-                      <input type="time" value={edScheduleFrom} onChange={e => setEdScheduleFrom(e.target.value)}
-                        className="px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none" />
-                      <span className="text-gray-500 text-sm">til</span>
-                      <input type="time" value={edScheduleTo} onChange={e => setEdScheduleTo(e.target.value)}
-                        className="px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none" />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Response Text (hide for AI fallback) */}
-              {edTriggerType !== "ai_fallback" && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Svar-tekst</label>
-                  <textarea value={edResponseText} onChange={e => setEdResponseText(e.target.value)} rows={3}
-                    placeholder="Hej! Tak for din besked..."
-                    className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" />
-                </div>
-              )}
-
-              {/* Settings row */}
+              {edTriggerType === "keyword" && <div><label className="block text-xs text-gray-400 mb-1.5">Nøgleord</label><div className="flex gap-2 mb-2"><input type="text" value={edKeywordInput} onChange={e => setEdKeywordInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addKeyword() } }} placeholder="Tilføj..." className="flex-1 px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /><button onClick={addKeyword} className="px-3 py-2 bg-[#2a3942] hover:bg-[#3a4a52] text-white text-sm rounded-lg"><Plus size={14} /></button></div><div className="flex flex-wrap gap-1.5">{edKeywords.map(kw => <span key={kw} className="flex items-center gap-1 px-2 py-1 bg-[#1f2c34] text-xs text-gray-300 rounded-md">{kw}<button onClick={() => setEdKeywords(edKeywords.filter(k => k !== kw))} className="text-gray-500 hover:text-red-400"><X size={10} /></button></span>)}</div></div>}
+              {edTriggerType === "regex" && <div><label className="block text-xs text-gray-400 mb-1.5">Regex pattern</label><input type="text" value={edRegexPattern} onChange={e => setEdRegexPattern(e.target.value)} placeholder="\\d{4}" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>}
+              {edTriggerType === "ai_fallback" && <div><label className="block text-xs text-gray-400 mb-1.5">AI System Prompt</label><textarea value={edAiPrompt} onChange={e => setEdAiPrompt(e.target.value)} rows={3} placeholder="Du er en venlig assistent..." className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" /></div>}
+              {edTriggerType === "schedule" && <div><label className="block text-xs text-gray-400 mb-1.5">Tidsplan</label><div className="flex items-center gap-3 mb-2"><button onClick={() => setEdScheduleAlways(true)} className={`px-3 py-1.5 rounded-lg text-xs border ${edScheduleAlways ? "border-[#00a884] bg-[#00a884]/20 text-[#00a884]" : "border-[#2a3942] text-gray-400"}`}>Altid aktiv</button><button onClick={() => setEdScheduleAlways(false)} className={`px-3 py-1.5 rounded-lg text-xs border ${!edScheduleAlways ? "border-[#00a884] bg-[#00a884]/20 text-[#00a884]" : "border-[#2a3942] text-gray-400"}`}>Uden for timer</button></div>{!edScheduleAlways && <div className="flex items-center gap-2"><input type="time" value={edScheduleFrom} onChange={e => setEdScheduleFrom(e.target.value)} className="px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white" /><span className="text-gray-500 text-sm">til</span><input type="time" value={edScheduleTo} onChange={e => setEdScheduleTo(e.target.value)} className="px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white" /></div>}</div>}
+              {edTriggerType !== "ai_fallback" && <div><label className="block text-xs text-gray-400 mb-1.5">Svar-tekst</label><textarea value={edResponseText} onChange={e => setEdResponseText(e.target.value)} rows={3} placeholder="Hej! Tak for din besked..." className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" /></div>}
               <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Forsinkelse (sek)</label>
-                  <input type="number" value={edDelay} onChange={e => setEdDelay(parseInt(e.target.value) || 5)} min={1} max={60}
-                    className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Prioritet</label>
-                  <input type="number" value={edPriority} onChange={e => setEdPriority(parseInt(e.target.value) || 10)} min={1} max={999}
-                    className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Cooldown (min)</label>
-                  <input type="number" value={edCooldown} onChange={e => setEdCooldown(parseInt(e.target.value) || 60)} min={0}
-                    className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" />
-                </div>
+                <div><label className="block text-xs text-gray-400 mb-1.5">Forsinkelse (s)</label><input type="number" value={edDelay} onChange={e => setEdDelay(parseInt(e.target.value) || 5)} min={1} className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" /></div>
+                <div><label className="block text-xs text-gray-400 mb-1.5">Prioritet</label><input type="number" value={edPriority} onChange={e => setEdPriority(parseInt(e.target.value) || 10)} min={1} className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" /></div>
+                <div><label className="block text-xs text-gray-400 mb-1.5">Cooldown (min)</label><input type="number" value={edCooldown} onChange={e => setEdCooldown(parseInt(e.target.value) || 60)} min={0} className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" /></div>
               </div>
-
-              {/* Platform toggles */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Platforme</label>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setEdPlatformWA(!edPlatformWA)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-colors ${
-                      edPlatformWA ? "border-green-600 bg-green-600/20 text-green-400" : "border-[#2a3942] text-gray-500"
-                    }`}>
-                    <span className="w-2 h-2 rounded-full bg-green-500" /> WhatsApp
-                  </button>
-                  <button onClick={() => setEdPlatformTG(!edPlatformTG)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-colors ${
-                      edPlatformTG ? "border-blue-500 bg-blue-500/20 text-blue-400" : "border-[#2a3942] text-gray-500"
-                    }`}>
-                    <Send size={10} /> Telegram
-                  </button>
-                </div>
-              </div>
+              <div><label className="block text-xs text-gray-400 mb-1.5">Platforme</label><div className="flex items-center gap-3">
+                <button onClick={() => setEdPlatformWA(!edPlatformWA)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border ${edPlatformWA ? "border-green-600 bg-green-600/20 text-green-400" : "border-[#2a3942] text-gray-500"}`}><WhatsAppIcon size={12} /> WhatsApp</button>
+                <button onClick={() => setEdPlatformTG(!edPlatformTG)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border ${edPlatformTG ? "border-blue-500 bg-blue-500/20 text-blue-400" : "border-[#2a3942] text-gray-500"}`}><TelegramIcon size={12} /> Telegram</button>
+              </div></div>
             </div>
-
             <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[#2a3942] sticky bottom-0 bg-[#111b21]">
               <button onClick={() => setArShowEditor(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg">Annuller</button>
-              <button onClick={saveRule} disabled={!edName.trim() || arSaving}
-                className="flex items-center gap-2 px-4 py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg transition-colors">
-                {arSaving && <Loader2 size={14} className="animate-spin" />}
-                {arEditRule ? "Gem ændringer" : "Opret regel"}
-              </button>
+              <button onClick={saveRule} disabled={!edName.trim() || arSaving} className="flex items-center gap-2 px-4 py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg">{arSaving && <Loader2 size={14} className="animate-spin" />}{arEditRule ? "Gem" : "Opret"}</button>
             </div>
           </div>
         </div>
@@ -1243,75 +679,20 @@ export default function MessengerHubPage() {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => { if (!qrPolling) setShowAddModal(false) }}>
           <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a3942]">
-              <h2 className="text-base font-bold">Tilføj Konto</h2>
-              <button onClick={() => { setShowAddModal(false); setQrPolling(false) }} className="p-1 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg"><X size={18} /></button>
-            </div>
-
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a3942]"><h2 className="text-base font-bold">Tilføj Konto</h2><button onClick={() => { setShowAddModal(false); setQrPolling(false) }} className="p-1 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg"><X size={18} /></button></div>
             <div className="px-5 py-5 space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1.5">Platform</label>
-                <div className="flex gap-2">
-                  <button onClick={() => setNewPlatform("whatsapp")}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      newPlatform === "whatsapp" ? "border-green-600 bg-green-600/20 text-green-400" : "border-[#2a3942] text-gray-400 hover:border-gray-600"
-                    }`}>WhatsApp</button>
-                  <button onClick={() => setNewPlatform("telegram")}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      newPlatform === "telegram" ? "border-blue-600 bg-blue-600/20 text-blue-400" : "border-[#2a3942] text-gray-400 hover:border-gray-600"
-                    }`}>Telegram</button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1.5">Konto Navn *</label>
-                <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="f.eks. Business WhatsApp"
-                  className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1.5">Telefonnummer (valgfrit)</label>
-                <input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+45 53 71 03 69"
-                  className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" />
-              </div>
-
-              {qrPolling && (
-                <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-4 text-center">
-                  {qrDataUrl ? (
-                    <>
-                      <img src={qrDataUrl} alt="QR Code" className="mx-auto w-[250px] h-[250px] rounded-lg" />
-                      <p className="text-sm text-[#00a884] mt-3 font-medium">Scan QR-koden med WhatsApp</p>
-                      <p className="text-xs text-gray-500 mt-1">Åbn WhatsApp → Linked Devices → Link a Device</p>
-                    </>
-                  ) : (
-                    <>
-                      <Loader2 size={40} className="mx-auto text-gray-500 animate-spin mb-3" />
-                      <p className="text-sm text-gray-400">Venter på QR-kode...</p>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {!qrPolling && (
-                <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-6 text-center">
-                  <QrCode size={48} className="mx-auto text-gray-600 mb-3" />
-                  <p className="text-sm text-gray-400">QR Code Pairing</p>
-                  <p className="text-xs text-gray-600 mt-1">Tryk &quot;Tilføj&quot; for at begynde pairing</p>
-                </div>
-              )}
+              <div><label className="block text-sm text-gray-400 mb-1.5">Platform</label><div className="flex gap-2">
+                <button onClick={() => setNewPlatform("whatsapp")} className={`flex-1 py-2.5 rounded-lg text-sm font-medium border flex items-center justify-center gap-2 ${newPlatform === "whatsapp" ? "border-green-600 bg-green-600/20 text-green-400" : "border-[#2a3942] text-gray-400 hover:border-gray-600"}`}><WhatsAppIcon size={18} /> WhatsApp</button>
+                <button onClick={() => setNewPlatform("telegram")} className={`flex-1 py-2.5 rounded-lg text-sm font-medium border flex items-center justify-center gap-2 ${newPlatform === "telegram" ? "border-blue-600 bg-blue-600/20 text-blue-400" : "border-[#2a3942] text-gray-400 hover:border-gray-600"}`}><TelegramIcon size={18} /> Telegram</button>
+              </div></div>
+              <div><label className="block text-sm text-gray-400 mb-1.5">Konto Navn *</label><input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="f.eks. Business WhatsApp" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+              <div><label className="block text-sm text-gray-400 mb-1.5">Telefonnummer</label><input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+45 53 71 03 69" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+              {qrPolling && <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-4 text-center">{qrDataUrl ? <><img src={qrDataUrl} alt="QR" className="mx-auto w-[250px] h-[250px] rounded-lg" /><p className="text-sm text-[#00a884] mt-3 font-medium">Scan QR-koden med WhatsApp</p></> : <><Loader2 size={40} className="mx-auto text-gray-500 animate-spin mb-3" /><p className="text-sm text-gray-400">Venter på QR-kode...</p></>}</div>}
+              {!qrPolling && <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-6 text-center"><QrCode size={48} className="mx-auto text-gray-600 mb-3" /><p className="text-sm text-gray-400">Tryk &quot;Tilføj&quot; for at begynde</p></div>}
             </div>
-
             <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[#2a3942]">
-              <button onClick={() => { setShowAddModal(false); setQrPolling(false) }} className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg">
-                {qrPolling ? "Luk" : "Annuller"}
-              </button>
-              {!qrPolling && (
-                <button onClick={createAccount} disabled={!newName.trim() || addingAccount}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg">
-                  {addingAccount && <Loader2 size={14} className="animate-spin" />}
-                  Tilføj & Forbind
-                </button>
-              )}
+              <button onClick={() => { setShowAddModal(false); setQrPolling(false) }} className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg">{qrPolling ? "Luk" : "Annuller"}</button>
+              {!qrPolling && <button onClick={createAccount} disabled={!newName.trim() || addingAccount} className="flex items-center gap-2 px-4 py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg">{addingAccount && <Loader2 size={14} className="animate-spin" />}Tilføj & Forbind</button>}
             </div>
           </div>
         </div>
