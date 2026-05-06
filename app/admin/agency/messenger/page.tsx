@@ -185,9 +185,13 @@ export default function MessengerHubPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [qrPolling, setQrPolling] = useState(false)
 
-  // Pair link state
+  // Pair / invite state
   const [pairLink, setPairLink] = useState<string | null>(null)
   const [pairCopied, setPairCopied] = useState(false)
+  const [addMode, setAddMode] = useState<"choose" | "local" | "invite">("choose")
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [inviteCopied, setInviteCopied] = useState(false)
+  const [inviteLoading, setInviteLoading] = useState(false)
 
   // Phone Settings modal
   const [settingsAccountId, setSettingsAccountId] = useState<string | null>(null)
@@ -327,6 +331,13 @@ export default function MessengerHubPage() {
     } finally { setAddingAccount(false) }
   }
   function copyPairLink() { if (pairLink) { navigator.clipboard.writeText(pairLink); setPairCopied(true); setTimeout(() => setPairCopied(false), 2000) } }
+  async function generateInvite() {
+    setInviteLoading(true)
+    const r = await apiFetch<{ token: string }>("/pair/invite", { method: "POST" })
+    if (r) setInviteLink(`${window.location.origin}/invite/${r.token}`)
+    setInviteLoading(false)
+  }
+  function copyInviteLink() { if (inviteLink) { navigator.clipboard.writeText(inviteLink); setInviteCopied(true); setTimeout(() => setInviteCopied(false), 2000) } }
   async function deleteAccount(id: string) { if (!confirm("Slet denne konto?")) return; await apiFetch(`/accounts/${id}`, { method: "DELETE" }); if (selectedAccountId === id) setSelectedAccountId(null); loadAccounts() }
   async function connectAccount(id: string) { await apiFetch(`/accounts/${id}/connect`, { method: "POST" }); setQrAccountId(id); setQrPolling(true); loadAccounts() }
   async function disconnectAccount(id: string) { await apiFetch(`/accounts/${id}/disconnect`, { method: "POST" }); loadAccounts() }
@@ -443,7 +454,7 @@ export default function MessengerHubPage() {
               ))}
             </div>
           )}
-          <button onClick={() => { setShowAddModal(true); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false); setPairLink(null); setPairCopied(false) }}
+          <button onClick={() => { setShowAddModal(true); setAddMode("choose"); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false); setPairLink(null); setPairCopied(false); setInviteLink(null); setInviteCopied(false) }}
             className="flex items-center gap-2 px-3 py-2 bg-[#00a884] hover:bg-[#00c49a] text-white text-sm font-medium rounded-lg"><Plus size={16} /><span className="hidden md:inline">Add Account</span></button>
         </div>
       </header>
@@ -835,28 +846,64 @@ export default function MessengerHubPage() {
           <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a3942]"><h2 className="text-base font-bold">Tilføj Konto</h2><button onClick={() => { setShowAddModal(false); setQrPolling(false) }} className="p-1 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg"><X size={18} /></button></div>
             <div className="px-5 py-5 space-y-4">
-              <div><label className="block text-sm text-gray-400 mb-1.5">Platform</label><div className="flex gap-2">
-                <button onClick={() => setNewPlatform("whatsapp")} className={`flex-1 py-2.5 rounded-lg text-sm font-medium border flex items-center justify-center gap-2 ${newPlatform === "whatsapp" ? "border-green-600 bg-green-600/20 text-green-400" : "border-[#2a3942] text-gray-400 hover:border-gray-600"}`}><WhatsAppIcon size={18} /> WhatsApp</button>
-                <button onClick={() => setNewPlatform("telegram")} className={`flex-1 py-2.5 rounded-lg text-sm font-medium border flex items-center justify-center gap-2 ${newPlatform === "telegram" ? "border-blue-600 bg-blue-600/20 text-blue-400" : "border-[#2a3942] text-gray-400 hover:border-gray-600"}`}><TelegramIcon size={18} /> Telegram</button>
-              </div></div>
-              <div><label className="block text-sm text-gray-400 mb-1.5">Konto Navn *</label><input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="f.eks. Business WhatsApp" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
-              <div><label className="block text-sm text-gray-400 mb-1.5">Telefonnummer</label><input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+45 53 71 03 69" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
-              {qrPolling && <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-4 text-center">{qrDataUrl ? <><img src={qrDataUrl} alt="QR" className="mx-auto w-[250px] h-[250px] rounded-lg" /><p className="text-sm text-[#00a884] mt-3 font-medium">Scan QR-koden med WhatsApp</p></> : <><Loader2 size={40} className="mx-auto text-gray-500 animate-spin mb-3" /><p className="text-sm text-gray-400">Venter på QR-kode...</p></>}</div>}
-              {/* Pair link buttons */}
-              {qrPolling && pairLink && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg px-3 py-2">
-                    <input type="text" readOnly value={pairLink} className="flex-1 bg-transparent text-xs text-gray-400 outline-none truncate" />
-                    <button onClick={copyPairLink} className={`px-3 py-1 text-xs font-medium rounded-md shrink-0 transition-colors ${pairCopied ? 'bg-[#00a884] text-white' : 'bg-[#2a3942] text-gray-300 hover:bg-[#3a4a52]'}`}>{pairCopied ? '✓ Kopieret' : 'Kopiér'}</button>
-                  </div>
-                  <p className="text-[10px] text-gray-600 text-center">Del dette link — modtageren kan paire uden login (udløber om 5 min)</p>
+
+              {/* Step 1: Choose mode */}
+              {addMode === "choose" && (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-400">Hvordan vil du tilføje kontoen?</p>
+                  <button onClick={() => setAddMode("local")} className="w-full flex items-center gap-3 p-4 bg-[#1f2c34] border border-[#2a3942] rounded-xl hover:border-[#00a884] transition-colors text-left">
+                    <div className="w-10 h-10 bg-[#00a884]/20 rounded-lg flex items-center justify-center shrink-0"><QrCode size={20} className="text-[#00a884]" /></div>
+                    <div><p className="text-sm font-medium">Lokal setup</p><p className="text-xs text-gray-500">Udfyld selv og scan QR-koden her</p></div>
+                  </button>
+                  <button onClick={() => { setAddMode("invite"); generateInvite() }} className="w-full flex items-center gap-3 p-4 bg-[#1f2c34] border border-[#2a3942] rounded-xl hover:border-blue-500 transition-colors text-left">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center shrink-0"><Send size={20} className="text-blue-400" /></div>
+                    <div><p className="text-sm font-medium">Send invite-link</p><p className="text-xs text-gray-500">Generér et link du kan sende til andre (24t)</p></div>
+                  </button>
                 </div>
               )}
-              {!qrPolling && <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-6 text-center"><QrCode size={48} className="mx-auto text-gray-600 mb-3" /><p className="text-sm text-gray-400">Tryk &quot;Tilføj&quot; for at begynde</p></div>}
+
+              {/* Mode: Local setup */}
+              {addMode === "local" && (
+                <>
+                  <button onClick={() => setAddMode("choose")} className="text-xs text-gray-500 hover:text-gray-300">← Tilbage</button>
+                  <div><label className="block text-sm text-gray-400 mb-1.5">Platform</label><div className="flex gap-2">
+                    <button onClick={() => setNewPlatform("whatsapp")} className={`flex-1 py-2.5 rounded-lg text-sm font-medium border flex items-center justify-center gap-2 ${newPlatform === "whatsapp" ? "border-green-600 bg-green-600/20 text-green-400" : "border-[#2a3942] text-gray-400"}`}><WhatsAppIcon size={18} /> WhatsApp</button>
+                    <button onClick={() => setNewPlatform("telegram")} className={`flex-1 py-2.5 rounded-lg text-sm font-medium border flex items-center justify-center gap-2 ${newPlatform === "telegram" ? "border-blue-600 bg-blue-600/20 text-blue-400" : "border-[#2a3942] text-gray-400"}`}><TelegramIcon size={18} /> Telegram</button>
+                  </div></div>
+                  <div><label className="block text-sm text-gray-400 mb-1.5">Konto Navn *</label><input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="f.eks. Business WhatsApp" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+                  <div><label className="block text-sm text-gray-400 mb-1.5">Telefonnummer</label><input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+45 53 71 03 69" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+                  {qrPolling && <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-4 text-center">{qrDataUrl ? <><img src={qrDataUrl} alt="QR" className="mx-auto w-[250px] h-[250px] rounded-lg" /><p className="text-sm text-[#00a884] mt-3 font-medium">Scan QR-koden</p></> : <><Loader2 size={40} className="mx-auto text-gray-500 animate-spin mb-3" /><p className="text-sm text-gray-400">Venter på QR-kode...</p></>}</div>}
+                  {!qrPolling && <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-6 text-center"><QrCode size={48} className="mx-auto text-gray-600 mb-3" /><p className="text-sm text-gray-400">Tryk &quot;Tilføj&quot; for at begynde</p></div>}
+                </>
+              )}
+
+              {/* Mode: Invite link */}
+              {addMode === "invite" && (
+                <>
+                  <button onClick={() => setAddMode("choose")} className="text-xs text-gray-500 hover:text-gray-300">← Tilbage</button>
+                  {inviteLoading ? (
+                    <div className="text-center py-6"><Loader2 size={24} className="mx-auto text-gray-500 animate-spin mb-2" /><p className="text-sm text-gray-400">Genererer link...</p></div>
+                  ) : inviteLink ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-300">Send dette link til personen der skal forbinde sin WhatsApp:</p>
+                      <div className="flex items-center gap-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg px-3 py-2.5">
+                        <input type="text" readOnly value={inviteLink} className="flex-1 bg-transparent text-xs text-[#00a884] outline-none truncate font-mono" />
+                        <button onClick={copyInviteLink} className={`px-3 py-1.5 text-xs font-medium rounded-md shrink-0 transition-colors ${inviteCopied ? 'bg-[#00a884] text-white' : 'bg-[#2a3942] text-gray-300 hover:bg-[#3a4a52]'}`}>{inviteCopied ? '✓ Kopieret' : 'Kopiér'}</button>
+                      </div>
+                      <div className="bg-[#1f2c34] rounded-lg p-3 space-y-1.5">
+                        <p className="text-[10px] text-gray-500">• Modtageren udfylder selv navn og scanner QR</p>
+                        <p className="text-[10px] text-gray-500">• Ingen login krævet</p>
+                        <p className="text-[10px] text-gray-500">• Udløber efter 24 timer</p>
+                        <p className="text-[10px] text-gray-500">• Kan kun bruges én gang</p>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
             </div>
             <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[#2a3942]">
-              <button onClick={() => { setShowAddModal(false); setQrPolling(false) }} className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg">{qrPolling ? "Luk" : "Annuller"}</button>
-              {!qrPolling && <button onClick={createAccount} disabled={!newName.trim() || addingAccount} className="flex items-center gap-2 px-4 py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg">{addingAccount && <Loader2 size={14} className="animate-spin" />}Tilføj & Forbind</button>}
+              <button onClick={() => { setShowAddModal(false); setQrPolling(false) }} className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg">{qrPolling ? "Luk" : addMode === "invite" && inviteLink ? "Færdig" : "Annuller"}</button>
+              {addMode === "local" && !qrPolling && <button onClick={createAccount} disabled={!newName.trim() || addingAccount} className="flex items-center gap-2 px-4 py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg">{addingAccount && <Loader2 size={14} className="animate-spin" />}Tilføj & Forbind</button>}
             </div>
           </div>
         </div>
