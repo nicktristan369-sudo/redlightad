@@ -218,6 +218,16 @@ export default function MessengerHubPage() {
 
   // Contact detail panel
   const [showContactPanel, setShowContactPanel] = useState(false)
+  const [showAddContact, setShowAddContact] = useState(false)
+  const [newContactName, setNewContactName] = useState("")
+  const [newContactPhone, setNewContactPhone] = useState("")
+  const [newContactEmail, setNewContactEmail] = useState("")
+  const [newContactNotes, setNewContactNotes] = useState("")
+  const [newContactCountry, setNewContactCountry] = useState("")
+  // Media attachment
+  const [attachedFile, setAttachedFile] = useState<File | null>(null)
+  const [attachPreview, setAttachPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [contactDetail, setContactDetail] = useState<Contact | null>(null)
   const [contactNotes, setContactNotes] = useState("")
   const [contactNameEdit, setContactNameEdit] = useState("")
@@ -416,6 +426,46 @@ export default function MessengerHubPage() {
     await apiFetch(`/contacts/${contactDetail.id}`, { method: "PATCH", body: JSON.stringify({ display_name: contactNameEdit, notes: contactNotes }) })
     setSavingContact(false); setShowContactPanel(false)
     if (selectedAccountId) loadConversations(selectedAccountId)
+  }
+
+  // Add contact
+  async function createContact() {
+    if (!newContactName.trim() || !newContactPhone.trim()) return
+    await apiFetch("/contacts", { method: "POST", body: JSON.stringify({ display_name: newContactName.trim(), phone_number: newContactPhone.trim(), email: newContactEmail.trim() || null, notes: newContactNotes.trim() || null, country_code: newContactCountry || phoneToCC(newContactPhone) || null }) })
+    setShowAddContact(false); setNewContactName(""); setNewContactPhone(""); setNewContactEmail(""); setNewContactNotes(""); setNewContactCountry("")
+    loadContacts()
+  }
+
+  // Send media
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAttachedFile(file)
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (ev) => setAttachPreview(ev.target?.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setAttachPreview(null)
+    }
+  }
+  async function sendMedia() {
+    if (!attachedFile || !selectedConv || !selectedAccount) return
+    setSendingMsg(true)
+    const formData = new FormData()
+    formData.append('file', attachedFile)
+    formData.append('account_id', selectedAccount.id)
+    formData.append('chat_id', selectedConv.platform_chat_id)
+    if (msgInput.trim()) formData.append('caption', msgInput.trim())
+    try {
+      await fetch(`${API}/messages/send-media`, { method: 'POST', body: formData })
+    } catch {}
+    setAttachedFile(null); setAttachPreview(null); setMsgInput(""); setSendingMsg(false)
+    setTimeout(() => loadMessages(selectedConv.id), 1000)
+  }
+  async function sendMessageOrMedia() {
+    if (attachedFile) { await sendMedia(); return }
+    await sendMessage()
   }
 
   // Contact page actions
@@ -650,10 +700,22 @@ export default function MessengerHubPage() {
                     {/* Input */}
                     <div className="px-4 py-3 bg-[#111b21] border-t border-[#2a3942] shrink-0">
                       {getEffectiveStatus(selectedAccount!) !== "connected" ? <div className="flex items-center justify-center gap-2 py-2 text-gray-500 text-sm"><WifiOff size={16} /><span>Konto ikke forbundet</span></div>
-                      : <div className="flex items-end gap-2">
-                        <textarea value={msgInput} onChange={e => setMsgInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() } }} placeholder="Skriv en besked..." rows={1}
-                          className="flex-1 px-4 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" />
-                        <button onClick={sendMessage} disabled={!msgInput.trim() || sendingMsg} className="p-2.5 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl shrink-0 mb-0.5"><Send size={16} /></button>
+                      : <div className="space-y-2">
+                        {/* File preview */}
+                        {attachedFile && (
+                          <div className="flex items-center gap-2 px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-xl">
+                            {attachPreview ? <img src={attachPreview} alt="" className="w-12 h-12 rounded object-cover" /> : <Paperclip size={16} className="text-gray-400" />}
+                            <div className="flex-1 min-w-0"><p className="text-xs text-gray-300 truncate">{attachedFile.name}</p><p className="text-[10px] text-gray-500">{(attachedFile.size / 1024).toFixed(0)} KB</p></div>
+                            <button onClick={() => { setAttachedFile(null); setAttachPreview(null) }} className="text-gray-500 hover:text-red-400"><X size={14} /></button>
+                          </div>
+                        )}
+                        <div className="flex items-end gap-2">
+                          <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xlsx" onChange={handleFileSelect} />
+                          <button onClick={() => fileInputRef.current?.click()} className="p-2.5 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-xl shrink-0 mb-0.5" title="Vedhæft fil"><Paperclip size={16} /></button>
+                          <textarea value={msgInput} onChange={e => setMsgInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessageOrMedia() } }} placeholder={attachedFile ? "Tilføj caption..." : "Skriv en besked..."} rows={1}
+                            className="flex-1 px-4 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" />
+                          <button onClick={sendMessageOrMedia} disabled={(!msgInput.trim() && !attachedFile) || sendingMsg} className="p-2.5 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl shrink-0 mb-0.5"><Send size={16} /></button>
+                        </div>
                       </div>}
                     </div>
                   </>
@@ -773,6 +835,7 @@ export default function MessengerHubPage() {
             <div className="w-[55%] flex flex-col border-r border-[#2a3942]">
               <div className="flex items-center gap-2 px-4 py-3 bg-[#111b21] border-b border-[#2a3942]">
                 <div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" /><input type="text" placeholder="Søg kontakter..." value={contactSearch} onChange={e => setContactSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+                <button onClick={() => setShowAddContact(true)} className="px-3 py-2 bg-[#00a884] hover:bg-[#00c49a] text-white text-xs font-medium rounded-lg shrink-0 flex items-center gap-1"><Plus size={12} /> Tilføj</button>
                 <select value={contactCountryFilter} onChange={e => setContactCountryFilter(e.target.value)} className="px-2 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-xs text-gray-300 focus:outline-none">
                   <option value="">Alle lande</option>
                   {countries.map(c => <option key={c.code} value={c.code}>{c.code !== 'unknown' ? ccToFlag(c.code)+' '+c.code : '❓ Ukendt'} ({c.count})</option>)}
@@ -984,6 +1047,26 @@ export default function MessengerHubPage() {
             <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[#2a3942]">
               <button onClick={() => { setShowAddModal(false); setQrPolling(false) }} className="px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-lg">{qrPolling ? "Luk" : addMode === "invite" && inviteLink ? "Færdig" : "Annuller"}</button>
               {addMode === "local" && !qrPolling && <button onClick={createAccount} disabled={!newName.trim() || addingAccount} className="flex items-center gap-2 px-4 py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg">{addingAccount && <Loader2 size={14} className="animate-spin" />}Tilføj & Forbind</button>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Add Contact Modal ═══ */}
+      {showAddContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowAddContact(false)}>
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a3942]"><h2 className="text-base font-bold">Tilføj Kontakt</h2><button onClick={() => setShowAddContact(false)} className="p-1 text-gray-400 hover:text-white"><X size={18} /></button></div>
+            <div className="px-5 py-5 space-y-3">
+              <div><label className="block text-xs text-gray-400 mb-1">Navn *</label><input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="Kontaktens navn" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+              <div><label className="block text-xs text-gray-400 mb-1">Telefonnummer *</label><input type="tel" value={newContactPhone} onChange={e => { setNewContactPhone(e.target.value); const cc = phoneToCC(e.target.value); if (cc) setNewContactCountry(cc) }} placeholder="+45 12 34 56 78" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+              <div className="flex items-center gap-3"><span className="text-lg">{ccToFlag(newContactCountry)}</span><input type="text" value={newContactCountry} onChange={e => setNewContactCountry(e.target.value.toUpperCase().slice(0,2))} placeholder="DK" maxLength={2} className="w-16 px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white uppercase focus:outline-none" /><span className="text-xs text-gray-500">Auto-detected fra nummer</span></div>
+              <div><label className="block text-xs text-gray-400 mb-1">Email</label><input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="email@example.com" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+              <div><label className="block text-xs text-gray-400 mb-1">Noter</label><textarea value={newContactNotes} onChange={e => setNewContactNotes(e.target.value)} rows={2} placeholder="Tilføj noter..." className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" /></div>
+            </div>
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-[#2a3942]">
+              <button onClick={() => setShowAddContact(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Annuller</button>
+              <button onClick={createContact} disabled={!newContactName.trim() || !newContactPhone.trim()} className="px-4 py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg">Gem kontakt</button>
             </div>
           </div>
         </div>

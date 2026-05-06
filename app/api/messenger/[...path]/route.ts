@@ -9,6 +9,22 @@ async function proxyRequest(request: NextRequest, method: string) {
     const targetUrl = `${BACKEND_URL}/${pathMatch}${url.search}`;
 
     const isMedia = pathMatch.startsWith('media/');
+    const isUpload = pathMatch.includes('send-media');
+
+    // For file uploads, forward the raw body with original content-type
+    if (isUpload) {
+      const body = await request.arrayBuffer();
+      const res = await fetch(targetUrl, {
+        method,
+        headers: { 'Content-Type': request.headers.get('Content-Type') || 'multipart/form-data' },
+        body: Buffer.from(body),
+      });
+      const data = await res.text();
+      return new NextResponse(data, {
+        status: res.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     const headers: Record<string, string> = {};
     if (!isMedia) headers['Content-Type'] = 'application/json';
