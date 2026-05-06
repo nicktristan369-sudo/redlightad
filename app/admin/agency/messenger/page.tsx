@@ -204,6 +204,7 @@ export default function MessengerHubPage() {
   const [inviteLoading, setInviteLoading] = useState(false)
   const [pairingCode, setPairingCode] = useState<string | null>(null)
   const [pairingCodeCopied, setPairingCodeCopied] = useState(false)
+  const [error, setError] = useState("")
 
   // Phone Settings modal
   const [settingsAccountId, setSettingsAccountId] = useState<string | null>(null)
@@ -350,6 +351,39 @@ export default function MessengerHubPage() {
     setInviteLoading(false)
   }
   function copyInviteLink() { if (inviteLink) { navigator.clipboard.writeText(inviteLink); setInviteCopied(true); setTimeout(() => setInviteCopied(false), 2000) } }
+
+  async function startPairingCodeFlow() {
+    if (!newName.trim() || !newPhone.trim()) return
+    setInviteLoading(true)
+    try {
+      // 1. Create account
+      const acc = await apiFetch<Account>("/accounts", { method: "POST", body: JSON.stringify({ platform: "whatsapp", display_name: newName.trim(), phone_number: newPhone.trim() }) })
+      if (!acc) { setError("Kunne ikke oprette konto"); setInviteLoading(false); return }
+      setSelectedAccountId(acc.id)
+
+      // 2. Connect (start WA session)
+      await apiFetch(`/accounts/${acc.id}/connect`, { method: "POST" })
+
+      // 3. Create invite token
+      const inv = await apiFetch<{token:string}>("/pair/invite", { method: "POST" })
+      if (inv) {
+        setInviteLink(`${window.location.origin}/invite/${inv.token}`)
+
+        // 4. Request pairing code (backend waits for session ready)
+        const cleanPhone = newPhone.trim().replace(/[^0-9]/g, '')
+        const codeRes = await apiFetch<{code:string}>(`/pair/invite/${inv.token}/pairing-code`, { method: "POST", body: JSON.stringify({ phone_number: cleanPhone }) })
+        if (codeRes?.code) {
+          setPairingCode(codeRes.code)
+        } else {
+          setError("Kode-generering fejlede — prøv igen")
+        }
+      }
+      loadAccounts()
+    } catch (e) {
+      setError("Noget gik galt")
+    }
+    setInviteLoading(false)
+  }
   async function deleteAccount(id: string) { if (!confirm("Slet denne konto?")) return; await apiFetch(`/accounts/${id}`, { method: "DELETE" }); if (selectedAccountId === id) setSelectedAccountId(null); loadAccounts() }
   async function connectAccount(id: string) { await apiFetch(`/accounts/${id}/connect`, { method: "POST" }); setQrAccountId(id); setQrPolling(true); loadAccounts() }
   async function disconnectAccount(id: string) { await apiFetch(`/accounts/${id}/disconnect`, { method: "POST" }); loadAccounts() }
@@ -466,7 +500,7 @@ export default function MessengerHubPage() {
               ))}
             </div>
           )}
-          <button onClick={() => { setShowAddModal(true); setAddMode("choose"); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false); setPairLink(null); setPairCopied(false); setInviteLink(null); setInviteCopied(false); setPairingCode(null); setPairingCodeCopied(false) }}
+          <button onClick={() => { setShowAddModal(true); setAddMode("choose"); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false); setPairLink(null); setPairCopied(false); setInviteLink(null); setInviteCopied(false); setPairingCode(null); setPairingCodeCopied(false); setError('') }}
             className="flex items-center gap-2 px-3 py-2 bg-[#00a884] hover:bg-[#00c49a] text-white text-sm font-medium rounded-lg"><Plus size={16} /><span className="hidden md:inline">Add Account</span></button>
         </div>
       </header>
@@ -908,26 +942,11 @@ export default function MessengerHubPage() {
                     <>
                       <div><label className="block text-sm text-gray-400 mb-1.5">Konto Navn *</label><input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Deres navn" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
                       <div><label className="block text-sm text-gray-400 mb-1.5">Deres telefonnummer *</label><input type="tel" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+45 12 34 56 78" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
-                      <button onClick={async () => {
-                        if (!newName.trim() || !newPhone.trim()) return; setInviteLoading(true)
-                        // Create account, start session, request pairing code
-                        const acc = await apiFetch<Account>("/accounts", { method: "POST", body: JSON.stringify({ platform: "whatsapp", display_name: newName.trim(), phone_number: newPhone.trim() }) })
-                        if (!acc) { setInviteLoading(false); return }
-                        await apiFetch(`/accounts/${acc.id}/connect`, { method: "POST" })
-                        setSelectedAccountId(acc.id)
-                        // Generate invite link too
-                        const inv = await apiFetch<{token:string}>("/pair/invite", { method: "POST" })
-                        if (inv) setInviteLink(`${window.location.origin}/invite/${inv.token}`)
-                        // Wait for session + request pairing code
-                        const cleanPhone = newPhone.trim().replace(/[^0-9]/g, '')
-                        const codeRes = await apiFetch<{code:string}>(`/pair/invite/${inv?.token || 'x'}/pairing-code`, { method: "POST", body: JSON.stringify({ phone_number: cleanPhone }) })
-                        if (codeRes?.code) setPairingCode(codeRes.code)
-                        setInviteLoading(false)
-                        loadAccounts()
-                      }} disabled={inviteLoading || !newName.trim() || !newPhone.trim()}
+                      {error && <p className="text-sm text-red-400">{error}</p>}
+                      <button onClick={startPairingCodeFlow} disabled={inviteLoading || !newName.trim() || !newPhone.trim()}
                         className="w-full py-2.5 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2">
                         {inviteLoading && <Loader2 size={14} className="animate-spin" />}
-                        {inviteLoading ? "Starter session..." : "Generér kode"}
+                        {inviteLoading ? "Starter session... (kan tage 30 sek)" : "Generér kode"}
                       </button>
                     </>
                   ) : (
