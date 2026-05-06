@@ -285,7 +285,7 @@ export default function MessengerHubPage() {
 
   const loadAccounts = useCallback(async () => { const d = await apiFetch<Account[]>("/accounts"); if (d) setAccounts(d); setLoading(false) }, [])
   const loadConversations = useCallback(async (aid: string) => { const d = await apiFetch<Conversation[]>(`/conversations?account_id=${aid}`); if (d) setConversations(d); else setConversations([]) }, [])
-  const loadMessages = useCallback(async (cid: string) => { const d = await apiFetch<Message[]>(`/conversations/${cid}/messages`); if (d) setMessages([...d].reverse()) }, [])
+  const loadMessages = useCallback(async (cid: string) => { const d = await apiFetch<Message[]>(`/conversations/${cid}/messages`); if (d) { const real = [...d].reverse(); setMessages(real) } }, [])
   const loadHealth = useCallback(async () => { const d = await apiFetch<typeof healthStatus>("/health"); if (d) setHealthStatus(d) }, [])
   const loadContacts = useCallback(async () => {
     const params = new URLSearchParams()
@@ -314,7 +314,15 @@ export default function MessengerHubPage() {
   // Realtime
   useEffect(() => {
     const msgSub = supabase.channel("messenger_messages_rt").on("postgres_changes", { event: "INSERT", schema: "public", table: "messenger_messages" }, (p) => {
-      const m = p.new as Message; if (m.conversation_id === selectedConvId) setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m])
+      const m = p.new as Message; if (m.conversation_id === selectedConvId) setMessages(prev => {
+        // Dedup: skip if ID exists OR if optimistic msg with same content+direction exists
+        if (prev.some(x => x.id === m.id)) return prev
+        if (m.direction === 'outbound' && prev.some(x => x.direction === 'outbound' && x.content === m.content && x.status === 'pending')) {
+          // Replace optimistic with real
+          return prev.map(x => (x.direction === 'outbound' && x.content === m.content && x.status === 'pending') ? m : x)
+        }
+        return [...prev, m]
+      })
       if (selectedAccountId) loadConversations(selectedAccountId)
     }).subscribe()
     const convSub = supabase.channel("messenger_conversations_rt").on("postgres_changes", { event: "*", schema: "public", table: "messenger_conversations" }, () => { if (selectedAccountId) loadConversations(selectedAccountId) }).subscribe()
