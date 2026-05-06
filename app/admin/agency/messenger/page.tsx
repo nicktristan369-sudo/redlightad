@@ -631,7 +631,7 @@ export default function MessengerHubPage() {
               )}
             </div>
           </>
-        ) : (
+        ) : mainView === "autoreply" ? (
           /* ════ AUTO-REPLY VIEW ════ */
           <div className="flex flex-1 overflow-hidden">
             <div className="w-[60%] flex flex-col border-r border-[#2a3942]">
