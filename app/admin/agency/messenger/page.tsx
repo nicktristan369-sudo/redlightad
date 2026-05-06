@@ -208,6 +208,9 @@ export default function MessengerHubPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [qrPolling, setQrPolling] = useState(false)
 
+  // Health state
+  const [healthStatus, setHealthStatus] = useState<{status: string; accounts: {id:string;platform:string;status:string;uptime:string}[]; autoReply: {activeRules:number;sentToday:number}; database: string} | null>(null)
+
   // Auto-reply state
   const [arRules, setArRules] = useState<AutoReplyRule[]>([])
   const [arLog, setArLog] = useState<AutoReplyLogEntry[]>([])
@@ -280,11 +283,16 @@ export default function MessengerHubPage() {
   }, [])
 
   // ─── Effects ────────────────────────────────────────────────────────
-  useEffect(() => { loadAccounts() }, [loadAccounts])
+  const loadHealth = useCallback(async () => {
+    const data = await apiFetch<typeof healthStatus>("/health")
+    if (data) setHealthStatus(data)
+  }, [])
+
+  useEffect(() => { loadAccounts(); loadHealth() }, [loadAccounts, loadHealth])
   useEffect(() => {
-    const iv = setInterval(loadAccounts, 5000)
+    const iv = setInterval(() => { loadAccounts(); loadHealth() }, 5000)
     return () => clearInterval(iv)
-  }, [loadAccounts])
+  }, [loadAccounts, loadHealth])
 
   useEffect(() => {
     if (selectedAccountId) {
@@ -622,6 +630,22 @@ export default function MessengerHubPage() {
             <MessageCircle size={18} />
           </div>
           <h1 className="text-lg font-bold tracking-tight">MessengerHub</h1>
+          {/* Health indicator */}
+          {healthStatus && (
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium ${
+              healthStatus.status === 'ok' ? 'bg-green-900/30 text-green-400' :
+              healthStatus.status === 'degraded' ? 'bg-yellow-900/30 text-yellow-400' :
+              'bg-red-900/30 text-red-400'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                healthStatus.status === 'ok' ? 'bg-green-500' :
+                healthStatus.status === 'degraded' ? 'bg-yellow-500 animate-pulse' :
+                'bg-red-500 animate-pulse'
+              }`} />
+              {healthStatus.status === 'ok' ? 'Online' : healthStatus.status === 'degraded' ? 'Degraded' : 'Error'}
+              {healthStatus.database !== 'connected' && <span className="text-red-400 ml-1">DB ✕</span>}
+            </div>
+          )}
         </div>
 
         {/* View Tabs */}
