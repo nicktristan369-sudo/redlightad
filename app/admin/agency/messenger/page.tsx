@@ -71,6 +71,8 @@ const BACKEND = "http://76.13.154.9:3001"
 function mediaUrl(path: string | null | undefined) {
   if (!path) return null
   if (path.startsWith('http')) return path
+  // Route through API proxy to avoid CORS
+  if (path.startsWith('/media/')) return `/api/messenger${path}`
   return `${BACKEND}${path}`
 }
 interface AutoReplyRule {

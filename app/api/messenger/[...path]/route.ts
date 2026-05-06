@@ -8,7 +8,10 @@ async function proxyRequest(request: NextRequest, method: string) {
     const pathMatch = url.pathname.replace('/api/messenger/', '');
     const targetUrl = `${BACKEND_URL}/${pathMatch}${url.search}`;
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const isMedia = pathMatch.startsWith('media/');
+
+    const headers: Record<string, string> = {};
+    if (!isMedia) headers['Content-Type'] = 'application/json';
     
     let body: string | undefined;
     if (method !== 'GET' && method !== 'HEAD') {
@@ -21,8 +24,19 @@ async function proxyRequest(request: NextRequest, method: string) {
       body: body || undefined,
     });
 
+    // For media files, return binary data with correct content-type
+    if (isMedia) {
+      const buf = await res.arrayBuffer();
+      return new NextResponse(buf, {
+        status: res.status,
+        headers: {
+          'Content-Type': res.headers.get('Content-Type') || 'application/octet-stream',
+          'Cache-Control': 'public, max-age=604800',
+        },
+      });
+    }
+
     const data = await res.text();
-    
     return new NextResponse(data, {
       status: res.status,
       headers: { 'Content-Type': res.headers.get('Content-Type') || 'application/json' },
