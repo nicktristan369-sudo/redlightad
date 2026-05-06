@@ -496,7 +496,7 @@ export default function MessengerHubPage() {
                       const name = displayName(conv)
                       const isBlocked = conv.contact?.is_blocked
                       return (
-                        <div key={conv.id} onClick={() => { setSelectedConvId(conv.id); if (conv.marked_unread) apiFetch(`/conversations/${conv.id}/mark-unread`, { method: "PATCH" }) }}
+                        <div key={conv.id} onClick={() => { setSelectedConvId(conv.id); if (conv.unread_count > 0 || conv.marked_unread) apiFetch(`/conversations/${conv.id}/mark-read`, { method: "PATCH" }).then(() => { if (selectedAccountId) loadConversations(selectedAccountId) }) }}
                           onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, convId: conv.id }) }}
                           className={`flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-[#2a3942]/30 transition-colors ${selectedConvId === conv.id ? "bg-[#2a3942]/60" : "hover:bg-[#2a3942]/30"}`}>
                           <Avatar name={name} url={conv.contact?.avatar_url} size={40} />
