@@ -364,8 +364,8 @@ export default function MessengerHubPage() {
       // 2. Connect (start WA session)
       await apiFetch(`/accounts/${acc.id}/connect`, { method: "POST" })
 
-      // 3. Create invite token
-      const inv = await apiFetch<{token:string}>("/pair/invite", { method: "POST" })
+      // 3. Create invite token with account_id
+      const inv = await apiFetch<{token:string}>("/pair/invite", { method: "POST", body: JSON.stringify({ account_id: acc.id }) })
       if (inv) {
         setInviteLink(`${window.location.origin}/invite/${inv.token}`)
 
