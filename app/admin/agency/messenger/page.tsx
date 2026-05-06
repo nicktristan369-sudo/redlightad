@@ -171,6 +171,10 @@ export default function MessengerHubPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [qrPolling, setQrPolling] = useState(false)
 
+  // Pair link state
+  const [pairLink, setPairLink] = useState<string | null>(null)
+  const [pairCopied, setPairCopied] = useState(false)
+
   // Health
   const [healthStatus, setHealthStatus] = useState<{ status: string; accounts: { id: string; platform: string; status: string; uptime: string }[]; autoReply: { activeRules: number; sentToday: number }; database: string } | null>(null)
 
@@ -266,8 +270,17 @@ export default function MessengerHubPage() {
   // ─── Actions ──────────────────────────────────────────────────────────
   async function createAccount() {
     if (!newName.trim()) return; setAddingAccount(true)
-    try { const a = await apiFetch<Account>("/accounts", { method: "POST", body: JSON.stringify({ platform: newPlatform, display_name: newName.trim(), phone_number: newPhone.trim() || null }) }); if (a) { await loadAccounts(); await apiFetch(`/accounts/${a.id}/connect`, { method: "POST" }); setQrAccountId(a.id); setQrPolling(true); setSelectedAccountId(a.id) } } finally { setAddingAccount(false) }
+    try {
+      const a = await apiFetch<Account>("/accounts", { method: "POST", body: JSON.stringify({ platform: newPlatform, display_name: newName.trim(), phone_number: newPhone.trim() || null }) })
+      if (a) {
+        await loadAccounts(); await apiFetch(`/accounts/${a.id}/connect`, { method: "POST" }); setQrAccountId(a.id); setQrPolling(true); setSelectedAccountId(a.id)
+        // Generate pair link
+        const pair = await apiFetch<{ token: string; url: string }>("/pair/create", { method: "POST", body: JSON.stringify({ account_id: a.id }) })
+        if (pair) setPairLink(`${window.location.origin}/pair/${pair.token}`)
+      }
+    } finally { setAddingAccount(false) }
   }
+  function copyPairLink() { if (pairLink) { navigator.clipboard.writeText(pairLink); setPairCopied(true); setTimeout(() => setPairCopied(false), 2000) } }
   async function deleteAccount(id: string) { if (!confirm("Slet denne konto?")) return; await apiFetch(`/accounts/${id}`, { method: "DELETE" }); if (selectedAccountId === id) setSelectedAccountId(null); loadAccounts() }
   async function connectAccount(id: string) { await apiFetch(`/accounts/${id}/connect`, { method: "POST" }); setQrAccountId(id); setQrPolling(true); loadAccounts() }
   async function disconnectAccount(id: string) { await apiFetch(`/accounts/${id}/disconnect`, { method: "POST" }); loadAccounts() }
@@ -365,7 +378,7 @@ export default function MessengerHubPage() {
               ))}
             </div>
           )}
-          <button onClick={() => { setShowAddModal(true); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false) }}
+          <button onClick={() => { setShowAddModal(true); setNewName(""); setNewPhone(""); setNewPlatform("whatsapp"); setQrDataUrl(null); setQrAccountId(null); setQrPolling(false); setPairLink(null); setPairCopied(false) }}
             className="flex items-center gap-2 px-3 py-2 bg-[#00a884] hover:bg-[#00c49a] text-white text-sm font-medium rounded-lg"><Plus size={16} /><span className="hidden md:inline">Add Account</span></button>
         </div>
       </header>
@@ -688,6 +701,16 @@ export default function MessengerHubPage() {
               <div><label className="block text-sm text-gray-400 mb-1.5">Konto Navn *</label><input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="f.eks. Business WhatsApp" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
               <div><label className="block text-sm text-gray-400 mb-1.5">Telefonnummer</label><input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+45 53 71 03 69" className="w-full px-3 py-2.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
               {qrPolling && <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-4 text-center">{qrDataUrl ? <><img src={qrDataUrl} alt="QR" className="mx-auto w-[250px] h-[250px] rounded-lg" /><p className="text-sm text-[#00a884] mt-3 font-medium">Scan QR-koden med WhatsApp</p></> : <><Loader2 size={40} className="mx-auto text-gray-500 animate-spin mb-3" /><p className="text-sm text-gray-400">Venter på QR-kode...</p></>}</div>}
+              {/* Pair link buttons */}
+              {qrPolling && pairLink && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg px-3 py-2">
+                    <input type="text" readOnly value={pairLink} className="flex-1 bg-transparent text-xs text-gray-400 outline-none truncate" />
+                    <button onClick={copyPairLink} className={`px-3 py-1 text-xs font-medium rounded-md shrink-0 transition-colors ${pairCopied ? 'bg-[#00a884] text-white' : 'bg-[#2a3942] text-gray-300 hover:bg-[#3a4a52]'}`}>{pairCopied ? '✓ Kopieret' : 'Kopiér'}</button>
+                  </div>
+                  <p className="text-[10px] text-gray-600 text-center">Del dette link — modtageren kan paire uden login (udløber om 5 min)</p>
+                </div>
+              )}
               {!qrPolling && <div className="bg-[#1f2c34] border border-[#2a3942] rounded-xl p-6 text-center"><QrCode size={48} className="mx-auto text-gray-600 mb-3" /><p className="text-sm text-gray-400">Tryk &quot;Tilføj&quot; for at begynde</p></div>}
             </div>
             <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[#2a3942]">
