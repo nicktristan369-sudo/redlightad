@@ -3,7 +3,12 @@ import { useEffect, useState, useRef } from "react"
 import { useParams } from "next/navigation"
 
 const API = "/api/messenger/api"
-type Step = "form" | "qr" | "done" | "expired"
+type Step = "form" | "qr" | "code" | "done" | "expired"
+
+function isMobile() {
+  if (typeof window === "undefined") return false
+  return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent)
+}
 
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>()
@@ -11,24 +16,32 @@ export default function InvitePage() {
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [pairingCode, setPairingCode] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [accountId, setAccountId] = useState<string | null>(null)
+  const [mobile, setMobile] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => { setMobile(isMobile()) }, [])
 
   // Check invite validity on mount
   useEffect(() => {
     if (!token) return
     fetch(`${API}/pair/invite/${token}`).then(r => {
       if (r.status === 404) setStep("expired")
-      else r.json().then(d => { if (d.status === "connected") setStep("done"); else if (d.accountId) { setAccountId(d.accountId); setStep("qr"); if (d.qrDataUrl) setQrDataUrl(d.qrDataUrl) } })
+      else r.json().then(d => {
+        if (d.status === "connected") setStep("done")
+        else if (d.pairingCode) { setAccountId(d.accountId); setPairingCode(d.pairingCode); setStep("code") }
+        else if (d.accountId) { setAccountId(d.accountId); setStep("qr"); if (d.qrDataUrl) setQrDataUrl(d.qrDataUrl) }
+      })
     }).catch(() => {})
   }, [token])
 
-  // WebSocket for live QR updates
+  // WebSocket
   useEffect(() => {
-    if (!token || step !== "qr") return
+    if (!token || step === "done" || step === "expired" || step === "form") return
     try {
       const ws = new WebSocket("ws://76.13.154.9:3001/ws")
       wsRef.current = ws
@@ -37,6 +50,7 @@ export default function InvitePage() {
           const msg = JSON.parse(ev.data)
           if (msg.type === "invite_qr_update" && msg.data?.token === token && msg.data.qrDataUrl) setQrDataUrl(msg.data.qrDataUrl)
           if (msg.type === "invite_connected" && msg.data?.token === token) setStep("done")
+          if (msg.type === "invite_pairing_code" && msg.data?.token === token) setPairingCode(msg.data.code)
           if (msg.type === "qr_code" && msg.data?.qr) setQrDataUrl(msg.data.qr)
         } catch {}
       }
@@ -44,25 +58,28 @@ export default function InvitePage() {
     return () => { wsRef.current?.close() }
   }, [token, step])
 
-  // Poll status when on QR step
+  // Poll status
   useEffect(() => {
-    if (step !== "qr" || !token) return
+    if (step !== "qr" && step !== "code") return
+    if (!token) return
     pollRef.current = setInterval(async () => {
       try {
         const r = await fetch(`${API}/pair/invite/${token}`)
         if (!r.ok) { if (r.status === 404) setStep("expired"); return }
         const d = await r.json()
         if (d.status === "connected") setStep("done")
-        if (d.qrDataUrl && d.qrDataUrl !== qrDataUrl) setQrDataUrl(d.qrDataUrl)
+        if (d.qrDataUrl && !qrDataUrl) setQrDataUrl(d.qrDataUrl)
+        if (d.pairingCode && !pairingCode) setPairingCode(d.pairingCode)
       } catch {}
     }, 2500)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [step, token, qrDataUrl])
+  }, [step, token])
 
-  async function handleNext() {
+  async function handleSetup() {
     if (!name.trim()) { setError("Indtast et navn"); return }
     setLoading(true); setError("")
     try {
+      // Step 1: Create account + start session
       const r = await fetch(`${API}/pair/invite/${token}/setup`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), phone_number: phone.trim() || null })
@@ -70,10 +87,34 @@ export default function InvitePage() {
       if (!r.ok) { const d = await r.json(); setError(d.error === "expired" ? "Link udløbet" : d.error || "Fejl"); setLoading(false); return }
       const d = await r.json()
       setAccountId(d.accountId)
+
+      // If mobile + phone number provided, request pairing code
+      if (mobile && phone.trim()) {
+        // Wait a moment for session to initialize puppeteer
+        await new Promise(r => setTimeout(r, 5000))
+        try {
+          const cr = await fetch(`${API}/pair/invite/${token}/pairing-code`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone_number: phone.trim() })
+          })
+          if (cr.ok) {
+            const cd = await cr.json()
+            setPairingCode(cd.code)
+            setStep("code")
+            setLoading(false)
+            return
+          }
+        } catch {}
+        // Fallback to QR if pairing code fails
+      }
+
       setStep("qr")
     } catch { setError("Netværksfejl") }
     setLoading(false)
   }
+
+  // Format pairing code as "XXXX-XXXX"
+  const formattedCode = pairingCode ? pairingCode.replace(/(.{4})/g, "$1-").replace(/-$/, "") : ""
 
   return (
     <div className="min-h-screen bg-[#0b141a] text-white flex flex-col items-center justify-center p-4">
@@ -94,24 +135,63 @@ export default function InvitePage() {
               <label className="block text-sm text-gray-400 mb-1.5">Konto Navn *</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Dit navn eller firmanavn"
                 className="w-full px-4 py-3 bg-[#1f2c34] border border-[#2a3942] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]"
-                onKeyDown={e => { if (e.key === "Enter") handleNext() }} autoFocus />
+                onKeyDown={e => { if (e.key === "Enter" && phone) handleSetup() }} autoFocus />
             </div>
             <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Telefonnummer</label>
+              <label className="block text-sm text-gray-400 mb-1.5">Telefonnummer {mobile ? "*" : "(valgfrit)"}</label>
               <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+45 12 34 56 78"
                 className="w-full px-4 py-3 bg-[#1f2c34] border border-[#2a3942] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]"
-                onKeyDown={e => { if (e.key === "Enter") handleNext() }} />
+                onKeyDown={e => { if (e.key === "Enter") handleSetup() }} />
+              {mobile && <p className="text-xs text-[#00a884] mt-1.5">📱 Du får en kode du taster ind i WhatsApp</p>}
+              {!mobile && <p className="text-xs text-gray-600 mt-1.5">💻 Du scanner en QR-kode med din telefon</p>}
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
-            <button onClick={handleNext} disabled={loading || !name.trim()}
+            <button onClick={handleSetup} disabled={loading || !name.trim() || (mobile && !phone.trim())}
               className="w-full py-3 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium rounded-xl flex items-center justify-center gap-2">
-              {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              {loading ? "Opretter..." : "Næste →"}
+              {loading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> {mobile ? "Henter kode..." : "Starter..."}</> : "Forbind →"}
             </button>
           </div>
         )}
 
-        {/* Step 2: QR */}
+        {/* Step: Pairing Code (mobile) */}
+        {step === "code" && (
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl p-6 text-center">
+            <div className="mb-5">
+              <p className="text-sm text-gray-400 mb-4">Indtast denne kode i WhatsApp</p>
+              <div className="bg-[#1f2c34] rounded-2xl py-6 px-4 mb-4">
+                <p className="text-4xl font-mono font-bold tracking-[0.3em] text-white">{formattedCode || "..."}</p>
+              </div>
+            </div>
+            <div className="text-left space-y-3 mb-4">
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 bg-[#00a884]/20 rounded-full flex items-center justify-center shrink-0 text-xs text-[#00a884] font-bold mt-0.5">1</span>
+                <p className="text-sm text-gray-300">Åbn <span className="text-[#00a884] font-medium">WhatsApp</span> på denne telefon</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 bg-[#00a884]/20 rounded-full flex items-center justify-center shrink-0 text-xs text-[#00a884] font-bold mt-0.5">2</span>
+                <p className="text-sm text-gray-300">Tryk <span className="text-white font-medium">⋮ Indstillinger</span> → <span className="text-white font-medium">Linkede enheder</span></p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 bg-[#00a884]/20 rounded-full flex items-center justify-center shrink-0 text-xs text-[#00a884] font-bold mt-0.5">3</span>
+                <p className="text-sm text-gray-300">Tryk <span className="text-white font-medium">Link en enhed</span></p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 bg-[#00a884]/20 rounded-full flex items-center justify-center shrink-0 text-xs text-[#00a884] font-bold mt-0.5">4</span>
+                <p className="text-sm text-gray-300">Tryk <span className="text-white font-medium">&quot;Link med telefonnummer&quot;</span> i bunden</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 bg-[#00a884]/20 rounded-full flex items-center justify-center shrink-0 text-xs text-[#00a884] font-bold mt-0.5">5</span>
+                <p className="text-sm text-gray-300">Indtast koden <span className="text-white font-bold font-mono">{formattedCode}</span></p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-3 border-t border-[#2a3942]">
+              <div className="w-2 h-2 bg-[#00a884] rounded-full animate-pulse" />
+              <span className="text-xs text-gray-500">Venter på bekræftelse...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Step: QR (desktop) */}
         {step === "qr" && (
           <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl p-6 text-center">
             {qrDataUrl ? (
@@ -124,9 +204,24 @@ export default function InvitePage() {
                   <p>1. Åbn <span className="text-[#00a884] font-medium">WhatsApp</span> på din telefon</p>
                   <p>2. Tryk <span className="text-white font-medium">⋮ Menu</span> → <span className="text-white font-medium">Linkede enheder</span></p>
                   <p>3. Tryk <span className="text-white font-medium">Link en enhed</span></p>
-                  <p>4. Scan denne QR-kode</p>
+                  <p>4. Scan QR-koden</p>
                 </div>
-                <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-[#2a3942]">
+
+                {/* Switch to code option */}
+                <button onClick={async () => {
+                  if (!phone.trim()) return
+                  try {
+                    const r = await fetch(`${API}/pair/invite/${token}/pairing-code`, {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ phone_number: phone.trim() })
+                    })
+                    if (r.ok) { const d = await r.json(); setPairingCode(d.code); setStep("code") }
+                  } catch {}
+                }} className="mt-4 text-xs text-gray-500 hover:text-gray-300 underline">
+                  Kan ikke scanne? Brug kode i stedet
+                </button>
+
+                <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-[#2a3942]">
                   <div className="w-2 h-2 bg-[#00a884] rounded-full animate-pulse" />
                   <span className="text-xs text-gray-500">Venter på scanning...</span>
                 </div>
@@ -135,13 +230,12 @@ export default function InvitePage() {
               <div className="py-8">
                 <div className="w-10 h-10 mx-auto mb-3 border-2 border-[#00a884] border-t-transparent rounded-full animate-spin" />
                 <p className="text-sm text-gray-400">Starter WhatsApp session...</p>
-                <p className="text-xs text-gray-600 mt-1">QR-koden kommer om et øjeblik</p>
               </div>
             )}
           </div>
         )}
 
-        {/* Step 3: Done */}
+        {/* Done */}
         {step === "done" && (
           <div className="bg-[#111b21] border border-[#2a3942] rounded-2xl p-8 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#00a884] flex items-center justify-center">
