@@ -78,7 +78,7 @@ interface AutoReplyStats {
   topRule: { name: string; count: number } | null; avgResponseTime: number
 }
 type TabFilter = "all" | "whatsapp" | "telegram"
-type MainView = "chat" | "autoreply"
+type MainView = "chat" | "autoreply" | "contacts"
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 function timeAgo(d: string | null) {
@@ -126,7 +126,18 @@ const TRIGGER_ICONS: Record<string, typeof Bot> = { first_message: MessageCircle
 const TRIGGER_LABELS: Record<string, string> = { first_message: "Første besked", keyword: "Nøgleord", regex: "Regex", schedule: "Tidsplan", ai_fallback: "AI Fallback", all_messages: "Alle beskeder" }
 
 // Format display name for chat header - hide raw chat IDs
+// Country code -> flag emoji
+function ccToFlag(cc: string | null | undefined) {
+  if (!cc || cc.length !== 2) return ""
+  return String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65))
+}
+
+// Phone prefix -> country code
+const PHONE_CC: Record<string, string> = {'1':'US','7':'RU','20':'EG','27':'ZA','31':'NL','32':'BE','33':'FR','34':'ES','39':'IT','41':'CH','43':'AT','44':'GB','45':'DK','46':'SE','47':'NO','48':'PL','49':'DE','52':'MX','55':'BR','61':'AU','62':'ID','63':'PH','64':'NZ','65':'SG','66':'TH','81':'JP','82':'KR','86':'CN','90':'TR','91':'IN','98':'IR','212':'MA','234':'NG','351':'PT','353':'IE','358':'FI','380':'UA','420':'CZ','421':'SK','852':'HK','886':'TW','966':'SA','971':'AE','972':'IL','974':'QA'}
+function phoneToCC(p: string | null) { if(!p) return null; const d=p.replace(/\D/g,''); for(const l of [3,2,1]){const px=d.substring(0,l);if(PHONE_CC[px])return PHONE_CC[px];} return null }
+
 function displayName(conv: Conversation) {
+  if (conv.contact?.custom_name) return conv.contact.custom_name
   if (conv.contact?.display_name) return conv.contact.display_name
   if (conv.chat_name && !conv.chat_name.includes("@")) return conv.chat_name
   // Extract phone from chat_id like "4553710369@c.us"
@@ -188,6 +199,23 @@ export default function MessengerHubPage() {
   const [contactNameEdit, setContactNameEdit] = useState("")
   const [savingContact, setSavingContact] = useState(false)
 
+  // Contacts page state
+  const [allContacts, setAllContacts] = useState<Contact[]>([])
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [contactSearch, setContactSearch] = useState("")
+  const [contactCountryFilter, setContactCountryFilter] = useState("")
+  const [contactTagFilter, setContactTagFilter] = useState("")
+  const [countries, setCountries] = useState<{code:string;count:number}[]>([])
+  // Contact edit fields
+  const [ceCustomName, setCeCustomName] = useState("")
+  const [ceEmail, setCeEmail] = useState("")
+  const [ceNotes, setCeNotes] = useState("")
+  const [ceTags, setCeTags] = useState<string[]>([])
+  const [ceTagInput, setCeTagInput] = useState("")
+  const [ceCountry, setCeCountry] = useState("")
+  const [ceFavorite, setCeFavorite] = useState(false)
+  const [ceSaving, setCeSaving] = useState(false)
+
   // Auto-reply state
   const [arRules, setArRules] = useState<AutoReplyRule[]>([])
   const [arLog, setArLog] = useState<AutoReplyLogEntry[]>([])
@@ -225,6 +253,16 @@ export default function MessengerHubPage() {
   const loadConversations = useCallback(async (aid: string) => { const d = await apiFetch<Conversation[]>(`/conversations?account_id=${aid}`); if (d) setConversations(d); else setConversations([]) }, [])
   const loadMessages = useCallback(async (cid: string) => { const d = await apiFetch<Message[]>(`/conversations/${cid}/messages`); if (d) setMessages([...d].reverse()) }, [])
   const loadHealth = useCallback(async () => { const d = await apiFetch<typeof healthStatus>("/health"); if (d) setHealthStatus(d) }, [])
+  const loadContacts = useCallback(async () => {
+    const params = new URLSearchParams()
+    if (contactSearch) params.set('search', contactSearch)
+    if (contactCountryFilter) params.set('country', contactCountryFilter)
+    if (contactTagFilter) params.set('tag', contactTagFilter)
+    const [c, co] = await Promise.all([apiFetch<Contact[]>(`/contacts?${params}`), apiFetch<{code:string;count:number}[]>('/contacts/countries')])
+    if (c) setAllContacts(c)
+    if (co) setCountries(co)
+  }, [contactSearch, contactCountryFilter, contactTagFilter])
+
   const loadAutoReply = useCallback(async () => {
     const [rules, log, stats] = await Promise.all([apiFetch<AutoReplyRule[]>("/autoreply/rules"), apiFetch<AutoReplyLogEntry[]>("/autoreply/log"), apiFetch<AutoReplyStats>("/autoreply/stats")])
     if (rules) setArRules(rules); if (log) setArLog(log); if (stats) setArStats(stats)
@@ -237,6 +275,7 @@ export default function MessengerHubPage() {
   useEffect(() => { if (selectedConvId) { loadMessages(selectedConvId); setShowContactPanel(false) } else setMessages([]) }, [selectedConvId, loadMessages])
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages])
   useEffect(() => { if (mainView === "autoreply") { loadAutoReply(); const iv = setInterval(loadAutoReply, 10000); return () => clearInterval(iv) } }, [mainView, loadAutoReply])
+  useEffect(() => { if (mainView === "contacts") loadContacts() }, [mainView, loadContacts])
 
   // Realtime
   useEffect(() => {
@@ -315,6 +354,24 @@ export default function MessengerHubPage() {
     if (selectedAccountId) loadConversations(selectedAccountId)
   }
 
+  // Contact page actions
+  function selectContactForEdit(c: Contact) {
+    setSelectedContact(c); setCeCustomName(c.custom_name || c.display_name || ""); setCeEmail((c as any).email || ""); setCeNotes(c.notes || ""); setCeTags(Array.isArray(c.tags) ? c.tags as string[] : []); setCeCountry(c.country_code || phoneToCC(c.phone_number) || ""); setCeFavorite(c.is_favorite || false)
+  }
+  async function saveContactEdit() {
+    if (!selectedContact) return; setCeSaving(true)
+    await apiFetch(`/contacts/${selectedContact.id}`, { method: "PATCH", body: JSON.stringify({ custom_name: ceCustomName || null, email: ceEmail || null, notes: ceNotes || null, tags: ceTags, country_code: ceCountry || null, is_favorite: ceFavorite }) })
+    setCeSaving(false); loadContacts()
+  }
+  async function toggleFavorite(c: Contact) {
+    await apiFetch(`/contacts/${c.id}`, { method: "PATCH", body: JSON.stringify({ is_favorite: !c.is_favorite }) }); loadContacts()
+  }
+  function openChatWithContact(c: Contact) {
+    // Find conversation for this contact and switch to chat
+    const conv = conversations.find(cv => cv.contact_id === c.id)
+    if (conv) { setMainView("chat"); setSelectedConvId(conv.id) }
+  }
+
   // Auto-reply actions
   async function toggleRule(id: string) { await apiFetch(`/autoreply/rules/${id}/toggle`, { method: "PATCH" }); loadAutoReply() }
   async function deleteRule(id: string) { if (!confirm("Slet regel?")) return; await apiFetch(`/autoreply/rules/${id}`, { method: "DELETE" }); loadAutoReply() }
@@ -367,6 +424,7 @@ export default function MessengerHubPage() {
         <div className="flex items-center gap-1 bg-[#1f2c34] rounded-lg p-1">
           <button onClick={() => setMainView("chat")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mainView === "chat" ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"}`}><MessageCircle size={14} /> Chat</button>
           <button onClick={() => setMainView("autoreply")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mainView === "autoreply" ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"}`}><Bot size={14} /> Auto-Reply</button>
+          <button onClick={() => setMainView("contacts")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mainView === "contacts" ? "bg-[#2a3942] text-white" : "text-gray-400 hover:text-gray-200"}`}><BookOpen size={14} /> Kontakter</button>
         </div>
         <div className="flex items-center gap-2">
           {mainView === "chat" && (
@@ -404,7 +462,7 @@ export default function MessengerHubPage() {
                         <div className="absolute -bottom-0.5 -right-0.5"><StatusDot status={eff} /></div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{account.display_name || "Unnamed"}</p>
+                        <p className="text-sm font-medium truncate">{(account as any).country_code ? ccToFlag((account as any).country_code)+' ' : ''}{account.display_name || "Unnamed"}</p>
                         <p className="text-xs text-gray-500 truncate">{account.phone_number || account.platform}</p>
                         <span className="text-[10px] text-gray-600 capitalize">{eff.replace("_", " ")}</span>
                       </div>
@@ -444,7 +502,7 @@ export default function MessengerHubPage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1.5 min-w-0">
                                 {conv.is_pinned && <Pin size={10} className="text-gray-500 shrink-0" />}
-                                <p className={`text-sm font-medium truncate ${isBlocked ? "text-red-400 line-through" : ""}`}>{name}</p>
+                                <p className={`text-sm font-medium truncate ${isBlocked ? "text-red-400 line-through" : ""}`}>{conv.contact?.country_code ? ccToFlag(conv.contact.country_code)+' ' : ''}{name}</p>
                               </div>
                               <span className="text-[10px] text-gray-500 shrink-0 ml-2">{timeAgo(conv.last_message_at)}</span>
                             </div>
@@ -480,7 +538,7 @@ export default function MessengerHubPage() {
                       <div className="flex items-center gap-3 cursor-pointer" onClick={openContactPanel}>
                         <Avatar name={displayName(selectedConv)} url={selectedConv.contact?.avatar_url} size={36} />
                         <div>
-                          <p className="text-sm font-medium">{displayName(selectedConv)}</p>
+                          <p className="text-sm font-medium">{selectedConv.contact?.country_code ? ccToFlag(selectedConv.contact.country_code)+' ' : ''}{displayName(selectedConv)}</p>
                           {displayPhone(selectedConv) && displayPhone(selectedConv) !== displayName(selectedConv) && (
                             <p className="text-[11px] text-gray-500">{displayPhone(selectedConv)}</p>
                           )}
@@ -632,7 +690,82 @@ export default function MessengerHubPage() {
               )}
             </div>
           </div>
-        )}
+        ) : mainView === "contacts" ? (
+          /* ════ CONTACTS VIEW ════ */
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left: Contact List */}
+            <div className="w-[55%] flex flex-col border-r border-[#2a3942]">
+              <div className="flex items-center gap-2 px-4 py-3 bg-[#111b21] border-b border-[#2a3942]">
+                <div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" /><input type="text" placeholder="Søg kontakter..." value={contactSearch} onChange={e => setContactSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884]" /></div>
+                <select value={contactCountryFilter} onChange={e => setContactCountryFilter(e.target.value)} className="px-2 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-xs text-gray-300 focus:outline-none">
+                  <option value="">Alle lande</option>
+                  {countries.map(c => <option key={c.code} value={c.code}>{c.code !== 'unknown' ? ccToFlag(c.code)+' '+c.code : '❓ Ukendt'} ({c.count})</option>)}
+                </select>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {allContacts.length === 0 ? <div className="text-center py-16"><BookOpen size={32} className="mx-auto text-gray-700 mb-3" /><p className="text-sm text-gray-500">Ingen kontakter</p></div>
+                : allContacts.map(c => {
+                  const name = (c as any).custom_name || c.display_name || c.phone_number || 'Ukendt'
+                  const flag = ccToFlag(c.country_code)
+                  return (
+                    <div key={c.id} onClick={() => selectContactForEdit(c)} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b border-[#2a3942]/30 transition-colors ${selectedContact?.id === c.id ? 'bg-[#2a3942]/60' : 'hover:bg-[#2a3942]/30'}`}>
+                      <Avatar name={name} url={c.avatar_url} size={36} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {c.is_favorite && <span className="text-yellow-500 text-xs">★</span>}
+                          <p className="text-sm font-medium truncate">{flag ? flag+' ' : ''}{name}</p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-gray-500">{c.phone_number || ''}</span>
+                          {(Array.isArray(c.tags) ? c.tags as string[] : []).slice(0,2).map(t => <span key={t} className="text-[10px] px-1 py-0.5 bg-[#1f2c34] text-gray-500 rounded">{t}</span>)}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Right: Contact Detail */}
+            <div className="w-[45%] flex flex-col bg-[#0b141a]">
+              {selectedContact ? (
+                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+                  <div className="text-center">
+                    <Avatar name={(selectedContact as any).custom_name || selectedContact.display_name || '?'} url={selectedContact.avatar_url} size={80} />
+                    <p className="text-lg font-bold mt-3">{ccToFlag(selectedContact.country_code)} {(selectedContact as any).custom_name || selectedContact.display_name || 'Ukendt'}</p>
+                    <p className="text-xs text-gray-500">{selectedContact.phone_number}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <div><label className="block text-xs text-gray-500 mb-1">Brugerdefineret navn</label><input type="text" value={ceCustomName} onChange={e => setCeCustomName(e.target.value)} placeholder="Overskriver WA-navn" className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" /></div>
+                    <div><label className="block text-xs text-gray-500 mb-1">Email</label><input type="email" value={ceEmail} onChange={e => setCeEmail(e.target.value)} placeholder="email@example.com" className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" /></div>
+                    <div><label className="block text-xs text-gray-500 mb-1">Land</label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{ccToFlag(ceCountry)}</span>
+                        <input type="text" value={ceCountry} onChange={e => setCeCountry(e.target.value.toUpperCase().slice(0,2))} placeholder="DK" maxLength={2} className="w-20 px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white uppercase focus:outline-none focus:border-[#00a884]" />
+                      </div>
+                    </div>
+                    <div><label className="block text-xs text-gray-500 mb-1">Noter</label><textarea value={ceNotes} onChange={e => setCeNotes(e.target.value)} rows={3} placeholder="Tilføj noter..." className="w-full px-3 py-2 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#00a884] resize-none" /></div>
+                    <div><label className="block text-xs text-gray-500 mb-1">Tags</label>
+                      <div className="flex gap-2 mb-2"><input type="text" value={ceTagInput} onChange={e => setCeTagInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const t = ceTagInput.trim(); if (t && !ceTags.includes(t)) setCeTags([...ceTags, t]); setCeTagInput('') }}} placeholder="Tilføj tag..." className="flex-1 px-3 py-1.5 bg-[#1f2c34] border border-[#2a3942] rounded-lg text-sm text-white focus:outline-none focus:border-[#00a884]" /></div>
+                      <div className="flex flex-wrap gap-1">{ceTags.map(t => <span key={t} className="flex items-center gap-1 px-2 py-0.5 bg-[#1f2c34] text-xs text-gray-300 rounded-md">{t}<button onClick={() => setCeTags(ceTags.filter(x => x !== t))} className="text-gray-500 hover:text-red-400"><X size={10} /></button></span>)}</div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-gray-500">Favorit</label>
+                      <button onClick={() => setCeFavorite(!ceFavorite)} className={`p-1 rounded ${ceFavorite ? 'text-yellow-500' : 'text-gray-600'}`}>{ceFavorite ? <span className="text-lg">★</span> : <span className="text-lg">☆</span>}</button>
+                    </div>
+                  </div>
+                  <button onClick={saveContactEdit} disabled={ceSaving} className="w-full py-2 bg-[#00a884] hover:bg-[#00c49a] disabled:bg-gray-700 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2">{ceSaving && <Loader2 size={14} className="animate-spin" />}Gem</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => openChatWithContact(selectedContact)} className="flex-1 py-2 bg-[#1f2c34] hover:bg-[#2a3942] text-white text-sm rounded-lg flex items-center justify-center gap-1.5"><Send size={14} /> Send besked</button>
+                    <button onClick={() => { if(selectedContact) blockContact(selectedContact.id); loadContacts() }} className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-sm rounded-lg"><Ban size={14} /></button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center"><div className="text-center"><BookOpen size={32} className="mx-auto text-gray-700 mb-3" /><p className="text-sm text-gray-500">Vælg en kontakt</p></div></div>
+              )}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* ═══ Context Menu ═══ */}
