@@ -64,6 +64,14 @@ interface Message {
   platform_message_id: string | null; direction: "inbound" | "outbound"
   message_type: string; content: string | null; status: string
   is_auto_reply: boolean; auto_reply_rule_id?: string | null; created_at: string
+  media_url?: string | null; media_mime_type?: string | null
+}
+
+const BACKEND = "http://76.13.154.9:3001"
+function mediaUrl(path: string | null | undefined) {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `${BACKEND}${path}`
 }
 interface AutoReplyRule {
   id: string; name: string; trigger_type: string; trigger_config: Record<string, unknown>
@@ -578,7 +586,18 @@ export default function MessengerHubPage() {
                           <div key={msg.id} className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
                             <div className={`max-w-[65%] rounded-2xl px-3.5 py-2 ${isOut ? "bg-[#005c4b] rounded-br-md" : "bg-[#1f2c34] rounded-bl-md"}`}>
                               {msg.is_auto_reply && isOut && <div className="flex items-center gap-1 text-[10px] text-blue-400 mb-1"><Zap size={10} /><span>Auto-reply</span></div>}
-                              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.content || `[${msg.message_type}]`}</p>
+                              {/* Media rendering */}
+                              {msg.media_url && (msg.message_type === 'image' || msg.message_type === 'sticker' || msg.media_mime_type?.startsWith('image/')) ? (
+                                <img src={mediaUrl(msg.media_url)!} alt="" className="max-w-full rounded-lg mb-1 cursor-pointer" style={{maxHeight:300}} onClick={() => window.open(mediaUrl(msg.media_url)!, '_blank')} />
+                              ) : msg.media_url && (msg.message_type === 'video' || msg.media_mime_type?.startsWith('video/')) ? (
+                                <video src={mediaUrl(msg.media_url)!} controls className="max-w-full rounded-lg mb-1" style={{maxHeight:300}} />
+                              ) : msg.media_url && (msg.message_type === 'audio' || msg.message_type === 'ptt' || msg.media_mime_type?.startsWith('audio/')) ? (
+                                <audio src={mediaUrl(msg.media_url)!} controls className="w-full mb-1" />
+                              ) : msg.media_url ? (
+                                <a href={mediaUrl(msg.media_url)!} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 bg-black/20 rounded-lg mb-1 text-xs text-blue-400 hover:text-blue-300"><Paperclip size={14} />{msg.message_type || 'Document'}</a>
+                              ) : null}
+                              {msg.content && <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>}
+                              {!msg.content && !msg.media_url && <p className="text-sm text-gray-500 italic">[{msg.message_type}]</p>}
                               <div className="flex items-center justify-end gap-1 mt-1">
                                 <span className="text-[10px] text-gray-500">{formatTime(msg.created_at)}</span>
                                 {isOut && <span className="text-gray-400">{msg.status === "read" ? <CheckCheck size={12} className="text-blue-400" /> : msg.status === "delivered" ? <CheckCheck size={12} /> : msg.status === "sent" ? <Check size={12} /> : <Clock size={10} />}</span>}
